@@ -162,9 +162,6 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
-/* Do we have MMAL? */
-#undef HAVE_MMAL
-
 /* Enable Musepack */
 #undef HAVE_MUSEPACK
 

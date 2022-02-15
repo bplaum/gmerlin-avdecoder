@@ -457,7 +457,6 @@ doc/Makefile \
 doc/Doxyfile \
 po/Makefile.in \
 utils/Makefile \
-gmerlin_avdec.spec \
 gmerlin_avdec.pc \
 include/Makefile \
 include/bgav_version.h \
