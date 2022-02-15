@@ -1,0 +1,31 @@
+WHAT THIS IS
+
+This is gmerlin_avdecoder, a multimedia decoding library. 
+It it primarly a support library for gmerlin, but it can also be 
+used as a standalone library for getting sophisticated media file 
+decoding support for your application.
+
+It needs gavl, the support library for handling uncompressed audio-
+and video data.
+
+In the include directory, you'll find the headers. The public API
+is in avdec.h. You might also take a look at the gavl headers for the
+definition of the AV-formats and -frames.
+
+The API is damn simple: look at tests/bgavdump.c. This program dumps all
+informations, it can find about a media file onto stderr. After that, it
+tries to decode one frame of each audio- or video stream.
+
+For further information, you can also consult plugins/i_avdec.c, which is
+the actual gmerlin plugin.
+
+REQUIREMENTS:
+
+The configure script autodetects all installed libraries and tell you what's
+missing.
+
+FORMATS/CODECS:
+
+Go to the test directory and type ./bgavdump without arguments.
+It will print all enabled features in html.
+

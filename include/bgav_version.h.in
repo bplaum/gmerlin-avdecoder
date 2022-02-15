@@ -1,0 +1,17 @@
+#ifndef __BGAV_VERSION_H_
+#define __BGAV_VERSION_H_
+
+#define BGAV_VERSION "@BGAV_VERSION@"
+
+#define BGAV_VERSION_MAJOR @BGAV_VERSION_MAJOR@
+#define BGAV_VERSION_MINOR @BGAV_VERSION_MINOR@
+#define BGAV_VERSION_MICRO @BGAV_VERSION_MICRO@
+
+#define BGAV_MAKE_BUILD(a,b,c) ((a << 16) + (b << 8) + c)
+
+#define BGAV_BUILD \
+BGAV_MAKE_BUILD(BGAV_VERSION_MAJOR, \
+                BGAV_VERSION_MINOR, \
+                BGAV_VERSION_MICRO)
+
+#endif // __BGAV_VERSION_H_

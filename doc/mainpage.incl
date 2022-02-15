@@ -1,0 +1,102 @@
+
+/*! \mainpage
+
+ \section bgav_into Introduction
+   This is the API documentation for Gmerlin avdecoder, a general multimedia
+   decoding library.
+ 
+  Click Modules (on top of the page) to get to the main API index.
+  Here, you find just some general blabla :)
+
+  \section bgav_why Why gmerlin-avdecoder?
+
+  The reasons for programming gmerlin-avdecoder lie in the history of the gmerlin project.
+  The old gmerlin (the 0.1.x series) used 3rd party libraries for decoding multimedia
+  formats. These were libmpeg3 (later libgmerlin_mpeg), avifile, quicktime4linux
+  (later libquicktime), libsndfile, libvorbisfile etc. This method worked surprisingly
+  well (from the users standpoint), but had some serious drawbacks (from the programmers
+  standpoint):
+
+  - Code duplication: The old gmerlin had 2 ffmpeg frontends (avifile and libquicktime),
+    numerous PCM audio decoders (avifile, libsndfile and libquicktime) and so on.
+
+  - The external libraries were not as flexible as they should be (libquicktime cannot
+    play network streams, libmpeg3 didn't read ID3 tags).
+
+  - Extremely long compilation times
+
+  Or put it this way: Writing a decoding library, which supports just a handful of filetypes,
+  is nonsense. Multimedia programming is so complicated that every small module should be
+  programmed exactly once and then right.
+
+  Of course, other people had similar ideas and came up with solutions:
+
+  - MPlayer: Probably the best support even for exotic formats. But not usable with
+    more than one decoding instance per process.
+  - Xine: Almost as good as MPlayer, but too tightly bound to the rest of the xine architecture
+  - GStreamer: Probably the cleanest solution, but way too complicated.
+  - Videolan: Very clean and well supported but not usable as a standalone library.
+  - libavformat/libavcodec: Not usabable in conjunction with binary codecs
+
+  A lot of brainload was spent on the matter. A decoding library should not only work for
+  playback applications, but also for transcoding. Therefore, we must not make any asumptions
+  about the final destination of the data we decode. Metadata should be read from the files
+  and made available to the rest of the application. The application range should be from
+  8bit/8KHz Mono streams to high definition production environments. No high quality
+  codec should be too insane to be supported.
+
+  \section what What is gmerlin-avdecoder?
+
+  The solution, which was found, is the library, whose documentation you are reading right now.
+  It lets you decode lots of fileformats with lots of codecs from lots of sources. It supports
+  data sources with multiple tracks (e.g. VCD tracks, ALBW wrapped mp3s), each track can have an
+  arbitrary number of audio/video streams. You can decode all streams at once, or switch unwanted
+  streams off, so they are skipped. It is (with few limitations) thread save per instance and
+  allows multiple decoding instances per process, which can be accessed from multiple threads.
+  This is an important feature for editing applications.
+
+  Metadata (additional information about the material) are read whenever possible. The resulting
+  strings are converted to UTF-8 for language independent display. MP3s with Arabic or Chinese
+  ID3-Tags are therefore no problem at all.
+
+  Gmerlin-avdecoder is built upon gavl. Therefore, the codecs never do any implicit conversion
+  of audio or video formats (like colorspace conversion, resampling, scaling etc.). Each codec
+  sets the \ref gavl_audio_format_t or \ref gavl_video_format_t to what it can natively
+  deliver. Format conversions are entirely up to the application.
+
+  Datasources, gmerlin-avdecoder can access, include:
+
+  - Regular files
+  - http and ftp servers (with authentication)
+  - rtsp (Real flavour)
+  - mms (Windows media)
+  - Samba shares
+  - VCDs
+  - ...
+
+  Demultiplexers are present for the following formats:
+
+  - MPEG-1/2 audio/video/system/program streams
+  - AVI
+  - ASF/WMA/WMV
+  - Quicktime/MP4
+  - WAV, AIFF(-C) and lots of other uncompressed audio formats
+  - Ogg (with Vorbis, Flac, Speex, Theora, OGM variants)
+  - RealMedia
+  - ...
+
+  (See http://gmerlin.sourceforge.net/avdec.html for a complete list).
+
+  All these features make gmerlin-avdecoder ideal for playback and transcoding applications,
+  where sequential decoding is needed.
+
+  \section bgav_whennot When should I NOT use gmerlin-avdecoder?
+
+  There are a small number of reasons, why gmerlin_avdecoder might not be the method of choice:
+
+  - Your application is extremely sensitive to speed issues and relies on direct rendering:
+    Direct rendering is not supported. It could, in theory, be added but would involve a much
+    more complicated decoding API. For now, every video frame is decoded into a user supplied buffer
+    with a memcpy.
+
+  */

@@ -1,0 +1,67 @@
+
+1. Requirements
+
+First of all: The only required library is gavl, which can be downloaded from
+the gmerlin website. All other libraries are OPTIONAL, i.e. the configure script
+will search for them and use them, if they are found. The more libraries you have,
+the more files you can play, e.g. if you really don't want to decode AAC streams,
+you can skip the installation of faad2 and everything will be fine for you.
+
+The website (http://gmerlin.sf.net/avdec.html) lists all packages, which can be
+used by gmerlin_avdecoder. At the very end, the configure script prints out a
+summary of the packages it found.
+
+If you want to install the gmerlin plugins, you also need to install gmerlin
+before compiling gmerlin_avdecoder.
+
+If you installed a library but it wasn't found by the configure script,
+the error is in 99% of the cases one of the following:
+
+- A binary package (e.g. rpm) was installed but not the development package
+ (e.g. for libfoo-1.2.3-4.i386.rpm you also need libfoo-devel-1.2.3-4.i386.rpm)
+
+- The path where the libraries got installed (usually /usr/local/bin for source
+  packages) is missing in the file /etc/ld.so.conf. This is the case e.g. on
+  Fedora Core 3. Add the path there, run /sbin/ldconfig as root and everything
+  should work.
+
+- After installation of the library, /sbin/ldconfig wasn't called
+
+- The package wasn't found, because the environment variable PKG_CONFIG_PATH is not
+  properly set. Typing
+
+  export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+
+  before calling configure helps in most cases.
+
+If all these tips don't help, attach the file config.log to an email and send it to
+gmerlin-general@lists.sourceforge.net.
+
+2. Compilation
+
+Nothing special here. It's the usual procedure:
+
+./configure
+make
+su
+<type root password>
+make install
+
+The configure script supports some command line options, type
+
+./configure --help
+
+to see them.
+
+3. Binary codecs
+
+You can install some binary dlls. They can be obtained from the MPlayer
+codec page (http://www1.mplayerhq.hu/MPlayer/releases/codecs/). Get the file
+all-YYYYMMDD.tar.bz2 where YYYYMMDD is some date string (get the latest one).
+Unpack them in a directory of your choice. Then you must tell gmerlin_avdecoder
+where to find the libraries. In gmerlin, you can do this via the plugin dialogs
+for the Avdecoder plugin. An alternative is to set some environment variables.
+
+For each dll, gmerlin_avdecoder cannot find, it will print instructions on the
+console.
+

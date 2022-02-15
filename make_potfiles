@@ -1,0 +1,2 @@
+#!/bin/sh
+find . -name "*.[ch]" | cut -b 3- | grep -v config\\.h | grep -v bgav_version\\.h > po/POTFILES.in

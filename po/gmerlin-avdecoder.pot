@@ -1,0 +1,2097 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Members of the gmerlin project
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: gmerlin-general@lists.sourceforge.net\n"
+"POT-Creation-Date: 2011-02-12 00:21+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: plugins/i_avdec.c:107
+msgid "Audio options"
+msgstr ""
+
+#: plugins/i_avdec.c:115
+msgid "Video options"
+msgstr ""
+
+#: plugins/i_avdec.c:121
+msgid "Shrink factor"
+msgstr ""
+
+#: plugins/i_avdec.c:126
+msgid ""
+"This enables downscaling of images while decoding. Currently only supported "
+"for JPEG-2000."
+msgstr ""
+
+#: plugins/i_avdec.c:130
+msgid "Use vdpau"
+msgstr ""
+
+#: plugins/i_avdec.c:132
+msgid "Use VDPAU"
+msgstr ""
+
+#: plugins/i_avdec.c:137
+msgid "Network options"
+msgstr ""
+
+#: plugins/i_avdec.c:142
+msgid "Connect timeout (milliseconds)"
+msgstr ""
+
+#: plugins/i_avdec.c:150 plugins/i_dvb.c:81
+msgid "Read timeout (milliseconds)"
+msgstr ""
+
+#: plugins/i_avdec.c:158
+msgid "Network buffer size (kB)"
+msgstr ""
+
+#: plugins/i_avdec.c:166
+msgid "Bandwidth"
+msgstr ""
+
+#: plugins/i_avdec.c:182
+msgid "14.4 Kbps (Modem)"
+msgstr ""
+
+#: plugins/i_avdec.c:183
+msgid "19.2 Kbps (Modem)"
+msgstr ""
+
+#: plugins/i_avdec.c:184
+msgid "28.8 Kbps (Modem)"
+msgstr ""
+
+#: plugins/i_avdec.c:185
+msgid "33.6 Kbps (Modem)"
+msgstr ""
+
+#: plugins/i_avdec.c:186
+msgid "34.4 Kbps (Modem)"
+msgstr ""
+
+#: plugins/i_avdec.c:187
+msgid "57.6 Kbps (Modem)"
+msgstr ""
+
+#: plugins/i_avdec.c:188
+msgid "115.2 Kbps (ISDN)"
+msgstr ""
+
+#: plugins/i_avdec.c:189
+msgid "262.2 Kbps (Cable/DSL)"
+msgstr ""
+
+#: plugins/i_avdec.c:190
+msgid "393.2 Kbps (Cable/DSL)"
+msgstr ""
+
+#: plugins/i_avdec.c:191
+msgid "524.3 Kbps (Cable/DSL)"
+msgstr ""
+
+#: plugins/i_avdec.c:192
+msgid "1.5 Mbps (T1)"
+msgstr ""
+
+#: plugins/i_avdec.c:193
+msgid "10.5 Mbps (LAN)"
+msgstr ""
+
+#: plugins/i_avdec.c:198
+msgid "HTTP Options"
+msgstr ""
+
+#: plugins/i_avdec.c:203
+msgid "Enable shoutcast title streaming"
+msgstr ""
+
+#: plugins/i_avdec.c:209
+msgid "Use proxy"
+msgstr ""
+
+#: plugins/i_avdec.c:215
+msgid "Proxy host"
+msgstr ""
+
+#: plugins/i_avdec.c:220
+msgid "Proxy port"
+msgstr ""
+
+#: plugins/i_avdec.c:228
+msgid "Proxy needs authentication"
+msgstr ""
+
+#: plugins/i_avdec.c:234
+msgid "Proxy username"
+msgstr ""
+
+#: plugins/i_avdec.c:240
+msgid "Proxy password"
+msgstr ""
+
+#: plugins/i_avdec.c:246
+msgid "RTSP Options"
+msgstr ""
+
+#: plugins/i_avdec.c:251
+msgid "Try RTP over TCP"
+msgstr ""
+
+#: plugins/i_avdec.c:254
+msgid ""
+"Use this if your filewall blocks all UDP traffic. Not all servers support TCP"
+msgstr ""
+
+#: plugins/i_avdec.c:258
+msgid "Port base for RTP"
+msgstr ""
+
+#: plugins/i_avdec.c:263
+msgid ""
+"Port base for RTP over UDP. Values of 1024 or smaller enable random ports "
+"(recommended for RTSP aware firewalls). Values larger than 1024 define the "
+"base port. 2 consecutive ports are used for each A/V stream, these must be "
+"accessible through the firewall. Odd values are rounded to the next even "
+"value."
+msgstr ""
+
+#: plugins/i_avdec.c:267
+msgid "FTP Options"
+msgstr ""
+
+#: plugins/i_avdec.c:272
+msgid "Login as anonymous"
+msgstr ""
+
+#: plugins/i_avdec.c:278
+msgid "Anonymous ftp password"
+msgstr ""
+
+#: plugins/i_avdec.c:284
+msgid "Subtitle Options"
+msgstr ""
+
+#: plugins/i_avdec.c:289
+msgid "Seek external subtitles"
+msgstr ""
+
+#: plugins/i_avdec.c:293 plugins/i_avdec.c:327
+msgid "Never"
+msgstr ""
+
+#: plugins/i_avdec.c:294
+msgid "For video files only"
+msgstr ""
+
+#: plugins/i_avdec.c:295 plugins/i_avdec.c:328
+msgid "Always"
+msgstr ""
+
+#: plugins/i_avdec.c:297
+msgid ""
+"If the input is a regular file, gmerlin_avdecoder can scan the directory for "
+"matching subtitle files. For a file movie.mpg, possible subtitle files are e."
+"g. movie_english.srt, movie_german.srt. The rule is, that the first part of "
+"the filename of the subtitle file must be equal to the movie filename up to "
+"the extension. Furthermore, the subtitle filename must have an extension "
+"supported by any of the subtitle readers. Subtitle seeking can be disabled, "
+"enabled for video files or enabled for all files."
+msgstr ""
+
+#: plugins/i_avdec.c:308
+msgid "Default subtitle encoding"
+msgstr ""
+
+#: plugins/i_avdec.c:311
+msgid ""
+"This sets the default encoding for text subtitles,when the original encoding "
+"is unknown. It must be a character set namerecognized by iconv. Type 'iconv -"
+"l' at the commandline for a list of supported encodings."
+msgstr ""
+
+#: plugins/i_avdec.c:318
+msgid "Misc options"
+msgstr ""
+
+#: plugins/i_avdec.c:323
+msgid "Sample accurate"
+msgstr ""
+
+#: plugins/i_avdec.c:329
+msgid "When necessary"
+msgstr ""
+
+#: plugins/i_avdec.c:332
+msgid ""
+"Try sample accurate seeking. For most formats, this is not necessary, since "
+"normal seeking works fine. Some formats are only seekable in sample accurate "
+"mode. Choose \"When necessary\" to enable seeking for most formats with the "
+"smallest overhead."
+msgstr ""
+
+#: plugins/i_avdec.c:336
+msgid "Cache time (milliseconds)"
+msgstr ""
+
+#: plugins/i_avdec.c:339
+msgid ""
+"If building an index takes longer than the specified time, it will be cached."
+msgstr ""
+
+#: plugins/i_avdec.c:343
+msgid "Cache size (Megabytes)"
+msgstr ""
+
+#: plugins/i_avdec.c:346
+msgid "Set the maximum total size of the cache directory."
+msgstr ""
+
+#: plugins/i_avdec.c:350
+msgid "Export date and time as timecodes for DV"
+msgstr ""
+
+#: plugins/i_avdec.c:390
+msgid "AVDecoder plugin"
+msgstr ""
+
+#: plugins/i_avdec.c:391
+msgid ""
+"Plugin based on the Gmerlin avdecoder library. Supports most media formats. "
+"Playback is supported from files, URLs (with various protocols) and stdin."
+msgstr ""
+
+#: plugins/i_dvd.c:72
+msgid "Handle chapters as tracks"
+msgstr ""
+
+#: plugins/i_dvd.c:102
+msgid "DVD Player"
+msgstr ""
+
+#: plugins/i_dvd.c:103
+msgid "Plugin for playing DVDs. Based on Gmerlin avdecoder."
+msgstr ""
+
+#: plugins/avdec_common.h:125
+msgid "Dynamic range control"
+msgstr ""
+
+#: plugins/avdec_common.h:128
+msgid ""
+"Enable dynamic range control for codecs, which support this (currently only "
+"A52 and DTS)."
+msgstr ""
+
+#: plugins/avdec_common.h:134
+msgid "Postprocessing level"
+msgstr ""
+
+#: plugins/avdec_common.h:141
+msgid ""
+"Set postprocessing (to remove compression artifacts). 0 means no "
+"postprocessing, 1 means maximum postprocessing."
+msgstr ""
+
+#: plugins/i_dvb.c:69
+msgid "Channel file"
+msgstr ""
+
+#: plugins/i_dvb.c:71
+msgid ""
+"The channels file must have the format of the dvb-utils programs (like szap, "
+"tzap). If you don't set this file, several locations like $HOME/.tzap/"
+"channels.conf will be searched."
+msgstr ""
+
+#: plugins/i_dvb.c:109
+msgid "DVB Player"
+msgstr ""
+
+#: plugins/i_dvb.c:110
+msgid ""
+"Plugin for playing DVB streams from a Linux-DVB compatible card. Based on "
+"Gmerlin avdecoder."
+msgstr ""
+
+#: plugins/i_vcd.c:81
+msgid "VCD Player"
+msgstr ""
+
+#: plugins/i_vcd.c:82
+msgid "Plugin for playing VCDs. Based on Gmerlin avdecoder."
+msgstr ""
+
+#: lib/r_smil.c:399
+msgid "Parse smil failed (yml error)"
+msgstr ""
+
+#: lib/r_smil.c:409
+msgid "Parse smil failed"
+msgstr ""
+
+#: lib/bgav.c:156
+msgid "Cannot detect stream type"
+msgstr ""
+
+#: lib/bgav.c:410
+msgid "Reopening input due to track reset"
+msgstr ""
+
+#: lib/matroska.c:226
+#, c-format
+msgid "Skipping %<PRId64> bytes of element %x in %s\n"
+msgstr ""
+
+#: lib/matroska.c:981
+msgid "Couldn't read header element for cues (truncated file?)"
+msgstr ""
+
+#: lib/matroska.c:987
+msgid "Didn't find cues where I expected them (truncated file?)"
+msgstr ""
+
+#: lib/audio_gsm.c:63
+msgid "Multichannel GSM not supported"
+msgstr ""
+
+#: lib/audio_ffmpeg.c:770
+#, c-format
+msgid "Codec not found: %s"
+msgstr ""
+
+#: lib/redirect.c:87 lib/redirect.c:105
+#, c-format
+msgid "Detected %s redirector"
+msgstr ""
+
+#: lib/audio_a52.c:223
+#, c-format
+msgid "Resync %<PRId64>"
+msgstr ""
+
+#: lib/video_vpx.c:59
+#, c-format
+msgid "Failed to initialize decoder: %s"
+msgstr ""
+
+#: lib/video_vpx.c:110
+#, c-format
+msgid "Failed to decode frame: %s"
+msgstr ""
+
+#: lib/video_vpx.c:113
+#, c-format
+msgid "  Additional information: %s\n"
+msgstr ""
+
+#: lib/video_vpx.c:147
+msgid "Ignoring additional frame\n"
+msgstr ""
+
+#: lib/in_smb.c:99
+#, c-format
+msgid "Initialization of samba failed (error: %d)"
+msgstr ""
+
+#: lib/in_smb.c:107
+#, c-format
+msgid "Open file failed (error: %d)"
+msgstr ""
+
+#: lib/in_smb.c:118
+msgid "Can't get filesize"
+msgstr ""
+
+#: lib/video_qtraw.c:244 lib/video_qtraw.c:258 lib/video_qtraw.c:272
+#: lib/video_qtraw.c:286
+#, c-format
+msgid "Palette missing or too small %d"
+msgstr ""
+
+#: lib/in_file.c:60
+#, c-format
+msgid "Cannot open %s: %s"
+msgstr ""
+
+#: lib/qt_timecode.c:49
+msgid "Timecode tracks in non-seekable sources not supported"
+msgstr ""
+
+#: lib/qt_timecode.c:108
+msgid "EOF while reading timecode"
+msgstr ""
+
+#: lib/sdp.c:537 lib/sdp.c:705
+#, c-format
+msgid "Invalid line %d: %s"
+msgstr ""
+
+#: lib/sdp.c:774
+#, c-format
+msgid "Unknown specifier: %c"
+msgstr ""
+
+#: lib/input.c:731
+#, c-format
+msgid "Unknown protocol: %s"
+msgstr ""
+
+#: lib/input.c:807
+#, c-format
+msgid "Got redirected to %s"
+msgstr ""
+
+#: lib/input.c:834
+msgid "mms connection failed, trying http"
+msgstr ""
+
+#: lib/input.c:1082
+#, c-format
+msgid "Reopening %s failed"
+msgstr ""
+
+#: lib/demux_wavpack.c:125
+msgid "Floating point data is not supported"
+msgstr ""
+
+#: lib/demux_wavpack.c:131
+msgid "Hybrid coding mode is not supported"
+msgstr ""
+
+#: lib/demux_wavpack.c:137
+msgid "Integer point data is not supported"
+msgstr ""
+
+#: lib/demux_wavpack.c:182 lib/mpegts_common.c:299
+msgid "Lost sync"
+msgstr ""
+
+#: lib/rtsp.c:153 lib/video_openjpeg.c:42 lib/video_openjpeg.c:48
+#: lib/video_openjpeg.c:54 lib/video_png.c:68 lib/video_png.c:153
+#: lib/http.c:381 lib/http.c:414
+#, c-format
+msgid "%s"
+msgstr ""
+
+#: lib/rtsp.c:203
+msgid "Reading session description failed"
+msgstr ""
+
+#: lib/parse_mpeg4.c:125
+msgid "Detected packed B-frames"
+msgstr ""
+
+#: lib/demux_quicktime.c:274
+msgid "No packets in movie"
+msgstr ""
+
+#: lib/demux_quicktime.c:759
+msgid "Chapters detected but stream is not seekable"
+msgstr ""
+
+#: lib/demux_quicktime.c:765
+msgid "More than one chapter track, choosing first"
+msgstr ""
+
+#: lib/demux_quicktime.c:782
+msgid "Unknown encoding for chapter names"
+msgstr ""
+
+#: lib/demux_quicktime.c:825
+msgid "Read error while setting up chapter list"
+msgstr ""
+
+#: lib/demux_quicktime.c:945
+msgid "Invalid mp3on4 channel configuration"
+msgstr ""
+
+#: lib/demux_quicktime.c:1280
+msgid "More than one timecode track, ignoring them all"
+msgstr ""
+
+#: lib/demux_quicktime.c:1492 lib/demux_adts.c:227
+msgid "Detected HE-AAC"
+msgstr ""
+
+#: lib/demux_quicktime.c:1498 lib/demux_adts.c:234
+msgid "Detected no HE-AAC"
+msgstr ""
+
+#: lib/demux_quicktime.c:1564
+msgid "Dirac stream has no ctts"
+msgstr ""
+
+#: lib/demux_quicktime.c:1628
+msgid "Non streamable file on non seekable source"
+msgstr ""
+
+#: lib/demux_quicktime.c:1637
+msgid "Reading moov atom failed"
+msgstr ""
+
+#: lib/demux_mpegaudio.c:259
+#, c-format
+msgid "Skipped %d bytes in MPEG audio stream"
+msgstr ""
+
+#: lib/subtitle.c:257
+#, c-format
+msgid "No subtitle decoder found for fourcc %c%c%c%c (0x%08x)"
+msgstr ""
+
+#: lib/rmff.c:337
+msgid "Reading logical stream failed"
+msgstr ""
+
+#: lib/rmff.c:574
+msgid "No index found, where I expected one"
+msgstr ""
+
+#: lib/rmff.c:831
+msgid "Control attribute missing"
+msgstr ""
+
+#: lib/rmff.c:838
+msgid "Stream number missing"
+msgstr ""
+
+#: lib/rmff.c:848
+msgid "No ASMRuleBook found"
+msgstr ""
+
+#: lib/rmff.c:857
+msgid "Bad ASMRuleBook"
+msgstr ""
+
+#: lib/rmff.c:871
+msgid "No Opaque data there"
+msgstr ""
+
+#: lib/rmff.c:925
+#, c-format
+msgid "Unsupported packet header version: %d"
+msgstr ""
+
+#: lib/qt_esds.c:120
+#, c-format
+msgid "length of MP4DecConfigDescrTag too short: %d < 13"
+msgstr ""
+
+#: lib/in_vcd.c:254 lib/in_dvd.c:677
+#, c-format
+msgid "cdio_close_tray failed: %s"
+msgstr ""
+
+#: lib/in_vcd.c:258 lib/in_dvd.c:681
+msgid "cdio_close_tray failed"
+msgstr ""
+
+#: lib/in_vcd.c:270
+#, c-format
+msgid "cdio_open failed for %s"
+msgstr ""
+
+#: lib/in_vcd.c:282
+#, c-format
+msgid "read_toc failed for %s"
+msgstr ""
+
+#: lib/audio_faad2.c:114 lib/aac_frame.c:121
+#, c-format
+msgid "faacDecDecode failed %s"
+msgstr ""
+
+#: lib/log.c:42
+msgid "Debug"
+msgstr ""
+
+#: lib/log.c:43
+msgid "Warning"
+msgstr ""
+
+#: lib/log.c:44
+msgid "Error"
+msgstr ""
+
+#: lib/log.c:45
+msgid "Info"
+msgstr ""
+
+#: lib/demux_ogg.c:224
+#, c-format
+msgid "Unknown stream type \"%.8s\" in OGM header"
+msgstr ""
+
+#: lib/demux_ogg.c:424
+#, c-format
+msgid "Skipped %d bytes of random garbage"
+msgstr ""
+
+#: lib/demux_ogg.c:554 lib/demux_ogg.c:1023
+msgid "EOF while setting up track"
+msgstr ""
+
+#: lib/demux_ogg.c:685
+msgid "Dirac header contains no framerate, assuming 24 fps"
+msgstr ""
+
+#: lib/demux_ogg.c:785 lib/demux_ogg.c:838
+msgid "Reading OGM header failed"
+msgstr ""
+
+#: lib/demux_ogg.c:860
+#, c-format
+msgid "Unsupported stream (serialno: %d)"
+msgstr ""
+
+#: lib/demux_ogg.c:1215
+msgid "Page has no BOS marker"
+msgstr ""
+
+#: lib/demux_ogg.c:1223
+msgid "Setting up track failed"
+msgstr ""
+
+#: lib/demux_matroska.c:135
+msgid "Ogg extradata must start with 0x02n"
+msgstr ""
+
+#: lib/demux_matroska.c:603
+msgid "Complex tracks not supported yet\n"
+msgstr ""
+
+#: lib/demux_matroska.c:607
+msgid "Logo tracks not supported yet\n"
+msgstr ""
+
+#: lib/demux_matroska.c:611
+msgid "Subtitle tracks not supported yet\n"
+msgstr ""
+
+#: lib/demux_matroska.c:615
+msgid "Button tracks not supported yet\n"
+msgstr ""
+
+#: lib/demux_matroska.c:619
+msgid "Control tracks not supported yet\n"
+msgstr ""
+
+#: lib/demux_avi.c:1379
+msgid "Could not get video framerate, assuming 25 fps"
+msgstr ""
+
+#: lib/demux_avi.c:1907
+#, c-format
+msgid "Unknown stream type: %c%c%c%c"
+msgstr ""
+
+#: lib/audio_win32.c:307
+#, c-format
+msgid "acmStreamPrepareHeader failed %d"
+msgstr ""
+
+#: lib/audio_win32.c:314
+#, c-format
+msgid "acmStreamConvert failed %d"
+msgstr ""
+
+#: lib/audio_win32.c:326
+#, c-format
+msgid "acmStreamUnprepareHeader failed %d"
+msgstr ""
+
+#: lib/audio_win32.c:412
+msgid "Unappropriate audio format"
+msgstr ""
+
+#: lib/audio_win32.c:415
+#, c-format
+msgid "acmStreamOpen error %d"
+msgstr ""
+
+#: lib/audio_win32.c:438
+msgid "DS_AudioDecoder_Open failed"
+msgstr ""
+
+#: lib/audio_win32.c:562 lib/video_win32.c:772
+#, c-format
+msgid "Codec DLL %s not found"
+msgstr ""
+
+#: lib/mxf.c:2609
+msgid "Cannot decode MXF file from non seekable source"
+msgstr ""
+
+#: lib/mxf.c:2623
+msgid "Could not find header partition"
+msgstr ""
+
+#: lib/in_mmsh.c:151 lib/in_mms.c:80
+msgid "Initializing asf demuxer failed"
+msgstr ""
+
+#: lib/udp.c:55 lib/tcp.c:171
+msgid "Cannot create socket"
+msgstr ""
+
+#: lib/udp.c:64
+#, c-format
+msgid "Cannot bind inet socket: %s"
+msgstr ""
+
+#: lib/udp.c:73
+#, c-format
+msgid "UDP Socket bound on port %d\n"
+msgstr ""
+
+#: lib/udp.c:109
+#, c-format
+msgid "Sending UDP packet failed: %s\n"
+msgstr ""
+
+#: lib/qt_cmov.c:66
+#, c-format
+msgid "Unknown compression method: %c%c%c%c"
+msgstr ""
+
+#: lib/qt_cmov.c:91
+msgid "Uncompression failed"
+msgstr ""
+
+#: lib/track.c:232
+#, c-format
+msgid "Starting audio decoder for stream %d failed"
+msgstr ""
+
+#: lib/track.c:244
+#, c-format
+msgid "Starting video decoder for stream %d failed"
+msgstr ""
+
+#: lib/track.c:260
+#, c-format
+msgid "Cannot decode subtitles from stream %d (no video)"
+msgstr ""
+
+#: lib/track.c:285
+#, c-format
+msgid ""
+"Starting subtitle decoder for stream %d failed (cannot get video format)"
+msgstr ""
+
+#: lib/track.c:301
+#, c-format
+msgid "Starting subtitle decoder for stream %d failed"
+msgstr ""
+
+#: lib/track.c:441
+#, c-format
+msgid "No audio decoder found for WAVId 0x%04x"
+msgstr ""
+
+#: lib/track.c:445 lib/audio.c:246
+#, c-format
+msgid "No audio decoder found for fourcc %c%c%c%c (0x%08x)"
+msgstr ""
+
+#: lib/track.c:467 lib/video.c:136
+#, c-format
+msgid "No video decoder found for fourcc %c%c%c%c (0x%08x)"
+msgstr ""
+
+#: lib/track.c:479
+#, c-format
+msgid "No parser found for fourcc %c%c%c%c (0x%08x)"
+msgstr ""
+
+#: lib/charset.c:153
+msgid "Invalid multibyte sequence"
+msgstr ""
+
+#: lib/charset.c:158
+msgid "Incomplete multibyte sequence"
+msgstr ""
+
+#: lib/demux_avs.c:170
+msgid "2 Palette blocks without intermediate video block"
+msgstr ""
+
+#: lib/demux_y4m.c:106
+#, c-format
+msgid "Reading stream header failed %d"
+msgstr ""
+
+#: lib/dvb_channels.c:138
+#, c-format
+msgid "Channels file %s cannot be opened"
+msgstr ""
+
+#: lib/dvb_channels.c:149
+msgid "Channels file cannot be found (home directory unset)"
+msgstr ""
+
+#: lib/dvb_channels.c:244
+msgid "Channels file cannot be found"
+msgstr ""
+
+#: lib/dvb_channels.c:251
+#, c-format
+msgid "Channels file %s cannot be opened: %s"
+msgstr ""
+
+#: lib/demux_au.c:170
+#, c-format
+msgid "Unsupported encoding %d"
+msgstr ""
+
+#: lib/demux_rm.c:668
+#, c-format
+msgid "Video extradata too short: %d"
+msgstr ""
+
+#: lib/demux_rm.c:676
+#, c-format
+msgid "Video extradata too long: %d"
+msgstr ""
+
+#: lib/demux_rm.c:830
+msgid "Cannot play multirate real from non seekable source"
+msgstr ""
+
+#: lib/demux_rm.c:837
+msgid "Detected multirate real"
+msgstr ""
+
+#: lib/demux_ra.c:112
+msgid "Unable to read header"
+msgstr ""
+
+#: lib/demux_ra.c:157
+msgid "Header too small"
+msgstr ""
+
+#: lib/demux_ra.c:209
+#, c-format
+msgid "Invalid fourcc size %d"
+msgstr ""
+
+#: lib/demux_vmd.c:114
+msgid "Cannot open VMD file from nonseekable source"
+msgstr ""
+
+#: lib/demux_vmd.c:204
+#, c-format
+msgid "Unexpected end of file %d %d"
+msgstr ""
+
+#: lib/video_win32.c:329
+#, c-format
+msgid "Cannot open %s"
+msgstr ""
+
+#: lib/video_win32.c:409
+msgid "ICDecompressBegin failed"
+msgstr ""
+
+#: lib/video_win32.c:458
+msgid "ICDecompress failed"
+msgstr ""
+
+#: lib/video_win32.c:530
+#, c-format
+msgid "DS_VideoDecoder_Open failed %d"
+msgstr ""
+
+#: lib/video_win32.c:567 lib/video_win32.c:667
+msgid "Decode failed"
+msgstr ""
+
+#: lib/video_win32.c:631
+#, c-format
+msgid "DMO_VideoDecoder_Open failed %d"
+msgstr ""
+
+#: lib/demux_flv.c:233
+#, c-format
+msgid "Unknown audio codec tag: %d"
+msgstr ""
+
+#: lib/demux_flv.c:287
+#, c-format
+msgid "Unknown video codec tag: %d"
+msgstr ""
+
+#: lib/demux_flv.c:462
+#, c-format
+msgid "Unknown type %d for metadata object %s"
+msgstr ""
+
+#: lib/demux_flv.c:688 lib/demux_flv.c:729
+#, c-format
+msgid "Packet size is %d (somethings wrong?)"
+msgstr ""
+
+#: lib/demux_flv.c:911
+msgid "Zero flags detected, assuming audio and video (might fail)"
+msgstr ""
+
+#: lib/demux_flv.c:1002
+msgid "Getting duration from last timestamp failed"
+msgstr ""
+
+#: lib/video_png.c:55
+msgid "EOF"
+msgstr ""
+
+#: lib/video_png.c:72 lib/video_png.c:157 lib/subread.c:431
+msgid "Reading png header failed"
+msgstr ""
+
+#: lib/video_png.c:110
+msgid "Decode png failed"
+msgstr ""
+
+#: lib/superindex.c:310
+msgid "Detected B-pyramid, fixing possibly broken timestamps"
+msgstr ""
+
+#: lib/video_ffmpeg.c:577
+msgid "Got EOF while skipping"
+msgstr ""
+
+#: lib/video_ffmpeg.c:777
+msgid "Using VDPAU for decoding"
+msgstr ""
+
+#: lib/video_ffmpeg.c:906
+msgid "Could not get initial frame"
+msgstr ""
+
+#: lib/video_ffmpeg.c:1733
+#, c-format
+msgid "Cannot find %s"
+msgstr ""
+
+#: lib/video_ffmpeg.c:2165
+msgid "Unsupported pixelformat for postprocessing"
+msgstr ""
+
+#: lib/video_aviraw.c:196
+#, c-format
+msgid "Palette too small %d < 2"
+msgstr ""
+
+#: lib/video_aviraw.c:203
+#, c-format
+msgid "Palette too small %d < 16"
+msgstr ""
+
+#: lib/video_aviraw.c:219
+#, c-format
+msgid "Palette too small %d < 256"
+msgstr ""
+
+#: lib/video_aviraw.c:247
+#, c-format
+msgid "Unsupported depth: %d"
+msgstr ""
+
+#: lib/qt_wave.c:80
+msgid "Skipping remainder of broken wave atom"
+msgstr ""
+
+#: lib/audio.c:193
+#, c-format
+msgid "No audio parser found for fourcc %c%c%c%c (0x%08x)"
+msgstr ""
+
+#: lib/audio.c:207
+msgid "EOF while initializing audio parser"
+msgstr ""
+
+#: lib/audio.c:222 lib/video.c:112
+msgid "EOF while getting start time"
+msgstr ""
+
+#: lib/audio.c:228
+#, c-format
+msgid "Got initial audio timestamp: %s"
+msgstr ""
+
+#: lib/audio.c:243
+#, c-format
+msgid "No audio decoder found for WAV ID 0x%04x"
+msgstr ""
+
+#: lib/audio.c:427 lib/video.c:344
+#, c-format
+msgid "Cannot skip backwards: Stream time: %s skip time: %s difference: %s"
+msgstr ""
+
+#: lib/audio.c:438
+#, c-format
+msgid "Skipping %s samples"
+msgstr ""
+
+#: lib/audio.c:561
+#, c-format
+msgid "Cannot output compressed audio stream %d: Unsupported codec"
+msgstr ""
+
+#: lib/audio.c:568
+#, c-format
+msgid "Cannot output compressed audio stream %d: Global header missing"
+msgstr ""
+
+#: lib/audio.c:575
+#, c-format
+msgid "Cannot output compressed audio stream %d: No bitrate specified"
+msgstr ""
+
+#: lib/demux_thp.c:145 lib/demux_dxa.c:88
+msgid "Cannot decode from nonseekable source"
+msgstr ""
+
+#: lib/video_tga.c:142
+#, c-format
+msgid "tga_read_from_memory failed: %s (%d bytes)"
+msgstr ""
+
+#: lib/video_tga.c:181
+#, c-format
+msgid "Cannot detect image type: %d"
+msgstr ""
+
+#: lib/video_tga.c:277
+#, c-format
+msgid "Setting palette %d entries"
+msgstr ""
+
+#: lib/in_dvd.c:115 lib/in_dvd.c:131
+#, c-format
+msgid "Opening vts %d failed"
+msgstr ""
+
+#: lib/in_dvd.c:139
+#, c-format
+msgid "Opening IFO for vts %d failed"
+msgstr ""
+
+#: lib/in_dvd.c:426
+msgid "Detected still cell"
+msgstr ""
+
+#: lib/in_dvd.c:693
+msgid "DVDOpen failed"
+msgstr ""
+
+#: lib/in_dvd.c:709
+msgid "ifoOpen failed"
+msgstr ""
+
+#: lib/in_dvd.c:808 lib/in_dvd.c:1070
+#, c-format
+msgid "Reading NAV packet at sector %d failed"
+msgstr ""
+
+#: lib/in_dvd.c:901
+#, c-format
+msgid "Reading blocks at %d failed"
+msgstr ""
+
+#: lib/in_dvd.c:1245
+#, c-format
+msgid "Cannot open DVD Device %s"
+msgstr ""
+
+#: lib/mpv_header.c:291
+msgid "Cannot read sequence header: missing marker bit"
+msgstr ""
+
+#: lib/mpv_header.c:359
+#, c-format
+msgid "Cannot read picture header: Invalid coding type %d"
+msgstr ""
+
+#: lib/demux_smaf.c:108
+msgid "MIDI like files not supported"
+msgstr ""
+
+#: lib/demux_smaf.c:122 lib/demux_smaf.c:182
+#, c-format
+msgid "Unsupported SMAF chunk (%c%c%c%c)"
+msgstr ""
+
+#: lib/demux_smaf.c:157
+msgid "Invalid samplerate"
+msgstr ""
+
+#: lib/rtpbuffer.c:299
+msgid "Dropping obsolete packet"
+msgstr ""
+
+#: lib/rtpbuffer.c:310
+msgid "Dropping duplicate packet"
+msgstr ""
+
+#: lib/rtpbuffer.c:374
+#, c-format
+msgid "%<PRId64> packet(s) missing"
+msgstr ""
+
+#: lib/subread.c:402 lib/subread.c:572
+msgid "yml node has no start attribute"
+msgstr ""
+
+#: lib/subread.c:412
+msgid "yml node has no filename attribute"
+msgstr ""
+
+#: lib/subread.c:418
+#, c-format
+msgid "Reading file %s failed"
+msgstr ""
+
+#: lib/subread.c:426
+#, c-format
+msgid "Reading png header failed: %s"
+msgstr ""
+
+#: lib/subread.c:446
+msgid "Overlay too large"
+msgstr ""
+
+#: lib/subread.c:460
+#, c-format
+msgid "Parsing time string %s failed"
+msgstr ""
+
+#: lib/subread.c:517
+msgid "Parsing spumux file failed"
+msgstr ""
+
+#: lib/subread.c:583
+msgid "Error parsing start attribute"
+msgstr ""
+
+#: lib/demux_roq.c:102
+msgid "Cannot play Roq files from nonseekable source"
+msgstr ""
+
+#: lib/demux_roq.c:139
+#, c-format
+msgid "Unknown Roq chunk %04x"
+msgstr ""
+
+#: lib/demux_roq.c:242
+msgid "No CODEBOOK chunk before VQ chunk"
+msgstr ""
+
+#: lib/demux_roq.c:287
+#, c-format
+msgid "Unknown chunk %04x"
+msgstr ""
+
+#: lib/parse_mpv.c:247
+msgid "Bogus picture header or broken frame"
+msgstr ""
+
+#: lib/parse_mpv.c:263
+msgid "Detected Intra slice refresh"
+msgstr ""
+
+#: lib/video_theora.c:70
+msgid "Theora codec requires extradata"
+msgstr ""
+
+#: lib/video_theora.c:89
+#, c-format
+msgid "Parsing header packet %d failed"
+msgstr ""
+
+#: lib/video_theora.c:161
+#, c-format
+msgid "Unknown pixelformat %d"
+msgstr ""
+
+#: lib/subovl_dvd.c:241
+#, c-format
+msgid "Unknown command %02x, decoding is doomed to failure"
+msgstr ""
+
+#: lib/video.c:71
+#, c-format
+msgid "No video parser found for fourcc %c%c%c%c (0x%08x)"
+msgstr ""
+
+#: lib/video.c:84
+msgid "EOF while initializing video parser"
+msgstr ""
+
+#: lib/video.c:98
+msgid "EOF while initializing packet timer"
+msgstr ""
+
+#: lib/video.c:118
+#, c-format
+msgid "Got initial video timestamp: %s"
+msgstr ""
+
+#: lib/video.c:293
+msgid "Skipping packet while waiting for keyframe"
+msgstr ""
+
+#: lib/video.c:764
+msgid "Video compression format needs pixelformat for compressed output"
+msgstr ""
+
+#: lib/video.c:804
+msgid "Video compression format needs bitrate for compressed output"
+msgstr ""
+
+#: lib/utils.c:553
+#, c-format
+msgid "Created directory %s"
+msgstr ""
+
+#: lib/demux_wve.c:95
+msgid "No PT header found"
+msgstr ""
+
+#: lib/demux_wve.c:132
+msgid "Unknown audio compression type"
+msgstr ""
+
+#: lib/demux_wve.c:153
+#, c-format
+msgid "Unknown audio header element 0x%02x: 0x%08x"
+msgstr ""
+
+#: lib/demux_wve.c:166
+#, c-format
+msgid "Unknown header element 0x%02x: 0x%08x"
+msgstr ""
+
+#: lib/r_asx.c:189
+msgid "Parse asx failed (yml error)"
+msgstr ""
+
+#: lib/r_asx.c:197
+msgid "Parse asx failed"
+msgstr ""
+
+#: lib/demux_psxstr.c:115
+#, c-format
+msgid "Invalid channel number %d"
+msgstr ""
+
+#: lib/video_xadll.c:317
+#, c-format
+msgid "Cannot open dll %s: %s"
+msgstr ""
+
+#: lib/video_xadll.c:325
+#, c-format
+msgid "failed to init %s"
+msgstr ""
+
+#: lib/video_xadll.c:332
+msgid "initializer function failed"
+msgstr ""
+
+#: lib/video_xadll.c:337
+#, c-format
+msgid "Unsupported api revision (%d)"
+msgstr ""
+
+#: lib/video_xadll.c:344
+msgid "function table error"
+msgstr ""
+
+#: lib/video_xadll.c:379
+msgid "Codec not supported"
+msgstr ""
+
+#: lib/video_xadll.c:467 lib/video_real.c:93
+#, c-format
+msgid "Cannot find file %s, disabling %s"
+msgstr ""
+
+#: lib/http.c:93 lib/mms.c:598 lib/mms.c:666
+msgid "Remote end closed connection"
+msgstr ""
+
+#: lib/http.c:282 lib/in_ftp.c:162
+msgid "Unvalid URL"
+msgstr ""
+
+#: lib/demux_mxf.c:323
+msgid "Clip wrapped tracks with nonconstant framesize not supported"
+msgstr ""
+
+#: lib/demux_mxf.c:326
+msgid "Custom wrapping not supported"
+msgstr ""
+
+#: lib/demux_mxf.c:329
+msgid "Unknown wrapping"
+msgstr ""
+
+#: lib/demux_mxf.c:360
+msgid "Rounding fractional audio samplerate"
+msgstr ""
+
+#: lib/demux_mxf.c:602
+#, c-format
+msgid "Couldn't find partition for source package %d"
+msgstr ""
+
+#: lib/demux_mxf.c:628
+msgid "Parsing MXF file failed, please report"
+msgstr ""
+
+#: lib/demux_mxf.c:643
+msgid "Unsupported MXF type, please report"
+msgstr ""
+
+#: lib/demuxer.c:244 lib/demuxer.c:254 lib/demuxer.c:267
+#: lib/demux_ffmpeg.c:137
+#, c-format
+msgid "Detected %s format"
+msgstr ""
+
+#: lib/demuxer.c:289
+#, c-format
+msgid "Detected %s format after skipping %d bytes"
+msgstr ""
+
+#: lib/demuxer.c:357
+#, c-format
+msgid "Removing audio stream %d (no packets found)"
+msgstr ""
+
+#: lib/demuxer.c:372
+#, c-format
+msgid "Removing video stream %d (no packets found)"
+msgstr ""
+
+#: lib/demuxer.c:478
+msgid "Non interleaved file from non seekable source"
+msgstr ""
+
+#: lib/demux_vivo.c:304
+#, c-format
+msgid "Unknown extended header: %s"
+msgstr ""
+
+#: lib/demux_vivo.c:326
+#, c-format
+msgid "Unknown timestamp type: %s"
+msgstr ""
+
+#: lib/demux_vivo.c:579
+msgid "Unknown packet type"
+msgstr ""
+
+#: lib/fileindex.c:728
+#, c-format
+msgid "Removing %s to keep maximum cache size"
+msgstr ""
+
+#: lib/fileindex.c:1239
+msgid "Building file index failed"
+msgstr ""
+
+#: lib/fileindex.c:1245
+#, c-format
+msgid "Built file index in %.2f seconds"
+msgstr ""
+
+#: lib/demux_voc.c:233
+#, c-format
+msgid "Skipping %d bytes of chunk type %02x"
+msgstr ""
+
+#: lib/demux_dxa.c:107
+msgid "File contains zero frames"
+msgstr ""
+
+#: lib/demux_aiff.c:304
+#, c-format
+msgid "%d bit aiff not supported"
+msgstr ""
+
+#: lib/demux_aiff.c:346
+#, c-format
+msgid "Compression %c%c%c%c not supported"
+msgstr ""
+
+#: lib/qt_udta.c:111
+msgid "Skipping garbage in udta atom"
+msgstr ""
+
+#: lib/demux_mpegps.c:713
+#, c-format
+msgid "Unknown ID %02x in private stream 1"
+msgstr ""
+
+#: lib/demux_mpegps.c:796
+#, c-format
+msgid "Unknown PES ID %02x"
+msgstr ""
+
+#: lib/video_libmpeg2.c:403
+msgid "Detected change of image size, not handled yet"
+msgstr ""
+
+#: lib/video_libmpeg2.c:411
+#, c-format
+msgid "Detected change of pixel aspect ratio: %dx%d"
+msgstr ""
+
+#: lib/video_libmpeg2.c:433
+msgid "Detected MPEG still image"
+msgstr ""
+
+#: lib/video_real.c:213 lib/audio_real.c:213
+#, c-format
+msgid "Could not open DLL %s %s"
+msgstr ""
+
+#: lib/video_real.c:244
+#, c-format
+msgid "DLL %s is not ok: %s"
+msgstr ""
+
+#: lib/video_real.c:261
+msgid "Init codec failed"
+msgstr ""
+
+#: lib/video_real.c:289
+msgid "rvyuv_custom_message failed"
+msgstr ""
+
+#: lib/video_real.c:339
+msgid "Decoding failed"
+msgstr ""
+
+#: lib/vdpau.c:111
+#, c-format
+msgid "Creating surface failed: %s\n"
+msgstr ""
+
+#: lib/vdpau.c:138
+#, c-format
+msgid "Creating decoder failed: %s\n"
+msgstr ""
+
+#: lib/vdpau.c:164
+#, c-format
+msgid "Decoding image failed: %s\n"
+msgstr ""
+
+#: lib/vdpau.c:194
+#, c-format
+msgid "Get surface bits failed: %s\n"
+msgstr ""
+
+#: lib/demux_nsv.c:519
+msgid ""
+"Seeking with version 2 TOC not support due to lack of sample files.\n"
+"Contact the authors to solve this"
+msgstr ""
+
+#: lib/audio_flac.c:214
+msgid "FLAC decoder needs 42 bytes extradata"
+msgstr ""
+
+#: lib/audio_flac.c:250
+msgid "Reading metadata failed"
+msgstr ""
+
+#: lib/audio_speex.c:62
+msgid "Speex needs extradata"
+msgstr ""
+
+#: lib/demux_ffmpeg.c:612
+msgid "av_open_input_stream failed"
+msgstr ""
+
+#: lib/demux_ffmpeg.c:622
+msgid "av_find_stream_info failed"
+msgstr ""
+
+#: lib/demux_4xm.c:475
+#, c-format
+msgid "Unknown Chunk %c%c%c%c"
+msgstr ""
+
+#: lib/rtp.c:971
+msgid "Joining RTP thread..."
+msgstr ""
+
+#: lib/rtp.c:975
+msgid "Joined RTP thread"
+msgstr ""
+
+#: lib/rtp.c:1148
+msgid "Interleaved MPEG-4 audio not supported yet"
+msgstr ""
+
+#: lib/rtp.c:1185
+msgid "No audio mode for mpeg4-generic"
+msgstr ""
+
+#: lib/rtp.c:1199
+#, c-format
+msgid "Unknown audio mode for mpeg4-generic: %s"
+msgstr ""
+
+#: lib/rtp.c:1207
+msgid "Interleaved audio not yet supported for mpeg4-generic"
+msgstr ""
+
+#: lib/rtp.c:1214
+msgid "No sizelength for mpeg4-generic"
+msgstr ""
+
+#: lib/rtp.c:1223
+msgid "No indexlength for mpeg4-generic"
+msgstr ""
+
+#: lib/rtp.c:1232
+msgid "No indexdeltalength for mpeg4-generic"
+msgstr ""
+
+#: lib/mms.c:254
+#, c-format
+msgid "Sequence number mismatch, expected %d, got %d"
+msgstr ""
+
+#: lib/mms.c:373
+#, c-format
+msgid "Unknown data: %02x %02x %02x %02x %02x %02x %02x %02x"
+msgstr ""
+
+#: lib/mms.c:436
+#, c-format
+msgid "Invalid URL: %s"
+msgstr ""
+
+#: lib/mms.c:464 lib/tcp.c:182
+msgid "Cannot set nonblocking mode"
+msgstr ""
+
+#: lib/mms.c:495
+msgid "Cannot get software version number and stuff"
+msgstr ""
+
+#: lib/mms.c:504
+#, c-format
+msgid "Invalid answer 1 %08x %08x"
+msgstr ""
+
+#: lib/mms.c:568 lib/mms.c:689
+msgid "Next packet failed"
+msgstr ""
+
+#: lib/mms.c:578
+msgid "Protocol not supported"
+msgstr ""
+
+#: lib/mms.c:583
+#, c-format
+msgid "Got answer: %d"
+msgstr ""
+
+#: lib/mms.c:605
+msgid "Next packet failed 2"
+msgstr ""
+
+#: lib/mms.c:610
+#, c-format
+msgid "Invalid answer 2 %08x"
+msgstr ""
+
+#: lib/mms.c:616
+msgid "Passwords not supported"
+msgstr ""
+
+#: lib/mms.c:622
+#, c-format
+msgid "Invalid answer 3: %d"
+msgstr ""
+
+#: lib/mms.c:631
+#, c-format
+msgid "Request not accepted %08x"
+msgstr ""
+
+#: lib/mms.c:678
+msgid "Invalid answer 4"
+msgstr ""
+
+#: lib/mms.c:697
+msgid "Read header failed"
+msgstr ""
+
+#: lib/parse_vorbis.c:98 lib/audio_vorbis.c:406
+msgid "No extradata found"
+msgstr ""
+
+#: lib/parse_vorbis.c:111 lib/audio_vorbis.c:419
+#, c-format
+msgid "Truncated vorbis header %d"
+msgstr ""
+
+#: lib/parse_vorbis.c:125 lib/audio_vorbis.c:433
+#, c-format
+msgid "Packet %d is not a vorbis header"
+msgstr ""
+
+#: lib/demux_mpegts.c:197
+#, c-format
+msgid "Detected pts wrap (%s < %s)"
+msgstr ""
+
+#: lib/demux_mpegts.c:251
+msgid "Too many transport errors"
+msgstr ""
+
+#: lib/demux_mpegts.c:254
+msgid "Transport error"
+msgstr ""
+
+#: lib/demux_mpegts.c:584
+msgid "PAT section spans multiple packets, please report"
+msgstr ""
+
+#: lib/demux_mpegts.c:593
+msgid "PAT has multiple sections, please report"
+msgstr ""
+
+#: lib/demux_mpegts.c:627
+msgid "Premature EOF"
+msgstr ""
+
+#: lib/demux_mpegts.c:640
+msgid "Lost sync during initializing"
+msgstr ""
+
+#: lib/demux_mpegts.c:678
+msgid "PMT section spans multiple packets, please report"
+msgstr ""
+
+#: lib/demux_mpegts.c:688
+msgid "PMT has multiple sections, please report"
+msgstr ""
+
+#: lib/demux_mpegts.c:994
+msgid "Cannot get packet size"
+msgstr ""
+
+#: lib/demux_mpegts.c:998
+#, c-format
+msgid "Packet size: %d"
+msgstr ""
+
+#: lib/demux_mpegts.c:1110
+msgid "Could not get program durations, seeking disabled"
+msgstr ""
+
+#: lib/demux_mpegts.c:1364
+#, c-format
+msgid "Next PCR wrap in %s"
+msgstr ""
+
+#: lib/in_dvb_linux.c:257
+#, c-format
+msgid "Setting channel failed: %s"
+msgstr ""
+
+#: lib/in_dvb_linux.c:274
+msgid "Setting channel failed: Event queue overflow"
+msgstr ""
+
+#: lib/in_dvb_linux.c:280
+msgid "Setting frequency failed"
+msgstr ""
+
+#: lib/in_dvb_linux.c:301
+#, c-format
+msgid "Reading status failed: %s"
+msgstr ""
+
+#: lib/in_dvb_linux.c:309
+msgid "Waiting for lock"
+msgstr ""
+
+#: lib/in_dvb_linux.c:314
+msgid "Locking timed out"
+msgstr ""
+
+#: lib/in_dvb_linux.c:318
+msgid "Frontend locked successfully"
+msgstr ""
+
+#: lib/in_dvb_linux.c:356
+#, c-format
+msgid "Setting PAT filter failed: %s"
+msgstr ""
+
+#: lib/in_dvb_linux.c:365
+msgid "Parsing PAT failed"
+msgstr ""
+
+#: lib/in_dvb_linux.c:390
+#, c-format
+msgid "Cannot find service ID %d in PAT (recreate channels.conf)"
+msgstr ""
+
+#: lib/in_dvb_linux.c:405
+#, c-format
+msgid "Setting PMT filter failed: %s"
+msgstr ""
+
+#: lib/in_dvb_linux.c:415
+msgid "Parsing PMT failed"
+msgstr ""
+
+#: lib/in_dvb_linux.c:483
+#, c-format
+msgid "Channel cache %s cannot be opened: %s"
+msgstr ""
+
+#: lib/in_dvb_linux.c:523
+msgid "Channel cache older than channels.conf"
+msgstr ""
+
+#: lib/in_dvb_linux.c:754
+#, c-format
+msgid "Cannot open frontend device %s: %s"
+msgstr ""
+
+#: lib/in_dvb_linux.c:761
+msgid "Cannot get frontend info"
+msgstr ""
+
+#: lib/in_dvb_linux.c:770
+msgid "Cannot get frontend status"
+msgstr ""
+
+#: lib/in_dvb_linux.c:786
+msgid "Found no channels.conf file"
+msgstr ""
+
+#: lib/in_dvb_linux.c:798
+msgid "Regenerating channel cache"
+msgstr ""
+
+#: lib/in_dvb_linux.c:812
+msgid "Using channel cache"
+msgstr ""
+
+#: lib/in_dvb_linux.c:1164 lib/in_dvb_linux.c:1185
+msgid "Reading timed out (check cable connections)"
+msgstr ""
+
+#: lib/in_dvb_linux.c:1176
+#, c-format
+msgid "poll failed: %s"
+msgstr ""
+
+#: lib/in_dvb_linux.c:1194
+#, c-format
+msgid "read failed: %s"
+msgstr ""
+
+#: lib/in_dvb_linux.c:1219
+#, c-format
+msgid "Setting pes filter failed: %s"
+msgstr ""
+
+#: lib/in_dvb_linux.c:1239
+#, c-format
+msgid "Setting section filter failed: %s"
+msgstr ""
+
+#: lib/in_dvb_linux.c:1392
+#, c-format
+msgid "Setting section filter buffer failed: %s"
+msgstr ""
+
+#: lib/in_dvb_linux.c:1402
+msgid "Filters initialized successfully"
+msgstr ""
+
+#: lib/demux_musepack.c:120
+msgid "Cannot decode from nonseekable sources"
+msgstr ""
+
+#: lib/demux_sphere.c:231
+msgid "Bytes per sample is zero"
+msgstr ""
+
+#: lib/audio_vorbis.c:215 lib/audio_vorbis.c:254 lib/audio_vorbis.c:298
+#: lib/audio_vorbis.c:334 lib/audio_vorbis.c:384
+msgid "decode: vorbis_synthesis_headerin: not a vorbis header"
+msgstr ""
+
+#: lib/audio_vorbis.c:237
+#, c-format
+msgid "Vorbis decoder: Init data too small (%d bytes)"
+msgstr ""
+
+#: lib/audio_vorbis.c:283
+msgid "ext size too small"
+msgstr ""
+
+#: lib/audio_vorbis.c:365
+msgid "No OVHS Atom found"
+msgstr ""
+
+#: lib/qt_atom.c:79
+#, c-format
+msgid "Unknown atom [%c%c%c%c] at toplevel"
+msgstr ""
+
+#: lib/qt_atom.c:88
+#, c-format
+msgid "Unknown atom inside [%c%c%c%c] (fourcc: [%c%c%c%c], size: %s)"
+msgstr ""
+
+#: lib/packettimer.c:261
+msgid "Packet cache full"
+msgstr ""
+
+#: lib/audio_pcm.c:861 lib/audio_pcm.c:944 lib/audio_pcm.c:984
+#, c-format
+msgid "%d audio bits not supported."
+msgstr ""
+
+#: lib/audio_pcm.c:955
+msgid "Could not get initial packet"
+msgstr ""
+
+#: lib/audio_pcm.c:1093
+#, c-format
+msgid "extradata too small (%d < %zd)"
+msgstr ""
+
+#: lib/audio_pcm.c:1192
+msgid "Unknown fourcc"
+msgstr ""
+
+#: lib/audio_real.c:262 lib/audio_real.c:268
+msgid "raOpenCodec2 failed"
+msgstr ""
+
+#: lib/audio_real.c:294
+msgid "raInitDecoder failed"
+msgstr ""
+
+#: lib/audio_real.c:304
+msgid "raSetFlavor failed"
+msgstr ""
+
+#: lib/audio_real.c:474
+msgid "raDecode failed"
+msgstr ""
+
+#: lib/demux_r3d.c:275
+msgid "Wrong index tag (broken file)"
+msgstr ""
+
+#: lib/demux_r3d.c:281
+msgid "Index chunk too small"
+msgstr ""
+
+#: lib/demux_r3d.c:290
+msgid "Unexpected EOF in index"
+msgstr ""
+
+#: lib/demux_r3d.c:380
+msgid "R3D cannot be read from nonseekable sources"
+msgstr ""
+
+#: lib/demux_r3d.c:392
+msgid "Got no header"
+msgstr ""
+
+#: lib/demux_r3d.c:407
+msgid "Got no footer"
+msgstr ""
+
+#: lib/tcp.c:139
+#, c-format
+msgid "Cannot resolve address of %s: %s"
+msgstr ""
+
+#: lib/tcp.c:197
+msgid "Connection timed out"
+msgstr ""
+
+#: lib/tcp.c:204 lib/tcp.c:215
+#, c-format
+msgid "Connecting failed: %s"
+msgstr ""
+
+#: lib/tcp.c:229
+msgid "Cannot set blocking mode"
+msgstr ""
+
+#: lib/tcp.c:257
+#, c-format
+msgid "Could not send data: %s"
+msgstr ""
+
+#: lib/in_ftp.c:179 lib/in_ftp.c:215 lib/in_ftp.c:226 lib/in_ftp.c:250
+#: lib/in_ftp.c:267 lib/in_ftp.c:294 lib/in_ftp.c:311 lib/in_ftp.c:332
+msgid "Could not read answer"
+msgstr ""
+
+#: lib/in_ftp.c:277
+msgid "Invalid server answer"
+msgstr ""
+
+#: lib/in_rtsp.c:267
+#, c-format
+msgid "Unknown RDT chunk %02x %02x %02x %02x %02x %02x %02x %02x"
+msgstr ""
+
+#: lib/in_rtsp.c:333
+#, c-format
+msgid "Real Server, challenge %s"
+msgstr ""
+
+#: lib/in_rtsp.c:351
+msgid "QTSS Server"
+msgstr ""
+
+#: lib/in_rtsp.c:360
+msgid "Generic RTSP code\n"
+msgstr ""
+
+#: lib/in_rtsp.c:426
+msgid "Got smil redirector"
+msgstr ""
+
+#: lib/in_rtsp.c:539
+#, c-format
+msgid "Client ports: %d %d\n"
+msgstr ""
+
+#: lib/in_rtsp.c:547
+#, c-format
+msgid "Server ports: %d %d\n"
+msgstr ""
+
+#: lib/in_rtsp.c:581
+#, c-format
+msgid "Server address: %s\n"
+msgstr ""
+
+#: lib/in_rtsp.c:593
+#, c-format
+msgid "ssrc: %08x\n"
+msgstr ""
+
+#: lib/in_rtsp.c:817
+msgid "Got no RTP-Info from server"
+msgstr ""
+
+#: lib/in_rtsp.c:879
+msgid "Got no ETag"
+msgstr ""
+
+#: lib/audio_qtwin32.c:149
+msgid "Cannot open QuickTime.qts"
+msgstr ""
+
+#: lib/audio_qtwin32.c:156
+msgid "Cannot open qtmlClient.dll"
+msgstr ""
+
+#: lib/audio_qtwin32.c:165
+msgid "Getting proc address InitializeQTML failed"
+msgstr ""
+
+#: lib/audio_qtwin32.c:173
+msgid "Getting proc address SoundConverterOpen failed"
+msgstr ""
+
+#: lib/audio_qtwin32.c:182
+msgid "Getting proc address SoundConverterClose failed"
+msgstr ""
+
+#: lib/audio_qtwin32.c:190
+msgid "Getting proc address TerminateQTML failed"
+msgstr ""
+
+#: lib/audio_qtwin32.c:198
+msgid "Getting proc address SoundConverterSetInfo failed"
+msgstr ""
+
+#: lib/audio_qtwin32.c:206
+msgid "Getting proc address SoundConverterGetBufferSizes failed"
+msgstr ""
+
+#: lib/audio_qtwin32.c:214
+msgid "Getting proc address SoundConverterConvertBuffer1 failed"
+msgstr ""
+
+#: lib/audio_qtwin32.c:222
+msgid "Getting proc address SoundConverterEndConversion failed"
+msgstr ""
+
+#: lib/audio_qtwin32.c:230
+msgid "Getting proc address SoundConverterBeginConversion failed"
+msgstr ""
+
+#: lib/audio_qtwin32.c:236
+msgid "InitializeQTML failed"
+msgstr ""
+
+#: lib/audio_qtwin32.c:275
+msgid "SoundConverterOpen failed"
+msgstr ""
+
+#: lib/audio_qtwin32.c:285
+msgid "SoundConverterSetInfo failed"
+msgstr ""
+
+#: lib/audio_qtwin32.c:302
+msgid "SoundConverterBeginConversion failed"
+msgstr ""
+
+#: lib/audio_qtwin32.c:368
+msgid "SoundConverterConvertBuffer failed"
+msgstr ""
+
+#: lib/audio_qtwin32.c:456
+#, c-format
+msgid "DLL %s not found"
+msgstr ""
+
+#: lib/demux_asf.c:941
+#, c-format
+msgid "unknown segment type (rlen): 0x%02X"
+msgstr ""
+
+#: lib/demux_asf.c:1027
+#, c-format
+msgid "data_size %d, Offset: %d"
+msgstr ""

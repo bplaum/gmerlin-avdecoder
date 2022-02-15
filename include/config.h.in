@@ -1,0 +1,320 @@
+/* include/config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if building universal (internal helper macro) */
+#undef AC_APPLE_UNIVERSAL_BUILD
+
+/* Flac major version */
+#undef BGAV_FLAC_MAJOR
+
+/* Flac minor version */
+#undef BGAV_FLAC_MINOR
+
+/* Flac patchlevel */
+#undef BGAV_FLAC_PATCHLEVEL
+
+/* Define to 1 if translation of program messages to the user's native
+   language is requested. */
+#undef ENABLE_NLS
+
+/* Do we have libavcodec installed? */
+#undef HAVE_AVCODEC
+
+/* Do we have libavformat installed? */
+#undef HAVE_AVFORMAT
+
+/* Define to 1 if you have the <byteswap.h> header file. */
+#undef HAVE_BYTESWAP_H
+
+/* libcdio found */
+#undef HAVE_CDIO
+
+/* Define to 1 if you have the Mac OS X function CFLocaleCopyCurrent in the
+   CoreFoundation framework. */
+#undef HAVE_CFLOCALECOPYCURRENT
+
+/* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in
+   the CoreFoundation framework. */
+#undef HAVE_CFPREFERENCESCOPYAPPVALUE
+
+/* Define to 1 if you have the `closesocket' function. */
+#undef HAVE_CLOSESOCKET
+
+/* libdca found */
+#undef HAVE_DCA
+
+/* Define if the GNU dcgettext() function is already present or preinstalled.
+   */
+#undef HAVE_DCGETTEXT
+
+/* Define to 1 if you have the declaration of `MSG_NOSIGNAL', and to 0 if you
+   don't. */
+#undef HAVE_DECL_MSG_NOSIGNAL
+
+/* Define to 1 if you have the declaration of `SO_NOSIGPIPE', and to 0 if you
+   don't. */
+#undef HAVE_DECL_SO_NOSIGPIPE
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the <dts.h> header file. */
+#undef HAVE_DTS_H
+
+/* Define to 1 if you have the `DVDFinish' function. */
+#undef HAVE_DVDFINISH
+
+/* Define to 1 if you have the `DVDInit' function. */
+#undef HAVE_DVDINIT
+
+/* Enable libdvdread */
+#undef HAVE_DVDREAD
+
+/* EGL available */
+#undef HAVE_EGL
+
+/* Enable FLAC */
+#undef HAVE_FLAC
+
+/* Define to 1 if fseeko (and presumably ftello) exists and is declared. */
+#undef HAVE_FSEEKO
+
+/* Define to 1 if you have the `ftello' function. */
+#undef HAVE_FTELLO
+
+/* Define to 1 if you have the `getaddrinfo' function. */
+#undef HAVE_GETADDRINFO
+
+/* Define if the GNU gettext() function is already present or preinstalled. */
+#undef HAVE_GETTEXT
+
+/* OpenGL available */
+#undef HAVE_GL
+
+/* GLX available */
+#undef HAVE_GLX
+
+/* Define if you have the iconv() function and it works. */
+#undef HAVE_ICONV
+
+/* Define to 1 if you have the `inet_aton' function. */
+#undef HAVE_INET_ATON
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `isatty' function. */
+#undef HAVE_ISATTY
+
+/* Enable liba52 */
+#undef HAVE_LIBA52
+
+/* Define to 1 if you have the `gettextlib' library (-lgettextlib). */
+#undef HAVE_LIBGETTEXTLIB
+
+/* libgsm enabled */
+#undef HAVE_LIBGSM
+
+/* Define to 1 if you have the `intl' library (-lintl). */
+#undef HAVE_LIBINTL
+
+/* Enable png codec */
+#undef HAVE_LIBPNG
+
+/* Define to 1 if you have the `pthread' library (-lpthread). */
+#undef HAVE_LIBPTHREAD
+
+/* Define to 1 if you have the `pthreadGC2' library (-lpthreadGC2). */
+#undef HAVE_LIBPTHREADGC2
+
+/* Define to 1 if you have the `regex' library (-lregex). */
+#undef HAVE_LIBREGEX
+
+/* Enable tiff codec */
+#undef HAVE_LIBTIFF
+
+/* libudf found */
+#undef HAVE_LIBUDF
+
+/* Do we have libva installed? */
+#undef HAVE_LIBVA
+
+/* Do we have libva (x11) installed? */
+#undef HAVE_LIBVA_X11
+
+/* Define to 1 if you have the `z' library (-lz). */
+#undef HAVE_LIBZ
+
+/* Linux DVB Support available */
+#undef HAVE_LINUXDVB
+
+/* Define to 1 if you have the <linux/dvb/dmx.h> header file. */
+#undef HAVE_LINUX_DVB_DMX_H
+
+/* Define to 1 if you have the <linux/dvb/frontend.h> header file. */
+#undef HAVE_LINUX_DVB_FRONTEND_H
+
+/* Define to 1 if you have the <linux/videodev2.h> header file. */
+#undef HAVE_LINUX_VIDEODEV2_H
+
+/* Enable MAD */
+#undef HAVE_MAD
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Enable Musepack */
+#undef HAVE_MUSEPACK
+
+/* Ogg libraries are there */
+#undef HAVE_OGG
+
+/* Enable openjpeg codec */
+#undef HAVE_OPENJPEG
+
+/* Do we have libopus installed? */
+#undef HAVE_OPUS
+
+/* Define to 1 if you have the `poll' function. */
+#undef HAVE_POLL
+
+/* System supports POSIX semaphores */
+#undef HAVE_POSIX_SEMAPHORES
+
+/* Samba support */
+#undef HAVE_SAMBA
+
+/* Do we have schroedinger installed? */
+#undef HAVE_SCHROEDINGER
+
+/* Define to 1 if you have the <schroedinger/schroversion.h> header file. */
+#undef HAVE_SCHROEDINGER_SCHROVERSION_H
+
+/* Do we have speex installed? */
+#undef HAVE_SPEEX
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Do we have theora decoder installed? */
+#undef HAVE_THEORADEC
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Enable v4l2 */
+#undef HAVE_V4L2
+
+/* Define to 1 if you have the `vasprintf' function. */
+#undef HAVE_VASPRINTF
+
+/* Vorbis libraries are there */
+#undef HAVE_VORBIS
+
+/* Define to 1 if you have the `vorbis_synthesis_restart' function. */
+#undef HAVE_VORBIS_SYNTHESIS_RESTART
+
+/* Do we have xlib installed? */
+#undef HAVE_XLIB
+
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
+#undef LT_OBJDIR
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Enable extensions on AIX 3, Interix.  */
+#ifndef _ALL_SOURCE
+# undef _ALL_SOURCE
+#endif
+/* Enable GNU extensions on systems that have them.  */
+#ifndef _GNU_SOURCE
+# undef _GNU_SOURCE
+#endif
+/* Enable threading extensions on Solaris.  */
+#ifndef _POSIX_PTHREAD_SEMANTICS
+# undef _POSIX_PTHREAD_SEMANTICS
+#endif
+/* Enable extensions on HP NonStop.  */
+#ifndef _TANDEM_SOURCE
+# undef _TANDEM_SOURCE
+#endif
+/* Enable general extensions on Solaris.  */
+#ifndef __EXTENSIONS__
+# undef __EXTENSIONS__
+#endif
+
+
+/* Version number of package */
+#undef VERSION
+
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#  undef WORDS_BIGENDIAN
+# endif
+#endif
+
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#undef _FILE_OFFSET_BITS
+
+/* Define to 1 to make fseeko visible on some hosts (e.g. glibc 2.2). */
+#undef _LARGEFILE_SOURCE
+
+/* Define for large files, on AIX-style hosts. */
+#undef _LARGE_FILES
+
+/* Define to 1 if on MINIX. */
+#undef _MINIX
+
+/* Define to 2 if the system does not provide POSIX.1 features except with
+   this defined. */
+#undef _POSIX_1_SOURCE
+
+/* Define to 1 if you need to in order for `stat' and other things to work. */
+#undef _POSIX_SOURCE

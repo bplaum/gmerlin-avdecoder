@@ -1,0 +1,7 @@
+Main concept and programming: Burkhard Plaum (plaum@ipf.uni-stuttgart.de)
+Programmer and beta tester:   Michael Gruenert (one78@web.de)
+
+Win32 DLL loader ported from the xine project (xinehq.de)
+
+Smaller code snippets ported from MPlayer, ffmpeg, xine and libquicktime
+(i.e. quicktime4linux)
