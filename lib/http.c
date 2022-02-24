@@ -103,7 +103,7 @@ do_connect(bgav_http_t * ret, const char * host, int port, const bgav_options_t 
   if(use_tls)
     ret->io = gavf_io_create_tls_client(fd, host, GAVF_IO_SOCKET_DO_CLOSE);
   else
-    ret->io = gavf_io_create_socket_1(fd, ret->opt->read_timeout, GAVF_IO_SOCKET_DO_CLOSE);
+    ret->io = gavf_io_create_socket(fd, ret->opt->read_timeout, GAVF_IO_SOCKET_DO_CLOSE);
   
   gavl_dictionary_init(&header);
   gavl_dictionary_copy(&header, request_header);
@@ -128,7 +128,7 @@ do_connect(bgav_http_t * ret, const char * host, int port, const bgav_options_t 
       if(use_tls)
         ret->io = gavf_io_create_tls_client(fd, host, GAVF_IO_SOCKET_DO_CLOSE);
       else
-        ret->io = gavf_io_create_socket_1(fd, ret->opt->read_timeout, GAVF_IO_SOCKET_DO_CLOSE);
+        ret->io = gavf_io_create_socket(fd, ret->opt->read_timeout, GAVF_IO_SOCKET_DO_CLOSE);
       
       if(!ret->io ||
          !gavl_http_request_write(ret->io, &header))
