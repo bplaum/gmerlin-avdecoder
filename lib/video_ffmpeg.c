@@ -906,7 +906,7 @@ static void close_ffmpeg(bgav_stream_t * s)
     {
     gavl_video_frame_null(priv->gavl_frame);
 
-    priv->gavl_frame->user_data = NULL;
+    priv->gavl_frame->storage = NULL;
     priv->gavl_frame->hwctx = NULL;
     gavl_video_frame_destroy(priv->gavl_frame);
     }
