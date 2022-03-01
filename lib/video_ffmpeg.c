@@ -221,7 +221,7 @@ static void put_frame_vaapi(bgav_stream_t * s, gavl_video_frame_t * f1)
   //  id = (VASurfaceID)(uintptr_t)priv->frame->data[0];
 
   s->vframe = priv->gavl_frame;
-  priv->gavl_frame->user_data = (VASurfaceID*)(&priv->frame->data[3]);
+  priv->gavl_frame->storage = (VASurfaceID*)(&priv->frame->data[3]);
 
   // fprintf(stderr, "put_frame_vaapi %08x\n", *((VASurfaceID*)priv->gavl_frame->user_data));
   
