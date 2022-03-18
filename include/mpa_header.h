@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_MPA_HEADER_H_INCLUDED
+#define BGAV_MPA_HEADER_H_INCLUDED
+
 typedef enum
   {
     MPEG_VERSION_NONE = 0,
@@ -54,3 +57,6 @@ int bgav_mpa_header_decode(bgav_mpa_header_t * h, uint8_t * ptr);
 
 void bgav_mpa_header_get_format(const bgav_mpa_header_t * h,
                                 gavl_audio_format_t * format);
+
+#endif // BGAV_MPA_HEADER_H_INCLUDED
+

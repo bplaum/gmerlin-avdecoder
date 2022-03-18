@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_NANOSOFT_H_INCLUDED
+#define BGAV_NANOSOFT_H_INCLUDED
+
 /* Handling of common redmond stuff */
 
 /* GUID: For codec identification and asf files */
@@ -178,4 +181,6 @@ void bgav_RIFFINFO_dump(bgav_RIFFINFO_t * info);
 void bgav_RIFFINFO_destroy(bgav_RIFFINFO_t * info);
 
 void bgav_RIFFINFO_get_metadata(bgav_RIFFINFO_t * info, bgav_metadata_t * m);
+
+#endif // BGAV_NANOSOFT_H_INCLUDED
 

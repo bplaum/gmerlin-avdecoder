@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_BSF_H_INCLUDED
+#define BGAV_BSF_H_INCLUDED
+
 bgav_bsf_t * bgav_bsf_create(bgav_stream_t * s);
 
 
@@ -29,3 +32,6 @@ bgav_bsf_get_packet(void * bsf, bgav_packet_t **);
 
 gavl_source_status_t
 bgav_bsf_peek_packet(void * bsf, bgav_packet_t **, int force);
+
+#endif // BGAV_BSF_H_INCLUDED
+

@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_FLAC_HEADER_H_INCLUDED
+#define BGAV_FLAC_HEADER_H_INCLUDED
+
 typedef struct
   {
   uint16_t min_blocksize;
@@ -98,3 +101,6 @@ int bgav_flac_seektable_read(bgav_input_context_t * input,
 void bgav_flac_seektable_dump(bgav_flac_seektable_t * t);
 
 void bgav_flac_seektable_free(bgav_flac_seektable_t * t);
+
+#endif // BGAV_FLAC_HEADER_H_INCLUDED
+

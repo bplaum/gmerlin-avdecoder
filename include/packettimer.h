@@ -19,9 +19,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_PACKETTIMER_H_INCLUDED
+#define BGAV_PACKETTIMER_H_INCLUDED
+
 typedef struct bgav_packet_timer_s bgav_packet_timer_t;
 
 bgav_packet_timer_t * bgav_packet_timer_create(bgav_stream_t * s);
 
 void bgav_packet_timer_destroy(bgav_packet_timer_t *);
 void bgav_packet_timer_reset(bgav_packet_timer_t *);
+
+#endif // BGAV_PACKETTIMER_H_INCLUDED
+

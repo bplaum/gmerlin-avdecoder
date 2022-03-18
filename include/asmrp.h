@@ -41,9 +41,9 @@
 
  */
 
-#ifndef HAVE_ASMRP_H
-#define HAVE_ASMRP_H
+#ifndef BGAV_ASMRP_H_INCLUDED
+#define BGAV_ASMRP_H_INCLUDED
 
 int bgav_asmrp_match (const char *rules, int bandwidth, int *matches) ;
 
-#endif
+#endif // BGAV_ASMRP_H_INCLUDED

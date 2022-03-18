@@ -660,29 +660,6 @@ fi
 echo ""
 echo "=== Other features: ============================"
 
-echo -n "win32 DLL Support:      "
-if test "x$enable_w32dll" = "xtrue"; then
-echo "Enabled"
-elif test "x$test_w32dll" = "xfalse"; then
-echo "Disabled by user"
-else
-echo "Disabled (Unsupported Architecture)"
-fi
-
-echo -n "RealPLayer DLL Support: "
-if test "x$enable_realdll" = "xtrue"; then
-echo "Enabled"
-else
-echo "Disabled (Unsupported Architecture)"
-fi
-
-echo -n "Xanim DLL Support:      "
-if test "x$enable_xadll" = "xtrue"; then
-echo "Enabled"
-else
-echo "Disabled (Unsupported Architecture)"
-fi
-
 echo -n "Linux DVB Support:      "
 if test "x$have_linuxdvb" = "xtrue"; then
 echo "Enabled"

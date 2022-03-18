@@ -21,8 +21,8 @@
 
 /* Functions which miss on some systems */
 
-#ifndef OS_H
-#define OS_H
+#ifndef BGAV_OS_H_INCLUDED
+#define BGAV_OS_H_INCLUDED
 
 #include <config.h>
 
@@ -73,4 +73,5 @@ int bgav_inet_aton(const char *cp, struct in_addr * addr);
 #define bgav_inet_aton(cp, addr) inet_aton(cp, addr) 
 #endif
 
-#endif
+#endif // BGAV__H_INCLUDED
+

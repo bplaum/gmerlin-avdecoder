@@ -21,6 +21,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#ifndef BGAV_RTJPEG_H_INCLUDED
+#define BGAV_RTJPEG_H_INCLUDED
+
 #ifdef __RTJPEG_INTERNAL__
 
 #ifdef MMX
@@ -128,3 +131,6 @@ void RTjpeg_set_tables(RTjpeg_t *rtj, uint32_t *tables);
 
 #define RTJPEG_COMPAT_STREAM(sp) RTjpeg_frame_data(sp)
 #define RTJPEG_COMPAT_LENGTH(sp) (RTjpeg_frame_framesize(sp) - RTjpeg_frame_headersize(sp))
+
+#endif // BGAV_RTJPEG_H_INCLUDED
+

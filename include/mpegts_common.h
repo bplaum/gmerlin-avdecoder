@@ -19,6 +19,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_MPEGTS_COMMON_H_INCLUDED
+#define BGAV_MPEGTS_COMMON_H_INCLUDED
 
 #define MAX_PAT_SECTION_LENGTH 1021
 
@@ -142,3 +144,6 @@ int bgav_pmt_section_setup_track(pmt_section_t * pmts,
                                   int max_ac3_streams,
                                   int * num_ac3_streams,
                                   int * extra_pcr_pid);
+
+#endif // BGAV_MPEGTS_COMMON_H_INCLUDED
+

@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_VORBIS_COMMENT_H_INCLUDED
+#define BGAV_VORBIS_COMMENT_H_INCLUDED
+
 typedef struct
   {
   char * vendor;
@@ -42,3 +45,6 @@ bgav_vorbis_comment_get_field(bgav_vorbis_comment_t * vc, const char * key, int 
 
 /* doesn't belong here actually */
 void bgav_vorbis_set_channel_setup(gavl_audio_format_t * format);
+
+#endif // BGAV_VORBIS_COMMENT_H_INCLUDED
+

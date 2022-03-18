@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_OPUS_HEADER_H_INCLUDED
+#define BGAV_OPUS_HEADER_H_INCLUDED
+
 typedef struct
   {
   uint8_t  version;
@@ -45,3 +48,6 @@ void bgav_opus_header_dump(const bgav_opus_header_t * ret);
 
 void bgav_opus_set_channel_setup(const bgav_opus_header_t * h,
                                  gavl_audio_format_t * fmt);
+
+#endif // BGAV_OPUS_HEADER_H_INCLUDED
+

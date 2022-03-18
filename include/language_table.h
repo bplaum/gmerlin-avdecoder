@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_LANGUAGE_TABLE_H_INCLUDED
+#define BGAV_LANGUAGE_TABLE_H_INCLUDED
+
 static const struct
   {
   char const * const iso_639_t;
@@ -463,3 +466,6 @@ language_codes[] =
     { "zul", "zul", "zu", "Zulu", "Negro-african" },
     { "zun", "zun", NULL, "Zuni", NULL },
   };
+
+#endif // BGAV_LANGUAGE_TABLE_H_INCLUDED
+

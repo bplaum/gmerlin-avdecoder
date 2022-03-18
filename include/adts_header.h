@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_ADTS_HEADER_H_INCLUDED
+#define BGAV_ADTS_HEADER_H_INCLUDED
+
 /* The following struct is not exactly the same as in the spec */
 
 #define ADTS_HEADER_LEN 9
@@ -42,3 +45,5 @@ typedef struct
 int bgav_adts_header_read(const uint8_t * data, bgav_adts_header_t * adts);
 void bgav_adts_header_dump(const bgav_adts_header_t * adts);
 void bgav_adts_header_get_format(const bgav_adts_header_t * adts, gavl_audio_format_t * format);
+
+#endif // BGAV_ADTS_HEADER_H_INCLUDED

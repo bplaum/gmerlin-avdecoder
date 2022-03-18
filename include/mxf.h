@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_MXF_H_INCLUDED
+#define BGAV_MXF_H_INCLUDED
+
 /* Based on the ffmpeg MXF demuxer with lots of changes */
 
 typedef uint8_t mxf_ul_t[16];
@@ -527,3 +530,6 @@ bgav_stream_t * bgav_mxf_find_stream(mxf_file_t * f,
 
 mxf_descriptor_t * bgav_mxf_get_source_descriptor(mxf_file_t * file,
                                                   mxf_package_t * p, mxf_track_t * st);
+
+#endif // BGAV_MXF_H_INCLUDED
+

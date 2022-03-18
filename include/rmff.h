@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_RMFF_H_INCLUDED
+#define BGAV_RMFF_H_INCLUDED
+
 #include <sdp.h>
 
 /*
@@ -284,3 +287,6 @@ bgav_rmff_header_create_from_sdp(const bgav_options_t*opt,
                                  char ** stream_rules);
 
 void bgav_rmff_header_dump(bgav_rmff_header_t * header);
+
+#endif // BGAV_RMFF_H_INCLUDED
+

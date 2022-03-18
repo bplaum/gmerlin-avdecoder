@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_MMS_H_INCLUDED
+#define BGAV_MMS_H_INCLUDED
+
 typedef struct bgav_mms_s bgav_mms_t;
 
 /* Open an mms url, return opaque structure */
@@ -44,4 +47,6 @@ int bgav_mms_select_streams(bgav_mms_t * mms,
 uint8_t * bgav_mms_read_data(bgav_mms_t * mms, int * len, int block);
 
 void bgav_mms_close(bgav_mms_t*);
+
+#endif // BGAV_MMS_H_INCLUDED
 

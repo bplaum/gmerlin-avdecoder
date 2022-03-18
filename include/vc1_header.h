@@ -19,6 +19,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_VC1_HEADER_H_INCLUDED
+#define BGAV_VC1_HEADER_H_INCLUDED
+
+
 #define PROFILE_SIMPLE   0
 #define PROFILE_MAIN     1
 #define PROFILE_COMPLEX  2
@@ -84,3 +88,6 @@ int bgav_vc1_picture_header_adv_read(const bgav_options_t * opt,
                                      const bgav_vc1_sequence_header_t * seq);
 
 void bgav_vc1_picture_header_adv_dump(bgav_vc1_picture_header_adv_t * ret);
+
+#endif // BGAV_VC1_HEADER_H_INCLUDED
+

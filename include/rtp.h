@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_RTP_H_INCLUDED
+#define BGAV_RTP_H_INCLUDED
+
 #include <pthread.h> // For the mutex
 
 #include <sdp.h>
@@ -201,3 +204,6 @@ int bgav_rtcp_rr_write(rtcp_sr_t * r, uint8_t * data);
 void bgav_rtcp_sr_dump(rtcp_sr_t * r);
 void bgav_rtcp_rr_setup(rtcp_sr_t * r, rtp_stats_t * s,
                         uint32_t lsr, uint32_t client_ssrc, uint32_t server_ssrc);
+
+#endif // BGAV_RTP_H_INCLUDED
+

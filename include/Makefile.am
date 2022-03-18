@@ -53,7 +53,6 @@ utils.h \
 vc1_header.h \
 videoparser_priv.h \
 vorbis_comment.h \
-win32codec.h \
 xing.h \
 yml.h
 

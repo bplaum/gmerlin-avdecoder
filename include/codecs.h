@@ -19,6 +19,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_CODECS_H_INCLUDED
+#define BGAV_CODECS_H_INCLUDED
 
 #ifdef HAVE_AVCODEC
 void bgav_init_audio_decoders_ffmpeg(bgav_options_t * opt);
@@ -97,3 +99,6 @@ void bgav_init_video_decoders_dvdsub();
 
 void bgav_init_audio_decoders_gavf();
 void bgav_init_video_decoders_gavf();
+
+#endif // BGAV_CODECS_H_INCLUDED
+

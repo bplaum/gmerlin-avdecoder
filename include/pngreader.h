@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_PNGREADER_H_INCLUDED
+#define BGAV_PNGREADER_H_INCLUDED
+
 typedef struct bgav_png_reader_s bgav_png_reader_t;
 
 bgav_png_reader_t * bgav_png_reader_create(int depth);
@@ -35,4 +38,6 @@ int bgav_png_reader_read_header(const bgav_options_t * opt,
                                 uint8_t * buffer, int buffer_size,
                                 gavl_video_format_t * format);
 
+
+#endif // GAV_PNGREADER_H_INCLUDED
 

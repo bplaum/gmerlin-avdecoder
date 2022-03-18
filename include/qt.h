@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_QT_H_INCLUDED
+#define BGAV_QT_H_INCLUDED
+
 /*
  *  The quicktime stuff is so complicated, that it is split into
  *  several files. So we need this header
@@ -1243,3 +1246,6 @@ typedef struct
   int64_t start;
   int64_t size;
   } qt_mdat_t;
+
+#endif // BGAV_QT_H_INCLUDED
+

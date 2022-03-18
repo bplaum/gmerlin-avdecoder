@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_PTSCACHE_H_INCLUDED
+#define BGAV_PTSCACHE_H_INCLUDED
+
 #define PTS_CACHE_SIZE 32
 
 typedef struct
@@ -46,3 +49,6 @@ int bgav_pts_cache_peek_first(bgav_pts_cache_t * c, gavl_video_frame_t * f);
 
 
 int64_t bgav_pts_cache_peek_last(bgav_pts_cache_t * c, int * duration);
+
+#endif // BGAV_PTSCACHE_H_INCLUDED
+

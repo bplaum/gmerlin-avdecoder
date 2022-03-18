@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_FRAMETYPE_H_INCLUDED
+#define BGAV_FRAMETYPE_H_INCLUDED
+
 /* Detect frametypes (especially if B-frames can occur)
    from timestamps */
 
@@ -29,3 +32,6 @@ bgav_frametype_detector_create(bgav_stream_t * s);
 
 void bgav_frametype_detector_destroy(bgav_frametype_detector_t *);
 void bgav_frametype_detector_reset(bgav_frametype_detector_t *);
+
+#endif // BGAV_FRAMETYPE_H_INCLUDED
+

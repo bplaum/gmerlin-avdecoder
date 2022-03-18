@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_MPV_HEADER_H_INCLUDED
+#define BGAV_MPV_HEADER_H_INCLUDED
+
 #define MPV_PROBE_SIZE 5 /* Sync code + extension type */
 
 #define MPEG_CODE_SEQUENCE             1
@@ -157,3 +160,6 @@ gavl_pixelformat_t bgav_mpv_get_pixelformat(bgav_mpv_sequence_header_t * h);
 
 void bgav_mpv_get_size(bgav_mpv_sequence_header_t * h,
                        gavl_video_format_t * ret);
+
+#endif // BGAV_MPV_HEADER_H_INCLUDED
+

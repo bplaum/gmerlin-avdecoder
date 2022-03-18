@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_YML_H_INCLUDED
+#define BGAV_YML_H_INCLUDED
+
 /* VERY simple and nonstandard xml-like parser */
 
 /*
@@ -67,4 +70,6 @@ int bgav_yml_probe(bgav_input_context_t * input);
 
 bgav_yml_node_t * bgav_yml_find_by_name(bgav_yml_node_t * yml, const char * name);
 bgav_yml_node_t * bgav_yml_find_by_pi(bgav_yml_node_t * yml, const char * pi);
+
+#endif // BGAV_YML_H_INCLUDED
 

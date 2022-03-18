@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_PES_HEADER_H_INCLUDED
+#define BGAV_PES_HEADER_H_INCLUDED
+
 #define START_CODE_SYSTEM_HEADER 0x000001bb
 #define START_CODE_PACK_HEADER   0x000001ba
 #define START_CODE_PROGRAM_END   0x000001b9
@@ -51,4 +54,6 @@ void bgav_pack_header_dump(bgav_pack_header_t * h);
 
 int bgav_pack_header_read(bgav_input_context_t * input,
                           bgav_pack_header_t * ret);
+
+#endif // BGAV_PES_HEADER_H_INCLUDED
 

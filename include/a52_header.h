@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_A52_HEADER_H_INCLUDED
+#define BGAV_A52_HEADER_H_INCLUDED
+
 typedef struct
   {
   int total_bytes;
@@ -41,3 +44,6 @@ int bgav_a52_header_read(bgav_a52_header_t * ret, uint8_t * buf);
 void bgav_a52_header_dump(bgav_a52_header_t * h);
 void bgav_a52_header_get_format(const bgav_a52_header_t * h,
                                 gavl_audio_format_t * format);
+
+#endif // BGAV_A52_HEADER_H_INCLUDED
+

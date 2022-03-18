@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_VIDEOPARSER_PRIV_H_INCLUDED
+#define BGAV_VIDEOPARSER_PRIV_H_INCLUDED
+
 #define PARSER_CACHE_MAX 32
 
 #define PARSER_CONTINUE     (PARSER_PRIV+0)
@@ -145,4 +148,6 @@ void bgav_video_parser_init_vp8(bgav_video_parser_t * parser);
 void bgav_video_parser_init_vp9(bgav_video_parser_t * parser);
 
 void bgav_video_parser_flush(bgav_video_parser_t * parser, int bytes);
+
+#endif // BGAV_VIDEOPARSER_PRIV_H_INCLUDED
 

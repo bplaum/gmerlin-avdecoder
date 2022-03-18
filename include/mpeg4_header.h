@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_MPEG4_HEADER_H_INCLUDED
+#define BGAV_MPEG4_HEADER_H_INCLUDED
+
 #define MPEG4_CODE_VOS_START  1
 #define MPEG4_CODE_VO_START   2
 #define MPEG4_CODE_VOL_START  3
@@ -107,3 +110,6 @@ int bgav_mpeg4_vop_header_read(const bgav_options_t * opt,
                                const bgav_mpeg4_vol_header_t * vol);
 
 void bgav_mpeg4_vop_header_dump(bgav_mpeg4_vop_header_t * h);
+
+#endif // BGAV_MPEG4_HEADER_H_INCLUDED
+

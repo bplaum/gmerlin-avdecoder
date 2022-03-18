@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_DVFRAME_H_INCLUDED
+#define BGAV_DVFRAME_H_INCLUDED
+
 /* minimum number of bytes to read from a DV stream in order to
    determine the profile */
 #define DV_HEADER_SIZE (6*80) /* 6 DIF blocks */
@@ -87,4 +90,6 @@ int bgav_dv_dec_get_time(bgav_dv_dec_t * d,
 int bgav_dv_dec_get_timecode(bgav_dv_dec_t * d,
                              gavl_timecode_t * tc);
 
+
+#endif // BGAV_DVFRAME_H_INCLUDED
 

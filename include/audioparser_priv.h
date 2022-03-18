@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_AUDIOPARSER_PRIV_H_INCLUDED
+#define BGAV_AUDIOPARSER_PRIV_H_INCLUDED
+
 #define PARSER_CACHE_MAX 16
 
 #define PARSER_HAVE_FRAME    (PARSER_PRIV+0)
@@ -123,3 +126,6 @@ void bgav_audio_parser_flush(bgav_audio_parser_t * parser, int bytes);
 
 void bgav_audio_parser_set_frame(bgav_audio_parser_t * parser,
                                  int pos, int len, int samples);
+
+#endif
+

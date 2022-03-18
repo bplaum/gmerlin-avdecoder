@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_AVDEDEC_PRIVATE_H_INCLUDED
+#define BGAV_AVDEDEC_PRIVATE_H_INCLUDED
+
 #include "config.h"
 
 #include <avdec.h>
@@ -1982,3 +1985,6 @@ void bgav_ffmpeg_unlock();
 #define BGAV_LIKELY(exp)   exp
 
 #endif
+
+#endif // BGAV_AVDEDEC_PRIVATE_H_INCLUDED
+

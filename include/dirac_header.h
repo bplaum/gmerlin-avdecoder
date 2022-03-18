@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_DIRAC_HEADER_H_INCLUDED
+#define BGAV_DIRAC_HEADER_H_INCLUDED
+
 #define DIRAC_CODE_SEQUENCE 1
 #define DIRAC_CODE_PICTURE  2
 #define DIRAC_CODE_END      3
@@ -74,3 +77,5 @@ int bgav_dirac_picture_header_parse(bgav_dirac_picture_header_t *,
                                     const uint8_t * buffer, int len);
 
 void bgav_dirac_picture_header_dump(const bgav_dirac_picture_header_t *);
+
+#endif // BGAV_DIRAC_HEADER_H_INCLUDED

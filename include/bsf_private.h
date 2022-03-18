@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_BSF_PRIVATE_H_INCLUDED
+#define BGAV_BSF_PRIVATE_H_INCLUDED
+
 struct bgav_bsf_s
   {
   /* Where to get packets */
@@ -41,3 +44,6 @@ int bgav_bsf_init_avcC(bgav_bsf_t*);
 
 int
 bgav_bsf_init_adts(bgav_bsf_t * bsf);
+
+#endif // BGAV_BSF_PRIVATE_H_INCLUDED
+

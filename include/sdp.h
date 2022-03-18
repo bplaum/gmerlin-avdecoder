@@ -19,8 +19,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
-#ifndef __BGAV_SDP_H_
-#define __BGAV_SDP_H_
+#ifndef BGAV_SDP_H_INCLUDED
+#define BGAV_SDP_H_INCLUDED
 
 typedef struct bgav_sdp_s bgav_sdp_t;
 
@@ -200,4 +200,5 @@ void bgav_sdp_free(bgav_sdp_t * s);
 
 void bgav_sdp_dump(bgav_sdp_t * s);
 
-#endif // __BGAV_SDP_H_
+#endif // BGAV_SDP_H_INCLUDED
+

@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_RTSP_H_INCLUDED
+#define BGAV_RTSP_H_INCLUDED
+
 #include <sdp.h>
 
 /* rtsp.c */
@@ -76,4 +79,6 @@ int bgav_rtsp_request_setparameter(bgav_rtsp_t *);
 /* Play */
 
 int bgav_rtsp_request_play(bgav_rtsp_t *);
+
+#endif BGAV_RTSP_H_INCLUDED
 

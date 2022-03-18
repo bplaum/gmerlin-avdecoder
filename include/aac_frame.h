@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_AAC_FRAME_H_INCLUDED
+#define BGAV_AAC_FRAME_H_INCLUDED
+
 #ifdef HAVE_NEAACDEC_H
 #include <neaacdec.h>
 
@@ -74,4 +77,6 @@ void bgav_aac_frame_get_audio_format(bgav_aac_frame_t * frame,
 
 void bgav_faad_set_channel_setup(faacDecFrameInfo * frame_info,
                                  gavl_audio_format_t * format);
+
+#endif // BGAV_AAC_FRAME_H_INCLUDED
 

@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_XING_H_INCLUDED
+#define BGAV_XING_H_INCLUDED
+
 /* XING VBR header (stolen from xmms) */
 
 #define FRAMES_FLAG     0x0001
@@ -46,4 +49,6 @@ void bgav_xing_header_dump(bgav_xing_header_t * xing);
 int bgav_xing_header_probe(unsigned char *buf);
 
 int bgav_mp3_info_header_probe(unsigned char *buf);
+
+#endif // BGAV_XING_H_INCLUDED
 

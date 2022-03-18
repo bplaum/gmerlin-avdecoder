@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_CUE_H_INCLUDED
+#define BGAV_CUE_H_INCLUDED
+
 typedef struct bgav_cue_s bgav_cue_t;
 
 bgav_cue_t *
@@ -33,4 +36,6 @@ void bgav_cue_destroy(bgav_cue_t *);
 // void bgav_cue_dump(bgav_cue_t *);
 
 void bgav_demuxer_init_cue(bgav_demuxer_context_t * ctx);
+
+#endif // BGAV_CUE_H_INCLUDED
 

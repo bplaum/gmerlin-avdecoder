@@ -19,4 +19,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_UTILS_H_INCLUDED
+#define BGAV_UTILS_H_INCLUDED
+
 void bgav_hexdump(const uint8_t * data, int len, int linebreak);
+
+#endif // BGAV_UTILS_H_INCLUDED
+

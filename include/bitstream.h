@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_BITSTREAM_H_INCLUDED
+#define BGAV_BITSTREAM_H_INCLUDED
+
 /* bitstream.c */
 
 typedef struct
@@ -47,3 +50,5 @@ int bgav_bitstream_get_golomb_se(bgav_bitstream_t * b, int * ret);
 int bgav_bitstream_decode012(bgav_bitstream_t * b, int * ret);
 int bgav_bitstream_get_unary(bgav_bitstream_t * b, int stop,
                              int len, int * ret);
+
+#endif // BGAV_BITSTREAM_H_INCLUDED

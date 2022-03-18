@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_MATROSKA_H_INCLUDED
+#define BGAV_MATROSKA_H_INCLUDED
+
 /* Basic stuff */
    
 int bgav_mkv_read_id(bgav_input_context_t * ctx, int * ret);
@@ -790,3 +793,6 @@ void bgav_mkv_block_group_free(bgav_mkv_block_group_t * g);
 #if 0
 #define MKV_ID_ 0x
 #endif
+
+#endif // BGAV_MATROSKA_H_INCLUDED
+

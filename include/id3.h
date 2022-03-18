@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_ID3_H_INCLUDED
+#define BGAV_ID3_H_INCLUDED
+
 /* ID3V1 */
 
 typedef struct bgav_id3v1_tag_s bgav_id3v1_tag_t;
@@ -73,4 +76,6 @@ void bgav_ape_tag_2_metadata(bgav_ape_tag_t * tag, bgav_metadata_t * m);
 void bgav_ape_tag_destroy(bgav_ape_tag_t * tag);
 
 void bgav_ape_tag_dump(bgav_ape_tag_t * tag);
+
+#endif // BGAV_ID3_H_INCLUDED
 

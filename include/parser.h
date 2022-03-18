@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_PARSER_H_INCLUDED
+#define BGAV_PARSER_H_INCLUDED
+
 #define PARSER_NEED_DATA      0
 
 #define PARSER_HAVE_FORMAT    1 /* Audio parsers */
@@ -76,4 +79,6 @@ void bgav_audio_parser_reset(bgav_audio_parser_t *,
 
 void bgav_audio_parser_add_data(bgav_audio_parser_t * parser,
                                 uint8_t * data, int len, int64_t position);
+
+#endif // BGAV_PARSER_H_INCLUDED
 

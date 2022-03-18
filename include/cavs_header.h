@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_CAVS_HEADER_H_INCLUDED
+#define BGAV_CAVS_HEADER_H_INCLUDED
+
 #define CAVS_CODE_SEQUENCE   1
 #define CAVS_CODE_PICTURE_I  2
 #define CAVS_CODE_PICTURE_PB 3
@@ -80,3 +83,6 @@ int bgav_cavs_picture_header_read(const bgav_options_t * opt,
 
 void bgav_cavs_picture_header_dump(const bgav_cavs_picture_header_t * h,
                                    const bgav_cavs_sequence_header_t * seq);
+
+#endif // BGAV_CAVS_HEADER_H_INCLUDED
+

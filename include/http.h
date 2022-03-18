@@ -19,61 +19,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_HTTP_H_INCLUDED
+#define BGAV_HTTP_H_INCLUDED
+
 /* http support */
 
 typedef struct bgav_http_s bgav_http_t;
-
-#if 0
-
-typedef struct
-  {
-  int num_lines;
-  int lines_alloc;
-
-  char * method;
-  char * protocol;
-  char * path;
-  
-  char ** lines;
-  } bgav_http_header_t;
-
-
-/* Creation/destruction of http header */
-
-bgav_http_header_t * bgav_http_header_create();
-
-void bgav_http_header_reset(bgav_http_header_t*);
-void bgav_http_header_destroy(bgav_http_header_t*);
-
-void bgav_http_header_add_line(bgav_http_header_t*, const char * line);
-void bgav_http_header_add_line_nocpy(bgav_http_header_t * h, char * line);
-
-void bgav_http_header_init(bgav_http_header_t*, const char * method, const char * path,
-                           const char * protocol);
-
-int bgav_http_header_send(const bgav_options_t * opt, const bgav_http_header_t * h1,
-                          const bgav_http_header_t * h2,
-                          int fd);
-
-char * bgav_http_header_to_string(const bgav_http_header_t * h1, const bgav_http_header_t * h2);
-
-int bgav_http_header_status_code(bgav_http_header_t * h);
-const char * bgav_http_header_status_line(bgav_http_header_t * h);
-
-/* Reading of http header */
-
-int bgav_http_header_revc(const bgav_options_t * opt,
-                          bgav_http_header_t*, int fd);
-
-const char * bgav_http_header_get_var(bgav_http_header_t*,
-                                      const char * name);
-
-
-void bgav_http_header_dump(bgav_http_header_t*);
-
-#endif
-
-/* http connection */
 
 bgav_http_t * bgav_http_open(const char * url,
                              const bgav_options_t * opt,
@@ -97,3 +48,6 @@ int64_t bgav_http_total_bytes(bgav_http_t * h);
 int bgav_http_can_seek(bgav_http_t * h);
 
 void bgav_http_set_metadata(bgav_http_t * h, gavl_dictionary_t * m);
+
+#endif // BGAV_HTTP_H_INCLUDED
+

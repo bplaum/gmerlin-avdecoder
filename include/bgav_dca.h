@@ -19,6 +19,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_DCA_H_INCLUDED
+#define BGAV_DCA_H_INCLUDED
 
 #include <config.h>
 
@@ -56,3 +58,5 @@ typedef struct dca_state_s dts_state_t;
 #define dts_free dca_free
 #endif // !HAVE_DTS_H
 
+
+#endif // BGAV_DCA_H_INCLUDED

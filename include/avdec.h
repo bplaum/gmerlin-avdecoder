@@ -21,6 +21,9 @@
 
 /* Public entry points */
 
+#ifndef BGAV_AVDEC_H_INCLUDED
+#define BGAV_AVDEC_H_INCLUDED
+
 /**
  * @file avdec.h
  * external api header.
@@ -2686,3 +2689,5 @@ void bgav_subreaders_dump();
 }
 #endif
 
+
+#endif // BGAV_AVDEC_H_INCLUDED

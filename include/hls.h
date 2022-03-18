@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_HLS_H_INCLUDED
+#define BGAV_HLS_H_INCLUDED
+
 typedef struct bgav_hls_s bgav_hls_t;
 
 int bgav_hls_detect(bgav_input_context_t * ctx);
@@ -29,3 +32,4 @@ int bgav_hls_read(bgav_hls_t *, uint8_t * data, int len);
 
 void bgav_hls_close(bgav_hls_t *);
 
+#endif // BGAV_HLS_H_INCLUDED

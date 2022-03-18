@@ -231,7 +231,7 @@ gsm_libs =
 endif  
 
 
-SUBDIRS = $(win32_subdirs) $(gsm_subdirs)
+SUBDIRS = $(gsm_subdirs)
 
 libgmerlin_avdec_la_LDFLAGS=-export-dynamic -version-info @LTVERSION_CURRENT@:@LTVERSION_REVISION@:@LTVERSION_AGE@ @GMERLIN_LIB_LDFLAGS@
 
@@ -299,7 +299,6 @@ $(ogg_sources) \
 $(png_sources) \
 $(openjpeg_sources) \
 $(tiff_sources) \
-$(win32_sources) \
 $(mad_sources) \
 $(musepack_sources) \
 $(avformat_sources) \

@@ -19,6 +19,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_DVB_CHANNELS_H_INCLUDED
+#define BGAV_DVB_CHANNELS_H_INCLUDED
 
 #ifdef HAVE_LINUXDVB
 
@@ -62,4 +64,6 @@ bgav_dvb_channels_load(bgav_t * b,
 void dvb_channels_destroy(bgav_dvb_channel_info_t *, int num);
 
 void dvb_channels_dump(bgav_dvb_channel_info_t *, fe_type_t type, int num);
+
+#endif // BGAV_DVB_CHANNELS_H_INCLUDED
 

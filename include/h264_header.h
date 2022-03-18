@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#ifndef BGAV_H264_HEADER_H_INCLUDED
+#define BGAV_H264_HEADER_H_INCLUDED
+
 /* H.264 stuff */
 
 const uint8_t *
@@ -256,3 +259,6 @@ void bgav_h264_slice_header_parse(const uint8_t * data, int len,
 
 void bgav_h264_slice_header_dump(const bgav_h264_sps_t * sps,
                                  const bgav_h264_slice_header_t * ret);
+
+#endif // BGAV_H264_HEADER_H_INCLUDED
+
