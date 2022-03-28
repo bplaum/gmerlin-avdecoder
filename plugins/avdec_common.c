@@ -76,24 +76,13 @@ static int handle_cmd(void * data, gavl_msg_t * msg)
           break;
         case GAVL_CMD_SRC_SEEK:
           {
-          bg_msg_hub_t * hub;
+//          bg_msg_hub_t * hub;
           int64_t time = gavl_msg_get_arg_long(msg, 0);
           int scale = gavl_msg_get_arg_int(msg, 1);
 
           /* Seek */
           bgav_seek_scaled(avdec->dec, &time, scale);
 
-          hub = bg_media_source_get_msg_hub_by_id(&avdec->src, GAVL_META_STREAM_ID_MSG_PROGRAM);
-
-          if(hub)
-            {
-            gavl_msg_t * resp;
-            bg_msg_sink_t * sink = bg_msg_hub_get_sink(hub);
-            
-            resp = bg_msg_sink_get(sink);
-            gavl_msg_set_src_resync(resp, time, scale, 1, 1);
-            bg_msg_sink_put(sink, resp);
-            }
           
           }
           break;
