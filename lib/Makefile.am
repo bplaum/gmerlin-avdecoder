@@ -411,6 +411,7 @@ in_dvb_linux.c \
 in_dvd.c \
 in_file.c \
 in_ftp.c \
+in_hls.c \
 in_http.c \
 in_memory.c \
 in_mms.c \

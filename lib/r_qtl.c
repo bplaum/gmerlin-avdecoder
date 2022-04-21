@@ -45,8 +45,10 @@ static bgav_track_table_t * parse_qtl(bgav_input_context_t * input)
      !(url = bgav_yml_get_attribute(node, "src")))
     return NULL;
   ret = bgav_track_table_create(1);
-  gavl_dictionary_set_string(ret->tracks[0]->metadata,
-                    GAVL_META_REFURL, url);
+
+  gavl_dictionary_set_string(ret->tracks[0]->metadata, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_LOCATION);
+  
+  gavl_metadata_add_src(ret->tracks[0]->metadata, GAVL_META_SRC, NULL, url);
   return ret;
   }
 

@@ -956,8 +956,6 @@ struct bgav_input_s
   void (*pause)(bgav_input_context_t*);
   void (*resume)(bgav_input_context_t*);
   
-  /* Finalize input (called at the very end of bgav_input_open() */
-  int (*finalize)(bgav_input_context_t*);
   };
 
 // #define BGAV_INPUT_DO_BUFFER      (1<<0)

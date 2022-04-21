@@ -471,6 +471,9 @@ int bgav_track_start(bgav_track_t * t, bgav_demuxer_context_t * demuxer)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
                "Starting video decoder for stream %d failed", i+1);
+      //      gavl_dictionary_dump(s->info, 2);
+      bgav_stream_dump(s);
+      bgav_video_dump(s);
       return 0;
       }
     }

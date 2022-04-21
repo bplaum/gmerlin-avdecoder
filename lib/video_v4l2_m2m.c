@@ -29,6 +29,8 @@
 
 #include <linux/videodev2.h>
 #include <gavl/hw_v4l2.h>
+#include <gavl/log.h>
+#define LOG_DOMAIN "v4l2_m2m"
 
 static gavl_array_t * v4l_devices = NULL;
 
@@ -48,7 +50,10 @@ static int init_v4l2(bgav_stream_t * s)
   v4l2_t * priv;
   
   if(!(dev_file = gavl_v4l2_get_decoder(v4l_devices, s->ci->id)))
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Couldn't find decoder for %d", s->ci->id);
     return 0;
+    }
   
   //  fprintf(stderr, "Got device %s\n", gavl_dictionary_get_string(dev_file, GAVL_META_URI));
 
@@ -65,8 +70,10 @@ static int init_v4l2(bgav_stream_t * s)
   //  fprintf(stderr, "Opened device %p\n", priv->dev);
   
   if(!gavl_v4l2_device_init_decoder(priv->dev, s->info, priv->psrc))
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Initializing decoder failed");
     return 0;
-
+    }
   s->data.video.vsrc = gavl_v4l2_device_get_video_source(priv->dev);
   s->decoder_priv = priv;
   return 1;

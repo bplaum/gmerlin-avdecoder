@@ -106,19 +106,26 @@ static void get_url(bgav_yml_node_t * n, bgav_track_t * ret,
     return;
 
   /* Set URL */
+
+  gavl_dictionary_set_string(ret->metadata, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_LOCATION);
   
   if(!strstr(location, "://") && url_base)
     {
+    char * uri;
+    
     if(url_base[strlen(url_base)-1] == '/')
-      gavl_dictionary_set_string_nocopy(ret->metadata, GAVL_META_REFURL,
-                              bgav_sprintf("%s%s", url_base, location));
+      uri = bgav_sprintf("%s%s", url_base, location);
     else
-      gavl_dictionary_set_string_nocopy(ret->metadata, GAVL_META_REFURL,
-                              bgav_sprintf("%s/%s", url_base, location));
+      uri = bgav_sprintf("%s/%s", url_base, location);
+
+    gavl_metadata_add_src(ret->metadata, GAVL_META_SRC, NULL, uri);
+    
+    free(uri);
     }
   else
-    gavl_dictionary_set_string(ret->metadata, GAVL_META_REFURL,
-                      location);
+    {
+    gavl_metadata_add_src(ret->metadata, GAVL_META_SRC, NULL, location);
+    }
   /* Set name */
 
   if(title)

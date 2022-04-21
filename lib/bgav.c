@@ -502,6 +502,9 @@ int bgav_select_track(bgav_t * b, int track)
     
     if(b->demuxer->demuxer->select_track)
       {
+      if(b->tt->cur)
+        bgav_track_clear(b->tt->cur);
+      
       /* Demuxer switches track */
       bgav_track_table_select_track(b->tt, track);
       
@@ -514,6 +517,7 @@ int bgav_select_track(bgav_t * b, int track)
       /* Reset input. This will be done by closing and reopening the input */
       gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Reopening input due to track reset");
 
+#if 0
       if(data_start < 0)
         {
         if(b->tt)
@@ -528,15 +532,16 @@ int bgav_select_track(bgav_t * b, int track)
           }
         bgav_demuxer_stop(b->demuxer);
         }
+#endif
       
       if(!bgav_input_reopen(b->input))
         return 0;
-
 
       if(data_start >= 0)
         {
         bgav_input_skip(b->input, data_start);
         }
+#if 0
       else
         {
         bgav_demuxer_start(b->demuxer);
@@ -548,6 +553,7 @@ int bgav_select_track(bgav_t * b, int track)
           }
         }
       bgav_track_table_create_message_streams(b->tt, &b->opt);
+#endif
       }
     }
   

@@ -154,46 +154,11 @@ void bgav_track_table_merge_metadata(bgav_track_table_t*t,
   {
   int i;
   //  gavl_dictionary_t * edl;
-    
-  const gavl_dictionary_t * src_src;
-  gavl_dictionary_t * src_dst;
-
-  src_src = gavl_dictionary_get_dictionary(m, GAVL_META_SRC);
   
   for(i = 0; i < t->num_tracks; i++)
     {
-    if(src_src)
-      {
-      src_dst = gavl_dictionary_get_dictionary_create(t->tracks[i]->metadata,
-                                                      GAVL_META_SRC);
-      gavl_dictionary_merge2(src_dst, src_src);
-      }
     gavl_dictionary_merge2(t->tracks[i]->metadata, m);
     }
-
-#if 0  
-  if((edl = gavl_dictionary_get_dictionary_nc(&t->info, GAVL_META_EDL)))
-    {
-    int num = gavl_get_num_tracks(edl);
-
-    for(i = 0; i < num; i++)
-      {
-      gavl_dictionary_t * edl_track;
-      gavl_dictionary_t * edl_metadata;
-
-      edl_track = gavl_get_track_nc(edl, i);
-      edl_metadata = gavl_track_get_metadata_nc(edl_track);
-
-      if(src_src)
-        {
-        src_dst = gavl_dictionary_get_dictionary_create(edl_metadata,
-                                                        GAVL_META_SRC);
-        gavl_dictionary_merge2(src_dst, src_src);
-        }
-      gavl_dictionary_merge2(edl_metadata, m);
-      }
-    }
-#endif
   
   }
 

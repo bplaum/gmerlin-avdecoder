@@ -609,6 +609,7 @@ extern const bgav_input_t bgav_input_pnm;
 extern const bgav_input_t bgav_input_mms;
 extern const bgav_input_t bgav_input_http;
 extern const bgav_input_t bgav_input_ftp;
+extern const bgav_input_t bgav_input_hls;
 //extern const bgav_input_t bgav_input_mmsh;
 
 #ifdef HAVE_CDIO
@@ -640,6 +641,7 @@ void bgav_inputs_dump()
   bgav_dprintf( "<li>%s\n", bgav_input_mms.name);
   //  bgav_dprintf( "<li>%s\n", bgav_input_mmsh.name);
   bgav_dprintf( "<li>%s\n", bgav_input_http.name);
+  bgav_dprintf( "<li>%s\n", bgav_input_hls.name);
   bgav_dprintf( "<li>%s\n", bgav_input_ftp.name);
 
 #ifdef HAVE_CDIO
@@ -745,6 +747,9 @@ static int input_open(bgav_input_context_t * ctx,
             !strcasecmp(protocol, "icyx") ||
             !strcasecmp(protocol, "https"))
       ctx->input = &bgav_input_http;
+    else if(!strcasecmp(protocol, "hls") ||
+            !strcasecmp(protocol, "hlss"))
+      ctx->input = &bgav_input_hls;
     else if(!strcasecmp(protocol, "ftp"))
       ctx->input = &bgav_input_ftp;
     //    else if(!strcasecmp(protocol, "mmsh"))
@@ -808,11 +813,7 @@ static int input_open(bgav_input_context_t * ctx,
     {
     goto fail;
     }
-
-  if(ctx->input->finalize && 
-     !ctx->input->finalize(ctx))
-    goto fail;
-     
+  
   ret = 1;
 
   fail:
@@ -1145,9 +1146,6 @@ int bgav_input_reopen(bgav_input_context_t * ctx)
       }
     //    init_buffering(ctx);
 
-    if(ctx->input->finalize && 
-       !ctx->input->finalize(ctx))
-      goto fail;
     ret = 1;
 
     ctx->tt = tt;

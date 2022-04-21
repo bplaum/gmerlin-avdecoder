@@ -305,8 +305,13 @@ int bgav_video_start(bgav_stream_t * s)
     
     result = dec->init(s);
     if(!result)
-      return 0;
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Initializig decoder failed");
 
+      gavl_dictionary_dump(s->info, 2);
+      
+      return 0;
+      }
     if(s->data.video.format->interlace_mode == GAVL_INTERLACE_UNKNOWN)
       s->data.video.format->interlace_mode = GAVL_INTERLACE_NONE;
     if(s->data.video.format->framerate_mode == GAVL_FRAMERATE_UNKNOWN)

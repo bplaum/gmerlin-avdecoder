@@ -233,6 +233,8 @@ typedef struct
   int error_counter;
 
   int discontinuous;
+
+  int is_running;
   
   } mpegts_t;
 
@@ -777,6 +779,9 @@ static int init_psi(bgav_demuxer_context_t * ctx,
       priv->programs[program].initialized = 1;
       init_streams_priv(&priv->programs[program],
                         ctx->tt->tracks[program]);
+      fprintf(stderr, "Got streams from PMT:\n");
+      gavl_dictionary_dump(ctx->tt->tracks[program]->info, 2);
+
 #if 0
       /* Get the AAUX and VAUX PIDs */
       for(i = 0; i < priv->programs[program].pmts.num_streams; i++)
@@ -955,7 +960,7 @@ static int init_raw(bgav_demuxer_context_t * ctx, int input_can_seek)
   priv->num_programs = 1;
   priv->programs = calloc(1, sizeof(*(priv->programs)));
   ctx->tt = bgav_track_table_create(priv->num_programs);
-
+  
   while(1)
     {
     if(!parse_transport_packet(ctx))
@@ -1719,6 +1724,10 @@ static int process_packet(bgav_demuxer_context_t * ctx)
 
 static int next_packet_mpegts(bgav_demuxer_context_t * ctx)
   {
+  mpegts_t * priv;
+  priv = ctx->priv;
+  priv->is_running = 1;
+  
   if(ctx->next_packet_pos)
     {
     int ret = 0;
@@ -1839,6 +1848,12 @@ static int select_track_mpegts(bgav_demuxer_context_t * ctx,
   {
   mpegts_t * priv;
   priv = ctx->priv;
+
+  if(!priv->is_running)
+    return 1;
+
+  priv->is_running = 0;
+
   priv->current_program = track;
   priv->error_counter = 0;
   

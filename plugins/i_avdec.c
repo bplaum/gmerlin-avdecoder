@@ -311,7 +311,7 @@ static const bg_parameter_info_t * get_parameters_avdec(void * priv)
 
 /* TODO: Build these dynamically */
 
-static char const * const protocols = "http https ftp rtsp smb mms pnm stdin";
+static char const * const protocols = "http https ftp rtsp smb mms pnm stdin hls hlss";
 
 static const char * get_protocols(void * priv)
   {

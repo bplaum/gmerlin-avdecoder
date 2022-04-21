@@ -72,15 +72,18 @@ static bgav_track_table_t * parse_ref(bgav_input_context_t * input)
                                 bgav_sprintf("Stream %d (%s)",
                                              ret->num_tracks,
                                              pos));
+
+        gavl_dictionary_set_string(t->metadata, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_LOCATION);
+        
         
         if(!strncasecmp(pos, "http://", 7))
-          gavl_dictionary_set_string_nocopy(t->metadata,
-                                  GAVL_META_REFURL,
-                                  bgav_sprintf("mmsh%s", pos+4));
+          {
+          char * uri = bgav_sprintf("mmsh%s", pos+4);
+          gavl_metadata_add_src(ret->tracks[0]->metadata, GAVL_META_SRC, NULL, uri);
+          free(uri);
+          }
         else
-          gavl_dictionary_set_string(t->metadata,
-                            GAVL_META_REFURL,
-                            pos);
+          gavl_metadata_add_src(ret->tracks[0]->metadata, GAVL_META_SRC, NULL, pos);
         }
       }
     }

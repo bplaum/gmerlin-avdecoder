@@ -23,10 +23,13 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <gavl/log.h>
 
 #include <avdec_private.h>
 
 #define PROBE_BYTES 10
+
+#define LOG_DOMAIN "m3u"
 
 static int probe_m3u(bgav_input_context_t * input)
   {
@@ -38,13 +41,13 @@ static int probe_m3u(bgav_input_context_t * input)
   /* Most likely, we get this via http, so we can check the mimetype */
   if(gavl_dictionary_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, NULL) && mimetype)
     {
-    if(strcmp(mimetype, "audio/x-pn-realaudio-plugin") &&
-       strcmp(mimetype, "video/x-pn-realvideo-plugin") &&
-       strcmp(mimetype, "audio/x-pn-realaudio") &&
-       strcmp(mimetype, "video/x-pn-realvideo") &&
-       strcmp(mimetype, "audio/x-mpegurl") &&
-       strcmp(mimetype, "audio/mpegurl") &&
-       strcmp(mimetype, "audio/m3u") &&
+    if(strcasecmp(mimetype, "audio/x-pn-realaudio-plugin") &&
+       strcasecmp(mimetype, "video/x-pn-realvideo-plugin") &&
+       strcasecmp(mimetype, "audio/x-pn-realaudio") &&
+       strcasecmp(mimetype, "video/x-pn-realvideo") &&
+       strcasecmp(mimetype, "audio/x-mpegurl") &&
+       strcasecmp(mimetype, "audio/mpegurl") &&
+       strcasecmp(mimetype, "audio/m3u") &&
        strncasecmp(mimetype, "application/x-mpegurl", 21) && // HLS
        strncasecmp(mimetype, "application/vnd.apple.mpegurl", 29)) // HLS
       return 0;
@@ -103,6 +106,13 @@ static char * strip_spaces(char * str)
   return str;
   }
 
+static bgav_track_t * append_track(bgav_track_table_t * tt)
+  {
+  bgav_track_t * ret = bgav_track_table_append_track(tt);
+  gavl_dictionary_set_string(ret->metadata, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_LOCATION);
+  return ret;
+  }
+
 static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
   {
   char * buffer = NULL;
@@ -110,6 +120,13 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
   char * pos;
   bgav_track_table_t * tt;
   bgav_track_t * t = NULL;
+
+  int hls = 0;
+
+  /* hls data */
+  int width = 0;
+  int height = 0;
+  int bitrate = 0;
   
   tt = bgav_track_table_create(0);
   
@@ -129,20 +146,55 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
       {
       // m3u8
       // http://tools.ietf.org/html/draft-pantos-http-live-streaming-12#section-3.4.10
+
+      if(!strncasecmp(pos, "#EXT-X-MEDIA-SEQUENCE:", 22))
+        {
+        gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Detected HLS segment list");
+        
+        if(input->url)
+          {
+          char * hls_uri;
+
+          if(!t)
+            t = append_track(tt);
+
+          if(gavl_string_starts_with(input->url, "https://"))
+            hls_uri = gavl_sprintf("hlss://%s", input->url + 8);
+          else if(gavl_string_starts_with(input->url, "http://"))
+            hls_uri = gavl_sprintf("hls://%s", input->url + 7);
+          else
+            hls_uri = gavl_strdup(input->url);
+        
+          gavl_metadata_add_src(t->metadata, GAVL_META_SRC, NULL, hls_uri);
+          free(hls_uri);
+          return tt;
+          }
+        
+        }
+      
+      if(!strncasecmp(pos, "#EXT-X-VERSION:", 15))
+        {
+        hls = 1;
+        gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Detected HLS");
+        }
       
       if(!strncasecmp(pos, "#EXT-X-STREAM-INF:", 18)) 
         {
         int idx = 0;
         char ** attrs;
         if(!t)
-          t = bgav_track_table_append_track(tt);
+          t = append_track(tt);
 
         attrs = gavl_strbreak(pos + 18, ',');
 
         while(attrs[idx])
           {
           if(!strncasecmp(attrs[idx], "BANDWIDTH=", 10))
-            gavl_dictionary_set_string(t->metadata, GAVL_META_BITRATE, attrs[idx] + 10);
+            bitrate = atoi(attrs[idx] + 10);
+
+          else if(!strncasecmp(attrs[idx], "RESOLUTION=", 11))
+            sscanf(attrs[idx] + 11, "%dx%d", &width, &height);
+          
           idx++;
           }
         
@@ -160,7 +212,7 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
           {
           *comma = '\0';
           if(!t)
-            t = bgav_track_table_append_track(tt);
+            t = append_track(tt);
 
           duration = gavl_seconds_to_time(strtod(pos, NULL));
           if(duration > 0)
@@ -177,11 +229,50 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
       }
     else
       {
+      char * uri;
+      char * hls_uri;
+      gavl_dictionary_t * src;
       if(!t)
-        t = bgav_track_table_append_track(tt);
-      gavl_dictionary_set_string_nocopy(t->metadata, GAVL_META_REFURL, 
-                                        bgav_input_absolute_url(input, pos));
-      t = NULL;
+        t = append_track(tt);
+   
+      
+      uri = bgav_input_absolute_url(input, pos);
+
+      if(hls)
+        {
+        if(gavl_string_starts_with(uri, "https://"))
+          hls_uri = gavl_sprintf("hlss://%s", uri + 8);
+        else if(gavl_string_starts_with(uri, "http://"))
+          hls_uri = gavl_sprintf("hls://%s", uri + 7);
+        else
+          hls_uri = gavl_strdup(uri);
+        
+        src = gavl_metadata_add_src(t->metadata, GAVL_META_SRC, NULL, hls_uri);
+        free(hls_uri);
+        }
+      else
+        src = gavl_metadata_add_src(t->metadata, GAVL_META_SRC, NULL, uri);
+      
+      free(uri);
+
+      if(bitrate)
+        {
+        gavl_dictionary_set_int(src, GAVL_META_BITRATE, bitrate);
+        bitrate = 0;
+        }
+      if(width)
+        {
+        gavl_dictionary_set_int(src, GAVL_META_WIDTH, width);
+        width = 0;
+        }
+      if(height)
+        {
+        gavl_dictionary_set_int(src, GAVL_META_HEIGHT, height);
+        height = 0;
+        }
+      
+      if(!hls)
+        t = NULL;
       }
     }
 

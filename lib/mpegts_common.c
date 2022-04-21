@@ -186,7 +186,7 @@ void bgav_pmt_section_dump(pmt_section_t * pmts)
     {
     stream_type = get_stream_type(pmts->streams[i].type);
     
-    bgav_dprintf( "  Stream %d\n", i+1);
+    bgav_dprintf( "  Stream %d, present: %d\n", i+1, pmts->streams[i].present);
 
     if(stream_type)
       bgav_dprintf( "    type:       0x%02x (%s)\n",
@@ -416,8 +416,8 @@ int bgav_pmt_section_setup_track(pmt_section_t * pmts,
   
   for(i = 0; i < pmts->num_streams; i++)
     {
-    if(!pmts->streams[i].present)
-      continue;
+    //    if(!pmts->streams[i].present)
+    //      continue;
     
     st = get_stream_type(pmts->streams[i].type);
     

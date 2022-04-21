@@ -357,32 +357,11 @@ static void close_http(bgav_input_context_t * ctx)
   free(p);
   }
 
-static int finalize_http(bgav_input_context_t * ctx)
-  {
-  http_priv * p = ctx->priv;
-  if(bgav_hls_detect(ctx))
-    {
-    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN,
-             "Detected http live streaming");
-    p->hls = bgav_hls_create(ctx);
-    
-    if(!p->hls)
-      return 0;
-
-    /* hls seeking is not supported */
-    ctx->flags &= ~BGAV_INPUT_CAN_SEEK_BYTE;
-    
-    return 1;
-    }
-  else
-    return 1;
-  }
 
 const bgav_input_t bgav_input_http =
   {
     .name =          "http",
     .open =          open_http,
-    .finalize =      finalize_http,
     .read =          read_http,
     .seek_byte     = seek_byte_http,
 
