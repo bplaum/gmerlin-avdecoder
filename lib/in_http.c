@@ -43,7 +43,7 @@ typedef struct
 
   bgav_charset_converter_t * charset_cnv;
 
-  bgav_hls_t * hls;
+  //  bgav_hls_t * hls;
 
   int64_t bytes_read;
   
@@ -172,12 +172,14 @@ static int read_data(bgav_input_context_t* ctx,
                      uint8_t * buffer, int len)
   {
   http_priv * p = ctx->priv;
-  
+#if 0  
   if(p->hls)
     return bgav_hls_read(p->hls, buffer, len);
   else
     {
+#endif
     int ret = bgav_http_read(p->h, buffer, len);
+    //    fprintf(stderr, "
     p->bytes_read += ret;
 
     if((ret < len) && (ctx->total_bytes > 0) && (p->bytes_read < ctx->total_bytes))
@@ -192,7 +194,11 @@ static int read_data(bgav_input_context_t* ctx,
       }
     
     return ret;
+#if 0  
+
     }
+#endif
+
   }
 
 static void * memscan(void * mem_start, int size, void * key, int key_len)
@@ -350,10 +356,10 @@ static void close_http(bgav_input_context_t * ctx)
   
   if(p->charset_cnv)
     bgav_charset_converter_destroy(p->charset_cnv);
-
+#if 0
   if(p->hls)
     bgav_hls_close(p->hls);
-
+#endif
   free(p);
   }
 

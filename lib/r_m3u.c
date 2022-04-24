@@ -36,10 +36,11 @@ static int probe_m3u(bgav_input_context_t * input)
   char probe_buffer[PROBE_BYTES];
   char * pos;
   const char * mimetype = NULL;
+  const char * uri = NULL;
   int result = 0;
   
   /* Most likely, we get this via http, so we can check the mimetype */
-  if(gavl_dictionary_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, NULL) && mimetype)
+  if(gavl_dictionary_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, &uri) && mimetype)
     {
     if(strcasecmp(mimetype, "audio/x-pn-realaudio-plugin") &&
        strcasecmp(mimetype, "video/x-pn-realvideo-plugin") &&
@@ -49,7 +50,9 @@ static int probe_m3u(bgav_input_context_t * input)
        strcasecmp(mimetype, "audio/mpegurl") &&
        strcasecmp(mimetype, "audio/m3u") &&
        strncasecmp(mimetype, "application/x-mpegurl", 21) && // HLS
-       strncasecmp(mimetype, "application/vnd.apple.mpegurl", 29)) // HLS
+       strncasecmp(mimetype, "application/vnd.apple.mpegurl", 29) && // HLS
+       !gavl_string_ends_with(uri, ".m3u") &&
+       !gavl_string_ends_with(uri, ".m3u8"))
       return 0;
     }
   else if(input->filename)
@@ -127,6 +130,14 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
   int width = 0;
   int height = 0;
   int bitrate = 0;
+  char * audio = NULL;
+  char * subtitles = NULL;
+  
+  gavl_dictionary_t ext_x_media;
+  gavl_dictionary_t metadata;
+  
+  gavl_dictionary_init(&ext_x_media);
+  gavl_dictionary_init(&metadata);
   
   tt = bgav_track_table_create(0);
   
@@ -135,7 +146,7 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
     if(!bgav_input_read_line(input, &buffer, &buffer_alloc, 0, NULL))
       break;
     pos = strip_spaces(buffer);
-
+    
     if(!strcmp(pos, "--stop--"))
       break;
 
@@ -147,7 +158,7 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
       // m3u8
       // http://tools.ietf.org/html/draft-pantos-http-live-streaming-12#section-3.4.10
 
-      if(!strncasecmp(pos, "#EXT-X-MEDIA-SEQUENCE:", 22))
+      if(gavl_string_starts_with(pos, "#EXT-X-MEDIA-SEQUENCE:"))
         {
         gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Detected HLS segment list");
         
@@ -172,58 +183,159 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
         
         }
       
-      if(!strncasecmp(pos, "#EXT-X-VERSION:", 15))
+      if(gavl_string_starts_with(pos, "#EXT-X-VERSION:") ||
+         gavl_string_starts_with(pos, "#EXT-X-INDEPENDENT-SEGMENTS"))
         {
         hls = 1;
         gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Detected HLS");
         }
-      
-      if(!strncasecmp(pos, "#EXT-X-STREAM-INF:", 18)) 
+
+      if(gavl_string_starts_with(pos, "#EXT-X-MEDIA:"))
         {
-        int idx = 0;
-        char ** attrs;
+        char * pos1;
+        char * pos2;
+
+        char * type = NULL;
+        char * group_id = NULL;
+
+        
+        if((pos1 = strstr(pos, "TYPE=")))
+          {
+          pos1 += strlen("TYPE=");
+          
+          if((pos2 = strchr(pos1, ',')))
+            type = gavl_strndup(pos1, pos2);
+          else
+            type = gavl_strdup(pos1);
+          }
+
+        if((pos1 = strstr(pos, "GROUP-ID=\"")))
+          {
+          pos1 += strlen("GROUP-ID=\"");
+          
+          if((pos2 = strchr(pos1, '"')))
+            group_id = gavl_strndup(pos1, pos2);
+          else
+            group_id = gavl_strdup(pos1);
+          }
+
+        if(type && group_id)
+          {
+          gavl_value_t val;
+          gavl_array_t * arr;
+          gavl_dictionary_t * dict;
+          
+          gavl_value_init(&val);
+          
+          dict = gavl_dictionary_get_dictionary_create(&ext_x_media, type);
+          arr = gavl_dictionary_get_array_create(dict, group_id);
+          
+          dict = gavl_value_set_dictionary(&val);
+          gavl_array_splice_val_nocopy(arr, -1, 0, &val);
+          
+          if((pos1 = strstr(pos, "NAME=\"")))
+            {
+            pos1 += strlen("NAME=\"");
+            
+            if((pos2 = strchr(pos1, '"')))
+              gavl_dictionary_set_string_nocopy(dict, GAVL_META_LABEL, gavl_strndup(pos1, pos2));
+            }
+
+          if((pos1 = strstr(pos, "URI=\"")))
+            {
+            pos1 += strlen("URI=\"");
+            
+            if((pos2 = strchr(pos1, '"')))
+              gavl_dictionary_set_string_nocopy(dict, GAVL_META_URI, gavl_strndup(pos1, pos2));
+            }
+
+          if((pos1 = strstr(pos, "LANGUAGE=\"")))
+            {
+            pos1 += strlen("LANGUAGE=\"");
+            
+            if((pos2 = strchr(pos1, '"')))
+              gavl_dictionary_set_string_nocopy(dict, GAVL_META_LANGUAGE, gavl_strndup(pos1, pos2));
+            }
+          
+          }
+        
+        
+        }
+      
+      
+      
+      if(gavl_string_starts_with(pos, "#EXT-X-STREAM-INF:")) 
+        {
+        char * pos1, * pos2;
+        
+        //        int idx = 0;
+
+        fprintf(stderr, "Got #EXT-X-STREAM-INF\n");
+        gavl_dictionary_dump(&ext_x_media, 2);
+        
+        
         if(!t)
           t = append_track(tt);
 
-        attrs = gavl_strbreak(pos + 18, ',');
+        if((pos1 = strstr(pos, "BANDWIDTH=")))
+          bitrate = atoi(pos1 + strlen("BANDWIDTH="));
 
-        while(attrs[idx])
+        if((pos1 = strstr(pos, "RESOLUTION=")))
+          sscanf(pos1 + strlen("RESOLUTION="), "%dx%d", &width, &height);
+
+        if((pos1 = strstr(pos, "AUDIO=\"")))
           {
-          if(!strncasecmp(attrs[idx], "BANDWIDTH=", 10))
-            bitrate = atoi(attrs[idx] + 10);
+          pos1 += strlen("AUDIO=\"");
+          pos2 = strchr(pos1, '"');
 
-          else if(!strncasecmp(attrs[idx], "RESOLUTION=", 11))
-            sscanf(attrs[idx] + 11, "%dx%d", &width, &height);
+          if(pos2)
+            audio = gavl_strndup(pos1, pos2);
           
-          idx++;
+          }
+        if((pos1 = strstr(pos, "SUBTITLES=\"")))
+          {
+          pos1 += strlen("SUBTITLES=\"");
+          pos2 = strchr(pos1, '"');
+
+          if(pos2)
+            subtitles = gavl_strndup(pos1, pos2);
           }
         
-        gavl_strbreak_free(attrs);
         }
       // Extended m3u
-      else if(!strncasecmp(pos, "#EXTINF:", 8))
+      else if(gavl_string_starts_with(pos, "#EXTINF:"))
         {
         char * comma;
         gavl_time_t duration;
-
+        const char * pos1, *pos2;
+        
         comma = strchr(pos, ',');
 
         if(comma)
           {
           *comma = '\0';
-          if(!t)
-            t = append_track(tt);
-
+          
           duration = gavl_seconds_to_time(strtod(pos, NULL));
           if(duration > 0)
-            gavl_dictionary_set_long(t->metadata, GAVL_META_APPROX_DURATION, duration);
+            gavl_dictionary_set_long(&metadata, GAVL_META_APPROX_DURATION, duration);
           comma++;
 
           while(isspace(*comma) && (*comma != '\0'))
             comma++;
 
           if(*comma != '\0')
-            gavl_dictionary_set_string(t->metadata, GAVL_META_LABEL, comma);
+            gavl_dictionary_set_string(&metadata, GAVL_META_LABEL, comma);
+
+          if((pos1 = strstr(pos, "tvg-logo=\"")))
+            {
+            pos1 += strlen("tvg-logo=\"");
+
+            if((pos2 = strchr(pos1, '"')))
+              {
+              gavl_dictionary_set_string_nocopy(&metadata, GAVL_META_LOGO_URL, gavl_strndup(pos1, pos2));
+              }
+            }
+
           }
         }
       }
@@ -231,10 +343,12 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
       {
       char * uri;
       char * hls_uri;
-      gavl_dictionary_t * src;
-      if(!t)
-        t = append_track(tt);
-   
+      gavl_dictionary_t * src = NULL;
+      const gavl_array_t * arr;
+      const gavl_dictionary_t * dict;
+
+      const char * stream_uri;
+      
       
       uri = bgav_input_absolute_url(input, pos);
 
@@ -246,36 +360,144 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
           hls_uri = gavl_sprintf("hls://%s", uri + 7);
         else
           hls_uri = gavl_strdup(uri);
-        
-        src = gavl_metadata_add_src(t->metadata, GAVL_META_SRC, NULL, hls_uri);
+
+        /* Check for separate streams */
+        if(audio && (dict = gavl_dictionary_get_dictionary_nc(&ext_x_media, "AUDIO")) &&
+           (arr = gavl_dictionary_get_array(dict, audio)) &&
+           (arr->num_entries > 0) &&
+           (dict = gavl_value_get_dictionary(&arr->entries[0])) &&
+           (stream_uri = gavl_dictionary_get_string(dict, GAVL_META_URI)))
+          {
+          int i;
+          gavl_dictionary_t * edl;
+          gavl_dictionary_t * edl_track;
+          gavl_dictionary_t * edl_stream;
+          gavl_dictionary_t * edl_segment;
+          const char * var;
+          const gavl_dictionary_t * s;
+          
+          fprintf(stderr, "Detected separate streams\n");
+
+          edl = gavl_edl_create(&tt->info);
+
+          edl_track = gavl_append_track(edl, NULL);
+          edl_stream = gavl_track_append_video_stream(edl_track);
+          edl_segment = gavl_edl_add_segment(edl_stream);
+          gavl_edl_segment_set_url(edl_segment, hls_uri);
+          gavl_edl_segment_set(edl_segment, 0, 0, -1, 0, 0, -1);
+          
+          for(i = 0; i < arr->num_entries; i++)
+            {
+            if(!(s = gavl_value_get_dictionary(&arr->entries[i])))
+              continue;
+            
+            edl_stream = gavl_track_append_audio_stream(edl_track);
+            edl_segment = gavl_edl_add_segment(edl_stream);
+
+            var = gavl_dictionary_get_string(s, GAVL_META_URI);
+            
+            if(gavl_string_starts_with(var, "https://"))
+              {
+              char * tmp_string;
+              tmp_string = gavl_sprintf("hlss://%s", var + 8);
+              gavl_edl_segment_set_url(edl_segment, tmp_string);
+              free(tmp_string);
+              }
+            else if(gavl_string_starts_with(var, "http://"))
+              {
+              char * tmp_string;
+              tmp_string = gavl_sprintf("hls://%s", var + 8);
+              gavl_edl_segment_set_url(edl_segment, tmp_string);
+              free(tmp_string);
+              }
+            else
+              gavl_edl_segment_set_url(edl_segment, var);
+            gavl_edl_segment_set(edl_segment, 0, 0, -1, 0, 0, -1);
+            }
+
+          if(subtitles && (dict = gavl_dictionary_get_dictionary_nc(&ext_x_media, "SUBTITLES")) &&
+             (arr = gavl_dictionary_get_array(dict, subtitles)))
+            {
+            
+            for(i = 0; i < arr->num_entries; i++)
+              {
+              if(!(s = gavl_value_get_dictionary(&arr->entries[i])))
+                continue;
+            
+              edl_stream = gavl_track_append_text_stream(edl_track);
+              edl_segment = gavl_edl_add_segment(edl_stream);
+
+              var = gavl_dictionary_get_string(s, GAVL_META_URI);
+              
+              if(gavl_string_starts_with(var, "https://"))
+                {
+                char * tmp_string;
+                tmp_string = gavl_sprintf("hlss://%s", var + 8);
+                gavl_edl_segment_set_url(edl_segment, tmp_string);
+                free(tmp_string);
+                }
+              else if(gavl_string_starts_with(var, "http://"))
+                {
+                char * tmp_string;
+                tmp_string = gavl_sprintf("hls://%s", var + 8);
+                gavl_edl_segment_set_url(edl_segment, tmp_string);
+                free(tmp_string);
+                }
+              else
+                gavl_edl_segment_set_url(edl_segment, var);
+              
+              gavl_edl_segment_set(edl_segment, 0, 0, -1, 0, 0, -1);
+              }
+            }
+          t = NULL;
+          }
+        else
+          {
+          if(!t)
+            t = append_track(tt);
+
+          gavl_dictionary_merge2(t->metadata, &metadata);
+          gavl_dictionary_reset(&metadata);
+          
+          src = gavl_metadata_add_src(t->metadata, GAVL_META_SRC, NULL, hls_uri);
+          }
         free(hls_uri);
         }
       else
+        {
+        if(!t)
+          t = append_track(tt);
+        
         src = gavl_metadata_add_src(t->metadata, GAVL_META_SRC, NULL, uri);
-      
+        }
       free(uri);
 
-      if(bitrate)
+      if(src)
         {
-        gavl_dictionary_set_int(src, GAVL_META_BITRATE, bitrate);
-        bitrate = 0;
-        }
-      if(width)
-        {
-        gavl_dictionary_set_int(src, GAVL_META_WIDTH, width);
-        width = 0;
-        }
-      if(height)
-        {
-        gavl_dictionary_set_int(src, GAVL_META_HEIGHT, height);
-        height = 0;
+        if(bitrate)
+          {
+          gavl_dictionary_set_int(src, GAVL_META_BITRATE, bitrate);
+          bitrate = 0;
+          }
+        if(width)
+          {
+          gavl_dictionary_set_int(src, GAVL_META_WIDTH, width);
+          width = 0;
+          }
+        if(height)
+          {
+          gavl_dictionary_set_int(src, GAVL_META_HEIGHT, height);
+          height = 0;
+          }
+
         }
       
       if(!hls)
         t = NULL;
       }
     }
-
+  gavl_dictionary_free(&ext_x_media);
+  
   if(buffer)
     free(buffer);
   return tt;

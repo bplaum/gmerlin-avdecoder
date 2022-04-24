@@ -1188,7 +1188,12 @@ char * bgav_input_absolute_url(bgav_input_context_t * ctx, const char * url)
     else                       // Relative path
       {
       pos1 = strrchr(ctx->filename, '/');
-      base = gavl_strndup(ctx->filename, pos1);
+
+      if(pos1)
+        base = gavl_strndup(ctx->filename, pos1);
+      else
+        base = gavl_strdup(".");
+      
       ret = bgav_sprintf("%s/%s", base, url);
       free(base);
       return ret;

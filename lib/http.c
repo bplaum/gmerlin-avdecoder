@@ -483,7 +483,7 @@ gavl_dictionary_t * bgav_http_get_header(bgav_http_t * h)
 static int next_chunk(bgav_http_t * h)
   {
   uint8_t c;
-  char buf[16];
+  char buf[17];
   int buf_len = 0;
 
   //  fprintf(stderr, "Next chunk\n");
@@ -508,6 +508,7 @@ static int next_chunk(bgav_http_t * h)
   
   if(gavf_io_read_data(h->io, &c, 1) < 1)
     {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Reading first byte of chunk length failed");
     h->chunk_error = 1;
     return 0;
     }
@@ -518,10 +519,11 @@ static int next_chunk(bgav_http_t * h)
   buf_len = 1;
 
   /* Allow max 4 GB chunks */
-  while(buf_len < 8)
+  while(buf_len < 16)
     {
     if(gavf_io_read_data(h->io, &c, 1) < 1)
       {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Reading chunk length failed");
       h->chunk_error = 1;
       return 0;
       }
@@ -535,13 +537,15 @@ static int next_chunk(bgav_http_t * h)
       }
     }
 
+  buf[buf_len] = '\0';
+
   if(c != '\n')
     {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Linefeed missing after chunk length, c: %c, buf: %s", c, buf);
     h->chunk_error = 1;
     return 0;
     }
 
-  buf[buf_len] = '\0';
 
   h->chunk_size = strtoul(buf, NULL, 16);
   h->chunk_pos = 0;
