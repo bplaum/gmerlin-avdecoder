@@ -609,10 +609,9 @@ static int next_packet_noninterleaved(bgav_demuxer_context_t * ctx)
 
 int bgav_demuxer_next_packet(bgav_demuxer_context_t * demuxer)
   {
-  bgav_stream_t * s;
-  
   int ret = 0, i;
 
+#if 0  
   if((demuxer->b->flags & (BGAV_FLAG_METADATA_CHANGED|BGAV_FLAG_IS_RUNNING)) ==
      (BGAV_FLAG_METADATA_CHANGED|BGAV_FLAG_IS_RUNNING))
     {
@@ -637,8 +636,16 @@ int bgav_demuxer_next_packet(bgav_demuxer_context_t * demuxer)
     
     demuxer->b->flags &= ~BGAV_FLAG_METADATA_CHANGED;
     }
-     
-     
+#endif
+  /* Send state */
+  if((demuxer->b->flags & (BGAV_FLAG_STATE_SENT|BGAV_FLAG_IS_RUNNING)) ==
+     (BGAV_FLAG_IS_RUNNING))
+    {
+    /* Broadcast state */
+    bgav_send_state(demuxer->b);
+    demuxer->b->flags |= BGAV_FLAG_STATE_SENT;
+    }
+  
   //   fprintf(stderr, "bgav_demuxer_next_packet\n");
   switch(demuxer->demux_mode)
     {

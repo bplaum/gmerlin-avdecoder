@@ -104,6 +104,12 @@ do_connect(bgav_http_t * ret, const char * host, int port, const bgav_options_t 
     ret->io = gavf_io_create_tls_client(fd, host, GAVF_IO_SOCKET_DO_CLOSE);
   else
     ret->io = gavf_io_create_socket(fd, ret->opt->read_timeout, GAVF_IO_SOCKET_DO_CLOSE);
+
+  if(!ret->io)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Could not create I/O chanel");
+    goto fail;
+    }
   
   gavl_dictionary_init(&header);
   gavl_dictionary_copy(&header, request_header);
@@ -353,14 +359,25 @@ static bgav_http_t * http_open(bgav_http_t * ret,
       free(*redirect_url);
       *redirect_url = NULL;
       }
+    
     location = gavl_dictionary_get_string(&ret->header, "Location");
-
-    if(location)
-      *redirect_url = gavl_strdup(location);
-    else
+    
+    if(!location)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
                "Got redirection but no URL");
+      }
+    else
+      {
+      if(*location == '/')
+        {
+        if(default_port)
+          *redirect_url = gavl_sprintf("%s://%s%s", protocol, host, location);
+        else
+          *redirect_url = gavl_sprintf("%s://%s:%d%s", protocol, host, port, location);
+        }
+      else
+        *redirect_url = gavl_strdup(location);
       }
     
     if(host)

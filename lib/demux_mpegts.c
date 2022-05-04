@@ -779,8 +779,8 @@ static int init_psi(bgav_demuxer_context_t * ctx,
       priv->programs[program].initialized = 1;
       init_streams_priv(&priv->programs[program],
                         ctx->tt->tracks[program]);
-      fprintf(stderr, "Got streams from PMT:\n");
-      gavl_dictionary_dump(ctx->tt->tracks[program]->info, 2);
+      //      fprintf(stderr, "Got streams from PMT:\n");
+      //      gavl_dictionary_dump(ctx->tt->tracks[program]->info, 2);
 
 #if 0
       /* Get the AAUX and VAUX PIDs */

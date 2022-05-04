@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include <avdec_private.h>
+#include <gavl/state.h>
 
 /* Configuration stuff */
 
@@ -439,56 +440,65 @@ bgav_set_msg_callback_by_id(bgav_t * bgav,
   
   }
 
-void bgav_metadata_changed(bgav_t * b,
-                           const gavl_dictionary_t * new_metadata,
-                           gavl_time_t time)
+static void state_changed(bgav_t * b,
+                          const char * var,
+                          gavl_value_t * val)
   {
   bgav_stream_t * s;
-  gavl_msg_t msg;
 
-  /* Merge the metadata */
-  if(b->tt && b->tt->cur)
-    {
-    gavl_dictionary_t tmp;
-    
-    //    fprintf(stderr, "Metadata changed %p %p\n", m, new_metadata);
-    gavl_dictionary_init(&tmp);
-    gavl_dictionary_merge(&tmp, new_metadata, b->tt->cur->metadata);
-    
-    gavl_dictionary_free(b->tt->cur->metadata);
-    gavl_dictionary_move(b->tt->cur->metadata, &tmp);
+  /* Store locally */
+  gavl_dictionary_set(&b->state, var, val);
 
-    if(!(b->flags && BGAV_FLAG_IS_RUNNING))
-      b->flags |= BGAV_FLAG_METADATA_CHANGED;
-    
-    }
+  //  fprintf(stderr, "state changed 1\n");
   
-  if(!(s = bgav_track_get_msg_stream_by_id(b->tt->cur, GAVL_META_STREAM_ID_MSG_PROGRAM)) ||
-     !s->data.msg.msg_callback)
-    {
-#if 0
-    if(!s)
-      {
-      fprintf(stderr, "Got no message stream %d\n", b->tt->cur->num_streams);
-      gavl_dictionary_dump(b->tt->cur->info, 2);
-      }
-    
-    fprintf(stderr, "Sending no track change message %p %p %d\n", s,
-            s ? s->data.msg.msg_callback : NULL, s ? s->action : 0);
-#endif
+  /* End here if we are not running yet */
+  if(!(b->flags && BGAV_FLAG_IS_RUNNING))
     return;
+
+  if((s = bgav_track_get_msg_stream_by_id(b->tt->cur, GAVL_META_STREAM_ID_MSG_PROGRAM)) &&
+     s->data.msg.msg_callback)
+    {
+    gavl_msg_t msg;
+
+    gavl_msg_init(&msg);
+    gavl_msg_set_state_nocopy(&msg, GAVL_MSG_STATE_CHANGED, 1, GAVL_STATE_CTX_SRC, var, val);
+    s->data.msg.msg_callback(s->data.msg.msg_callback_data, &msg);
+    gavl_msg_free(&msg);
     }
   
-  gavl_msg_init(&msg);
-  gavl_msg_set_id_ns(&msg, GAVL_MSG_SRC_METADATA_CHANGED, GAVL_MSG_NS_SRC);
-  gavl_dictionary_set_long(&msg.header, GAVL_MSG_HEADER_TIMESTAMP, time);
+  }
 
-  gavl_msg_set_arg_dictionary(&msg, 0, new_metadata);
+void bgav_metadata_changed(bgav_t * b,
+                           const gavl_dictionary_t * new_metadata)
+  {
+  gavl_value_t val;
+  gavl_dictionary_t * dict;
+  gavl_value_init(&val);
 
-  //  fprintf(stderr, "Sending track change message\n");
-  //  gavl_msg_dump(&msg, 2);
+  dict = gavl_value_set_dictionary(&val);  
+  gavl_dictionary_copy(dict, new_metadata);
+
+  state_changed(b, GAVL_STATE_SRC_METADATA, &val);
+  }
+
+void bgav_seek_window_changed(bgav_t * b,
+                              gavl_time_t start, gavl_time_t end)
+  {
+  gavl_value_t val;
+  gavl_dictionary_t * dict;
+  gavl_value_init(&val);
+
+  dict = gavl_value_set_dictionary(&val);  
+  gavl_dictionary_set_long(dict, GAVL_STATE_SRC_SEEK_WINDOW_START, start);
+  gavl_dictionary_set_long(dict, GAVL_STATE_SRC_SEEK_WINDOW_END, end);
+  state_changed(b, GAVL_STATE_SRC_SEEK_WINDOW, &val);
   
+  }
 
-  s->data.msg.msg_callback(s->data.msg.msg_callback_data, &msg);
-  gavl_msg_free(&msg);
+void bgav_start_time_absolute_changed(bgav_t * b, gavl_time_t off)
+  {
+  gavl_value_t val;
+  gavl_value_init(&val);
+  gavl_value_set_long(&val, off);
+  state_changed(b, GAVL_STATE_SRC_START_TIME_ABSOLUTE, &val);
   }

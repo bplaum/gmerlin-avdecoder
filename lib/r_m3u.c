@@ -270,12 +270,12 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
         
         //        int idx = 0;
 
-        fprintf(stderr, "Got #EXT-X-STREAM-INF\n");
-        gavl_dictionary_dump(&ext_x_media, 2);
+        //        fprintf(stderr, "Got #EXT-X-STREAM-INF\n");
+        //        gavl_dictionary_dump(&ext_x_media, 2);
         
         
-        if(!t)
-          t = append_track(tt);
+        //        if(!t)
+        //          t = append_track(tt);
 
         if((pos1 = strstr(pos, "BANDWIDTH=")))
           bitrate = atoi(pos1 + strlen("BANDWIDTH="));
@@ -376,11 +376,15 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
           const char * var;
           const gavl_dictionary_t * s;
           
-          fprintf(stderr, "Detected separate streams\n");
+          //          fprintf(stderr, "Detected separate streams\n");
 
           edl = gavl_edl_create(&tt->info);
 
           edl_track = gavl_append_track(edl, NULL);
+
+          gavl_dictionary_merge2(gavl_track_get_metadata_nc(edl_track), &metadata);
+          gavl_dictionary_reset(&metadata);
+          
           edl_stream = gavl_track_append_video_stream(edl_track);
           edl_segment = gavl_edl_add_segment(edl_stream);
           gavl_edl_segment_set_url(edl_segment, hls_uri);
@@ -467,7 +471,9 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
         {
         if(!t)
           t = append_track(tt);
-        
+
+        gavl_dictionary_merge2(t->metadata, &metadata);
+        gavl_dictionary_reset(&metadata);
         src = gavl_metadata_add_src(t->metadata, GAVL_META_SRC, NULL, uri);
         }
       free(uri);

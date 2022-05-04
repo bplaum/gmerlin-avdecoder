@@ -315,7 +315,7 @@ static int load_stream_url(bgav_hls_t * h, int idx)
     memcpy(h->ctx->tt->cur->metadata, &m, sizeof(m));
     gavl_dictionary_init(&m);
 
-    bgav_metadata_changed(h->ctx->b, h->ctx->tt->cur->metadata, GAVL_TIME_UNDEFINED);
+    bgav_metadata_changed(h->ctx->b, h->ctx->tt->cur->metadata);
     }
   gavl_dictionary_free(&m);
   return 1;

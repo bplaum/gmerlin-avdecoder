@@ -1136,6 +1136,7 @@ int bgav_input_reopen(bgav_input_context_t * ctx)
 
     ctx->input = input;
     ctx->opt = opt;
+    ctx->b = b;
     
     if(!ctx->input->open(ctx, url, &redir))
       {
@@ -1149,7 +1150,6 @@ int bgav_input_reopen(bgav_input_context_t * ctx)
     ret = 1;
 
     ctx->tt = tt;
-    ctx->b = b;
     }
   fail:
   if(url)
@@ -1214,7 +1214,7 @@ char * bgav_input_absolute_url(bgav_input_context_t * ctx, const char * url)
     if(!pos2)
       pos2 = pos1 + strlen(pos1);
     
-    base = gavl_strndup(pos1, pos2);
+    base = gavl_strndup(ctx->url, pos2);
     ret = bgav_sprintf("%s/%s", base, url);
     free(base);
     }

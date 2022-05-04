@@ -1115,7 +1115,7 @@ static void check_eit(bgav_input_context_t* ctx)
           }
         
         gavl_dictionary_set_string(m, GAVL_META_DATE, time_string);
-        bgav_metadata_changed(ctx->b, m, GAVL_TIME_UNDEFINED);
+        bgav_metadata_changed(ctx->b, m);
         
         pos = end_pos;
         if(pos >= descriptors_end)
@@ -1131,7 +1131,7 @@ static void check_eit(bgav_input_context_t* ctx)
 
   if(priv->metadata_changed)
     {
-    bgav_metadata_changed(ctx->b, ctx->tt->cur->metadata, GAVL_TIME_UNDEFINED);
+    bgav_metadata_changed(ctx->b, ctx->tt->cur->metadata);
     priv->metadata_changed = 0;
     }
   }

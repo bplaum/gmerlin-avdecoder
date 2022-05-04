@@ -1516,7 +1516,7 @@ int bgav_is_redirector(bgav_t * bgav);
 
 #define BGAV_FLAG_EOF              (1<<0)
 #define BGAV_FLAG_IS_RUNNING       (1<<1)
-#define BGAV_FLAG_METADATA_CHANGED (1<<2)
+#define BGAV_FLAG_STATE_SENT       (1<<2)
 
 struct bgav_s
   {
@@ -1536,6 +1536,8 @@ struct bgav_s
   /* Set by the seek function */
   
   int flags;
+
+  gavl_dictionary_t state;
   };
 
 /* bgav.c */
@@ -1544,8 +1546,15 @@ void bgav_stop(bgav_t * b);
 int bgav_init(bgav_t * b);
 
 void bgav_metadata_changed(bgav_t * b,
-                           const gavl_dictionary_t * new_metadata,
-                           gavl_time_t time);
+                           const gavl_dictionary_t * new_metadata);
+
+void bgav_seek_window_changed(bgav_t * b,
+                              gavl_time_t start, gavl_time_t end);
+
+// void bgav_abs_time_offset_changed(bgav_t * b, gavl_time_t off);
+void bgav_start_time_absolute_changed(bgav_t * b, gavl_time_t off);
+
+void bgav_send_state(bgav_t * b);
 
 /* Bytestream utilities */
 

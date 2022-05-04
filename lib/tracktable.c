@@ -34,6 +34,9 @@ bgav_track_table_t * bgav_track_table_create(int num_tracks)
   gavl_dictionary_t * m;
   
   gavl_dictionary_t track;
+
+  fprintf(stderr, "bgav_track_table_create\n");
+
   gavl_dictionary_init(&track);
 
   
@@ -127,6 +130,8 @@ void bgav_track_table_unref(bgav_track_table_t * t)
 void bgav_track_table_create_message_streams(bgav_track_table_t * t, const bgav_options_t * opt)
   {
   int i;
+  fprintf(stderr, "bgav_track_table_create_message_streams\n");
+
   for(i = 0; i < t->num_tracks; i++)
     bgav_track_add_msg_stream(t->tracks[i], opt, GAVL_META_STREAM_ID_MSG_PROGRAM);
   }

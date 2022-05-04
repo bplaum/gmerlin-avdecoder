@@ -1646,7 +1646,6 @@ static void metadata_changed(bgav_demuxer_context_t * ctx, gavl_time_t time)
   ogg_t * priv = ctx->priv;
 
   get_metadata(ctx->tt->cur);
-  gavl_dictionary_merge2(ctx->tt->cur->metadata, &ctx->input->m);
 
   if(!gavl_dictionary_get_string(ctx->tt->cur->metadata, GAVL_META_LABEL))
     {
@@ -1654,7 +1653,7 @@ static void metadata_changed(bgav_demuxer_context_t * ctx, gavl_time_t time)
     if(name)
       gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata, GAVL_META_LABEL, name);
     }
-  bgav_metadata_changed(ctx->b, ctx->tt->cur->metadata, time);
+  bgav_metadata_changed(ctx->b, ctx->tt->cur->metadata);
   priv->metadata_changed = 0;
   }
 

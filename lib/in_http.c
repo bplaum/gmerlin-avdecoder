@@ -223,8 +223,6 @@ static int read_shoutcast_metadata(bgav_input_context_t* ctx)
   uint8_t icy_len;
   int meta_bytes;
   http_priv * priv;
-  int bitrate;
-  gavl_time_t timestamp = GAVL_TIME_SCALE;
   
   priv = ctx->priv;
     
@@ -274,12 +272,8 @@ static int read_shoutcast_metadata(bgav_input_context_t* ctx)
         
 
 
-        if(!gavl_dictionary_get_int(&ctx->m, GAVL_META_BITRATE, &bitrate))
-          timestamp = GAVL_TIME_UNDEFINED;
-        else
-          timestamp = (priv->total_bytes_read * 8 * GAVL_TIME_SCALE) / bitrate;
         
-        bgav_metadata_changed(ctx->b, ctx->tt->cur->metadata, timestamp);
+        bgav_metadata_changed(ctx->b, ctx->tt->cur->metadata);
 
 #if 0        
         fprintf(stderr, "Got ICY metadata: %s, %f\n",

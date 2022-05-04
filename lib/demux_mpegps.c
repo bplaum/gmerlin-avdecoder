@@ -1141,7 +1141,7 @@ static int open_mpegps(bgav_demuxer_context_t * ctx)
   
   if(((ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE) && priv->have_pts) ||
      (ctx->input->input->seek_sector) ||
-     (ctx->input->input->seek_time))
+     (ctx->input->flags & BGAV_INPUT_CAN_SEEK_TIME))
     ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
   
   if(!ctx->input->input->seek_time)

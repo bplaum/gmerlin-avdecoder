@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <gavl/state.h>
 
 #define LOG_DOMAIN "core"
 
@@ -329,6 +330,8 @@ void bgav_close(bgav_t * b)
 
   bgav_options_free(&b->opt);
 
+  gavl_dictionary_free(&b->state);
+  
   free(b);
   }
 
@@ -517,22 +520,6 @@ int bgav_select_track(bgav_t * b, int track)
       /* Reset input. This will be done by closing and reopening the input */
       gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Reopening input due to track reset");
 
-#if 0
-      if(data_start < 0)
-        {
-        if(b->tt)
-          {
-          bgav_track_table_unref(b->tt);
-          b->tt = NULL;
-          }
-        if(b->demuxer && b->demuxer->tt)
-          {
-          bgav_track_table_unref(b->demuxer->tt);
-          b->demuxer->tt = NULL;
-          }
-        bgav_demuxer_stop(b->demuxer);
-        }
-#endif
       
       if(!bgav_input_reopen(b->input))
         return 0;
@@ -541,19 +528,6 @@ int bgav_select_track(bgav_t * b, int track)
         {
         bgav_input_skip(b->input, data_start);
         }
-#if 0
-      else
-        {
-        bgav_demuxer_start(b->demuxer);
-        
-        if(b->demuxer->tt)
-          {
-          b->tt = b->demuxer->tt;
-          bgav_track_table_ref(b->tt);
-          }
-        }
-      bgav_track_table_create_message_streams(b->tt, &b->opt);
-#endif
       }
     }
   
@@ -646,4 +620,35 @@ int bgav_set_stream_action_all(bgav_t * bgav, int idx, bgav_stream_action_t acti
 
   bgav->tt->cur->streams[idx].action = action;
   return 1;
+  }
+
+/* State */
+
+static void state_foreach_func(void * priv, const char * var,
+                               const gavl_value_t * val)
+  {
+  gavl_msg_t msg;
+  bgav_stream_t * s = priv;
+  
+  gavl_msg_init(&msg);
+
+  fprintf(stderr, "state_foreach_func %s\n", var);
+  gavl_value_dump(val, 2);
+  
+  gavl_msg_set_state(&msg, GAVL_MSG_STATE_CHANGED, 1, GAVL_STATE_CTX_SRC, var, val);
+  
+  s->data.msg.msg_callback(s->data.msg.msg_callback_data, &msg);
+  gavl_msg_free(&msg);
+
+  }
+
+void bgav_send_state(bgav_t * b)
+  {
+  bgav_stream_t * s;
+  if(!b->tt || !(s = bgav_track_find_stream_all(b->tt->cur, GAVL_META_STREAM_ID_MSG_PROGRAM)) ||
+     !s->data.msg.msg_callback)
+    return;
+  
+  gavl_dictionary_foreach(&b->state, state_foreach_func, s);
+  
   }
