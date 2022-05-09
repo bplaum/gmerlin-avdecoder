@@ -22,6 +22,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 
 #include <avdec_private.h>
@@ -34,36 +35,33 @@
 #define SEGMENT_START_TIME "start"
 #define SEGMENT_END_TIME "end"
 
+#define SEGMENT_CIPHER         "cipher"
+#define SEGMENT_CIPHER_KEY_URI "cipherkeyuri"
+#define SEGMENT_CIPHER_IV      "cipheriv"
+
 typedef struct
   {
   gavf_io_t * m3u_io;
   gavf_io_t * ts_io;
-
+  gavf_io_t * cipher_io;
+  gavf_io_t * cipher_key_io;
+  
+  /* ts_io or cipher_io */
+  gavf_io_t * io;
+  
   gavl_array_t segments;
   
-  gavl_socket_address_t * m3u_addr;
-  gavl_dictionary_t m3u_req;
   gavl_buffer_t m3u_buf;
   
-  gavl_socket_address_t * ts_addr;
-  gavl_dictionary_t ts_req;
-  int use_tls_m3u;
-  int use_tls_ts;
-
-  char * host;
-
   int64_t seq_start; // First sequence number of the array
   int64_t seq_cur;   // Current sequence number
   
-  int64_t ts_len; /* Content length */
-  int64_t ts_pos; /* Bytes read so far from the file or chunk */
-  int ts_chunked;
-  int ts_keepalive;
-
   gavl_time_t window_start;
   gavl_time_t window_end;
   
   gavl_time_t abs_offset;
+
+  gavl_buffer_t cipher_key;
   
   } hls_priv_t;
 
@@ -71,7 +69,6 @@ static int load_m3u8(bgav_input_context_t * ctx)
   {
   int ret = 0;
   hls_priv_t * p = ctx->priv;
-  gavl_dictionary_t res;
   char ** lines;
   int idx;
   int64_t new_seq = -1;
@@ -81,62 +78,25 @@ static int load_m3u8(bgav_input_context_t * ctx)
   gavl_time_t segment_start_time = GAVL_TIME_UNDEFINED;
   gavl_time_t segment_duration = 0;
   int window_changed = 0;
+
+  gavl_dictionary_t cipher_params;
   
   p->window_start = GAVL_TIME_UNDEFINED;
   p->window_end = GAVL_TIME_UNDEFINED;
-    
-  gavl_dictionary_init(&res);
-  
-  if(p->m3u_io)
-    {
-    if(!gavl_http_request_write(p->m3u_io, &p->m3u_req))
-      {
-      gavf_io_destroy(p->m3u_io);
-      p->m3u_io = NULL; // re-open
-      }
-    }
-  
-  if(!p->m3u_io)
-    {
-    int fd;
-    if((fd = gavl_socket_connect_inet(p->m3u_addr, 1000)) < 0)
-      goto fail;
 
-    if(p->use_tls_m3u)
-      p->m3u_io = gavf_io_create_tls_client(fd, p->host, GAVF_IO_SOCKET_DO_CLOSE);
-    else
-      p->m3u_io = gavf_io_create_socket(fd, 1000, GAVF_IO_SOCKET_DO_CLOSE);
-    
-    if(!gavl_http_request_write(p->m3u_io, &p->m3u_req))
-      {
-      gavf_io_destroy(p->m3u_io);
-      p->m3u_io = NULL; // re-open
-      goto fail;
-      }
-    }
+  gavl_dictionary_init(&cipher_params);
   
-  if(!gavl_http_response_read(p->m3u_io, &res))
-    {
+  if(!gavl_http_client_open_full(p->m3u_io, "GET", ctx->url, 
+                                 NULL, NULL))
     goto fail;
-    }
-
-  if(gavl_http_response_get_status_int(&res) != 200)
-    {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Cannot load m3u, got code: %d %s",
-             gavl_http_response_get_status_int(&res),
-             gavl_http_response_get_status_str(&res));
-    goto fail;
-    }
   
   //  gavl_dprintf("Got response\n");
   //  gavl_dictionary_dump(&res, 2);
   
   gavl_buffer_reset(&p->m3u_buf);
   
-  if(!gavl_http_read_body(p->m3u_io, &res, &p->m3u_buf))
-    {
+  if(!gavl_http_client_read_body(p->m3u_io, &p->m3u_buf))
     goto fail;
-    }
   
   lines = gavl_strbreak((char*)p->m3u_buf.buf, '\n');
 
@@ -176,9 +136,55 @@ static int load_m3u8(bgav_input_context_t * ctx)
   
   gavl_value_init(&val);
   dict = gavl_value_set_dictionary(&val);
+
   
   while(lines[idx])
     {
+    if(gavl_string_starts_with(lines[idx], "#EXT-X-KEY:"))
+      {
+      const char * start;
+      const char * end;
+
+      gavl_dictionary_reset(&cipher_params);
+      
+      // #EXT-X-KEY:METHOD=AES-128,URI="https://livestreamdirect-three.mediaworks.nz/K110346488-2000.key",IV=0x0000000000000000000000000005497B
+
+      if((start = strstr(lines[idx], "METHOD=")))
+        {
+        start += strlen("METHOD=");
+
+        if(!(end = strchr(start, ',')))
+          end = start + strlen(start);
+
+        gavl_dictionary_set_string_nocopy(&cipher_params, SEGMENT_CIPHER, gavl_strndup(start, end));
+        }
+      
+      if((start = strstr(lines[idx], "URI=\"")))
+        {
+        
+        start += strlen("URI=\"");
+        
+        if((end = strchr(start, '"')))
+          {
+          char * tmp_string = gavl_strndup(start, end);
+          gavl_dictionary_set_string_nocopy(&cipher_params,
+                                            SEGMENT_CIPHER_KEY_URI,
+                                            gavl_get_absolute_uri(tmp_string, ctx->url));
+          free(tmp_string);
+          }
+        }
+
+      if((start = strstr(lines[idx], "IV=")))
+        {
+        start += strlen("IV=");
+
+        if(!(end = strchr(start, ',')))
+          end = start + strlen(start);
+        
+        gavl_dictionary_set_string_nocopy(&cipher_params, SEGMENT_CIPHER_IV, gavl_strndup(start, end));
+        }
+      }
+    
     if(skip)
       {
       if(!gavl_string_starts_with(lines[idx], "#"))
@@ -204,12 +210,6 @@ static int load_m3u8(bgav_input_context_t * ctx)
       if(!gavl_time_parse_iso8601(lines[idx] + strlen("#EXT-X-PROGRAM-DATE-TIME:") , &segment_start_time))
         segment_start_time = GAVL_TIME_UNDEFINED;
       }
-    else if(gavl_string_starts_with(lines[idx], "#EXT-X-KEY:"))
-      {
-      // #EXT-X-KEY:METHOD=AES-128,URI="https://livestreamdirect-three.mediaworks.nz/K110346488-2000.key",IV=0x0000000000000000000000000005497B
-
-      
-      }
     else if(gavl_string_starts_with(lines[idx], "#EXTINF:"))
       {
       double duration = strtod(lines[idx] + strlen("#EXTINF:"), NULL);
@@ -223,6 +223,8 @@ static int load_m3u8(bgav_input_context_t * ctx)
         if(segment_duration >  0)
           gavl_dictionary_set_long(dict, SEGMENT_END_TIME, segment_start_time + segment_duration);
         }
+
+      gavl_dictionary_merge2(dict, &cipher_params);
       
       gavl_dictionary_set_string_nocopy(dict, GAVL_META_URI, bgav_input_absolute_url(ctx, lines[idx]));
       gavl_array_splice_val_nocopy(&p->segments, -1, 0, &val);
@@ -255,10 +257,63 @@ static int load_m3u8(bgav_input_context_t * ctx)
       }
     }
   
-  gavl_dictionary_free(&res);
-
+  gavl_dictionary_free(&cipher_params);
+  
   return ret;
   
+  }
+
+static int download_key(bgav_input_context_t * ctx, const char * uri, int len)
+  {
+  hls_priv_t * priv = ctx->priv;
+  
+  if(!priv->cipher_key_io)
+    priv->cipher_key_io = gavl_http_client_create();
+
+  if(!gavl_http_client_open_full(priv->cipher_key_io,
+                                 "GET", uri, NULL, NULL))
+    return 0;
+
+  gavl_buffer_reset(&priv->cipher_key);
+  if(!gavl_http_client_read_body(priv->cipher_key_io, &priv->cipher_key))
+    return 0;
+
+  if(priv->cipher_key.len != len)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Invalid key length (expected %d got %d)", len, priv->cipher_key.len);
+    return 0;
+    }
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got key");
+  return 1;
+  }
+
+static int parse_iv(bgav_input_context_t * ctx, const char * str, uint8_t * out, int len)
+  {
+  int i;
+  int val;
+  
+  if((str[0] == '0') &&
+     (tolower(str[1] == 'x')))
+    str+=2;
+
+  if(strlen(str) != len * 2)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Parsing IV failed: wrong string length");
+    return 0;
+    }
+
+  for(i = 0; i < len; i++)
+    {
+    if(!sscanf(str, "%02x", &val))
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Parsing IV failed: Invalid hex sequence: %c%c", str[0], str[1]);
+      return 0;
+      }
+    out[i] = val;
+    str += 2;
+    }
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "IV");
+  return 1;
   }
 
 static int open_ts(bgav_input_context_t * ctx)
@@ -270,18 +325,13 @@ static int open_ts(bgav_input_context_t * ctx)
   //  int use_tls;
   hls_priv_t * p = ctx->priv;
 
-  char * host = NULL;
   char * http_host = NULL;
-  char * protocol = NULL;
-  char * path = NULL;
-  int port = -1;
   const char * var;
-  int do_close = 0;
-  int addr_changed = 0;
   int tries = 0;
-  gavl_dictionary_t res;
-
-  gavl_dictionary_init(&res);
+  gavl_dictionary_t * res;
+  uint8_t * iv = NULL;
+  
+  const char * cipher;
   
   if(!load_m3u8(ctx))
     return 0;
@@ -335,147 +385,83 @@ static int open_ts(bgav_input_context_t * ctx)
     bgav_start_time_absolute_changed(ctx->b, p->abs_offset);
     }
   gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN, "Opening TS %s", uri);
-  
-  if(!bgav_url_split(uri,
-                     &protocol,
-                     NULL, /* User */
-                     NULL, /* Pass */
-                     &host,
-                     &port,
-                     &path))
+
+  if(!gavl_http_client_open_full(p->ts_io,
+                                 "GET",
+                                 uri, NULL, &res))
     {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Unvalid TS URL: %s", uri);
     goto fail;
     }
   
-  if(port > 0)
-    http_host = gavl_sprintf("%s:%d", host, port);
-  else
-    http_host = gavl_strdup(host);
-
-  if(!strcasecmp(protocol, "https") ||
-     !strcasecmp(protocol, "hlss"))
+  /* Check for encryption */
+  if((cipher = gavl_dictionary_get_string(dict, SEGMENT_CIPHER)) &&
+     strcmp(cipher, "NONE"))
     {
-    if(!p->use_tls_ts && p->ts_io)
+    const char * cipher_key_uri;
+    const char * cipher_iv;
+    int cipher_block_size = 0;
+    int cipher_key_size = 0;
+    gavl_cipher_algo_t algo = 0;
+    gavl_cipher_mode_t mode = 0;
+    gavl_cipher_padding_t padding = 0;
+
+    cipher_key_uri = gavl_dictionary_get_string(dict, SEGMENT_CIPHER_KEY_URI);
+    cipher_iv = gavl_dictionary_get_string(dict, SEGMENT_CIPHER_IV);
+
+    if(!cipher_key_uri)
       {
-      do_close = 1;
-      addr_changed = 1;
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Got encrypred segment but no key URI");
+      goto fail;
       }
-    p->use_tls_ts = 1;
-    }
-  else
-    {
-    if(p->use_tls_ts && p->ts_io)
-      {
-      do_close = 1;
-      addr_changed = 1;
-      }
-    p->use_tls_ts = 0;
-    }
-
-  if((var = gavl_dictionary_get_string(&p->ts_req, "Host")) &&
-     strcmp(var, http_host))
-    {
-    do_close = 1;
-    addr_changed = 1;
-    }
-  
-  if(port <= 0)
-    {
-    if(p->use_tls_ts)
-      port = 443;
-    else
-      port = 80;
-    }
-
-  if(do_close)
-    {
-    if(p->ts_io)
-      {
-      gavf_io_destroy(p->ts_io);
-      p->ts_io = NULL;
-      }
-    }
-
-  if(addr_changed && p->ts_addr)
-    {
-    gavl_socket_address_destroy(p->ts_addr);
-    p->ts_addr = NULL;
-    }
-  
-  if(p->ts_io)
-    {
-    gavl_http_request_set_path(&p->ts_req, path);
     
-    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Trying keepalive connection");
-
-    if(!gavl_http_request_write(p->ts_io, &p->ts_req))
+    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got encrypted segment: %s %s %s",
+             cipher, cipher_key_uri, cipher_iv);
+    
+    if(!strcmp(cipher, "AES-128"))
       {
-      gavf_io_destroy(p->ts_io);
-      p->ts_io = NULL;
+      algo = GAVL_CIPHER_AES128;
+      mode = GAVL_CIPHER_MODE_CBC;
+      padding = GAVL_CIPHER_PADDING_PKCS7;
+      cipher_block_size = 16;
+      cipher_key_size = 16;
       }
-    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "keepalive succeeded");
-    }
-  
-  if(!p->ts_io)
-    {
-    int fd;
-
-    if(!p->ts_addr)
+    else
       {
-      p->ts_addr = gavl_socket_address_create();
-      
-      if(!gavl_socket_address_set(p->ts_addr, host, port, SOCK_STREAM))
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Unsupported cipher: %s", cipher);
+      goto fail;
+      }
+
+    if(!download_key(ctx, cipher_key_uri, cipher_key_size))
+      goto fail;
+
+    if(!p->cipher_io)
+      p->cipher_io = gavf_io_create_cipher(p->ts_io, algo, mode, padding, 0);
+    
+    if(cipher_iv)
+      {
+      iv = malloc(cipher_block_size);
+      if(!parse_iv(ctx, cipher_iv, iv, cipher_block_size))
+        {
+        free(iv);
         goto fail;
+        }
       }
-
-    if((fd = gavl_socket_connect_inet(p->ts_addr, 1000)) < 0)
-      goto fail;
-
-    if(p->use_tls_ts)
-      p->ts_io = gavf_io_create_tls_client(fd, p->host, GAVF_IO_SOCKET_DO_CLOSE);
-    else
-      p->ts_io = gavf_io_create_socket(fd, 1000, GAVF_IO_SOCKET_DO_CLOSE);
     
-    gavl_dictionary_reset(&p->ts_req);
-    gavl_http_request_init(&p->ts_req,  "GET", path, "HTTP/1.1");
-    gavl_dictionary_set_string_nocopy(&p->ts_req, "Host", http_host);
-    http_host = NULL;
+    gavf_io_cipher_init(p->cipher_io, p->cipher_key.buf, iv);
     
-    if(!gavl_http_request_write(p->ts_io, &p->ts_req))
-      goto fail;
-    }
-
-  if(!gavl_http_response_read(p->ts_io, &res))
-    {
-    goto fail;
-    }
-
-  if(gavl_http_response_get_status_int(&res) != 200)
-    {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Got code: %d %s",
-             gavl_http_response_get_status_int(&res),
-             gavl_http_response_get_status_str(&res));
-    goto fail;
-    }
-  
-  if(!gavl_dictionary_get_long(&res, "Content-Length", &p->ts_len))
-    {
-    var = gavl_dictionary_get_string_i(&res, "Transfer-Encoding");
-    if(var && !strcasecmp(var, "chunked"))
-      p->ts_chunked = 1;
-    goto fail;
+    if(iv)
+      free(iv);
+    
+    p->io = p->cipher_io;
     }
   else
     {
-    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Segment size: %"PRId64, p->ts_len);
+    p->io = p->ts_io;
+    if((var = gavl_dictionary_get_string(res, "Content-Type")) &&
+       !(gavl_dictionary_get_string(&ctx->m, GAVL_META_MIMETYPE)))
+      gavl_dictionary_set_string(&ctx->m, GAVL_META_MIMETYPE, var);
     }
   
-  if((var = gavl_dictionary_get_string(&res, "Content-Type")) &&
-     !(gavl_dictionary_get_string(&ctx->m, GAVL_META_MIMETYPE)))
-    gavl_dictionary_set_string(&ctx->m, GAVL_META_MIMETYPE, var);
-  
-  p->ts_pos = 0;
   ret = 1;
   
   fail:
@@ -486,56 +472,21 @@ static int open_ts(bgav_input_context_t * ctx)
   return ret;
   }
 
+
 static int open_hls(bgav_input_context_t * ctx, const char * url, char ** r)
   {
   int ret = 0;
-  char * path = NULL;
-  char * protocol = NULL;
-  int port = 0;
 
   hls_priv_t * priv = calloc(1, sizeof(*priv));
 
   ctx->priv = priv;
 
   ctx->url = gavl_strdup(url);
-
-  if(!bgav_url_split(ctx->url,
-                     &protocol,
-                     NULL, /* User */
-                     NULL, /* Pass */
-                     &priv->host,
-                     &port,
-                     &path))
-    {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Unvalid URL");
-    goto fail;
-    }
-
-  if(!strcmp(protocol, "hlss"))
-    priv->use_tls_m3u = 1;
-
-  priv->m3u_addr = gavl_socket_address_create();
   
-  gavl_http_request_init(&priv->m3u_req,  "GET", path, "HTTP/1.1");
-
-  if(port > 0)
-    gavl_dictionary_set_string_nocopy(&priv->m3u_req, "Host", gavl_sprintf("%s:%d", priv->host, port));
-  else
-    gavl_dictionary_set_string(&priv->m3u_req, "Host", priv->host);
+  priv->m3u_io = gavl_http_client_create();
+  priv->ts_io = gavl_http_client_create();
   
-  if(port < 0)
-    {
-    if(priv->use_tls_m3u)
-      port = 443;
-    else
-      port = 80;
-    }
-
-  if(!gavl_socket_address_set(priv->m3u_addr, priv->host, port, SOCK_STREAM))
-    goto fail;
-
-  gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN, "Connecting to: %s:%d", priv->host, port);
-  
+    
   priv->seq_start = -1;
   
   if(!load_m3u8(ctx))
@@ -552,15 +503,9 @@ static int open_hls(bgav_input_context_t * ctx, const char * url, char ** r)
   
   if(!open_ts(ctx))
     goto fail;
-
+  
   ret = 1;
   fail:
-  
-  if(path)
-    free(path);
-  if(protocol)
-    free(protocol);
-  
   
   return ret;
   }
@@ -573,49 +518,32 @@ static void seek_time_hls(bgav_input_context_t * ctx, int64_t t1, int scale)
 static int read_hls(bgav_input_context_t* ctx,
                     uint8_t * buffer, int len)
   {
-  int bytes_to_read = 0;
   int bytes_read = 0;
   int result;
   
   hls_priv_t * p = ctx->priv;
 
-  while(1)
+  while(bytes_read < len)
     {
+    result = gavf_io_read_data(p->io, buffer + bytes_read, len - bytes_read);
 
-    bytes_to_read = len;
-
-    if(bytes_to_read + p->ts_pos > p->ts_len)
-      bytes_to_read = p->ts_len - p->ts_pos;
-    
-    if(bytes_to_read > 0)
+    if(result < len - bytes_read)
       {
-      result = gavf_io_read_data(p->ts_io, buffer + bytes_read, bytes_to_read);
-      if(result < bytes_to_read)
+      if(gavf_io_got_error(p->io))
         {
-        if(result > 0)
-          {
-          bytes_read += result;
-          }
         return bytes_read;
         }
-      len -= result;
-      p->ts_pos += result;
-      bytes_read += result;
+      else
+        {
+        p->seq_cur++;
+        if(!open_ts(ctx))
+          return bytes_read;
+        }
       }
 
-    if(!len)
-      {
-      return bytes_read;
-      }
-
-    if(p->ts_len == p->ts_pos)
-      {
-      p->seq_cur++;
-      if(!open_ts(ctx))
-        return bytes_read;
-      }
+    bytes_read += result;
     }
-  
+  return bytes_read;
   }
 
 #if 0
@@ -658,20 +586,14 @@ static void close_hls(bgav_input_context_t * ctx)
     gavf_io_destroy(p->m3u_io);
   if(p->ts_io)
     gavf_io_destroy(p->ts_io);
+
+  if(p->cipher_io)
+    gavf_io_destroy(p->cipher_io);
   
   gavl_array_free(&p->segments);
-  gavl_dictionary_free(&p->m3u_req);
-  gavl_dictionary_free(&p->ts_req);
   
-  if(p->m3u_addr)
-    gavl_socket_address_destroy(p->m3u_addr);
-  if(p->ts_addr)
-    gavl_socket_address_destroy(p->ts_addr);
-
   gavl_buffer_free(&p->m3u_buf);
   
-  if(p->host)
-    free(p->host);
   
   free(p);
   }

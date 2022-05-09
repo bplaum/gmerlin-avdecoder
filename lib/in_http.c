@@ -26,6 +26,7 @@
 #include <avdec_private.h>
 #include <http.h>
 #include <hls.h>
+#include <gavl/http.h>
 
 #define NUM_REDIRECTIONS 5
 
@@ -60,28 +61,38 @@ static void create_header(gavl_dictionary_t * ret, const bgav_options_t * opt)
   gavl_dictionary_set_string(ret, "GetContentFeatures.DLNA.ORG", "1");
   }
 
-static int open_http(bgav_input_context_t * ctx, const char * url, char ** r)
+static int open_http(bgav_input_context_t * ctx, const char * url1, char ** r)
   {
+  int ret = 0;
   const char * var;
   http_priv * p;
 
   const gavl_dictionary_t * res;
+
+  char * url;
   
   gavl_dictionary_t extra_header;
   gavl_dictionary_init(&extra_header);
+
+  ctx->url = gavl_strdup(url1);
+  
+  url = gavl_strdup(url1);
   
   p = calloc(1, sizeof(*p));
+
+  url = gavl_url_extract_http_vars(url, &extra_header);
+
+  fprintf(stderr, "Got extra header:\n");
+  gavl_dictionary_dump(&extra_header, 2);
   
   create_header(&extra_header, ctx->opt);
   
   p->h = bgav_http_open(url, ctx->opt, r, &extra_header);
-
-  gavl_dictionary_free(&extra_header);
   
   if(!p->h)
     {
     free(p);
-    return 0;
+    goto fail;
     }
   
   ctx->priv = p;
@@ -113,8 +124,14 @@ static int open_http(bgav_input_context_t * ctx, const char * url, char ** r)
   
   //  ctx->flags |= BGAV_INPUT_DO_BUFFER;
 
-  ctx->url = gavl_strdup(url);
-  return 1;
+  
+  ret = 1;
+  fail:
+  
+  free(url);
+  gavl_dictionary_free(&extra_header);
+  
+  return ret;
   }
 
 static int64_t seek_byte_http(bgav_input_context_t * ctx,

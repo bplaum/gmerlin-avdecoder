@@ -30,6 +30,8 @@
 #include <string.h>
 #include <limits.h>
 
+#include <gavl/metatags.h>
+
 #ifndef _WIN32
 #include <termios.h> /* Ask passwords */
 #endif
@@ -147,6 +149,7 @@ static int64_t audio_seek = -1;
 static int64_t video_seek = -1;
 static gavl_time_t global_seek = -1;
 static int dump_ci = 0;
+static int follow_redir= 0;
 
 
 static void print_usage()
@@ -168,6 +171,7 @@ static void print_usage()
   fprintf(stderr, "-di              Dump indices of the file\n");
   fprintf(stderr, "-dp              Dump packets\n");
   fprintf(stderr, "-L               List all demultiplexers and codecs\n");
+  fprintf(stderr, "-follow          Follow redirections (e.g. in m3u files)\n");
   }
 
 static void list_all()
@@ -304,6 +308,11 @@ int main(int argc, char ** argv)
       gavl_set_log_verbose(strtol(argv[arg_index+1], NULL, 10));
       arg_index+=2;
       }
+    else if(!strcmp(argv[arg_index], "-follow"))
+      {
+      follow_redir = 1;
+      arg_index++;
+      }
     else
       arg_index++;
     }
@@ -375,27 +384,54 @@ int main(int argc, char ** argv)
       return -1;
       }
     }
-  else if(!bgav_open(file, argv[argc-1]))
+  else 
     {
-    fprintf(stderr, "Could not open file %s\n",
-            argv[argc-1]);
-    bgav_close(file);
-    return -1;
-    }
-#if 0
-  if(bgav_is_redirector(file))
-    {
-    fprintf(stderr, "Found redirector:\n");
-    num_urls = bgav_redirector_get_num_urls(file);
-    for(i = 0; i < num_urls; i++)
+    if(!follow_redir)
       {
-      fprintf(stderr, "Name %d: %s\n", i+1, bgav_redirector_get_name(file, i));
-      fprintf(stderr, "URL %d: %s\n",  i+1, bgav_redirector_get_url(file, i));
+      if(!bgav_open(file, argv[argc-1]))
+        {
+        fprintf(stderr, "Could not open file %s\n",
+                argv[argc-1]);
+        bgav_close(file);
+        return -1;
+        }
       }
-    bgav_close(file);
-    return 0;
+    else
+      {
+      const char * var;
+      const gavl_dictionary_t * dict;
+      char * str = gavl_strdup(argv[argc-1]);
+      
+      while(1)
+        {
+        if(!bgav_open(file, str))
+          {
+          fprintf(stderr, "Could not open location %s\n", str);
+          bgav_close(file);
+          return -1;
+          }
+        /* Check for redirection */
+
+        if((dict = bgav_get_media_info(file)) &&
+           (dict = gavl_get_track(dict, 0)) &&
+           (dict = gavl_track_get_metadata(dict)) &&
+           (var = gavl_dictionary_get_string(dict, GAVL_META_MEDIA_CLASS)) &&
+           !strcmp(var, GAVL_META_MEDIA_CLASS_LOCATION) &&
+           gavl_dictionary_get_src(dict, GAVL_META_SRC, 0,
+                                   NULL, &var))
+          {
+          fprintf(stderr, "Got redirection to %s\n", var);
+          str = gavl_strrep(str, var);
+          bgav_close(file);
+          file = bgav_create();
+          }
+        else
+          break;
+        }
+      
+      }
+    
     }
-#endif
   edl = bgav_get_edl(file);
   if(edl)
     {

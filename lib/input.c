@@ -1108,7 +1108,7 @@ int bgav_input_reopen(bgav_input_context_t * ctx)
   const bgav_input_t * input;
   char * url = NULL;
   int ret = 0;
-  char * redir;
+  char * redir = NULL;
   const bgav_options_t * opt;
   bgav_track_table_t * tt = NULL;
 
@@ -1171,60 +1171,9 @@ bgav_yml_node_t * bgav_input_get_yml(bgav_input_context_t * ctx)
 
 char * bgav_input_absolute_url(bgav_input_context_t * ctx, const char * url)
   {
-  char * ret = NULL;
-  char * base;
-  const char * pos1;
-  const char * pos2;
-
-  // Return early for complete URL
-  if(strstr(url, "://"))
-    return gavl_strdup(url);
-  
-  /* Filename */
-  if(ctx->filename)
-    {
-    if(*url == '/')            // Absolute path
-      return gavl_strdup(url);
-    else                       // Relative path
-      {
-      pos1 = strrchr(ctx->filename, '/');
-
-      if(pos1)
-        base = gavl_strndup(ctx->filename, pos1);
-      else
-        base = gavl_strdup(".");
-      
-      ret = bgav_sprintf("%s/%s", base, url);
-      free(base);
-      return ret;
-      }
-    }
-  
-  /* URL */
-  else if(*url == '/') // URL relative to host
-    {
-    pos1 = strstr(ctx->url, "://");
-
-    if(!pos1)
-      pos1 = ctx->url;
-    else
-      pos1 += 3;
-
-    pos2 = strchr(pos1, '/');
-    if(!pos2)
-      pos2 = pos1 + strlen(pos1);
-    
-    base = gavl_strndup(ctx->url, pos2);
-    ret = bgav_sprintf("%s/%s", base, url);
-    free(base);
-    }
-  else // Relative to file
-    {
-    pos1 = strrchr(ctx->url, '/');
-    base = gavl_strndup(ctx->url, pos1);
-    ret = bgav_sprintf("%s/%s", base, url);
-    free(base);
-    return ret;
-    }
-  return ret;
+  if(ctx->url)
+    return gavl_get_absolute_uri(url, ctx->url);
+  else if(ctx->filename)
+    return gavl_get_absolute_uri(url, ctx->filename);
+  return NULL;
   }

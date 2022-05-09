@@ -24,6 +24,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <gavl/log.h>
+#include <gavl/http.h>
 
 #include <avdec_private.h>
 
@@ -135,9 +136,23 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
   
   gavl_dictionary_t ext_x_media;
   gavl_dictionary_t metadata;
+  gavl_dictionary_t http_vars;
+  gavl_dictionary_t http_vars_global;
   
   gavl_dictionary_init(&ext_x_media);
   gavl_dictionary_init(&metadata);
+  gavl_dictionary_init(&http_vars);
+  gavl_dictionary_init(&http_vars_global);
+
+  if(input->url)
+    {
+    char * tmp_string = gavl_strdup(input->url);
+    tmp_string = gavl_url_extract_http_vars(tmp_string, &http_vars_global);
+    free(tmp_string);
+    }
+
+  fprintf(stderr, "Got global http vars %s:\n", input->url);
+  gavl_dictionary_dump(&http_vars_global, 2);
   
   tt = bgav_track_table_create(0);
   
@@ -267,6 +282,12 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
       if(gavl_string_starts_with(pos, "#EXT-X-STREAM-INF:")) 
         {
         char * pos1, * pos2;
+
+        if(!hls)
+          {
+          hls = 1;
+          gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Detected HLS");
+          }
         
         //        int idx = 0;
 
@@ -309,7 +330,7 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
         gavl_time_t duration;
         const char * pos1, *pos2;
         
-        comma = strchr(pos, ',');
+        comma = strrchr(pos, ',');
 
         if(comma)
           {
@@ -338,6 +359,22 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
 
           }
         }
+      else if(gavl_string_starts_with(pos, "#EXTVLCOPT:"))
+        {
+        const char * pos1;
+        pos1 = pos + strlen("#EXTVLCOPT:");
+
+        if(gavl_string_starts_with(pos1, "http-referrer="))
+          {
+          pos1 += strlen("http-referrer=");
+          gavl_dictionary_set_string(&http_vars, "Referrer", pos1);
+          }
+        else if(gavl_string_starts_with(pos1, "http-user-agent="))
+          {
+          pos1 += strlen("http-user-agent=");
+          gavl_dictionary_set_string(&http_vars, "User-Agent", pos1);
+          }
+        }
       }
     else
       {
@@ -360,7 +397,13 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
           hls_uri = gavl_sprintf("hls://%s", uri + 7);
         else
           hls_uri = gavl_strdup(uri);
-
+        
+        gavl_dictionary_merge2(&http_vars, &http_vars_global);
+        
+        /* Append URI variables */
+        hls_uri = gavl_url_append_http_vars(hls_uri, &http_vars);
+        gavl_dictionary_reset(&http_vars);
+        
         /* Check for separate streams */
         if(audio && (dict = gavl_dictionary_get_dictionary_nc(&ext_x_media, "AUDIO")) &&
            (arr = gavl_dictionary_get_array(dict, audio)) &&
@@ -469,12 +512,19 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
         }
       else
         {
+        char * tmp_string = gavl_strdup(uri);
         if(!t)
           t = append_track(tt);
 
+        gavl_dictionary_merge2(&http_vars, &http_vars_global);
+        
+        tmp_string = gavl_url_append_http_vars(tmp_string, &http_vars);
+        gavl_dictionary_reset(&http_vars);
+        
         gavl_dictionary_merge2(t->metadata, &metadata);
         gavl_dictionary_reset(&metadata);
-        src = gavl_metadata_add_src(t->metadata, GAVL_META_SRC, NULL, uri);
+        src = gavl_metadata_add_src(t->metadata, GAVL_META_SRC, NULL, tmp_string);
+        free(tmp_string);
         }
       free(uri);
 
@@ -503,6 +553,8 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
       }
     }
   gavl_dictionary_free(&ext_x_media);
+  gavl_dictionary_free(&http_vars_global);
+  gavl_dictionary_free(&http_vars);
   
   if(buffer)
     free(buffer);
