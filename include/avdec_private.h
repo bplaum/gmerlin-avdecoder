@@ -351,6 +351,7 @@ void bgav_packet_pool_destroy(bgav_packet_pool_t*);
 #define STREAM_STANDALONE         (1<<18) // Standalone decoder
 #define STREAM_EXTERN             (1<<19) // Exteral to the demultiplexer (subtitle file, message stream)
 
+#define STREAM_PES_TIMESTAMPS     (1<<20) // Use timestamps from the PES packets
 
 /* Stream could not get extract compression info from the
  * demuxer

@@ -72,7 +72,7 @@ create_demuxer(bgav_t * b, const bgav_demuxer_t * demuxer)
 int bgav_init(bgav_t * ret)
   {
   int i, j;
-
+  int is_redirector = 0;
   const bgav_demuxer_t * demuxer = NULL;
   const bgav_redirector_t * redirector = NULL;
   
@@ -115,6 +115,7 @@ int bgav_init(bgav_t * ret)
         goto fail;
       else
         {
+        is_redirector = 1;
         bgav_track_table_merge_metadata(ret->tt, &ret->input->m);
         goto done;
         }
@@ -181,7 +182,11 @@ int bgav_init(bgav_t * ret)
 
   done:
   
+  if(is_redirector)
+    return 1;
+  
   /* Add message streams */
+  
   bgav_track_table_create_message_streams(ret->tt, &ret->opt);
 
   bgav_check_sample_accurate(ret);

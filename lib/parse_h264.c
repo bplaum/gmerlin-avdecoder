@@ -46,6 +46,7 @@
 #define FLAG_HAVE_DATE         (1<<0)
 #define FLAG_HAVE_SPS          (1<<1)
 #define FLAG_HAVE_PPS          (1<<2)
+// #define FLAG_USE_PTS           (1<<3)
 
 typedef struct
   {
@@ -520,11 +521,15 @@ static void handle_sps(bgav_video_parser_t * parser)
   {
   h264_priv_t * priv = parser->priv;
 
+  //  fprintf(stderr, "Got SPS:\n");
+  //  bgav_h264_sps_dump(&priv->sps);
+  
   if(!parser->format->timescale)
     {
     parser->format->timescale = priv->sps.vui.time_scale;
     parser->format->frame_duration = priv->sps.vui.num_units_in_tick * 2;
     }
+  
   // bgav_video_parser_set_framerate(parser);
         
   bgav_h264_sps_get_image_size(&priv->sps,
@@ -570,7 +575,14 @@ static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int
   const uint8_t * pps_end = NULL;
 
   h264_priv_t * priv = parser->priv;
-  
+
+  //  fprintf(stderr, "parse_frame %"PRId64"\n", pts_orig);
+
+  if(parser->s->flags & STREAM_PES_TIMESTAMPS)
+    {
+    p->pts = pts_orig;
+    p->duration = -1;
+    }
   nal_start = p->data; // Assume that we have a startcode
   
   while(nal_start < p->data + p->data_size)
@@ -608,6 +620,19 @@ static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int
           sps_end = nal_end;
           
           priv->flags |= FLAG_HAVE_SPS;
+
+          if(!parser->format->timescale)
+            {
+            gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Stream has no timing info, using PES timestamps");
+            parser->format->timescale = parser->s->timescale;
+            parser->format->framerate_mode = GAVL_FRAMERATE_VARIABLE;
+            parser->s->flags |= (STREAM_NO_DURATIONS | STREAM_PES_TIMESTAMPS);
+            
+            parser->flags &= ~PARSER_GEN_PTS;
+            }
+
+          if(parser->s->flags & STREAM_PES_TIMESTAMPS)
+            parser->flags &= ~PARSER_GEN_PTS;
           }
         break;
       case H264_NAL_PPS:

@@ -427,6 +427,11 @@ static void process_packet(bgav_video_parser_t * parser, bgav_packet_t * p, int6
   /* Initialize stuff */
   if(!(parser->flags & PARSER_INITIALIZED))
     {
+    /* MPEG-type video parsers only get the *duration* of each frame.
+       Timestamps, which implies that the timestamps are DTS. They will be
+       converted to PTS by the packettimer
+    */
+    
     if((parser->s->ci->flags & GAVL_COMPRESSION_HAS_B_FRAMES) && (parser->flags & PARSER_GEN_PTS))
       parser->s->flags |= STREAM_DTS_ONLY;
     parser->flags |= PARSER_INITIALIZED;
@@ -521,8 +526,12 @@ get_packet_parse_full(void * parser1, bgav_packet_t ** ret_p)
       break;
     bgav_packet_pool_put(parser->s->pp, ret);
     }
-  
+
+    
   *ret_p = ret;
+
+  //  fprintf(stderr, "get_packet_parse_full %"PRId64"\n", (*ret_p)->pts);
+  
   return ret ? GAVL_SOURCE_OK : GAVL_SOURCE_EOF;
   }
 

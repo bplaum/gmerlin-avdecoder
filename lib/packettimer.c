@@ -332,7 +332,7 @@ next_packet_duration_from_pts(bgav_packet_timer_t * pt, int force)
     
   if(ip1 > 0)
     {
-    fprintf(stderr, "BUUUG");
+    fprintf(stderr, "BUUUG in packettimer\n");
     return GAVL_SOURCE_EOF;
     }
 
@@ -580,7 +580,7 @@ bgav_packet_timer_t * bgav_packet_timer_create(bgav_stream_t * s)
   s->src.data = ret;
 
   /* Set functions */
-  if(ret->s->flags & STREAM_DTS_ONLY)
+  if((ret->s->flags & (STREAM_DTS_ONLY | STREAM_PES_TIMESTAMPS)) == STREAM_DTS_ONLY)
     ret->next_packet = next_packet_pts_from_dts;
   else if(ret->s->flags & STREAM_NO_DURATIONS)
     {
