@@ -9,7 +9,6 @@ include/pngreader.h
 include/vorbis_comment.h
 include/qt.h
 include/avdec.h
-include/bgav_vaapi.h
 include/mxf.h
 include/matroska.h
 include/nanosoft.h
@@ -54,7 +53,6 @@ include/avdec_private.h
 include/mms.h
 include/os.h
 include/id3.h
-include/win32codec.h
 utils/cpuinfo.c
 tests/frametable.c
 tests/bgavdump.c
@@ -183,6 +181,7 @@ lib/demux_adif.c
 lib/demux_asf.c
 lib/demux_wavpack.c
 lib/qt_minf.c
+lib/in_hls.c
 lib/demux_psxstr.c
 lib/audio_a52.c
 lib/qt_udta.c
@@ -292,7 +291,6 @@ lib/audio_vorbis.c
 lib/demux_dxa.c
 lib/demux_rawaudio.c
 lib/rtcp.c
-lib/vaapi.c
 lib/qt_useratoms.c
 lib/qt_dinf.c
 lib/qt_tcmi.c

@@ -62,6 +62,8 @@ typedef struct
   gavl_time_t abs_offset;
 
   gavl_buffer_t cipher_key;
+
+  gavl_dictionary_t http_vars;
   
   } hls_priv_t;
 
@@ -217,6 +219,8 @@ static int load_m3u8(bgav_input_context_t * ctx)
       }
     else if(!gavl_string_starts_with(lines[idx], "#"))
       {
+      char * uri;
+      
       if(segment_start_time != GAVL_TIME_UNDEFINED)
         {
         gavl_dictionary_set_long(dict, SEGMENT_START_TIME, segment_start_time);
@@ -225,8 +229,13 @@ static int load_m3u8(bgav_input_context_t * ctx)
         }
 
       gavl_dictionary_merge2(dict, &cipher_params);
+
+      uri = bgav_input_absolute_url(ctx, lines[idx]);
+
+      uri = gavl_url_append_http_vars(uri, &p->http_vars);
+
       
-      gavl_dictionary_set_string_nocopy(dict, GAVL_META_URI, bgav_input_absolute_url(ctx, lines[idx]));
+      gavl_dictionary_set_string_nocopy(dict, GAVL_META_URI, uri);
       gavl_array_splice_val_nocopy(&p->segments, -1, 0, &val);
 
       segment_start_time = GAVL_TIME_UNDEFINED;
@@ -473,20 +482,23 @@ static int open_ts(bgav_input_context_t * ctx)
   }
 
 
-static int open_hls(bgav_input_context_t * ctx, const char * url, char ** r)
+static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   {
   int ret = 0;
-
+  char * url;
   hls_priv_t * priv = calloc(1, sizeof(*priv));
 
   ctx->priv = priv;
 
-  ctx->url = gavl_strdup(url);
+  ctx->url = gavl_strdup(url1);
   
   priv->m3u_io = gavl_http_client_create();
   priv->ts_io = gavl_http_client_create();
+
+  url = gavl_strdup(url1);
+  url = gavl_url_extract_http_vars(url, &priv->http_vars);
+  free(url);
   
-    
   priv->seq_start = -1;
   
   if(!load_m3u8(ctx))
@@ -591,6 +603,7 @@ static void close_hls(bgav_input_context_t * ctx)
     gavf_io_destroy(p->cipher_io);
   
   gavl_array_free(&p->segments);
+  gavl_dictionary_free(&p->http_vars);
   
   gavl_buffer_free(&p->m3u_buf);
   

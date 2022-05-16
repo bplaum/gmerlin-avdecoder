@@ -168,9 +168,6 @@
 /* Ogg libraries are there */
 #undef HAVE_OGG
 
-/* Enable openjpeg codec */
-#undef HAVE_OPENJPEG
-
 /* Do we have libopus installed? */
 #undef HAVE_OPUS
 

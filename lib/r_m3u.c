@@ -190,7 +190,11 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
             hls_uri = gavl_sprintf("hls://%s", input->url + 7);
           else
             hls_uri = gavl_strdup(input->url);
-        
+
+          gavl_dictionary_merge2(&http_vars, &http_vars_global);
+          hls_uri = gavl_url_append_http_vars(hls_uri, &http_vars);
+          gavl_dictionary_reset(&http_vars);
+          
           gavl_metadata_add_src(t->metadata, GAVL_META_SRC, NULL, hls_uri);
           free(hls_uri);
           return tt;
@@ -555,6 +559,18 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
   gavl_dictionary_free(&ext_x_media);
   gavl_dictionary_free(&http_vars_global);
   gavl_dictionary_free(&http_vars);
+
+  if(hls && t)
+    {
+    if(!gavl_track_sort_source(t->info,
+                               GAVL_META_SRC,
+                               GAVL_META_BITRATE,
+                               0))
+      gavl_track_sort_source(t->info,
+                             GAVL_META_SRC,
+                             GAVL_META_WIDTH,
+                             0);
+    }
   
   if(buffer)
     free(buffer);

@@ -315,7 +315,7 @@ dnl
 dnl openjpeg
 dnl
 
-GMERLIN_CHECK_OPENJPEG
+dnl GMERLIN_CHECK_OPENJPEG
 
 dnl
 dnl libsmbclient

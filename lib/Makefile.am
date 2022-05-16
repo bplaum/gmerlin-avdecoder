@@ -62,15 +62,15 @@ png_libs =
 png_sources =
 endif
 
-if HAVE_OPENJPEG
-openjpeg_cflags =  @OPENJPEG_CFLAGS@
-openjpeg_libs =    @OPENJPEG_LIBS@
-openjpeg_sources = video_openjpeg.c
-else
-openjpeg_cflags =
-openjpeg_libs =
-openjpeg_sources =
-endif
+# if HAVE_OPENJPEG
+# openjpeg_cflags =  @OPENJPEG_CFLAGS@
+# openjpeg_libs =    @OPENJPEG_LIBS@
+# openjpeg_sources = video_openjpeg.c
+# else
+# openjpeg_cflags =
+# openjpeg_libs =
+# openjpeg_sources =
+# endif
 
 
 if HAVE_LIBTIFF
@@ -241,7 +241,6 @@ $(opus_libs) \
 $(ogg_libs) \
 $(win32_libs) \
 $(png_libs) \
-$(openjpeg_libs) \
 $(tiff_libs) \
 $(dvdread_libs) \
 $(flac_libs) \

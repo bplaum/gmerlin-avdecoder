@@ -194,14 +194,12 @@ int bgav_init(bgav_t * ret)
   if(bgav_can_seek(ret) || 
      bgav_can_pause(ret))
     {
-
     for(i = 0; i < ret->tt->num_tracks; i++)
       {
       if(bgav_can_seek(ret))
         gavl_dictionary_set_int(ret->tt->tracks[i]->metadata, GAVL_META_CAN_SEEK, 1);
       if(bgav_can_pause(ret))
         gavl_dictionary_set_int(ret->tt->tracks[i]->metadata, GAVL_META_CAN_PAUSE, 1);
-      
       }
     }
 
