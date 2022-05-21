@@ -1799,12 +1799,21 @@ bgav_device_info_t * bgav_device_info_append(bgav_device_info_t * arr,
 void bgav_device_info_dump(bgav_device_info_t * arr);
 
 /* languages.c */
+#if 0
+const char * gavl_language_get_iso639_2_b_from_code(const char * code);
 
-const char * bgav_lang_from_name(const char * name);
+GAVL_PUBLIC
+const char * gavl_language_get_iso639_2_b_from_label(const char * label);
 
-const char * bgav_lang_from_twocc(const char * twocc);
+GAVL_PUBLIC
+const char * gavl_language_get_label_from_code(const char * label);
+#endif
 
-const char * bgav_lang_name(const char * lang);
+#define bgav_lang_from_name(name) gavl_language_get_iso639_2_b_from_label(name)
+
+#define bgav_lang_from_twocc(twocc) gavl_language_get_iso639_2_b_from_code(twocc)
+
+#define bgav_lang_name(lang) gavl_language_get_label_from_code(lang)
 
 void bgav_correct_language(char * lang);
 

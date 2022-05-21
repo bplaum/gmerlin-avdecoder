@@ -22,6 +22,8 @@
 #include <string.h>
 
 #include <avdec_private.h>
+
+#if 0
 #include <language_table.h>
 
 static const int num_lang = sizeof(language_codes)/sizeof(language_codes[0]);
@@ -65,9 +67,12 @@ const char * bgav_lang_name(const char * lang)
     }
   return NULL;
   }
+#endif
 
 void bgav_correct_language(char * lang)
   {
+#if 0
+
   int i;
   char lang_save[4];
   memcpy(lang_save, lang, 3);
@@ -90,4 +95,9 @@ void bgav_correct_language(char * lang)
       break;
       }
     }
+#endif
+
+  const char * code = gavl_language_get_iso639_2_b_from_code(lang);
+  if(code)
+    strcpy(lang, code);
   }
