@@ -30,6 +30,8 @@
 #include <gavl/value.h>
 #include <gavl/http.h>
 
+#include <id3.h>
+
 #define LOG_DOMAIN "in_hls"
 
 #define SEGMENT_START_TIME "start"
@@ -241,7 +243,7 @@ static int load_m3u8(bgav_input_context_t * ctx)
       segment_start_time = GAVL_TIME_UNDEFINED;
       segment_duration = 0;
       
-      gavl_value_init(&val);
+      gavl_value_reset(&val);
       dict = gavl_value_set_dictionary(&val);
       }
     idx++;
@@ -266,6 +268,8 @@ static int load_m3u8(bgav_input_context_t * ctx)
       }
     }
   
+  gavl_value_free(&val);
+
   gavl_dictionary_free(&cipher_params);
   
   return ret;
@@ -292,7 +296,7 @@ static int download_key(bgav_input_context_t * ctx, const char * uri, int len)
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Invalid key length (expected %d got %d)", len, priv->cipher_key.len);
     return 0;
     }
-  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got key");
+  //  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got key");
   return 1;
   }
 
@@ -321,7 +325,52 @@ static int parse_iv(bgav_input_context_t * ctx, const char * str, uint8_t * out,
     out[i] = val;
     str += 2;
     }
-  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "IV");
+  //  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "IV");
+  return 1;
+  }
+
+static int handle_id3(bgav_input_context_t * ctx)
+  {
+  hls_priv_t * p = ctx->priv;
+  int len;
+  uint8_t probe_buf[BGAV_ID3V2_DETECT_LEN];
+  gavl_buffer_t buf;
+  bgav_input_context_t * mem;
+  bgav_id3v2_tag_t * id3;
+  
+  gavl_buffer_init(&buf);
+  
+  if(gavf_io_get_data(p->io, probe_buf, BGAV_ID3V2_DETECT_LEN) < BGAV_ID3V2_DETECT_LEN)
+    return 1;
+  
+  //  fprintf(stderr, "Segment start:\n");
+  //  gavl_hexdump(probe_buf, BGAV_ID3V2_DETECT_LEN, BGAV_ID3V2_DETECT_LEN);
+  
+  if((len = bgav_id3v2_detect(probe_buf)) <= 0)
+    return 1;
+  gavl_buffer_alloc(&buf, len);
+
+  if(gavf_io_read_data(p->io, buf.buf, len) < len)
+    return 0;
+
+  buf.len = len;
+  mem = bgav_input_open_memory(buf.buf, buf.len, ctx->opt);
+
+  if((id3 = bgav_id3v2_read(mem)))
+    {
+    gavl_dictionary_t m;
+    gavl_dictionary_init(&m);
+    fprintf(stderr, "Got ID3V2\n");
+    //    bgav_id3v2_dump(id3);
+    bgav_id3v2_2_metadata(id3, &m);
+    bgav_id3v2_destroy(id3);
+    gavl_dictionary_dump(&m, 2);
+    gavl_dictionary_free(&m);
+    }
+  
+  bgav_input_close(mem);
+  bgav_input_destroy(mem);
+  gavl_buffer_free(&buf);
   return 1;
   }
 
@@ -390,7 +439,7 @@ static int open_ts(bgav_input_context_t * ctx)
 
   if(!p->abs_offset && gavl_dictionary_get_long(dict, SEGMENT_START_TIME, &p->abs_offset))
     {
-    fprintf(stderr, "Got absolute time 1 %lld\n", p->abs_offset);
+    fprintf(stderr, "Got absolute time 1 %"PRId64"\n", p->abs_offset);
     bgav_start_time_absolute_changed(ctx->b, p->abs_offset);
     }
   gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN, "Opening TS %s", uri);
@@ -423,8 +472,8 @@ static int open_ts(bgav_input_context_t * ctx)
       goto fail;
       }
     
-    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got encrypted segment: %s %s %s",
-             cipher, cipher_key_uri, cipher_iv);
+    //    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got encrypted segment: %s %s %s",
+    //             cipher, cipher_key_uri, cipher_iv);
     
     if(!strcmp(cipher, "AES-128"))
       {
@@ -470,9 +519,12 @@ static int open_ts(bgav_input_context_t * ctx)
        !(gavl_dictionary_get_string(&ctx->m, GAVL_META_MIMETYPE)))
       gavl_dictionary_set_string(&ctx->m, GAVL_META_MIMETYPE, var);
     }
+
+  handle_id3(ctx);
   
   ret = 1;
-  
+
+
   fail:
 
   if(http_host)
@@ -601,11 +653,15 @@ static void close_hls(bgav_input_context_t * ctx)
 
   if(p->cipher_io)
     gavf_io_destroy(p->cipher_io);
+
+  if(p->cipher_key_io)
+    gavf_io_destroy(p->cipher_key_io);
   
   gavl_array_free(&p->segments);
   gavl_dictionary_free(&p->http_vars);
   
   gavl_buffer_free(&p->m3u_buf);
+  gavl_buffer_free(&p->cipher_key);
   
   
   free(p);

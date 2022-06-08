@@ -43,6 +43,8 @@
 
 #define BGAV_VORBIS BGAV_MK_FOURCC('V','B','I','S')
 
+#define META_START_PTS_DEN "pts_start_den"
+#define META_START_PTS_NUM "pts_start_num"
 
 // typedef struct bgav_edl_dec_s bgav_edl_dec_t;
 
@@ -518,7 +520,6 @@ struct bgav_stream_s
   
   gavl_packet_source_t * psrc; /* Output packets for the public API */
   
-  
   /* Correct timestamps from broken containers */
   bgav_packet_timer_t * pt;
   
@@ -788,7 +789,7 @@ void bgav_track_remove_unsupported(bgav_track_t * t);
 
 void bgav_track_free(bgav_track_t * t);
 
-void bgav_track_dump(bgav_t * b, bgav_track_t * t);
+void bgav_track_dump(bgav_track_t * t);
 
 int bgav_track_has_sync(bgav_track_t * t);
 

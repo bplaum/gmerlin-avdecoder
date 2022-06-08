@@ -854,6 +854,12 @@ static const uint32_t cover_tags[] =
     0x00,
   };
 
+static const uint32_t start_pts_tags[] =
+  {
+    BGAV_MK_FOURCC('P', 'R', 'I', 'V'),
+    0x00,
+  };
+
 static char * get_comment(const bgav_options_t * opt,
                           bgav_id3v2_frame_t* frame)
   {
@@ -1034,7 +1040,25 @@ void bgav_id3v2_2_metadata(bgav_id3v2_tag_t * t, gavl_dictionary_t*m)
                                      frame->picture->data_offset + frame->header.header_size + frame->header.start,
                                      frame->picture->data_size);
     }
-  
+
+  /* Start PTS */
+  if((frame = bgav_id3v2_find_frame(t, start_pts_tags)))
+    {
+    
+    // fprintf(stderr, "Got PRIV tag:\n");
+    // gavl_hexdump(frame->data, frame->header.data_size, 16);
+
+    if((frame->header.data_size == 53) &&
+       !memcmp("com.apple.streaming.transportStreamTimestamp", frame->data, 45))
+      {
+      int64_t pts;
+      uint8_t * ptr = frame->data+45;
+      pts = GAVL_PTR_2_64BE(ptr);
+
+      gavl_dictionary_set_int(m, META_START_PTS_DEN, 90000);
+      gavl_dictionary_set_long(m, META_START_PTS_NUM, pts);
+      }
+    }
   }
 
 void bgav_id3v2_destroy(bgav_id3v2_tag_t * t)

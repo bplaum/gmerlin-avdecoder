@@ -37,11 +37,11 @@ static int probe_m3u(bgav_input_context_t * input)
   char probe_buffer[PROBE_BYTES];
   char * pos;
   const char * mimetype = NULL;
-  const char * uri = NULL;
+  //  const char * uri = NULL;
   int result = 0;
   
   /* Most likely, we get this via http, so we can check the mimetype */
-  if(gavl_dictionary_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, &uri) && mimetype)
+  if(input->url && gavl_dictionary_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, NULL) && mimetype)
     {
     if(strcasecmp(mimetype, "audio/x-pn-realaudio-plugin") &&
        strcasecmp(mimetype, "video/x-pn-realvideo-plugin") &&
@@ -52,8 +52,8 @@ static int probe_m3u(bgav_input_context_t * input)
        strcasecmp(mimetype, "audio/m3u") &&
        strncasecmp(mimetype, "application/x-mpegurl", 21) && // HLS
        strncasecmp(mimetype, "application/vnd.apple.mpegurl", 29) && // HLS
-       !gavl_string_ends_with(uri, ".m3u") &&
-       !gavl_string_ends_with(uri, ".m3u8"))
+       (!gavl_string_ends_with(input->url, ".m3u") &&
+        !gavl_string_ends_with(input->url, ".m3u8")))
       return 0;
     }
   else if(input->filename)
@@ -151,8 +151,8 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
     free(tmp_string);
     }
 
-  fprintf(stderr, "Got global http vars %s:\n", input->url);
-  gavl_dictionary_dump(&http_vars_global, 2);
+  //  fprintf(stderr, "Got global http vars %s:\n", input->url);
+  //  gavl_dictionary_dump(&http_vars_global, 2);
   
   tt = bgav_track_table_create(0);
   
@@ -278,6 +278,10 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
           
           }
         
+        if(type)
+          free(type);
+        if(group_id)
+          free(group_id);
         
         }
       
@@ -355,12 +359,106 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
             {
             pos1 += strlen("tvg-logo=\"");
 
-            if((pos2 = strchr(pos1, '"')))
+            if((pos2 = strchr(pos1, '"')) && (pos2 > pos1))
               {
               gavl_dictionary_set_string_nocopy(&metadata, GAVL_META_LOGO_URL, gavl_strndup(pos1, pos2));
               }
             }
 
+          if((pos1 = strstr(pos, "tvg-country=\"")))
+            {
+            pos1 += strlen("tvg-country=\"");
+
+            if((pos2 = strchr(pos1, '"')) && (pos2 > pos1))
+              {
+              char * pos;
+              const char * label;
+              char * tmp_string = gavl_strndup(pos1, pos2);
+
+              if(strchr(tmp_string, ';'))
+                {
+                int idx = 0;
+                char ** arr = gavl_strbreak(tmp_string, ';');
+
+                while(arr[idx])
+                  {
+                  if((pos = strchr(arr[idx], '-')))
+                    *pos = '\0';
+                  if((label = gavl_get_country_label(arr[idx])))
+                    gavl_dictionary_append_string_array(&metadata, GAVL_META_COUNTRY, label);
+                  idx++;
+                  }
+                gavl_strbreak_free(arr);
+                free(tmp_string);
+                }
+              else
+                {
+                if((pos = strchr(tmp_string, '-')))
+                  *pos = '\0';
+
+                if((label = gavl_get_country_label(tmp_string)))
+                  gavl_dictionary_set_string(&metadata, GAVL_META_COUNTRY, label);
+                free(tmp_string);
+                }
+              
+              
+              }
+            }
+
+          if((pos1 = strstr(pos, "tvg-language=\"")))
+            {
+            pos1 += strlen("tvg-language=\"");
+
+            if((pos2 = strchr(pos1, '"')) && (pos2 > pos1))
+              {
+              char * tmp_string = gavl_strndup(pos1, pos2);
+
+              if(strchr(tmp_string, ';'))
+                {
+                int idx = 0;
+                char ** arr = gavl_strbreak(tmp_string, ';');
+
+                while(arr[idx])
+                  {
+                  gavl_dictionary_append_string_array(&metadata, GAVL_META_AUDIO_LANGUAGES, arr[idx]);
+                  idx++;
+                  }
+                gavl_strbreak_free(arr);
+                free(tmp_string);
+                }
+              else
+                gavl_dictionary_set_string_nocopy(&metadata, GAVL_META_AUDIO_LANGUAGES,
+                                                  tmp_string);
+              }
+            }
+          if((pos1 = strstr(pos, "group-title=\"")))
+            {
+            pos1 += strlen("group-title=\"");
+
+            if((pos2 = strchr(pos1, '"')) && (pos2 > pos1))
+              {
+              char * tmp_string = gavl_strndup(pos1, pos2);
+
+              if(strchr(tmp_string, ';'))
+                {
+                int idx = 0;
+                char ** arr = gavl_strbreak(tmp_string, ';');
+
+                while(arr[idx])
+                  {
+                  gavl_dictionary_append_string_array(&metadata, GAVL_META_CATEGORY, arr[idx]);
+                  idx++;
+                  }
+                gavl_strbreak_free(arr);
+                free(tmp_string);
+                }
+              else
+                gavl_dictionary_set_string_nocopy(&metadata, GAVL_META_CATEGORY,
+                                                  tmp_string);
+              }
+            }
+          
+          
           }
         }
       else if(gavl_string_starts_with(pos, "#EXTVLCOPT:"))
@@ -420,6 +518,7 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
           gavl_dictionary_t * edl_track;
           gavl_dictionary_t * edl_stream;
           gavl_dictionary_t * edl_segment;
+          gavl_dictionary_t * m;
           const char * var;
           const gavl_dictionary_t * s;
           
@@ -427,9 +526,33 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
 
           edl = gavl_edl_create(&tt->info);
 
+          if(gavl_get_num_tracks(edl) == 1)
+            {
+            m = gavl_dictionary_get_dictionary_create(edl, GAVL_META_METADATA);
+            gavl_dictionary_set_int(m, GAVL_META_MULTIVARIANT, 1);
+            }
+          
           edl_track = gavl_append_track(edl, NULL);
+          m = gavl_dictionary_get_dictionary_create(edl_track, GAVL_META_METADATA);
 
-          gavl_dictionary_merge2(gavl_track_get_metadata_nc(edl_track), &metadata);
+          if(bitrate)
+            {
+            gavl_dictionary_set_int(m, GAVL_META_BITRATE, bitrate);
+            bitrate = 0;
+            }
+          if(width)
+            {
+            gavl_dictionary_set_int(m, GAVL_META_WIDTH, width);
+            width = 0;
+            }
+          if(height)
+            {
+            gavl_dictionary_set_int(m, GAVL_META_HEIGHT, height);
+            height = 0;
+            }
+          
+          
+          gavl_dictionary_merge2(m, &metadata);
           gavl_dictionary_reset(&metadata);
           
           edl_stream = gavl_track_append_video_stream(edl_track);
@@ -443,8 +566,13 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
               continue;
             
             edl_stream = gavl_track_append_audio_stream(edl_track);
-            edl_segment = gavl_edl_add_segment(edl_stream);
+            m = gavl_dictionary_get_dictionary_create(edl_stream, GAVL_META_METADATA);
 
+            gavl_dictionary_set(m, GAVL_META_LANGUAGE, gavl_dictionary_get(s, GAVL_META_LANGUAGE));
+            gavl_dictionary_set(m, GAVL_META_LABEL, gavl_dictionary_get(s, GAVL_META_LABEL));
+            
+            edl_segment = gavl_edl_add_segment(edl_stream);
+            
             var = gavl_dictionary_get_string(s, GAVL_META_URI);
             
             if(gavl_string_starts_with(var, "https://"))
@@ -465,7 +593,7 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
               gavl_edl_segment_set_url(edl_segment, var);
             gavl_edl_segment_set(edl_segment, 0, 0, -1, 0, 0, -1);
             }
-
+#if 0 // TODO: Enable subtitles later
           if(subtitles && (dict = gavl_dictionary_get_dictionary_nc(&ext_x_media, "SUBTITLES")) &&
              (arr = gavl_dictionary_get_array(dict, subtitles)))
             {
@@ -500,6 +628,7 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
               gavl_edl_segment_set(edl_segment, 0, 0, -1, 0, 0, -1);
               }
             }
+#endif
           t = NULL;
           }
         else
@@ -550,6 +679,18 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
           height = 0;
           }
 
+        }
+
+      if(audio)
+        {
+        free(audio);
+        audio = NULL;
+        }
+
+      if(subtitles)
+        {
+        free(subtitles);
+        subtitles = NULL;
         }
       
       if(!hls)

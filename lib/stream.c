@@ -31,8 +31,6 @@ int bgav_stream_start(bgav_stream_t * stream)
   {
   int result = 1;
 
-  gavl_stream_set_stats(stream->info, &stream->stats);
-  
   switch(stream->type)
     {
     case GAVL_STREAM_VIDEO:
@@ -50,6 +48,8 @@ int bgav_stream_start(bgav_stream_t * stream)
     default:
       break;
     }
+
+  gavl_stream_set_stats(stream->info, &stream->stats);
   
   if(result)
     stream->initialized = 1;

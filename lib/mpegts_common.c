@@ -287,8 +287,7 @@ void bgav_transport_packet_dump(transport_packet_t * p)
     }
   }
 
-int bgav_transport_packet_parse(const bgav_options_t * opt,
-                                uint8_t ** data, transport_packet_t * ret)
+int bgav_transport_packet_parse(uint8_t ** data, transport_packet_t * ret)
   {
   int tmp;
   int adaption_field_length, adaption_field_flags;
@@ -429,7 +428,8 @@ int bgav_pmt_section_setup_track(pmt_section_t * pmts,
       s->index_mode = INDEX_MODE_SIMPLE;
       s->fourcc = st->fourcc;
 
-
+      if(s->fourcc == BGAV_MK_FOURCC('A','D','T','S'))
+        s->flags |= STREAM_FILTER_PACKETS;
       }
     else if(st && (st->bgav_type == GAVL_STREAM_VIDEO) &&
        ((max_video_streams < 0) ||

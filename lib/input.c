@@ -36,7 +36,7 @@
 #define ALLOC_SIZE    128
 #define MAX_REDIRECTIONS 5
 
-
+#undef HAVE_LINUXDVB
 
 static void add_char_16(char ** buffer, uint32_t * buffer_alloc,
                         int pos, uint16_t c)
@@ -667,7 +667,6 @@ void bgav_inputs_dump()
 
 #define DVD_PATH "/video_ts/video_ts.ifo"
 #define DVD_PATH_LEN strlen(DVD_PATH)
-
 
 static int is_dvd_iso(const char * path)
   {

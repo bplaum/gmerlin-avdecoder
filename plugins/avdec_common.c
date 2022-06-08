@@ -217,6 +217,10 @@ static int bg_avdec_start(void * priv)
   bg_media_source_stream_t * st;
 
   num = gavl_track_get_num_streams_all(avdec->src.track);
+
+  if(!num) // Redirector
+    return 1;
+  
   for(i = 0; i < num; i++)
     bgav_set_stream_action_all(avdec->dec, i, get_stream_action(avdec->src.streams[i]->action));
 

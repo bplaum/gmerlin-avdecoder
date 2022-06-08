@@ -365,6 +365,7 @@ demux_matroska.c \
 demux_mpegaudio.c \
 demux_mpegps.c \
 demux_mpegts.c \
+demux_mpegts2.c \
 demux_mpegvideo.c \
 demux_mtv.c \
 demux_mxf.c \
@@ -406,7 +407,6 @@ http.c \
 id3v1.c \
 id3v2.c \
 in_cb.c \
-in_dvb_linux.c \
 in_dvd.c \
 in_file.c \
 in_ftp.c \

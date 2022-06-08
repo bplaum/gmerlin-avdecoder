@@ -64,6 +64,8 @@ do_connect(bgav_http_t * ret, const char * host, int port, const bgav_options_t 
   int fd = -1;
   
   const char * var;
+
+  gavl_dictionary_init(&header);
   
   //  bgav_http_t * ret = NULL;
   
@@ -111,7 +113,6 @@ do_connect(bgav_http_t * ret, const char * host, int port, const bgav_options_t 
     goto fail;
     }
   
-  gavl_dictionary_init(&header);
   gavl_dictionary_copy(&header, request_header);
 
   if(extra_header)
@@ -179,10 +180,15 @@ do_connect(bgav_http_t * ret, const char * host, int port, const bgav_options_t 
     ret->chunked = 1;
     ret->content_length = 0;
     }
+
+  gavl_dictionary_free(&header);
   
   return ret;
   
   fail:
+
+  gavl_dictionary_free(&header);
+  
   
   if(ret)
     bgav_http_close(ret);
@@ -360,12 +366,13 @@ static bgav_http_t * http_open(bgav_http_t * ret,
       *redirect_url = NULL;
       }
     
-    location = gavl_dictionary_get_string(&ret->header, "Location");
+    location = gavl_dictionary_get_string_i(&ret->header, "Location");
     
     if(!location)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
                "Got redirection but no URL");
+      gavl_dictionary_dump(&ret->header, 2);
       }
     else
       {

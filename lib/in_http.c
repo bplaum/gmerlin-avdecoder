@@ -82,8 +82,11 @@ static int open_http(bgav_input_context_t * ctx, const char * url1, char ** r)
 
   url = gavl_url_extract_http_vars(url, &extra_header);
 
-  fprintf(stderr, "Got extra header:\n");
-  gavl_dictionary_dump(&extra_header, 2);
+  if(extra_header.num_entries)
+    {
+    fprintf(stderr, "Got extra header:\n");
+    gavl_dictionary_dump(&extra_header, 2);
+    }
   
   create_header(&extra_header, ctx->opt);
   

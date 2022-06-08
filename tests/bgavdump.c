@@ -355,6 +355,7 @@ int main(int argc, char ** argv)
       return -1;
       }
     }
+#if 0
   else if(!strncmp(argv[argc-1], "dvb://", 6))
     {
     if(!bgav_open_dvb(file, argv[argc-1] + 6))
@@ -364,6 +365,7 @@ int main(int argc, char ** argv)
       return -1;
       }
     }
+#endif
   else if(!strncmp(argv[argc-1], "cb://", 5))
     {
     cb_file = fopen(argv[argc-1] + 5, "r");
@@ -426,7 +428,10 @@ int main(int argc, char ** argv)
           file = bgav_create();
           }
         else
+          {
+          free(str);
           break;
+          }
         }
       
       }
@@ -572,7 +577,7 @@ int main(int argc, char ** argv)
         asrc = bgav_get_audio_source(file, i);
         gavl_audio_source_set_dst(asrc, 0, NULL);
         
-        // audio_format = bgav_get_audio_format(file, i);
+        audio_format = bgav_get_audio_format(file, i);
         // af = gavl_audio_frame_create(audio_format);
         if(sample_accurate && (audio_seek >= 0))
           bgav_seek_audio(file, i, audio_seek);
@@ -583,8 +588,8 @@ int main(int argc, char ** argv)
           
           af = NULL;
           if(gavl_audio_source_read_frame(asrc, &af) == GAVL_SOURCE_OK)
-            fprintf(stderr, "Done, PTS: %"PRId64", Samples: %d\n",
-                    af->timestamp, af->valid_samples);
+            fprintf(stderr, "Done, timestamp: %"PRId64" [%"PRId64"], Samples: %d\n",
+                    af->timestamp, gavl_time_unscale(audio_format->samplerate, af->timestamp), af->valid_samples);
           else
             fprintf(stderr, "Failed\n");
           }
@@ -611,7 +616,7 @@ int main(int argc, char ** argv)
           vf = NULL;
           if(gavl_video_source_read_frame(vsrc, &vf) == GAVL_SOURCE_OK)
             {
-            fprintf(stderr, "Done, timestamp: %"PRId64, vf->timestamp);
+            fprintf(stderr, "Done, timestamp: %"PRId64" [%"PRId64"]", vf->timestamp, gavl_time_unscale(video_format->timescale, vf->timestamp));
 
             if(vf->duration > 0)
               fprintf(stderr, ", Duration: %"PRId64, vf->duration);

@@ -505,15 +505,15 @@ int bgav_track_start(bgav_track_t * t, bgav_demuxer_context_t * demuxer)
   }
 
 
-void bgav_track_dump(bgav_t * b, bgav_track_t * t)
+void bgav_track_dump(bgav_track_t * t)
   {
   int i;
   const char * description;
   
-  description = bgav_get_description(b);
+  //  description = bgav_get_description(b);
   
-  bgav_dprintf( "Format:   %s\n", (description ? description : 
-                                   "Not specified"));
+  //  bgav_dprintf( "Format:   %s\n", (description ? description : 
+  //                                   "Not specified"));
   
   bgav_diprintf(2, "Metadata\n");
   gavl_dictionary_dump(t->metadata, 4);

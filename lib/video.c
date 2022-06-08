@@ -312,6 +312,13 @@ int bgav_video_start(bgav_stream_t * s)
       
       return 0;
       }
+#if 0
+    else
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Initialized decoder");
+      gavl_dictionary_dump(s->info, 2);
+      }
+#endif
     if(s->data.video.format->interlace_mode == GAVL_INTERLACE_UNKNOWN)
       s->data.video.format->interlace_mode = GAVL_INTERLACE_NONE;
     if(s->data.video.format->framerate_mode == GAVL_FRAMERATE_UNKNOWN)

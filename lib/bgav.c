@@ -238,7 +238,7 @@ int bgav_init(bgav_t * ret)
 
   if(!demuxer && !redirector)
     {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Cannot detect stream type");
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Cannot detect stream type %s %s", ret->input->url, ret->input->filename);
     }
   
   if(ret->demuxer)
@@ -346,7 +346,7 @@ gavl_dictionary_t * bgav_get_media_info(bgav_t * bgav)
 
 void bgav_dump(bgav_t * bgav)
   {
-  bgav_track_dump(bgav, bgav->tt->cur);
+  bgav_track_dump(bgav->tt->cur);
   }
 
 gavl_time_t bgav_get_duration(bgav_t * bgav, int track)
@@ -453,8 +453,10 @@ int bgav_select_track(bgav_t * b, int track)
           bgav_input_seek(b->input, b->demuxer->data_start, SEEK_SET);
         else
           {
+          if(was_running)
+            reset_input = 1;
+          
           data_start = b->demuxer->data_start;
-          reset_input = 1;
           //        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
           //                 "Cannot reset track when on a nonseekable source");
           //        return 0;
@@ -522,7 +524,7 @@ int bgav_select_track(bgav_t * b, int track)
       {
       /* Reset input. This will be done by closing and reopening the input */
       gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Reopening input due to track reset");
-
+      
       
       if(!bgav_input_reopen(b->input))
         return 0;

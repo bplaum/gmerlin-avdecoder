@@ -278,12 +278,14 @@ int main(int argc, char ** argv)
     }
   else if(!strncmp(argv[argc-1], "dvb://", 6))
     {
+#if 0    
     if(!bgav_open_dvb(file, argv[argc-1] + 6))
       {
       fprintf(stderr, "Could not open DVB Device %s\n",
               argv[argc-1] + 6);
       return -1;
       }
+#endif
     }
   else if(!bgav_open(file, argv[argc-1]))
     {

@@ -53,6 +53,7 @@ extern const bgav_demuxer_t bgav_demuxer_mpegaudio;
 extern const bgav_demuxer_t bgav_demuxer_mpegvideo;
 extern const bgav_demuxer_t bgav_demuxer_mpegps;
 extern const bgav_demuxer_t bgav_demuxer_mpegts;
+extern const bgav_demuxer_t bgav_demuxer_mpegts2;
 extern const bgav_demuxer_t bgav_demuxer_mxf;
 extern const bgav_demuxer_t bgav_demuxer_flac;
 extern const bgav_demuxer_t bgav_demuxer_adts;
@@ -181,6 +182,7 @@ static const demuxer_t demuxers[] =
 
 static const demuxer_t sync_demuxers[] =
   {
+    { &bgav_demuxer_mpegts2,    "MPEG-2 transport stream" },
     { &bgav_demuxer_mpegts,    "MPEG-2 transport stream" },
     { &bgav_demuxer_mpegaudio, "MPEG Audio" },
     { &bgav_demuxer_adts,      "ADTS" },

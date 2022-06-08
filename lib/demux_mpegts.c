@@ -307,10 +307,9 @@ static int get_data(bgav_demuxer_context_t * ctx, int num_packets)
 static inline int
 parse_transport_packet(bgav_demuxer_context_t * ctx)
   {
-  const bgav_options_t * opt = ctx->opt;
   mpegts_t * priv = ctx->priv;
   
-  if(!bgav_transport_packet_parse(opt, &priv->ptr, &priv->packet))
+  if(!bgav_transport_packet_parse(&priv->ptr, &priv->packet))
     {
     if(ctx->input->total_bytes > 0)
       {
@@ -717,11 +716,14 @@ static int init_psi(bgav_demuxer_context_t * ctx,
       return 0;
       }
     
+    //fprintf(stderr, "Got PID: %d\n", priv->packet.pid);
+    
     for(program = 0; program < priv->num_programs; program++)
       {
       /* Check if we got the PMT of a program */
       if(priv->packet.pid == priv->programs[program].program_map_pid)
         break;
+#if 0
       /* Check if the PMT is already parsed and we got a stream ID */
       else if(priv->programs[program].pmts.table_id == 0x02)
         {
@@ -733,6 +735,7 @@ static int init_psi(bgav_demuxer_context_t * ctx,
             }
           }
         }
+#endif
       }
     
     if(program == priv->num_programs)
@@ -764,6 +767,17 @@ static int init_psi(bgav_demuxer_context_t * ctx,
         return 0;
         }
       }
+
+    keep_going = 0;
+    for(program = 0; program < priv->num_programs; program++)
+      {
+      /* Check if we got the PMT of a program */
+      if(!priv->programs[program].pmts.table_id)
+        keep_going = 1;
+      }
+    if(!keep_going)
+      break;
+    
     if(!next_packet_scan(ctx))
       break;
     }
@@ -1215,7 +1229,7 @@ static int open_mpegts(bgav_demuxer_context_t * ctx)
   }
 
 /*
- * Parse HDV AAUV/VAUX
+ * Parse HDV AAUX/VAUX
  *
  * Modeled after the gstreamer parser by Edward Hervey
  * http://cgit.freedesktop.org/gstreamer/gst-plugins-bad/tree/gst/hdvparse/gsthdvparse.c
@@ -1849,7 +1863,7 @@ static int select_track_mpegts(bgav_demuxer_context_t * ctx,
   mpegts_t * priv;
   priv = ctx->priv;
 
-  if(!priv->is_running)
+  if(!priv->is_running || (priv->num_programs == 1))
     return 1;
 
   priv->is_running = 0;

@@ -49,6 +49,10 @@
 #define STREAM_TYPE_AUDIO_AC3       0x81
 #define STREAM_TYPE_AUDIO_DTS       0x8a
 
+#define TS_PACKET_SIZE      188
+#define TS_DVHS_PACKET_SIZE 192
+#define TS_FEC_PACKET_SIZE  204
+
 typedef struct
   {
   int transport_error;
@@ -74,8 +78,7 @@ typedef struct
 
 void bgav_transport_packet_dump(transport_packet_t * p);
 
-int bgav_transport_packet_parse(const bgav_options_t * opt,
-                                uint8_t ** data, transport_packet_t * ret);
+int bgav_transport_packet_parse(uint8_t ** data, transport_packet_t * ret);
 
 
 /* Program association table section */
