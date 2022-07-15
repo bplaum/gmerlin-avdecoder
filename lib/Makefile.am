@@ -390,6 +390,7 @@ demux_vivo.c \
 demux_voc.c \
 demux_vmd.c \
 demux_vqa.c \
+demux_vtt.c \
 demux_wav.c \
 demux_wavpack.c \
 demux_wve.c \

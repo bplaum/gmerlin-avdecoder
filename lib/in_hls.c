@@ -84,13 +84,15 @@ static int load_m3u8(bgav_input_context_t * ctx)
   int window_changed = 0;
 
   gavl_dictionary_t cipher_params;
+
+  int num_appended = 0;
   
   p->window_start = GAVL_TIME_UNDEFINED;
   p->window_end = GAVL_TIME_UNDEFINED;
 
   gavl_dictionary_init(&cipher_params);
   
-  if(!gavl_http_client_open_full(p->m3u_io, "GET", ctx->url, 
+  if(!gavl_http_client_open(p->m3u_io, "GET", ctx->url, 
                                  NULL, NULL))
     goto fail;
   
@@ -128,19 +130,34 @@ static int load_m3u8(bgav_input_context_t * ctx)
     {
     if(p->seq_start < new_seq)
       {
+      //      fprintf(stderr, "Deleting %"PRId64" elements\n", new_seq - p->seq_start);
+  
       gavl_array_splice_val(&p->segments, 0, new_seq - p->seq_start, NULL);
       p->seq_start = new_seq;
       window_changed = 1;
       }
     }
 
+  
   skip = p->segments.num_entries;
+  //  fprintf(stderr, "seq_start: %"PRId64" skip: %d\n", p->seq_start, skip);
   
   idx = 0;
   
   gavl_value_init(&val);
   dict = gavl_value_set_dictionary(&val);
 
+  while(skip)
+    {
+    gavl_strtrim(lines[idx]);
+
+    if((*(lines[idx]) != '\0') &&
+       !gavl_string_starts_with(lines[idx], "#"))
+      skip--;
+    idx++;
+    if(!lines[idx])
+      break;
+    }
   
   while(lines[idx])
     {
@@ -189,14 +206,6 @@ static int load_m3u8(bgav_input_context_t * ctx)
         }
       }
     
-    if(skip)
-      {
-      if(!gavl_string_starts_with(lines[idx], "#"))
-        skip--;
-      idx++;
-      continue;
-      }
-
     gavl_strtrim(lines[idx]);
 
     if(*(lines[idx]) == 0)
@@ -245,6 +254,7 @@ static int load_m3u8(bgav_input_context_t * ctx)
       
       gavl_value_reset(&val);
       dict = gavl_value_set_dictionary(&val);
+      num_appended++;
       }
     idx++;
     }
@@ -271,6 +281,8 @@ static int load_m3u8(bgav_input_context_t * ctx)
   gavl_value_free(&val);
 
   gavl_dictionary_free(&cipher_params);
+
+  //  fprintf(stderr, "*** Appended %d entries\n", num_appended);
   
   return ret;
   
@@ -283,7 +295,7 @@ static int download_key(bgav_input_context_t * ctx, const char * uri, int len)
   if(!priv->cipher_key_io)
     priv->cipher_key_io = gavl_http_client_create();
 
-  if(!gavl_http_client_open_full(priv->cipher_key_io,
+  if(!gavl_http_client_open(priv->cipher_key_io,
                                  "GET", uri, NULL, NULL))
     return 0;
 
@@ -358,14 +370,13 @@ static int handle_id3(bgav_input_context_t * ctx)
 
   if((id3 = bgav_id3v2_read(mem)))
     {
-    gavl_dictionary_t m;
-    gavl_dictionary_init(&m);
-    fprintf(stderr, "Got ID3V2\n");
     //    bgav_id3v2_dump(id3);
-    bgav_id3v2_2_metadata(id3, &m);
+    bgav_id3v2_2_metadata(id3, &ctx->m);
     bgav_id3v2_destroy(id3);
-    gavl_dictionary_dump(&m, 2);
-    gavl_dictionary_free(&m);
+#if 0
+    fprintf(stderr, "Got ID3V2\n");
+    gavl_dictionary_dump(&ctx->m, 2);
+#endif
     }
   
   bgav_input_close(mem);
@@ -430,9 +441,7 @@ static int open_ts(bgav_input_context_t * ctx)
     tries++;
     gavl_time_delay(&delay_time);
     }
-  
-    
-  
+
   dict = gavl_value_get_dictionary(&p->segments.entries[idx]);
 
   uri = gavl_dictionary_get_string(dict, GAVL_META_URI);
@@ -442,9 +451,9 @@ static int open_ts(bgav_input_context_t * ctx)
     fprintf(stderr, "Got absolute time 1 %"PRId64"\n", p->abs_offset);
     bgav_start_time_absolute_changed(ctx->b, p->abs_offset);
     }
-  gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN, "Opening TS %s", uri);
-
-  if(!gavl_http_client_open_full(p->ts_io,
+  gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN, "Opening TS %s %d %"PRId64, uri, idx, p->seq_cur);
+  
+  if(!gavl_http_client_open(p->ts_io,
                                  "GET",
                                  uri, NULL, &res))
     {

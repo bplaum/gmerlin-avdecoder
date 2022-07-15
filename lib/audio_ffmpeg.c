@@ -126,7 +126,7 @@ typedef struct
 
 static codec_info_t * lookup_codec(bgav_stream_t * s);
 
-static int init_format(bgav_stream_t * s)
+static int init_format(bgav_stream_t * s, int samples_per_frame)
   {
   ffmpeg_audio_priv * priv;
   int planar = 0;
@@ -138,10 +138,11 @@ static int init_format(bgav_stream_t * s)
   s->data.audio.format->num_channels = priv->ctx->channels;
   s->data.audio.format->samplerate   = priv->ctx->sample_rate;
 
-  if(s->data.audio.format->samplerate == 2 * s->timescale)
+  if((priv->ctx->codec_id == AV_CODEC_ID_AAC) && (samples_per_frame == 2048))
     {
     gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Detected SBR");
-    s->ci->flags |= GAVL_COMPRESSION_SBR;
+    //    gavl_stream_stats_dump(&s->stats, 2);
+    bgav_stream_set_sbr(s);
     }
   
   /* These come from the codec */
@@ -230,7 +231,7 @@ static gavl_source_status_t decode_frame_ffmpeg(bgav_stream_t * s)
   if(!result && priv->f->nb_samples)
     {
     /* Detect if we need the format */
-    if(!priv->sample_size && !init_format(s))
+    if(!priv->sample_size && !init_format(s, priv->f->nb_samples))
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Init format failed");
       return GAVL_SOURCE_EOF;

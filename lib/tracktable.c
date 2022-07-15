@@ -166,8 +166,10 @@ void bgav_track_table_merge_metadata(bgav_track_table_t*t,
     src_ext = gavl_dictionary_get_src(m, GAVL_META_SRC, 0, NULL, NULL);
     src_t   = gavl_dictionary_get_src_nc(t->tracks[i]->metadata, GAVL_META_SRC, 0);
     
-    if(src_ext && src_t)
+    if(src_ext && src_t && !gavl_dictionary_get(src_t, GAVL_META_EDL))
+      {
       gavl_dictionary_merge2(src_t, src_ext);
+      }
 #if 0
     fprintf(stderr, "bgav_track_table_merge_metadata\n");
     fprintf(stderr, "t->tracks[i]->metadata\n");
@@ -192,6 +194,8 @@ void bgav_track_table_compute_info(bgav_track_table_t * t)
   int i;
   gavl_dictionary_t * edl;
 
+  gavl_track_update_children(&t->info);
+  
   for(i = 0; i < t->num_tracks; i++)
     bgav_track_compute_info(t->tracks[i]);
 

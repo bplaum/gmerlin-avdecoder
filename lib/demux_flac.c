@@ -140,6 +140,24 @@ static int open_flac(bgav_demuxer_context_t * ctx)
         
         if(priv->streaminfo.total_samples)
           s->stats.pts_end = priv->streaminfo.total_samples;
+
+        if(priv->streaminfo.min_framesize > 0)
+          s->stats.size_min = priv->streaminfo.min_framesize;
+
+        if(priv->streaminfo.max_framesize > 0)
+          s->stats.size_max = priv->streaminfo.max_framesize;
+
+        if(priv->streaminfo.min_blocksize > 0)
+          {
+          if((priv->streaminfo.min_blocksize == priv->streaminfo.max_blocksize) &&
+             priv->streaminfo.total_samples)
+            s->stats.duration_min = priv->streaminfo.total_samples % priv->streaminfo.min_blocksize;
+          }
+        
+        if(priv->streaminfo.max_blocksize > 0)
+          s->stats.duration_max = priv->streaminfo.max_blocksize;
+        
+        
         //        bgav_input_skip(ctx->input, size);
         break;
       case 1: // PADDING

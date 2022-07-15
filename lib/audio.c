@@ -171,6 +171,10 @@ int bgav_audio_start(bgav_stream_t * s)
     
     if(!dec->init(s))
       return 0;
+
+    /* might need to (re)set this here */
+    s->out_time = s->stats.pts_start;
+
     
     if(!s->timescale)
       s->timescale = s->data.audio.format->samplerate;
@@ -609,4 +613,23 @@ gavl_packet_source_t * bgav_get_audio_packet_source(bgav_t * bgav, int stream)
   if(!(s = bgav_track_get_audio_stream(bgav->tt->cur, stream)))
     return NULL;
   return s->psrc;
+  }
+
+void bgav_stream_set_sbr(bgav_stream_t * s)
+  {
+  s->ci->flags |= GAVL_COMPRESSION_SBR;
+
+  if(s->stats.pts_start != GAVL_TIME_UNDEFINED)
+    s->stats.pts_start *= 2;
+
+  if(s->stats.pts_end != GAVL_TIME_UNDEFINED)
+    s->stats.pts_end *= 2;
+
+  if(s->stats.duration_min != GAVL_TIME_UNDEFINED)
+    s->stats.duration_min *= 2;
+
+  if(s->stats.duration_max != GAVL_TIME_UNDEFINED)
+    s->stats.duration_max *= 2;
+
+  
   }

@@ -86,6 +86,7 @@ extern const bgav_demuxer_t bgav_demuxer_y4m;
 extern const bgav_demuxer_t bgav_demuxer_rawaudio;
 extern const bgav_demuxer_t bgav_demuxer_image;
 extern const bgav_demuxer_t bgav_demuxer_cue;
+extern const bgav_demuxer_t bgav_demuxer_vtt;
 
 #ifdef HAVE_VORBIS
 extern const bgav_demuxer_t bgav_demuxer_ogg;
@@ -178,6 +179,7 @@ static const demuxer_t demuxers[] =
     { &bgav_demuxer_image, "Image" },
     { &bgav_demuxer_p2xml, "P2 xml" },
     { &bgav_demuxer_rawaudio, "Raw audio" },
+    { &bgav_demuxer_vtt, "WEBVTT" },
   };
 
 static const demuxer_t sync_demuxers[] =
@@ -196,7 +198,10 @@ static struct
   }
 mimetypes[] =
   {
-    { &bgav_demuxer_mpegaudio, "audio/mpeg" }
+    { &bgav_demuxer_mpegaudio, "audio/mpeg" },
+    { &bgav_demuxer_adts,      "audio/aacp" },
+    { &bgav_demuxer_adts,      "audio/aac" },
+    { &bgav_demuxer_vtt,       "text/vtt" },
   };
 
 static const int num_demuxers = sizeof(demuxers)/sizeof(demuxers[0]);
@@ -229,6 +234,8 @@ const bgav_demuxer_t * bgav_demuxer_probe(bgav_input_context_t * input)
       {
       if(!strcmp(mimetypes[i].mimetype, mimetype))
         {
+        gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN,
+                 "Got demuxer for mimetype %s", mimetype);
         return mimetypes[i].demuxer;
         }
       }

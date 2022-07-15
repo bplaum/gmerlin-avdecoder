@@ -391,41 +391,44 @@ static int start_subtitle(void * data, bgav_stream_t * s)
   if(s->flags & STREAM_HAS_SUBREADER)
     ss->num_active_subtitle_readers++;
   
-  video_stream = bgav_track_get_video_stream(s->track, 0);
-  
-  /* Check, if we must get the video format from the decoder */
-  video_format = video_stream->data.video.format;
+  if((video_stream = bgav_track_get_video_stream(s->track, 0)))
+    {
+    /* Check, if we must get the video format from the decoder */
+    video_format = video_stream->data.video.format;
 
-  if((video_stream->action == BGAV_STREAM_MUTE) &&
-     !video_stream->initialized)
-    {
-    /* Start the video decoder to get the format */
-    video_stream->action = BGAV_STREAM_DECODE;
-    video_stream->demuxer = ss->demuxer;
-    bgav_stream_start(video_stream);
-    bgav_stream_stop(video_stream);
-    video_stream->action = BGAV_STREAM_MUTE;
-    }
+    if((video_stream->action == BGAV_STREAM_MUTE) &&
+       !video_stream->initialized)
+      {
+      /* Start the video decoder to get the format */
+      video_stream->action = BGAV_STREAM_DECODE;
+      video_stream->demuxer = ss->demuxer;
+      bgav_stream_start(video_stream);
+      bgav_stream_stop(video_stream);
+      video_stream->action = BGAV_STREAM_MUTE;
+      }
     
-  if((!video_format->image_width || !video_format->image_height ||
-      !video_format->timescale) &&
-     (video_stream->action != BGAV_STREAM_PARSE))
-    {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-             "Starting subtitle decoder failed (cannot get video format)");
-    return 0;
-    }
+    if((!video_format->image_width || !video_format->image_height ||
+        !video_format->timescale) &&
+       (video_stream->action != BGAV_STREAM_PARSE))
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
+               "Starting subtitle decoder failed (cannot get video format)");
+      return 0;
+      }
     
-  /*
-   *  For text subtitles, copy the video format.
-   *  TODO: This shouldn't be necessary!!
-   */
+    /*
+     *  For text subtitles, copy the video format.
+     *  TODO: This shouldn't be necessary!!
+     */
     
-  if(s->type == GAVL_STREAM_TEXT)
-    {
-    gavl_video_format_copy(s->data.subtitle.video.format,
-                           video_format);
+    if(s->type == GAVL_STREAM_TEXT)
+      {
+      gavl_video_format_copy(s->data.subtitle.video.format,
+                             video_format);
+      }
+    
     }
+  
     
   if(!bgav_stream_start(s))
     {
@@ -508,7 +511,7 @@ int bgav_track_start(bgav_track_t * t, bgav_demuxer_context_t * demuxer)
 void bgav_track_dump(bgav_track_t * t)
   {
   int i;
-  const char * description;
+  //  const char * description;
   
   //  description = bgav_get_description(b);
   

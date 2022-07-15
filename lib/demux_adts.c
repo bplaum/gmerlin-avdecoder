@@ -52,15 +52,10 @@ static int probe_adts(bgav_input_context_t * input)
   int ret;
   uint8_t * buffer;
   uint8_t header[7];
-  const char * mimetype; 
   bgav_adts_header_t h1, h2;
   
   /* Support aac live streams */
 
-  if(gavl_dictionary_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, NULL) && mimetype &&
-     (!strcmp(mimetype, "audio/aacp") ||
-      !strcmp(mimetype, "audio/aac")))
-    return 1;
   
   if(bgav_input_get_data(input, header, 7) < 7)
     return 0;
@@ -93,9 +88,8 @@ static int open_adts(bgav_demuxer_context_t * ctx)
   bgav_id3v1_tag_t * id3v1 = NULL;
   gavl_dictionary_t id3v1_metadata, id3v2_metadata;
   uint8_t buf[ADTS_HEADER_LEN];
-
   bgav_adts_header_t adts;
-  
+
   priv = calloc(1, sizeof(*priv));
   ctx->priv = priv;
 
@@ -168,7 +162,8 @@ static int open_adts(bgav_demuxer_context_t * ctx)
   /* This fourcc reminds the decoder to call a different init function */
 
   s->fourcc = BGAV_MK_FOURCC('A', 'D', 'T', 'S');
-
+  s->stats.pts_start = GAVL_TIME_UNDEFINED;
+ 
   /* Initialize rest */
 
   if(bgav_input_get_data(ctx->input, buf, ADTS_HEADER_LEN) < ADTS_HEADER_LEN)
@@ -262,8 +257,21 @@ static void resync_adts(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
 static int select_track_adts(bgav_demuxer_context_t * ctx, int track)
   {
   aac_priv_t * priv;
+  int64_t pts_start_num = 0;
+  int     pts_start_den = 0;
+  bgav_stream_t * s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
+
+  
   priv = ctx->priv;
   priv->sample_count = 0;
+
+  if(gavl_dictionary_get_int(&ctx->input->m, META_START_PTS_DEN, &pts_start_den) &&
+     (pts_start_den > 0) &&
+     gavl_dictionary_get_long(&ctx->input->m, META_START_PTS_NUM, &pts_start_num))
+    {
+    priv->sample_count = gavl_time_rescale(pts_start_den, s->timescale, pts_start_num);
+    }
+  
   return 1;
   }
 

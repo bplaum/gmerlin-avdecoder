@@ -957,7 +957,10 @@ struct bgav_input_s
 
   void (*pause)(bgav_input_context_t*);
   void (*resume)(bgav_input_context_t*);
-  
+
+  /* Non-Blocking API */
+  void (*can_read)(bgav_input_context_t*, int timeout);
+  int  (*read_noblock)(bgav_input_context_t*, uint8_t * buffer, int len);
   };
 
 // #define BGAV_INPUT_DO_BUFFER      (1<<0)
@@ -1708,6 +1711,8 @@ void bgav_audio_dump(bgav_stream_t * s);
 
 int bgav_audio_start(bgav_stream_t * s);
 void bgav_audio_stop(bgav_stream_t * s);
+
+void bgav_stream_set_sbr(bgav_stream_t * s);
 
 /* Resynchronize the stream to the next point
  * where decoding can start again.
