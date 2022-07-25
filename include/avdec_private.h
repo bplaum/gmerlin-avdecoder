@@ -968,6 +968,7 @@ struct bgav_input_s
 #define BGAV_INPUT_CAN_SEEK_BYTE  (1<<2)
 #define BGAV_INPUT_CAN_SEEK_TIME  (1<<3)
 #define BGAV_INPUT_SEEK_SLOW      (1<<4)
+#define BGAV_INPUT_PAUSED         (1<<5)
 
 struct bgav_input_context_s
   {
@@ -1522,6 +1523,7 @@ int bgav_is_redirector(bgav_t * bgav);
 #define BGAV_FLAG_EOF              (1<<0)
 #define BGAV_FLAG_IS_RUNNING       (1<<1)
 #define BGAV_FLAG_STATE_SENT       (1<<2)
+#define BGAV_FLAG_PAUSED           (1<<3)
 
 struct bgav_s
   {

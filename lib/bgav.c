@@ -38,21 +38,28 @@ static bgav_input_context_t * create_input(bgav_t * b)
 
 int bgav_pause(bgav_t * bgav)
   {
+  bgav->flags |= BGAV_FLAG_PAUSED;
   /* Close seekable network connection */
-
   if(bgav->input->input->pause)
+    {
     bgav->input->input->pause(bgav->input);
-
+    bgav->input->flags |= BGAV_INPUT_PAUSED;
+    }
+  
   return 1;
   }
 
 int bgav_resume(bgav_t * bgav)
   {
+  bgav->flags &= ~BGAV_FLAG_PAUSED;
+  
   /* Resume seekable network connection */
   
   if(bgav->input->input->resume)
+    {
     bgav->input->input->resume(bgav->input);
-  
+    bgav->input->flags &= ~BGAV_INPUT_PAUSED;
+    }
   return 1;
   
   }

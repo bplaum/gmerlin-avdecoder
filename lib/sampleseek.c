@@ -27,6 +27,8 @@
 #include <avdec_private.h>
 #include <parser.h>
 
+#define LOG_DOMAIN "sampleseek"
+
 static int file_index_seek(bgav_file_index_t * idx, int64_t time)
   {
   int pos1, pos2, tmp;
@@ -118,6 +120,14 @@ void bgav_seek_audio(bgav_t * bgav, int stream, int64_t sample)
   {
   int64_t frame_time;
   bgav_stream_t * s;
+
+  if(bgav->flags & BGAV_FLAG_PAUSED)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "bgav_seek_audio failed: Decoder paused");
+    return;
+    }
+
+
   s = bgav_track_get_audio_stream(bgav->tt->cur, stream);
 
   // fprintf(stderr, "Seek audio: %ld\n", sample);
@@ -183,6 +193,13 @@ void bgav_seek_video(bgav_t * bgav, int stream, int64_t time)
   {
   bgav_stream_t * s;
   int64_t frame_time;
+
+  if(bgav->flags & BGAV_FLAG_PAUSED)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "bgav_seek_video failed: Decoder paused");
+    return;
+    }
+  
   s = bgav_track_get_video_stream(bgav->tt->cur, stream);
   
   //  fprintf(stderr, "Seek video: %ld\n", time);
@@ -393,19 +410,39 @@ static void seek_subtitle(bgav_t * bgav, bgav_stream_t * s, int64_t time)
 void bgav_seek_subtitle(bgav_t * bgav, int stream, int64_t time)
   {
   bgav_stream_t * s;
+  if(bgav->flags & BGAV_FLAG_PAUSED)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "bgav_seek_subtitle failed: Decoder paused");
+    return;
+    }
+
   s = bgav_track_get_subtitle_stream(bgav->tt->cur, stream);
   seek_subtitle(bgav, s, time);
   }
 
 void bgav_seek_text(bgav_t * bgav, int stream, int64_t time)
   {
-  bgav_stream_t * s = bgav_track_get_text_stream(bgav->tt->cur, stream);
+  bgav_stream_t * s;
+  if(bgav->flags & BGAV_FLAG_PAUSED)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "bgav_seek_text failed: Decoder paused");
+    return;
+    }
+
+  s = bgav_track_get_text_stream(bgav->tt->cur, stream);
   seek_subtitle(bgav, s, time);
   }
 
 void bgav_seek_overlay(bgav_t * bgav, int stream, int64_t time)
   {
-  bgav_stream_t * s = bgav_track_get_overlay_stream(bgav->tt->cur, stream);
+  bgav_stream_t * s;
+  if(bgav->flags & BGAV_FLAG_PAUSED)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "bgav_seek_overlay failed: Decoder paused");
+    return;
+    }
+  
+  s = bgav_track_get_overlay_stream(bgav->tt->cur, stream);
   seek_subtitle(bgav, s, time);
   }
 

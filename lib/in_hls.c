@@ -92,8 +92,7 @@ static int load_m3u8(bgav_input_context_t * ctx)
 
   gavl_dictionary_init(&cipher_params);
   
-  if(!gavl_http_client_open(p->m3u_io, "GET", ctx->url, 
-                                 NULL, NULL))
+  if(!gavl_http_client_open(p->m3u_io, "GET", ctx->url))
     goto fail;
   
   //  gavl_dprintf("Got response\n");
@@ -296,7 +295,7 @@ static int download_key(bgav_input_context_t * ctx, const char * uri, int len)
     priv->cipher_key_io = gavl_http_client_create();
 
   if(!gavl_http_client_open(priv->cipher_key_io,
-                                 "GET", uri, NULL, NULL))
+                                 "GET", uri))
     return 0;
 
   gavl_buffer_reset(&priv->cipher_key);
@@ -397,7 +396,7 @@ static int open_ts(bgav_input_context_t * ctx)
   char * http_host = NULL;
   const char * var;
   int tries = 0;
-  gavl_dictionary_t * res;
+  const gavl_dictionary_t * res;
   uint8_t * iv = NULL;
   
   const char * cipher;
@@ -455,10 +454,12 @@ static int open_ts(bgav_input_context_t * ctx)
   
   if(!gavl_http_client_open(p->ts_io,
                                  "GET",
-                                 uri, NULL, &res))
+                                 uri))
     {
     goto fail;
     }
+
+  res = gavl_http_client_get_response(p->ts_io);
   
   /* Check for encryption */
   if((cipher = gavl_dictionary_get_string(dict, SEGMENT_CIPHER)) &&

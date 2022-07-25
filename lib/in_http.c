@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <avdec_private.h>
-#include <http.h>
+// #include <http.h>
 #include <hls.h>
 #include <gavl/http.h>
 
@@ -36,16 +36,12 @@
 
 typedef struct
   {
-  int64_t total_bytes_read;
-
   int icy_metaint;
   int icy_bytes;
-  bgav_http_t * h;
 
+  gavf_io_t * io;
+  
   bgav_charset_converter_t * charset_cnv;
-
-  //  bgav_hls_t * hls;
-
   int64_t bytes_read;
   
   } http_priv;
@@ -61,6 +57,135 @@ static void create_header(gavl_dictionary_t * ret, const bgav_options_t * opt)
   gavl_dictionary_set_string(ret, "GetContentFeatures.DLNA.ORG", "1");
   }
 
+static char const * const title_vars[] =
+  {
+    "icy-name",
+    "ice-name",
+    "x-audiocast-name",
+    NULL
+  };
+
+static char const * const genre_vars[] =
+  {
+    "x-audiocast-genre",
+    "icy-genre",
+    "ice-genre",
+    NULL
+  };
+
+static char const * const comment_vars[] =
+  {
+    "ice-description",
+    "x-audiocast-description",
+    NULL
+  };
+
+static char const * const url_vars[] =
+  {
+    "icy-url",
+    NULL
+  };
+
+static void set_metadata_string(const gavl_dictionary_t * header,
+                                char const * const vars[],
+                                gavl_dictionary_t * m, const char * name)
+  {
+  const char * val;
+  int i = 0;
+  while(vars[i])
+    {
+    val = gavl_dictionary_get_string(header, vars[i]);
+    if(val)
+      {
+      gavl_dictionary_set_string(m, name, val);
+      return;
+      }
+    else
+      i++;
+    }
+  }
+
+
+static void set_metadata(const gavl_dictionary_t * header, gavl_dictionary_t * m)
+  {
+  int bitrate = 0;
+  const char * var;
+  gavl_dictionary_t * src;
+
+  /* Get content type */
+
+  if((src = gavl_dictionary_get_src_nc(m, GAVL_META_SRC, 0)))
+    {
+    var = gavl_dictionary_get_string_i(header, "Content-Type");
+    if(var)
+      {
+      /* Special hack for radio-browser.info */
+      if(!strcasecmp(var, "application/octet-stream"))
+        {
+        if((var = gavl_dictionary_get_string_i(header, "Content-Disposition")) &&
+           (gavl_string_starts_with(var, "attachment;")) &&
+           (var = strstr(var, "filename=")) &&
+           (var = strrchr(var, '.')))
+          {
+          if(!strcmp(var, ".pls"))
+            gavl_dictionary_set_string(src, GAVL_META_MIMETYPE, "audio/x-scpls");
+          else if(!strcmp(var, ".m3u"))
+            gavl_dictionary_set_string(src, GAVL_META_MIMETYPE, "audio/x-mpegurl");
+          }
+        }
+      else
+        gavl_dictionary_set_string(src, GAVL_META_MIMETYPE, var);
+      }
+    else if(gavl_dictionary_get_string_i(header, "icy-notice1"))
+      gavl_dictionary_set_string(src, GAVL_META_MIMETYPE, "audio/mpeg");
+    }
+  
+  /* Get Metadata */
+  
+  set_metadata_string(header,
+                      title_vars, m, GAVL_META_STATION);
+  set_metadata_string(header,
+                      genre_vars, m, GAVL_META_GENRE);
+  set_metadata_string(header,
+                      comment_vars, m, GAVL_META_COMMENT);
+  set_metadata_string(header,
+                      url_vars, m, GAVL_META_RELURL);
+
+  /* Duration for lpcm streams from upnp servers */
+  if((var = gavl_dictionary_get_string(header, "X-AvailableSeekRange")))
+    {
+    gavl_time_t start, end;
+    int len;
+    
+    fprintf(stderr, "X-AvailableSeekRange: %s", var);
+    
+    if((var = strstr(var, "ntp=")) &&
+       (var += 4) &&
+       (len = gavl_time_parse(var, &start)) &&
+       (var += len) &&
+       (*var == '-') &&
+       (var++) &&
+       gavl_time_parse(var, &end))
+      {
+      if(start == 0)
+        gavl_dictionary_set_long(m, GAVL_META_APPROX_DURATION, end);
+      }
+    
+    }
+  
+  if((var = gavl_dictionary_get_string(header, "icy-br")))
+    bitrate = atoi(var);
+  else if((var = gavl_dictionary_get_string(header, "ice-audio-info")))
+    {
+    var = strstr(var, "bitrate=");
+    if(var)
+      bitrate = atoi(var + 8);
+    }
+  if(bitrate)
+    gavl_dictionary_set_int(m, GAVL_META_BITRATE, bitrate * 1000);
+  }
+
+
 static int open_http(bgav_input_context_t * ctx, const char * url1, char ** r)
   {
   int ret = 0;
@@ -69,18 +194,21 @@ static int open_http(bgav_input_context_t * ctx, const char * url1, char ** r)
 
   const gavl_dictionary_t * res;
 
-  char * url;
+  //  char * url;
   
   gavl_dictionary_t extra_header;
   gavl_dictionary_init(&extra_header);
 
   ctx->url = gavl_strdup(url1);
   
-  url = gavl_strdup(url1);
+  //  url = gavl_strdup(url1);
   
   p = calloc(1, sizeof(*p));
+  ctx->priv = p;
 
-  url = gavl_url_extract_http_vars(url, &extra_header);
+  //  url = gavl_url_extract_http_vars(url, &extra_header);
+
+  create_header(&extra_header, ctx->opt);
 
   if(extra_header.num_entries)
     {
@@ -88,30 +216,26 @@ static int open_http(bgav_input_context_t * ctx, const char * url1, char ** r)
     gavl_dictionary_dump(&extra_header, 2);
     }
   
-  create_header(&extra_header, ctx->opt);
   
-  p->h = bgav_http_open(url, ctx->opt, r, &extra_header);
-  
-  if(!p->h)
-    {
-    free(p);
-    goto fail;
-    }
-  
-  ctx->priv = p;
+  // p->h = bgav_http_open(url, ctx->opt, r, &extra_header);
+  p->io = gavl_http_client_create();
 
-  ctx->total_bytes = bgav_http_total_bytes(p->h);
+  gavl_http_client_set_req_vars(p->io, &extra_header);
+
+  if(!gavl_http_client_open(p->io, "GET", url1))
+    goto fail;
+
+
+  res = gavl_http_client_get_response(p->io);
+
+  ctx->total_bytes = gavf_io_total_bytes(p->io);
   
-  res = bgav_http_get_header(p->h);
-  bgav_http_set_metadata(p->h, &ctx->m);
-  
-  //  bgav_http_header_dump(header);
+  set_metadata(res, &ctx->m);
   
   var = gavl_dictionary_get_string(res, "icy-metaint");
   if(var)
     {
     p->icy_metaint = atoi(var);
-    //    p->icy_bytes = p->icy_metaint;
     /* Then, we'll also need a charset converter */
 
     p->charset_cnv = bgav_charset_converter_create(ctx->opt,
@@ -119,19 +243,14 @@ static int open_http(bgav_input_context_t * ctx, const char * url1, char ** r)
                                                    BGAV_UTF8);
     }
 
-  var = gavl_dictionary_get_string(res, "Accept-Ranges");
-  if(!var || strcasecmp(var, "bytes"))
-    ctx->flags &= ~BGAV_INPUT_CAN_SEEK_BYTE;
-  else
+  if(gavf_io_can_seek(p->io))
     ctx->flags |= (BGAV_INPUT_SEEK_SLOW | BGAV_INPUT_CAN_PAUSE);
-  
-  //  ctx->flags |= BGAV_INPUT_DO_BUFFER;
-
+  else
+    ctx->flags &= ~BGAV_INPUT_CAN_SEEK_BYTE;
   
   ret = 1;
   fail:
   
-  free(url);
   gavl_dictionary_free(&extra_header);
   
   return ret;
@@ -141,84 +260,29 @@ static int64_t seek_byte_http(bgav_input_context_t * ctx,
                               int64_t pos, int whence)
   {
   http_priv * p = ctx->priv;
-
-  gavl_dictionary_t extra_header;
-  gavl_dictionary_init(&extra_header);
-
-  if(p->h)
-    {
-    bgav_http_close(p->h);
-    p->h = NULL;
-    }
-  
-  create_header(&extra_header, ctx->opt);
-
-  gavl_dictionary_set_string_nocopy(&extra_header, "Range",
-                                    bgav_sprintf("bytes=%"PRId64"-", ctx->position));
-  
-  p->h = bgav_http_open(ctx->url, ctx->opt, NULL, &extra_header);
-
-  gavl_dictionary_free(&extra_header);
-
-  p->bytes_read = ctx->position;
-  
+  fprintf(stderr, "Seek_byte http %"PRId64" %"PRId64"\n", pos, ctx->position);
+  gavf_io_seek(p->io, pos, whence);
   return ctx->position;
   }
 
 static void pause_http(bgav_input_context_t * ctx)
   {
   http_priv * p = ctx->priv;
-  bgav_http_close(p->h);
-  p->h = NULL;
+  gavl_http_client_pause(p->io);
   }
 
 static void resume_http(bgav_input_context_t * ctx)
   {
-  gavl_dictionary_t extra_header;
-
   http_priv * p = ctx->priv;
-  gavl_dictionary_init(&extra_header);
-
-  create_header(&extra_header, ctx->opt);
-
-  gavl_dictionary_set_string_nocopy(&extra_header, "Range",
-                                    bgav_sprintf("bytes=%"PRId64"-", p->bytes_read));
-
-  p->h = bgav_http_open(ctx->url, ctx->opt, NULL, &extra_header);
-  gavl_dictionary_free(&extra_header);
+  gavl_http_client_resume(p->io);
   }
 
 static int read_data(bgav_input_context_t* ctx,
                      uint8_t * buffer, int len)
   {
   http_priv * p = ctx->priv;
-#if 0  
-  if(p->hls)
-    return bgav_hls_read(p->hls, buffer, len);
-  else
-    {
-#endif
-    int ret = bgav_http_read(p->h, buffer, len);
-    //    fprintf(stderr, "
-    p->bytes_read += ret;
-
-    if((ret < len) && (ctx->total_bytes > 0) && (p->bytes_read < ctx->total_bytes))
-      {
-      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Premature end of stream, reconnecting...");
-
-      pause_http(ctx);
-      resume_http(ctx);
-
-      ret = bgav_http_read(p->h, buffer, len);
-      p->bytes_read += ret;
-      }
-    
-    return ret;
-#if 0  
-
-    }
-#endif
-
+  
+  return gavf_io_read_data(p->io, buffer, len);
   }
 
 static void * memscan(void * mem_start, int size, void * key, int key_len)
@@ -334,8 +398,6 @@ static int do_read(bgav_input_context_t* ctx,
         result = read_data(ctx, buffer + bytes_read, bytes_to_read);
         bytes_read += result;
         p->icy_bytes += result;
-        p->total_bytes_read += result;
-        
         if(result < bytes_to_read)
           return bytes_read;
         }
@@ -365,15 +427,11 @@ static void close_http(bgav_input_context_t * ctx)
   {
   http_priv * p = ctx->priv;
 
-  if(p->h)
-    bgav_http_close(p->h);
+  if(p->io)
+    gavf_io_destroy(p->io);
   
   if(p->charset_cnv)
     bgav_charset_converter_destroy(p->charset_cnv);
-#if 0
-  if(p->hls)
-    bgav_hls_close(p->hls);
-#endif
   free(p);
   }
 

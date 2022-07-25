@@ -183,6 +183,12 @@ int bgav_input_read_data(bgav_input_context_t * ctx, uint8_t * buffer, int len)
   int result;
 
   int bytes_read = 0;
+
+  if(ctx->flags & BGAV_INPUT_PAUSED)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "bgav_input_read_data failed: Input paused");
+    return 0;
+    }
   
   if(ctx->total_bytes)
     {
@@ -224,6 +230,13 @@ int bgav_input_read_data(bgav_input_context_t * ctx, uint8_t * buffer, int len)
 void bgav_input_ensure_buffer_size(bgav_input_context_t * ctx, int len)
   {
   int result;
+
+  if(ctx->flags & BGAV_INPUT_PAUSED)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "bgav_input_ensure_buffer_size: Input paused");
+    return;
+    }
+
   if(ctx->buf.len < len)
     {
     gavl_buffer_alloc(&ctx->buf, len);
@@ -241,6 +254,14 @@ void bgav_input_ensure_buffer_size(bgav_input_context_t * ctx, int len)
 int bgav_input_get_data(bgav_input_context_t * ctx, uint8_t * buffer, int len)
   {
   int bytes_gotten;
+
+  if(ctx->flags & BGAV_INPUT_PAUSED)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "bgav_input_get_data failed: Input paused");
+    return 0;
+    }
+
+  
   bgav_input_ensure_buffer_size(ctx, len);
   
   bytes_gotten = (len > ctx->buf.len) ? ctx->buf.len : len;

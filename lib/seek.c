@@ -27,6 +27,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define LOG_DOMAIN "seek"
+
 // #define DUMP_ITERATIVE
 
 static void skip_to(bgav_t * b, bgav_track_t * track, int64_t * time, int scale)
@@ -419,7 +421,12 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
   {
   seek_subreader_t ss;
   bgav_track_t * track = b->tt->cur;
-  
+
+  if(b->flags & BGAV_FLAG_PAUSED)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "bgav_seek_scaled failed: Decoder paused");
+    return;
+    }
   //  fprintf(stderr, "bgav_seek_scaled: %f\n",
   //          gavl_time_to_seconds(gavl_time_unscale(scale, *time)));
   

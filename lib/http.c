@@ -631,54 +631,8 @@ int bgav_http_read(bgav_http_t * h, uint8_t * data, int len)
     return read_normal(h, data, len);
   }
 
-static char const * const title_vars[] =
-  {
-    "icy-name",
-    "ice-name",
-    "x-audiocast-name",
-    NULL
-  };
 
-static char const * const genre_vars[] =
-  {
-    "x-audiocast-genre",
-    "icy-genre",
-    "ice-genre",
-    NULL
-  };
-
-static char const * const comment_vars[] =
-  {
-    "ice-description",
-    "x-audiocast-description",
-    NULL
-  };
-
-static char const * const url_vars[] =
-  {
-    "icy-url",
-    NULL
-  };
-
-static void set_metadata_string(const gavl_dictionary_t * header,
-                                char const * const vars[],
-                                gavl_dictionary_t * m, const char * name)
-  {
-  const char * val;
-  int i = 0;
-  while(vars[i])
-    {
-    val = gavl_dictionary_get_string(header, vars[i]);
-    if(val)
-      {
-      gavl_dictionary_set_string(m, name, val);
-      return;
-      }
-    else
-      i++;
-    }
-  }
-
+#if 0
 void bgav_http_set_metadata(bgav_http_t * h, gavl_dictionary_t * m)
   {
   int bitrate = 0;
@@ -757,6 +711,7 @@ void bgav_http_set_metadata(bgav_http_t * h, gavl_dictionary_t * m)
   if(bitrate)
     gavl_dictionary_set_int(m, GAVL_META_BITRATE, bitrate * 1000);
   }
+#endif
 
 int64_t bgav_http_total_bytes(bgav_http_t * h)
   {
