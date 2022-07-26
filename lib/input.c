@@ -177,7 +177,7 @@ int bgav_input_read_convert_line(bgav_input_context_t * input,
   }
 
 
-int bgav_input_read_data(bgav_input_context_t * ctx, uint8_t * buffer, int len)
+static int input_read_data(bgav_input_context_t * ctx, uint8_t * buffer, int len, int block)
   {
   int bytes_to_copy = 0;
   int result;
@@ -186,7 +186,7 @@ int bgav_input_read_data(bgav_input_context_t * ctx, uint8_t * buffer, int len)
 
   if(ctx->flags & BGAV_INPUT_PAUSED)
     {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "bgav_input_read_data failed: Input paused");
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "input_read_data failed: Input paused");
     return 0;
     }
   
@@ -213,8 +213,12 @@ int bgav_input_read_data(bgav_input_context_t * ctx, uint8_t * buffer, int len)
 
   if(len > bytes_read)
     {
-    result =
-      ctx->input->read(ctx, buffer + bytes_read, len - bytes_read);
+    if(!block && ctx->input->read_noblock)
+      result =
+        ctx->input->read_noblock(ctx, buffer + bytes_read, len - bytes_read);
+    else
+      result =
+        ctx->input->read(ctx, buffer + bytes_read, len - bytes_read);
 
     if(result < 0)
       result = 0;
@@ -225,6 +229,11 @@ int bgav_input_read_data(bgav_input_context_t * ctx, uint8_t * buffer, int len)
   ctx->position += bytes_read;
   
   return bytes_read;
+  }
+
+int bgav_input_read_data(bgav_input_context_t * ctx, uint8_t * buffer, int len)
+  {
+  return input_read_data(ctx, buffer, len, 1);
   }
 
 void bgav_input_ensure_buffer_size(bgav_input_context_t * ctx, int len)
@@ -1196,4 +1205,17 @@ char * bgav_input_absolute_url(bgav_input_context_t * ctx, const char * url)
   else if(ctx->filename)
     return gavl_get_absolute_uri(url, ctx->filename);
   return NULL;
+  }
+
+int bgav_input_can_read(bgav_input_context_t * ctx, int milliseconds)
+  {
+  if(ctx->input->can_read)
+    return ctx->input->can_read(ctx, milliseconds);
+  else
+    return 1;
+  }
+
+int bgav_input_read_nonblock(bgav_input_context_t * ctx, uint8_t * data, int len)
+  {
+  return input_read_data(ctx, data, len, 0);
   }

@@ -959,7 +959,7 @@ struct bgav_input_s
   void (*resume)(bgav_input_context_t*);
 
   /* Non-Blocking API */
-  void (*can_read)(bgav_input_context_t*, int timeout);
+  int (*can_read)(bgav_input_context_t*, int timeout);
   int  (*read_noblock)(bgav_input_context_t*, uint8_t * buffer, int len);
   };
 
@@ -1039,6 +1039,12 @@ struct bgav_input_context_s
 /* Read functions return FALSE on error */
 
 BGAV_PUBLIC int bgav_input_read_data(bgav_input_context_t*, uint8_t*, int);
+
+/* Non-blocking i/o */
+
+int bgav_input_can_read(bgav_input_context_t*, int milliseconds);
+int bgav_input_read_nonblock(bgav_input_context_t*, uint8_t*, int);
+
 int bgav_input_read_string_pascal(bgav_input_context_t*, char*);
 
 int bgav_input_read_8(bgav_input_context_t*,uint8_t*);
@@ -1127,6 +1133,8 @@ void bgav_input_get_dump(bgav_input_context_t *, int);
 void bgav_input_seek(bgav_input_context_t * ctx,
                      int64_t position,
                      int whence);
+
+
 
 void bgav_input_seek_sector(bgav_input_context_t * ctx,
                             int64_t sector);
@@ -1378,6 +1386,11 @@ struct bgav_demuxer_s
                                                   * True if we have just one active subtitle stream with attached subreader
                                                   */
 
+
+/* Discontionus demuxer: Read_packet *might* return GAVL_SOURCE_AGAIN */
+#define BGAV_DEMUXER_DISCONT              (1<<10) /*
+                                                   * True if we have just one active subtitle stream with attached subreader
+                                                   */
 
 #define INDEX_MODE_NONE   0 /* Default: No sample accuracy */
 /* Packets have precise timestamps and durations and are adjacent in the file */

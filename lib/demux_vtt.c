@@ -76,7 +76,9 @@ static int open_vtt(bgav_demuxer_context_t * ctx)
   bgav_stream_t * s;
   vtt_t * priv = calloc(1, sizeof(*priv));
   ctx->priv = priv;
-
+  
+  ctx->flags |= BGAV_DEMUXER_DISCONT;
+  
   ctx->tt = bgav_track_table_create(1);
 
   s = bgav_track_add_text_stream(ctx->tt->cur, ctx->opt, BGAV_UTF8);
