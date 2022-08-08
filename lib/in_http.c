@@ -192,6 +192,7 @@ static int open_http(bgav_input_context_t * ctx, const char * url1, char ** r)
   const char * var;
   http_priv * p;
 
+  gavl_dictionary_t * info;
   const gavl_dictionary_t * res;
 
   //  char * url;
@@ -231,6 +232,10 @@ static int open_http(bgav_input_context_t * ctx, const char * url1, char ** r)
   ctx->total_bytes = gavf_io_total_bytes(p->io);
   
   set_metadata(res, &ctx->m);
+
+  info = gavf_io_info(p->io);
+  if((var = gavl_dictionary_get_string(info, GAVL_META_REAL_URI)))
+    gavl_dictionary_set_string(&ctx->m, GAVL_META_REAL_URI, var);
   
   var = gavl_dictionary_get_string(res, "icy-metaint");
   if(var)
@@ -260,7 +265,7 @@ static int64_t seek_byte_http(bgav_input_context_t * ctx,
                               int64_t pos, int whence)
   {
   http_priv * p = ctx->priv;
-  fprintf(stderr, "Seek_byte http %"PRId64" %"PRId64"\n", pos, ctx->position);
+  //  fprintf(stderr, "Seek_byte http %"PRId64" %"PRId64"\n", pos, ctx->position);
   gavf_io_seek(p->io, pos, whence);
   return ctx->position;
   }

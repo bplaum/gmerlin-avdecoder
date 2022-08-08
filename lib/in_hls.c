@@ -529,6 +529,8 @@ static int open_ts(bgav_input_context_t * ctx)
       gavl_dictionary_set_string(&ctx->m, GAVL_META_MIMETYPE, var);
     }
 
+  fprintf(stderr, "Total bytes: %"PRId64"\n", gavf_io_total_bytes(p->io));
+  
   handle_id3(ctx);
   
   ret = 1;
@@ -596,10 +598,14 @@ static int read_hls(bgav_input_context_t* ctx,
   
   hls_priv_t * p = ctx->priv;
 
+  //  fprintf(stderr, "read_hls %d\n", len);
+  
   while(bytes_read < len)
     {
     result = gavf_io_read_data(p->io, buffer + bytes_read, len - bytes_read);
 
+    //    fprintf(stderr, "read_hls 1 %d\n", len - bytes_read);
+    
     if(result < len - bytes_read)
       {
       if(gavf_io_got_error(p->io))
@@ -608,6 +614,8 @@ static int read_hls(bgav_input_context_t* ctx,
         }
       else
         {
+        //        fprintf(stderr, "HLS Segment end %d %d\n", result, len - bytes_read);
+        
         p->seq_cur++;
         if(!open_ts(ctx))
           return bytes_read;
