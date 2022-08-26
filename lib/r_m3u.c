@@ -37,8 +37,14 @@ static int probe_m3u(bgav_input_context_t * input)
   char probe_buffer[PROBE_BYTES];
   char * pos;
   const char * mimetype = NULL;
-  //  const char * uri = NULL;
   int result = 0;
+
+  const char * real_uri = gavl_dictionary_get_string(&input->m, GAVL_META_REAL_URI);
+
+  if(real_uri &&
+     (gavl_string_ends_with(real_uri, ".m3u") ||
+      gavl_string_ends_with(real_uri, ".m3u8")))
+    return 1;
   
   /* Most likely, we get this via http, so we can check the mimetype */
   if(input->url && gavl_dictionary_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, NULL) && mimetype)
