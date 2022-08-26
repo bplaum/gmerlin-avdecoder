@@ -425,7 +425,17 @@ int bgav_input_get_32_be(bgav_input_context_t * ctx,uint32_t * ret)
   *ret = GAVL_PTR_2_32BE(data);
   return 1;
   }
-    
+
+int bgav_input_get_24_be(bgav_input_context_t * ctx,uint32_t * ret)
+  {
+  uint8_t data[3];
+  if(bgav_input_get_data(ctx, data, 3) < 3)
+    return 0;
+  *ret = GAVL_PTR_2_24BE(data);
+  return 1;
+  }
+
+
 int bgav_input_get_64_be(bgav_input_context_t * ctx, uint64_t * ret)
   {
   uint8_t data[8];

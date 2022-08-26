@@ -1073,6 +1073,7 @@ int bgav_input_get_32_le(bgav_input_context_t*,uint32_t*);
 int bgav_input_get_64_le(bgav_input_context_t*,uint64_t*);
 
 int bgav_input_get_16_be(bgav_input_context_t*,uint16_t*);
+int bgav_input_get_24_be(bgav_input_context_t*,uint32_t*);
 int bgav_input_get_32_be(bgav_input_context_t*,uint32_t*);
 int bgav_input_get_64_be(bgav_input_context_t*,uint64_t*);
 
