@@ -61,6 +61,7 @@ parsers[] =
     { BGAV_MK_FOURCC('S','P','E','X'), bgav_audio_parser_init_speex },
 #endif
     { BGAV_MK_FOURCC('A','D','T','S'), bgav_audio_parser_init_adts },
+    { BGAV_MK_FOURCC('A','A','C','P'), bgav_audio_parser_init_adts },
   };
 
 int bgav_audio_parser_supported(uint32_t fourcc)

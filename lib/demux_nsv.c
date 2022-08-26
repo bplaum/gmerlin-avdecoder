@@ -472,6 +472,13 @@ static int open_nsv(bgav_demuxer_context_t * ctx)
     {
     s = bgav_track_add_audio_stream(ctx->tt->cur, ctx->opt);
     s->fourcc = sh.audfmt;
+
+    /* Probably also ('A','A','C',' ')? */
+    if(s->fourcc == BGAV_MK_FOURCC('A','A','C','P'))
+      {
+      s->flags |= STREAM_PARSE_FULL;
+      }
+    
     s->stream_id = AUDIO_ID;
     if(sh.audfmt == BGAV_MK_FOURCC('P','C','M',' '))
       {
@@ -598,9 +605,11 @@ static int next_packet_nsv(bgav_demuxer_context_t * ctx)
   nsv_sync_header_t sh;
   uint32_t fourcc;
   int have_sync_header = 0;
-  
+
   priv = ctx->priv;
 
+  //  fprintf(stderr, "next_packet_nsv\n");
+  
   if(!priv->payload_follows)
     {
     /* Read header */
@@ -623,7 +632,8 @@ static int next_packet_nsv(bgav_demuxer_context_t * ctx)
         }
       if(!nsv_sync_header_read(ctx->input, &sh))
         return 0;
-      //      nsv_sync_header_dump(&sh);
+      if(ctx->opt->dump_headers)
+        nsv_sync_header_dump(&sh);
       have_sync_header = 1;
       }
     else
@@ -636,6 +646,9 @@ static int next_packet_nsv(bgav_demuxer_context_t * ctx)
   //  bgav_input_get_data(ctx->input, test_data, 32);
   //  gavl_hexdump(test_data, 32, 16);
   /* Parse payload */
+
+  //  bgav_input_get_24_be(ctx->input, &dummy);
+  //  fprintf(stderr, "24 bit: %06x\n", dummy);
   
   if(!bgav_input_read_8(ctx->input, &num_aux))
     return 0;
@@ -652,6 +665,8 @@ static int next_packet_nsv(bgav_demuxer_context_t * ctx)
   num_aux &= 0x0f;
   video_len = aux_plus_video_len;
 
+  //  fprintf(stderr, "Num AUX packets: %d\n", num_aux);
+  
   /* Skip aux packets */
   for(i = 0; i < num_aux; i++)
     {
@@ -666,6 +681,8 @@ static int next_packet_nsv(bgav_demuxer_context_t * ctx)
 
   /* Video data */
 
+  //  fprintf(stderr, "Video len: %d\n", video_len);
+  
   if(video_len)
     {
     if(priv->need_pcm_format)
@@ -817,7 +834,9 @@ static int select_track_nsv(bgav_demuxer_context_t * ctx, int track)
   {
   nsv_priv_t * priv;
   priv = ctx->priv;
-  priv->payload_follows = 1;
+
+  if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
+    priv->payload_follows = 1;
   return 1;
   }
 

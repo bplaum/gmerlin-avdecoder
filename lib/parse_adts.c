@@ -54,17 +54,6 @@ static int parse_adts(bgav_audio_parser_t * parser)
   return PARSER_NEED_DATA;
   }
 
-#if 0
-void cleanup_mpa(bgav_audio_parser_t * parser)
-  {
-  
-  }
-
-void reset_mpa(bgav_audio_parser_t * parser)
-  {
-  
-  }
-#endif
 
 void bgav_audio_parser_init_adts(bgav_audio_parser_t * parser)
   {
