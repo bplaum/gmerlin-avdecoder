@@ -855,7 +855,7 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
     int result = gavl_http_client_run_async_done(p->ts_io_next, timeout);
     if(result <= 0)
       {
-      fprintf(stderr, "Open TS: %d\n", result);
+      //  fprintf(stderr, "Open TS: %d\n", result);
       return result;
       }
     p->next_state = NEXT_STATE_DONE;
@@ -961,7 +961,7 @@ static int open_ts(bgav_input_context_t * ctx)
 
     if(!cipher_key_uri)
       {
-      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Got encrypred segment but no key URI");
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Got encrypted segment but no key URI");
       goto fail;
       }
     
@@ -1023,6 +1023,32 @@ static int open_ts(bgav_input_context_t * ctx)
   }
 #endif
 
+static void init_segment_io(bgav_input_context_t * ctx)
+  {
+  gavf_io_t * swp;
+  hls_priv_t * p = ctx->priv;
+  
+  swp = p->ts_io;
+  p->ts_io = p->ts_io_next;
+  p->ts_io_next = swp;
+
+  if(p->cipher_io)
+    {
+    gavf_io_cipher_init(p->cipher_io, p->ts_io, p->cipher_key.buf, p->cipher_iv.buf);
+    p->io = p->cipher_io;
+    }
+  else
+    p->io = p->ts_io;
+
+  fprintf(stderr, "init_segment_io %p %p %p\n", p->io, p->ts_io, p->ts_io_next);
+
+  p->next_state = NEXT_STATE_START;
+  p->seq_cur++;
+  
+  handle_id3(ctx);
+
+  }
+
 static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   {
   int result;
@@ -1031,6 +1057,8 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   char * url;
   hls_priv_t * priv = calloc(1, sizeof(*priv));
 
+  fprintf(stderr, "Open HLS: %s\n", url1);
+  
   ctx->priv = priv;
 
   ctx->url = gavl_strdup(url1);
@@ -1081,11 +1109,13 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
     fprintf(stderr, "open next async: Too many iterations %d\n", priv->next_state);
     goto fail;
     }
+
+  init_segment_io(ctx);
   
   if((priv->window_end == GAVL_TIME_UNDEFINED) ||
      (priv->window_start == GAVL_TIME_UNDEFINED))
     ctx->flags &= ~BGAV_INPUT_CAN_SEEK_TIME;
-  
+
   ret = 1;
   fail:
   
@@ -1111,6 +1141,11 @@ static int read_hls(bgav_input_context_t* ctx,
     {
     result = gavf_io_read_data(p->io, buffer + bytes_read, len - bytes_read);
 
+    if(result < len - bytes_read)
+      {
+      fprintf(stderr, "Wanted %d, got %d\n", len - bytes_read, result);
+      }
+    
     //    fprintf(stderr, "read_hls 1 %d\n", len - bytes_read);
 
     if(p->next_state != NEXT_STATE_DONE)
@@ -1124,43 +1159,39 @@ static int read_hls(bgav_input_context_t* ctx,
         }
       else
         {
-        gavf_io_t * swp;
         int i;
-
+        int result1;
+        
+        fprintf(stderr, "Opening next segment: %d %d %d\n", result, len, bytes_read);
+        
         if(p->next_state != NEXT_STATE_DONE)
           {
+          fprintf(stderr, "Need to open next syncronous %d\n", p->next_state);
+          
           for(i = 0 ; i < 100; i++)
             {
-            result = open_next_async(ctx, 100);
+            result1 = open_next_async(ctx, 100);
             
-            if(result > 0)
+            if(result1 > 0)
               break;
 
-            if(result < 0)
+            if(result1 < 0)
               return bytes_read;
           
             if(p->next_state == NEXT_STATE_DONE)
               break;
             }
           }
-        swp = p->ts_io;
-        p->ts_io = p->ts_io_next;
-        p->ts_io_next = swp;
-
-        if(p->cipher_io)
-          {
-          gavf_io_cipher_init(p->cipher_io, p->ts_io, p->cipher_key.buf, p->cipher_iv.buf);
-          p->io = p->cipher_io;
-          }
-        else
-          p->io = p->ts_io;
-        
-        handle_id3(ctx);
+        init_segment_io(ctx);
         }
       }
 
     bytes_read += result;
     }
+
+  if(bytes_read == 1)
+    fprintf(stderr, "Blupp 1\n");
+  
   return bytes_read;
   }
 
@@ -1200,6 +1231,8 @@ static void close_hls(bgav_input_context_t * ctx)
   {
   hls_priv_t * p = ctx->priv;
 
+  fprintf(stderr, "Close HLS\n");
+  
   if(p->m3u_io)
     gavf_io_destroy(p->m3u_io);
   if(p->ts_io)
