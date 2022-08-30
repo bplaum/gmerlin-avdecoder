@@ -175,10 +175,10 @@ static int find_frame_boundary_dvdsub(bgav_video_parser_t * parser, int * skip)
   
   if(!priv->packet_size)
     {
-    if(parser->buf.size - parser->pos < 2)
+    if(parser->buf.len - parser->pos < 2)
       return 0;
     
-    priv->packet_size = GAVL_PTR_2_16BE(parser->buf.buffer + parser->pos);
+    priv->packet_size = GAVL_PTR_2_16BE(parser->buf.buf + parser->pos);
     
     //    fprintf(stderr, "Packet size: %d\n", priv->packet_size);
 
@@ -189,7 +189,7 @@ static int find_frame_boundary_dvdsub(bgav_video_parser_t * parser, int * skip)
       }
     }
 
-  if(parser->buf.size - parser->pos >= priv->packet_size)
+  if(parser->buf.len - parser->pos >= priv->packet_size)
     {
     parser->pos += priv->packet_size;
     return 1;

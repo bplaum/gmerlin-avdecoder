@@ -207,11 +207,11 @@ static int find_frame_boundary_vc1(bgav_video_parser_t * parser, int * skip)
   
   while(1)
     {
-    sc = bgav_mpv_find_startcode(parser->buf.buffer + parser->pos,
-                                 parser->buf.buffer + parser->buf.size - 4);
+    sc = bgav_mpv_find_startcode(parser->buf.buf + parser->pos,
+                                 parser->buf.buf + parser->buf.len - 4);
     if(!sc)
       {
-      parser->pos = parser->buf.size - 4;
+      parser->pos = parser->buf.len - 4;
       if(parser->pos < 0)
         parser->pos = 0;
       return 0;
@@ -232,7 +232,7 @@ static int find_frame_boundary_vc1(bgav_video_parser_t * parser, int * skip)
         break;
       }
     
-    parser->pos = sc - parser->buf.buffer;
+    parser->pos = sc - parser->buf.buf;
     
     if(new_state < 0)
       parser->pos += 4;
@@ -240,7 +240,7 @@ static int find_frame_boundary_vc1(bgav_video_parser_t * parser, int * skip)
             ((new_state <= STATE_PICTURE) && (new_state < priv->state)))
       {
       *skip = 4;
-      parser->pos = sc - parser->buf.buffer;
+      parser->pos = sc - parser->buf.buf;
       priv->state = new_state;
       return 1;
       }

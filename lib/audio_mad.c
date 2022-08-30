@@ -45,7 +45,7 @@ typedef struct
   //  uint8_t * buffer;
   //  int buffer_alloc;
   
-  bgav_bytebuffer_t buf;
+  gavl_buffer_t buf;
   
   gavl_audio_frame_t * audio_frame;
   
@@ -76,7 +76,7 @@ static gavl_source_status_t get_data(bgav_stream_t * s)
     case GAVL_SOURCE_EOF:
       return st;
     case GAVL_SOURCE_OK:
-      bgav_bytebuffer_append(&priv->buf, p, MAD_BUFFER_GUARD);
+      bgav_bytebuffer_append_packet(&priv->buf, p, MAD_BUFFER_GUARD);
       priv->last_duration = p->duration;
       bgav_stream_done_packet_read(s, p);
       break;
@@ -185,8 +185,8 @@ static gavl_source_status_t decode_frame_mad(bgav_stream_t * s)
   
     got_frame = 1;
   
-    mad_stream_buffer(&priv->stream, priv->buf.buffer,
-                      priv->buf.size + flush * MAD_BUFFER_GUARD);
+    mad_stream_buffer(&priv->stream, priv->buf.buf,
+                      priv->buf.len + flush * MAD_BUFFER_GUARD);
 
     if(priv->do_init)
       {
@@ -255,9 +255,8 @@ static gavl_source_status_t decode_frame_mad(bgav_stream_t * s)
 
   s->flags |= STREAM_HAVE_FRAME;
   
-  bgav_bytebuffer_remove(&priv->buf,
-                         priv->stream.next_frame - priv->stream.buffer);
-
+  gavl_buffer_flush(&priv->buf, priv->stream.next_frame - priv->stream.buffer);
+  
   if(flush)
     priv->eof = 1;
 
@@ -301,7 +300,7 @@ static void resync_mad(bgav_stream_t * s)
   
   //  fprintf(stderr, "Resync mad\n");
 
-  bgav_bytebuffer_flush(&priv->buf);
+  gavl_buffer_reset(&priv->buf);
   
   mad_frame_init(&priv->frame);
   mad_synth_init(&priv->synth);
@@ -319,7 +318,7 @@ static void close_mad(bgav_stream_t * s)
   mad_frame_finish(&priv->frame);
   mad_stream_finish(&priv->stream);
 
-  bgav_bytebuffer_free(&priv->buf);
+  gavl_buffer_free(&priv->buf);
   
   if(priv->audio_frame)
     gavl_audio_frame_destroy(priv->audio_frame);

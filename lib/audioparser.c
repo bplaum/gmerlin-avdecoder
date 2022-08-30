@@ -81,14 +81,14 @@ static void set_eof(bgav_audio_parser_t * parser)
   parser->eof = 1;
 
   /* Output the last packet */
-  if(parser->frame_bytes > parser->buf.size)
-    parser->frame_bytes = parser->buf.size;
+  if(parser->frame_bytes > parser->buf.len)
+    parser->frame_bytes = parser->buf.len;
   }
 
 static int check_output(bgav_audio_parser_t * parser)
   {
   if(parser->frame_bytes &&
-     (parser->buf.size >= parser->frame_bytes))
+     (parser->buf.len >= parser->frame_bytes))
     return 1;
   return 0;
   }
@@ -135,12 +135,12 @@ static void add_packet(bgav_audio_parser_t * parser, bgav_packet_t * p)
                                     sizeof(*parser->packets));
     }
   parser->packets[parser->num_packets].packet_position = p->position;
-  parser->packets[parser->num_packets].parser_position = parser->buf.size;
+  parser->packets[parser->num_packets].parser_position = parser->buf.len;
   parser->packets[parser->num_packets].size = p->data_size;
   parser->packets[parser->num_packets].pts  = p->pts;
   parser->num_packets++;
-  bgav_bytebuffer_append_data(&parser->buf, p->data, p->data_size, 0);
-
+  bgav_bytebuffer_append_packet(&parser->buf, p, 0);
+  
   }
 
 static int parse_frame(bgav_audio_parser_t * parser,
@@ -208,7 +208,7 @@ static void get_out_packet(bgav_audio_parser_t * parser,
                            bgav_packet_t * p)
   {
   bgav_packet_alloc(p, parser->frame_bytes);
-  memcpy(p->data, parser->buf.buffer, parser->frame_bytes);
+  memcpy(p->data, parser->buf.buf, parser->frame_bytes);
   p->data_size = parser->frame_bytes;
   bgav_packet_pad(p);
   bgav_audio_parser_flush(parser, parser->frame_bytes);
@@ -464,7 +464,7 @@ void bgav_audio_parser_destroy(bgav_audio_parser_t * parser)
   {
   if(parser->packets)
     free(parser->packets);
-  bgav_bytebuffer_free(&parser->buf);
+  gavl_buffer_free(&parser->buf);
 
   if(parser->out_packet)
     bgav_packet_pool_put(parser->s->pp, parser->out_packet);
@@ -477,7 +477,7 @@ void bgav_audio_parser_destroy(bgav_audio_parser_t * parser)
 void bgav_audio_parser_reset(bgav_audio_parser_t * parser,
                              int64_t in_pts, int64_t out_pts)
   {
-  bgav_bytebuffer_flush(&parser->buf);
+  gavl_buffer_reset(&parser->buf);
   
   parser->num_packets = 0;
   parser->frame_samples = 0;
@@ -510,7 +510,7 @@ void bgav_audio_parser_add_data(bgav_audio_parser_t * parser,
                                 uint8_t * data, int len, int64_t position)
   {
   parser->raw = 1;
-  bgav_bytebuffer_append_data(&parser->buf, data, len, 0);
+  gavl_buffer_append_data(&parser->buf, data, len);
   if(parser->raw_position < 0)
     parser->raw_position = position;
   }
@@ -520,7 +520,7 @@ void bgav_audio_parser_add_data(bgav_audio_parser_t * parser,
 void bgav_audio_parser_flush(bgav_audio_parser_t * parser, int bytes)
   {
   //  fprintf(stderr, "bgav_audio_parser_flush %d\n", bytes);
-  bgav_bytebuffer_remove(&parser->buf, bytes);
+  gavl_buffer_flush(&parser->buf, bytes);
   if(parser->raw)
     parser->raw_position += bytes;
   else

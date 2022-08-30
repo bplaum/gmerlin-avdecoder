@@ -23,21 +23,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-void bgav_bytebuffer_append(bgav_bytebuffer_t * b, bgav_packet_t * p, int padding)
+void bgav_bytebuffer_append_packet(gavl_buffer_t * b, bgav_packet_t * p, int padding)
   {
-  if(b->size + p->data_size + padding > b->alloc)
-    {
-    b->alloc = b->size + p->data_size + padding + 1024; 
-    b->buffer = realloc(b->buffer, b->alloc);
-    }
-  memcpy(b->buffer + b->size, p->data, p->data_size);
-  b->size += p->data_size;
-  if(padding)
-    memset(b->buffer + b->size, 0, padding);
+  gavl_buffer_append_data_pad(b, p->data, p->data_size, padding);
   }
 
-void bgav_bytebuffer_append_data(bgav_bytebuffer_t * b, uint8_t * data, int len, int padding)
+#if 0
+void bgav_bytebuffer_append_data(gavl_buffer_t * b, uint8_t * data, int len, int padding)
   {
+  gavl_buffer_append_data_pad(b, data, len, padding);
+
   if(b->size + len + padding > b->alloc)
     {
     b->alloc = b->size + len + padding + 1024; 
@@ -49,28 +44,27 @@ void bgav_bytebuffer_append_data(bgav_bytebuffer_t * b, uint8_t * data, int len,
   if(padding)
     memset(b->buffer + b->size, 0, padding);
   }
+#endif
 
-int bgav_bytebuffer_append_read(bgav_bytebuffer_t * b, bgav_input_context_t * input,
+int bgav_bytebuffer_append_read(gavl_buffer_t * b, bgav_input_context_t * input,
                                 int len, int padding)
   {
   int ret;
-  if(b->size + len + padding > b->alloc)
-    {
-    b->alloc = b->size + len + padding + 1024; 
-    b->buffer = realloc(b->buffer, b->alloc);
-    }
 
-  ret = bgav_input_read_data(input, b->buffer + b->size, len);
-  b->size += ret;
+  gavl_buffer_alloc(b, b->len + len + padding);
+
+  ret = bgav_input_read_data(input, b->buf + b->len, len);
+  b->len += ret;
+
   if(padding)
-    memset(b->buffer + b->size, 0, padding);
+    memset(b->buf + b->len, 0, padding);
   
   return ret;
   }
 
 
-
-void bgav_bytebuffer_remove(bgav_bytebuffer_t * b, int bytes)
+#if 0
+void bgav_bytebuffer_remove(gavl_buffer_t * b, int bytes)
   {
   if(bytes > b->size)
     bytes = b->size;
@@ -80,13 +74,14 @@ void bgav_bytebuffer_remove(bgav_bytebuffer_t * b, int bytes)
   b->size -= bytes;
   }
 
-void bgav_bytebuffer_free(bgav_bytebuffer_t * b)
+void bgav_bytebuffer_free(gavl_buffer_t * b)
   {
   if(b->buffer)
     free(b->buffer);
   }
 
-void bgav_bytebuffer_flush(bgav_bytebuffer_t * b)
+void bgav_bytebuffer_flush(gavl_buffer_t * b)
   {
   b->size = 0;
   }
+#endif

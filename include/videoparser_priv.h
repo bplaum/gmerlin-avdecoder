@@ -82,7 +82,7 @@ struct bgav_video_parser_s
   bgav_stream_t * s;
 
   int raw;
-  bgav_bytebuffer_t buf;
+  gavl_buffer_t buf;
   
   int flags;
   int pos;

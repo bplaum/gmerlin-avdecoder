@@ -380,11 +380,11 @@ static int find_frame_boundary_mpeg12(bgav_video_parser_t * parser, int * skip)
   
   while(1)
     {
-    sc = bgav_mpv_find_startcode(parser->buf.buffer + parser->pos,
-                                 parser->buf.buffer + parser->buf.size - 1);
+    sc = bgav_mpv_find_startcode(parser->buf.buf + parser->pos,
+                                 parser->buf.buf + parser->buf.len - 1);
     if(!sc)
       {
-      parser->pos = parser->buf.size - 3;
+      parser->pos = parser->buf.len - 3;
       if(parser->pos < 0)
         parser->pos = 0;
       return 0;
@@ -411,7 +411,7 @@ static int find_frame_boundary_mpeg12(bgav_video_parser_t * parser, int * skip)
       case MPEG_CODE_END:
         //        fprintf(stderr, "Got sequence end\n");
         /* Sequence end is always a picture start */
-        parser->pos = (sc - parser->buf.buffer) + 4;
+        parser->pos = (sc - parser->buf.buf) + 4;
         *skip = 4;
         priv->state = STATE_SEQUENCE;
         return 1;
@@ -420,7 +420,7 @@ static int find_frame_boundary_mpeg12(bgav_video_parser_t * parser, int * skip)
         break;
       }
 
-    parser->pos = sc - parser->buf.buffer;
+    parser->pos = sc - parser->buf.buf;
     
     if(new_state < 0)
       parser->pos += 4;
@@ -428,7 +428,7 @@ static int find_frame_boundary_mpeg12(bgav_video_parser_t * parser, int * skip)
             ((priv->state == STATE_SYNC) && (new_state >=  STATE_PICTURE)))
       {
       *skip = 4;
-      parser->pos = sc - parser->buf.buffer;
+      parser->pos = sc - parser->buf.buf;
       priv->state = new_state;
       return 1;
       }

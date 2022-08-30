@@ -64,7 +64,7 @@ typedef struct
   bgav_flac_streaminfo_t streaminfo;
   bgav_flac_seektable_t seektable;
   
-  bgav_bytebuffer_t buf;
+  gavl_buffer_t buf;
   int64_t next_header;
   int has_sync;
   bgav_flac_frame_header_t this_fh;
@@ -293,7 +293,7 @@ static int find_next_header(bgav_demuxer_context_t * ctx,
   int i;
   flac_priv_t * priv = ctx->priv;
 
-  if(priv->buf.size < BGAV_FLAC_FRAMEHEADER_MIN)
+  if(priv->buf.len < BGAV_FLAC_FRAMEHEADER_MIN)
     {
     if(!bgav_bytebuffer_append_read(&priv->buf, ctx->input, BYTES_TO_READ, 0))
       return -1;
@@ -301,9 +301,9 @@ static int find_next_header(bgav_demuxer_context_t * ctx,
   
   while(1)
     {
-    for(i = start; i < priv->buf.size - BGAV_FLAC_FRAMEHEADER_MAX; i++)
+    for(i = start; i < priv->buf.len - BGAV_FLAC_FRAMEHEADER_MAX; i++)
       {
-      if(bgav_flac_frame_header_read(priv->buf.buffer + i, priv->buf.size - i,
+      if(bgav_flac_frame_header_read(priv->buf.buf + i, priv->buf.len - i,
                                      &priv->streaminfo, h))
         {
         if(!priv->have_first_fh)
@@ -314,17 +314,17 @@ static int find_next_header(bgav_demuxer_context_t * ctx,
           }
         else if(!priv->has_sync) // Assume we seeked correctly
           return i;
-        else if(bgav_flac_check_crc(priv->buf.buffer, i))
+        else if(bgav_flac_check_crc(priv->buf.buf, i))
           return i;
         //        else
         //          fprintf(stderr, "crc mismatch\n");
         }
       }
     
-    if(priv->buf.size > SYNC_SIZE)
+    if(priv->buf.len > SYNC_SIZE)
       return -1;
 
-    start = priv->buf.size - BGAV_FLAC_FRAMEHEADER_MAX;
+    start = priv->buf.len - BGAV_FLAC_FRAMEHEADER_MAX;
     
     if(!bgav_bytebuffer_append_read(&priv->buf, ctx->input, BYTES_TO_READ, 0))
       return -1;
@@ -362,7 +362,7 @@ static int next_packet_flac(bgav_demuxer_context_t * ctx)
         return 0;
 
       if(pos > 0)
-        bgav_bytebuffer_remove(&priv->buf, pos);
+        gavl_buffer_flush(&priv->buf, pos);
 
       memcpy(&priv->this_fh, &next_fh, sizeof(next_fh));
     
@@ -376,7 +376,7 @@ static int next_packet_flac(bgav_demuxer_context_t * ctx)
     //  fprintf(stderr, "pos < 0!!\n");
   
     if(pos < 0) // EOF
-      size = priv->buf.size;
+      size = priv->buf.len;
     else
       size = pos;
 
@@ -399,9 +399,9 @@ static int next_packet_flac(bgav_demuxer_context_t * ctx)
     }
   else
     {
-    memcpy(p->data, priv->buf.buffer, size);
-    p->position = ctx->input->position - priv->buf.size;
-    bgav_bytebuffer_remove(&priv->buf, size);
+    memcpy(p->data, priv->buf.buf, size);
+    p->position = ctx->input->position - priv->buf.len;
+    gavl_buffer_flush(&priv->buf, size);
     }
   
   //  p->pts = fh.sample_number;
@@ -473,7 +473,7 @@ static void seek_flac(bgav_demuxer_context_t * ctx, int64_t time, int scale)
   priv->pts = priv->seektable.entries[i].sample_number;
 
   priv->has_sync = 0;
-  bgav_bytebuffer_flush(&priv->buf);
+  gavl_buffer_reset(&priv->buf);
   }
 
 static int select_track_flac(bgav_demuxer_context_t * ctx, int track)
@@ -481,7 +481,7 @@ static int select_track_flac(bgav_demuxer_context_t * ctx, int track)
   flac_priv_t * priv;
   priv = ctx->priv;
   priv->has_sync = 0;
-  bgav_bytebuffer_flush(&priv->buf);
+  gavl_buffer_reset(&priv->buf);
   return 1;
   }
 
@@ -492,7 +492,7 @@ static void close_flac(bgav_demuxer_context_t * ctx)
 
   bgav_flac_seektable_free(&priv->seektable);
 
-  bgav_bytebuffer_free(&priv->buf);
+  gavl_buffer_free(&priv->buf);
 
   free(priv);
   }
@@ -503,7 +503,7 @@ static void resync_flac(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
   
   priv = ctx->priv;
   priv->has_sync = 0;
-  bgav_bytebuffer_flush(&priv->buf);
+  gavl_buffer_reset(&priv->buf);
   priv->pts = STREAM_GET_SYNC(s);
   }
 

@@ -35,9 +35,9 @@ static int parse_mpa(bgav_audio_parser_t * parser)
   int i;
   bgav_mpa_header_t h;
   
-  for(i = 0; i < parser->buf.size - HEADER_BYTES; i++)
+  for(i = 0; i < parser->buf.len - HEADER_BYTES; i++)
     {
-    if(bgav_mpa_header_decode(&h, parser->buf.buffer + i))
+    if(bgav_mpa_header_decode(&h, parser->buf.buf + i))
       {
       if(parser->have_format)
         {

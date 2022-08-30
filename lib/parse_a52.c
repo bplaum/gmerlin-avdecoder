@@ -35,9 +35,9 @@ static int parse_a52(bgav_audio_parser_t * parser)
   int i;
   bgav_a52_header_t h;
   
-  for(i = 0; i < parser->buf.size - BGAV_A52_HEADER_BYTES; i++)
+  for(i = 0; i < parser->buf.len - BGAV_A52_HEADER_BYTES; i++)
     {
-    if(bgav_a52_header_read(&h, parser->buf.buffer + i))
+    if(bgav_a52_header_read(&h, parser->buf.buf + i))
       {
       if(!parser->have_format)
         {

@@ -480,7 +480,7 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
         if(gavl_string_starts_with(pos1, "http-referrer="))
           {
           pos1 += strlen("http-referrer=");
-          gavl_dictionary_set_string(&http_vars, "Referrer", pos1);
+          gavl_dictionary_set_string(&http_vars, "Referer", pos1);
           }
         else if(gavl_string_starts_with(pos1, "http-user-agent="))
           {
@@ -740,13 +740,13 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
 #if 1
   if(hls && t)
     {
-    if(!gavl_track_sort_source(t->info,
+    if(!gavl_metadata_sort_source(t->metadata,
                                GAVL_META_SRC,
                                GAVL_META_BITRATE,
                                0))
-      gavl_track_sort_source(t->info,
-                             GAVL_META_SRC,
-                             GAVL_META_WIDTH,
+      gavl_metadata_sort_source(t->metadata,
+                                GAVL_META_SRC,
+                                GAVL_META_WIDTH,
                              0);
     }
 #endif

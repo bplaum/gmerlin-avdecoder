@@ -428,20 +428,20 @@ static int find_frame_boundary_h264(bgav_video_parser_t * parser, int * skip)
     //                 16);
 
     sc =
-      bgav_h264_find_nal_start(parser->buf.buffer + parser->pos,
-                               parser->buf.size - parser->pos);
+      bgav_h264_find_nal_start(parser->buf.buf + parser->pos,
+                               parser->buf.len - parser->pos);
     if(!sc)
       {
-      parser->pos = parser->buf.size - 5;
+      parser->pos = parser->buf.len - 5;
       if(parser->pos < 0)
         parser->pos = 0;
       return 0;
       }
     
-    parser->pos = sc - parser->buf.buffer;
+    parser->pos = sc - parser->buf.buf;
   
-    header_len = bgav_h264_decode_nal_header(parser->buf.buffer + parser->pos,
-                                             parser->buf.size - parser->pos,
+    header_len = bgav_h264_decode_nal_header(parser->buf.buf + parser->pos,
+                                             parser->buf.len - parser->pos,
                                              &nh);
 
     if(priv->has_aud)
@@ -482,7 +482,7 @@ static int find_frame_boundary_h264(bgav_video_parser_t * parser, int * skip)
       case H264_NAL_ACCESS_UNIT_DEL:
         priv->has_aud = 1;
         *skip = header_len;
-        parser->pos = sc - parser->buf.buffer;
+        parser->pos = sc - parser->buf.buf;
         return 1;
         break;
       case H264_NAL_END_OF_SEQUENCE:
@@ -490,7 +490,7 @@ static int find_frame_boundary_h264(bgav_video_parser_t * parser, int * skip)
       case H264_NAL_FILLER_DATA:
         break;
       }
-    parser->pos = sc - parser->buf.buffer;
+    parser->pos = sc - parser->buf.buf;
     
     if(new_state < 0)
       {

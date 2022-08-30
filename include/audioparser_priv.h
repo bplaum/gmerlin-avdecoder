@@ -49,7 +49,7 @@ typedef struct
 struct bgav_audio_parser_s
   {
   int raw;
-  bgav_bytebuffer_t buf;
+  gavl_buffer_t buf;
   
   bgav_stream_t * s;
   

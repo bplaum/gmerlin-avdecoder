@@ -35,9 +35,9 @@ static int parse_adts(bgav_audio_parser_t * parser)
   int i;
   bgav_adts_header_t h;
   
-  for(i = 0; i < parser->buf.size - HEADER_BYTES; i++)
+  for(i = 0; i < parser->buf.len - HEADER_BYTES; i++)
     {
-    if(bgav_adts_header_read(parser->buf.buffer + i, &h))
+    if(bgav_adts_header_read(parser->buf.buf + i, &h))
       {
       if(!parser->have_format)
         {

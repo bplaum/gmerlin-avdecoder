@@ -122,14 +122,14 @@ void bgav_video_parser_destroy(bgav_video_parser_t * parser)
     free(parser->packets);
   if(parser->out_packet)
     bgav_packet_pool_put(parser->s->pp, parser->out_packet);
-  bgav_bytebuffer_free(&parser->buf);
+  gavl_buffer_free(&parser->buf);
   free(parser);
   }
 
 void bgav_video_parser_reset(bgav_video_parser_t * parser,
                              int64_t in_pts, int64_t out_pts)
   {
-  bgav_bytebuffer_flush(&parser->buf);
+  gavl_buffer_reset(&parser->buf);
   
   parser->raw_position = -1;
   //  parser->cache_size = 0;
@@ -174,7 +174,7 @@ void bgav_video_parser_add_packet(bgav_video_parser_t * parser,
   if(parser->s->flags & STREAM_RAW_PACKETS)
     {
     parser->raw = 1;
-    bgav_bytebuffer_append_data(&parser->buf, p->data, p->data_size, 0);
+    gavl_buffer_append_data(&parser->buf, p->data, p->data_size);
     if(parser->raw_position < 0)
       parser->raw_position = p->position;
     return;
@@ -190,12 +190,12 @@ void bgav_video_parser_add_packet(bgav_video_parser_t * parser,
                                       sizeof(*parser->packets));
       }
     parser->packets[parser->num_packets].packet_position = p->position;
-    parser->packets[parser->num_packets].parser_position = parser->buf.size;
+    parser->packets[parser->num_packets].parser_position = parser->buf.len;
     parser->packets[parser->num_packets].size = p->data_size;
     parser->packets[parser->num_packets].pts  = p->pts;
     parser->num_packets++;
     }
-  bgav_bytebuffer_append_data(&parser->buf, p->data, p->data_size, 0);
+  gavl_buffer_append_data(&parser->buf, p->data, p->data_size);
   }
 
 void bgav_video_parser_flush(bgav_video_parser_t * parser, int bytes)
@@ -203,7 +203,7 @@ void bgav_video_parser_flush(bgav_video_parser_t * parser, int bytes)
   if(!bytes)
     return;
   
-  bgav_bytebuffer_remove(&parser->buf, bytes);
+  gavl_buffer_flush(&parser->buf, bytes);
   parser->pos -= bytes;
   if(parser->pos < 0)
     parser->pos = 0;
@@ -287,11 +287,11 @@ parse_next_packet(bgav_video_parser_t * parser, int force, int64_t *pts_ret,
       return st;
       }
 
-    if(parser->buf.size > MAX_SCAN_SIZE)
+    if(parser->buf.len > MAX_SCAN_SIZE)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
                "Didn't find a frame in the first %d bytes (misdetected codec?)",
-               parser->buf.size);
+               parser->buf.len);
       return GAVL_SOURCE_EOF;
       }
     
@@ -308,20 +308,20 @@ parse_next_packet(bgav_video_parser_t * parser, int force, int64_t *pts_ret,
       // EOF: Take this packet as the last one if there is data left
       if(st == GAVL_SOURCE_EOF)
         {
-        if(!parser->buf.size)
+        if(!parser->buf.len)
           return GAVL_SOURCE_EOF;
-        parser->pos = parser->buf.size;
+        parser->pos = parser->buf.len;
         }
       else if(st == GAVL_SOURCE_AGAIN)
         return st;
       break;
       }
 
-    if(parser->buf.size > MAX_SCAN_SIZE)
+    if(parser->buf.len > MAX_SCAN_SIZE)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
                "Didn't find a frame in the first %d bytes (misdetected codec?)",
-               parser->buf.size);
+               parser->buf.len);
       return GAVL_SOURCE_EOF;
       }
     }
@@ -330,7 +330,7 @@ parse_next_packet(bgav_video_parser_t * parser, int force, int64_t *pts_ret,
 
   *ret = bgav_packet_pool_get(parser->s->pp);
   bgav_packet_alloc(*ret, parser->pos);
-  memcpy((*ret)->data, parser->buf.buffer, parser->pos);
+  memcpy((*ret)->data, parser->buf.buf, parser->pos);
   (*ret)->data_size = parser->pos;
 
   if(parser->raw)

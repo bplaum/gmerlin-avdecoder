@@ -1927,19 +1927,28 @@ bgav_subtitle_reader_peek_packet(void * subreader,
 
 /* bytebuffer.c */
 
+#if 0
 typedef struct
   {
   uint8_t * buffer;
   int size;
   int alloc;
   } bgav_bytebuffer_t;
+#endif
 
-void bgav_bytebuffer_append(bgav_bytebuffer_t * b, bgav_packet_t * p, int padding);
-void bgav_bytebuffer_append_data(bgav_bytebuffer_t * b, uint8_t * data, int len, int padding);
-int bgav_bytebuffer_append_read(bgav_bytebuffer_t * b, bgav_input_context_t * input, int len, int padding);
-void bgav_bytebuffer_remove(bgav_bytebuffer_t * b, int bytes);
-void bgav_bytebuffer_free(bgav_bytebuffer_t * b);
-void bgav_bytebuffer_flush(bgav_bytebuffer_t * b);
+void bgav_bytebuffer_append_packet(gavl_buffer_t * b, bgav_packet_t * p, int padding);
+
+// void bgav_bytebuffer_append_data(gavl_buffer_t * b, uint8_t * data, int len, int padding);
+int bgav_bytebuffer_append_read(gavl_buffer_t * b, bgav_input_context_t * input,
+                                int len, int padding);
+
+
+// int bgav_bytebuffer_append_read(bgav_bytebuffer_t * b, bgav_input_context_t * input,
+//                                int len, int padding);
+
+// void bgav_bytebuffer_remove(bgav_bytebuffer_t * b, int bytes);
+// void bgav_bytebuffer_free(bgav_bytebuffer_t * b);
+// void bgav_bytebuffer_flush(bgav_bytebuffer_t * b);
 
 /* sampleseek.c */
 int bgav_set_sample_accurate(bgav_t * b);
