@@ -25,6 +25,7 @@
 #include "config.h"
 
 #include <avdec.h>
+#include <libavcodec/version.h>
 #include <gavl/gavf.h>
 #include <gavl/log.h>
 
