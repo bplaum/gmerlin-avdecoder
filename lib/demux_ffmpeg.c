@@ -541,12 +541,22 @@ static void init_audio_stream(bgav_demuxer_context_t * ctx,
   if(!s->data.audio.block_align &&
      map->bits)
     {
-    s->data.audio.block_align = ((map->bits + 7) / 8) * params->channels;
+    s->data.audio.block_align = ((map->bits + 7) / 8) *
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
+            params->ch_layout.nb_channels;
+#else
+            params->channels;
+#endif
     }
   
   s->timescale = st->time_base.den;
   
-  s->data.audio.format->num_channels = params->channels;
+  s->data.audio.format->num_channels =
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
+            params->ch_layout.nb_channels;
+#else
+            params->channels;
+#endif
   s->data.audio.format->samplerate = params->sample_rate;
   
   bgav_stream_set_extradata(s, params->extradata, params->extradata_size);
