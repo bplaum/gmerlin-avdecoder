@@ -25,6 +25,7 @@
 
 #include <avdec_private.h>
 #include <gavl/state.h>
+#include <gavl/msg.h>
 
 /* Configuration stuff */
 
@@ -465,6 +466,24 @@ static void state_changed(bgav_t * b,
     s->data.msg.msg_callback(s->data.msg.msg_callback_data, &msg);
     gavl_msg_free(&msg);
     }
+  
+  }
+
+void bgav_signal_restart(bgav_t * b, int reason)
+  {
+  bgav_stream_t * s;
+
+  if((s = bgav_track_get_msg_stream_by_id(b->tt->cur, GAVL_META_STREAM_ID_MSG_PROGRAM)) &&
+     s->data.msg.msg_callback)
+    {
+    gavl_msg_t msg;
+
+    gavl_msg_init(&msg);
+    gavl_msg_set_id_ns(&msg, GAVL_MSG_SRC_RESTART, GAVL_MSG_NS_SRC);
+    s->data.msg.msg_callback(s->data.msg.msg_callback_data, &msg);
+    gavl_msg_free(&msg);
+    }
+
   
   }
 

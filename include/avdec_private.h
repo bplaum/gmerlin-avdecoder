@@ -1031,7 +1031,6 @@ struct bgav_input_context_s
   bgav_yml_node_t * yml;
   
   bgav_t * b;
-  bgav_options_t opt_priv;
   };
 
 /* input.c */
@@ -1568,6 +1567,7 @@ int bgav_init(bgav_t * b);
 
 void bgav_metadata_changed(bgav_t * b,
                            const gavl_dictionary_t * new_metadata);
+void bgav_signal_restart(bgav_t * b, int reason);
 
 void bgav_seek_window_changed(bgav_t * b,
                               gavl_time_t start, gavl_time_t end);

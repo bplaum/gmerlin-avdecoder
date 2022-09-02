@@ -620,32 +620,6 @@ int bgav_demuxer_next_packet(bgav_demuxer_context_t * demuxer)
   {
   int ret = 0, i;
 
-#if 0  
-  if((demuxer->b->flags & (BGAV_FLAG_METADATA_CHANGED|BGAV_FLAG_IS_RUNNING)) ==
-     (BGAV_FLAG_METADATA_CHANGED|BGAV_FLAG_IS_RUNNING))
-    {
-
-    if((s = bgav_track_find_stream_all(demuxer->tt->cur, GAVL_META_STREAM_ID_MSG_PROGRAM)) &&
-       s->data.msg.msg_callback)
-      {
-      gavl_msg_t msg;
-
-      gavl_msg_init(&msg);
-      gavl_msg_set_id_ns(&msg, GAVL_MSG_SRC_METADATA_CHANGED, GAVL_MSG_NS_SRC);
-
-      gavl_msg_set_arg_dictionary(&msg, 0, demuxer->tt->cur->metadata);
-
-      fprintf(stderr, "Sending delayed track change message\n");
-      gavl_msg_dump(&msg, 2);
-  
-
-      s->data.msg.msg_callback(s->data.msg.msg_callback_data, &msg);
-
-      }
-    
-    demuxer->b->flags &= ~BGAV_FLAG_METADATA_CHANGED;
-    }
-#endif
   /* Send state */
   if((demuxer->b->flags & (BGAV_FLAG_STATE_SENT|BGAV_FLAG_IS_RUNNING)) ==
      (BGAV_FLAG_IS_RUNNING))

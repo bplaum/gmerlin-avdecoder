@@ -672,7 +672,9 @@ static int init_cipher(bgav_input_context_t * ctx)
 
   if(p->cipher_key.len != cipher_key_size)
     {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Invalid key length (expected %d got %d)", cipher_key_size, p->cipher_key.len);
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
+             "Invalid key length (expected %d got %d)",
+             cipher_key_size, p->cipher_key.len);
     goto fail;
     }
   //  if(!download_key(ctx, cipher_key_uri, cipher_key_size))
@@ -710,8 +712,10 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
       gavl_buffer_reset(&p->m3u_buf);
       
       if(!gavl_http_client_run_async(p->m3u_io, "GET", ctx->url))
+        {
+        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Opening m3u8 failed");
         return -1;
-      
+        }
       p->next_state = NEXT_STATE_READ_M3U;
       }
     else
@@ -729,8 +733,10 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
         gavl_buffer_reset(&p->m3u_buf);
       
         if(!gavl_http_client_run_async(p->m3u_io, "GET", ctx->url))
+          {
+          gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Downloading segment list failed");
           return -1;
-      
+          }
         p->next_state = NEXT_STATE_READ_M3U;
         }
       else
@@ -745,11 +751,16 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
     //    fprintf(stderr, "Read m3u %d %d\n", result,  p->m3u_buf.len);
     
     if(result <= 0)
+      {
+      if(result < 0)
+        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Downloading m3u8 failed");
       return result;
-
+      }
     if(!parse_m3u8(ctx))
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Parsing m3u8 failed");
       return -1;
-
+      }
     if(p->seq_cur < 0)
       {
       if(p->segments.num_entries < 4)
@@ -795,14 +806,18 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
         {
         p->cipher_key_io = gavl_http_client_create();
         gavl_http_client_set_req_vars(p->cipher_key_io, &p->http_vars);
-        
         gavl_http_client_set_response_body(p->cipher_key_io, &p->cipher_key);
         }
       gavl_buffer_reset(&p->cipher_key);
+
+      gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN, "Downloading cipher key from %s",
+               cipher_key_uri);
       
       if(!gavl_http_client_run_async(p->cipher_key_io, "GET", cipher_key_uri))
+        {
+        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Downloading cipher key failed");
         return -1;
-      
+        }
       p->next_state = NEXT_STATE_READ_CIPHER_KEY;
       }
     else
@@ -818,15 +833,23 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
   
   if(p->next_state == NEXT_STATE_READ_CIPHER_KEY)
     {
-    int result = gavl_http_client_run_async_done(p->cipher_key_io, 0);
+    int result = gavl_http_client_run_async_done(p->cipher_key_io, timeout);
 
     if(result <= 0)
+      {
+      if(result < 0)
+        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Downloading cipher key failed");
       return result;
+      }
 
+    gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN, "Got cipher key");
+    
     /* Initialize cipher */
     if(!init_cipher(ctx))
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Initializing cipher failed");
       return -1;
-    
+      }
     p->next_state = NEXT_STATE_START_OPEN_TS;
     }
 
@@ -842,11 +865,15 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
     uri = gavl_dictionary_get_string(dict, GAVL_META_URI);
 
     if(!uri)
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Got no TS uri");
       return -1;
-    
+      }
     if(!gavl_http_client_run_async(p->ts_io_next, "GET", uri))
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Opening TS failed");
       return -1;
-    
+      }
     p->next_state = NEXT_STATE_OPEN_TS;
     }
   
@@ -855,6 +882,9 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
     int result = gavl_http_client_run_async_done(p->ts_io_next, timeout);
     if(result <= 0)
       {
+      if(result < 0)
+        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Opening TS failed");
+      
       //  fprintf(stderr, "Open TS: %d\n", result);
       return result;
       }
@@ -869,159 +899,6 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
   
   return 0;
   }
-
-#if 0
-static int open_ts(bgav_input_context_t * ctx)
-  {
-  int ret = 0;
-  int idx;
-  const gavl_dictionary_t * dict;
-  const char * uri;
-  hls_priv_t * p = ctx->priv;
-
-  char * http_host = NULL;
-  const char * var;
-  int tries = 0;
-  const gavl_dictionary_t * res;
-  
-  const char * cipher;
-  
-  if(!load_m3u8(ctx))
-    return 0;
-  
-  idx = p->seq_cur - p->seq_start;
-
-  if(idx < 0)
-    {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Lost sync");
-    return 0;
-    }
-  
-  while(idx >= p->segments.num_entries)
-    {
-    gavl_time_t delay_time = GAVL_TIME_SCALE / 5; // 200 ms
-    
-    gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN, "Opening M8U %s seq_start: %"PRId64" num_segments: %d",
-             ctx->url, p->seq_start, p->segments.num_entries);
-    
-    if(!load_m3u8(ctx))
-      return 0;
-
-    gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN, "Opening M8U done seq_start: %"PRId64" num_segments: %d",
-             p->seq_start, p->segments.num_entries);
-
-    idx = p->seq_cur - p->seq_start;
-
-    if(idx < 0)
-      {
-      gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN, "Lost sync");
-      return 0;
-      }
-    else if(idx < p->segments.num_entries)
-      break;
-    else if(tries >= 10)
-      return 0;
-    
-    tries++;
-    gavl_time_delay(&delay_time);
-    }
-
-  dict = gavl_value_get_dictionary(&p->segments.entries[idx]);
-
-  uri = gavl_dictionary_get_string(dict, GAVL_META_URI);
-
-  if(!p->abs_offset && gavl_dictionary_get_long(dict, SEGMENT_START_TIME, &p->abs_offset))
-    {
-    fprintf(stderr, "Got absolute time 1 %"PRId64"\n", p->abs_offset);
-    bgav_start_time_absolute_changed(ctx->b, p->abs_offset);
-    }
-  gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN, "Opening TS %s %d %"PRId64, uri, idx, p->seq_cur);
-  
-  if(!gavl_http_client_open(p->ts_io, "GET", uri))
-    {
-    goto fail;
-    }
-
-  res = gavl_http_client_get_response(p->ts_io);
-  
-  /* Check for encryption */
-  if((cipher = gavl_dictionary_get_string(dict, SEGMENT_CIPHER)) &&
-     strcmp(cipher, "NONE"))
-    {
-    const char * cipher_key_uri;
-    const char * cipher_iv;
-    int cipher_block_size = 0;
-    int cipher_key_size = 0;
-    gavl_cipher_algo_t algo = 0;
-    gavl_cipher_mode_t mode = 0;
-    gavl_cipher_padding_t padding = 0;
-
-    cipher_key_uri = gavl_dictionary_get_string(dict, SEGMENT_CIPHER_KEY_URI);
-    cipher_iv = gavl_dictionary_get_string(dict, SEGMENT_CIPHER_IV);
-
-    if(!cipher_key_uri)
-      {
-      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Got encrypted segment but no key URI");
-      goto fail;
-      }
-    
-    //    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got encrypted segment: %s %s %s",
-    //             cipher, cipher_key_uri, cipher_iv);
-    
-    if(!strcmp(cipher, "AES-128"))
-      {
-      algo = GAVL_CIPHER_AES128;
-      mode = GAVL_CIPHER_MODE_CBC;
-      padding = GAVL_CIPHER_PADDING_PKCS7;
-      cipher_block_size = 16;
-      cipher_key_size = 16;
-      }
-    else
-      {
-      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Unsupported cipher: %s", cipher);
-      goto fail;
-      }
-
-    if(!download_key(ctx, cipher_key_uri, cipher_key_size))
-      goto fail;
-
-    if(!p->cipher_io)
-      p->cipher_io = gavf_io_create_cipher(algo, mode, padding, 0);
-    
-    if(cipher_iv)
-      {
-      gavl_buffer_alloc(&p->cipher_iv, cipher_block_size);
-      if(!parse_iv(ctx, cipher_iv, p->cipher_iv.buf, cipher_block_size))
-        goto fail;
-      }
-    
-    gavf_io_cipher_init(p->cipher_io, p->ts_io, p->cipher_key.buf, p->cipher_iv.buf);
-    
-    p->io = p->cipher_io;
-    }
-  else
-    {
-    p->io = p->ts_io;
-    if((var = gavl_dictionary_get_string(res, "Content-Type")) &&
-       !(gavl_dictionary_get_string(&ctx->m, GAVL_META_MIMETYPE)))
-      gavl_dictionary_set_string(&ctx->m, GAVL_META_MIMETYPE, var);
-    }
-
-  fprintf(stderr, "Total bytes: %"PRId64"\n", gavf_io_total_bytes(p->io));
-  
-  handle_id3(ctx);
-  
-  ret = 1;
-
-
-  fail:
-
-  if(http_host)
-    free(http_host);
-  
-  return ret;
-  }
-#endif
 
 static void init_segment_io(bgav_input_context_t * ctx)
   {
@@ -1040,7 +917,7 @@ static void init_segment_io(bgav_input_context_t * ctx)
   else
     p->io = p->ts_io;
 
-  fprintf(stderr, "init_segment_io %p %p %p\n", p->io, p->ts_io, p->ts_io_next);
+  //  fprintf(stderr, "init_segment_io %p %p %p\n", p->io, p->ts_io, p->ts_io_next);
 
   p->next_state = NEXT_STATE_START;
   p->seq_cur++;
@@ -1057,7 +934,7 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   char * url;
   hls_priv_t * priv = calloc(1, sizeof(*priv));
 
-  fprintf(stderr, "Open HLS: %s\n", url1);
+  //  fprintf(stderr, "Open HLS: %s\n", url1);
   
   ctx->priv = priv;
 
@@ -1096,7 +973,7 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
 
     if(result < 0)
       {
-      fprintf(stderr, "open next async failed %d\n", result);
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "open next async failed %d", result);
       goto fail;
       }
     
@@ -1106,7 +983,8 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
 
   if(priv->next_state != NEXT_STATE_DONE)
     {
-    fprintf(stderr, "open next async: Too many iterations %d\n", priv->next_state);
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "open next async: Too many iterations %d",
+             priv->next_state);
     goto fail;
     }
 
@@ -1141,11 +1019,12 @@ static int read_hls(bgav_input_context_t* ctx,
     {
     result = gavf_io_read_data(p->io, buffer + bytes_read, len - bytes_read);
 
+#if 0    
     if(result < len - bytes_read)
       {
       fprintf(stderr, "Wanted %d, got %d\n", len - bytes_read, result);
       }
-    
+#endif
     //    fprintf(stderr, "read_hls 1 %d\n", len - bytes_read);
 
     if(p->next_state != NEXT_STATE_DONE)
@@ -1162,11 +1041,11 @@ static int read_hls(bgav_input_context_t* ctx,
         int i;
         int result1;
         
-        fprintf(stderr, "Opening next segment: %d %d %d\n", result, len, bytes_read);
+        //  fprintf(stderr, "Opening next segment: %d %d %d\n", result, len, bytes_read);
         
         if(p->next_state != NEXT_STATE_DONE)
           {
-          fprintf(stderr, "Need to open next syncronous %d\n", p->next_state);
+          gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Need to open next syncronously");
           
           for(i = 0 ; i < 100; i++)
             {
@@ -1189,49 +1068,20 @@ static int read_hls(bgav_input_context_t* ctx,
     bytes_read += result;
     }
 
-  if(bytes_read == 1)
-    fprintf(stderr, "Blupp 1\n");
+  if(bytes_read < len)
+    {
+    bgav_signal_restart(ctx->b, GAVL_MSG_SRC_RESTART_ERROR);
+    }
+  
   
   return bytes_read;
   }
-
-#if 0
-typedef struct
-  {
-  gavf_io_t * m3u_io;
-  gavf_io_t * ts_io;
-
-  gavl_array_t segments;
-  
-  gavl_socket_address_t * m3u_addr;
-  gavl_dictionary_t m3u_req;
-  gavl_buffer_t m3u_buf;
-  
-  gavl_socket_address_t * ts_addr;
-  gavl_dictionary_t ts_req;
-  int use_tls_m3u;
-  int use_tls_ts;
-
-  char * host;
-
-  int64_t seq_start; // First sequence number of the array
-  int64_t seq_cur;   // Current sequence number
-  
-  int64_t ts_len; /* Content length */
-  int64_t ts_pos; /* Bytes read so far from the file or chunk */
-  int ts_chunked;
-  int ts_keepalive;
-  
-  } hls_priv_t;
-
-#endif
-
 
 static void close_hls(bgav_input_context_t * ctx)
   {
   hls_priv_t * p = ctx->priv;
 
-  fprintf(stderr, "Close HLS\n");
+  //  fprintf(stderr, "Close HLS\n");
   
   if(p->m3u_io)
     gavf_io_destroy(p->m3u_io);
