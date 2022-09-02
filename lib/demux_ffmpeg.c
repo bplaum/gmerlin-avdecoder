@@ -82,7 +82,7 @@ static void cleanup_stream_ffmpeg(bgav_stream_t * s)
 
 typedef struct
   {
-  AVInputFormat *avif;
+  const AVInputFormat *avif;
   AVFormatContext *avfc;
 #ifdef NEW_IO_API
 #define BUFFER_SIZE 1024 * 4
@@ -170,7 +170,7 @@ static URLProtocol bgav_protocol = {
 
 /* Demuxer functions */
 
-static AVInputFormat * get_format(bgav_input_context_t * input)
+static const AVInputFormat * get_format(bgav_input_context_t * input)
   {
   uint8_t data[PROBE_SIZE];
   AVProbeData avpd;
@@ -189,7 +189,7 @@ static AVInputFormat * get_format(bgav_input_context_t * input)
 
 static int probe_ffmpeg(bgav_input_context_t * input)
   {
-  AVInputFormat * format;
+  const AVInputFormat * format;
   /* This sucks */
   format= get_format(input);
   
@@ -541,12 +541,22 @@ static void init_audio_stream(bgav_demuxer_context_t * ctx,
   if(!s->data.audio.block_align &&
      map->bits)
     {
-    s->data.audio.block_align = ((map->bits + 7) / 8) * params->channels;
+    s->data.audio.block_align = ((map->bits + 7) / 8) *
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
+            params->ch_layout.nb_channels;
+#else
+            params->channels;
+#endif
     }
   
   s->timescale = st->time_base.den;
   
-  s->data.audio.format->num_channels = params->channels;
+  s->data.audio.format->num_channels =
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
+            params->ch_layout.nb_channels;
+#else
+            params->channels;
+#endif
   s->data.audio.format->samplerate = params->sample_rate;
   
   bgav_stream_set_extradata(s, params->extradata, params->extradata_size);
@@ -827,7 +837,9 @@ static int next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
   int i_tmp;
   uint32_t * pal_i;
 
-#if LIBAVCODEC_VERSION_MAJOR >= 54
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 130, 100)
+  size_t pal_i_len;
+#elif LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(54, 0, 0)
   int pal_i_len;
 #else
   const int pal_i_len = AVPALETTE_COUNT;
