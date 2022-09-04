@@ -1034,6 +1034,7 @@ static int read_hls(bgav_input_context_t* ctx,
       {
       if(gavf_io_got_error(p->io))
         {
+        bgav_signal_restart(ctx->b, GAVL_MSG_SRC_RESTART_ERROR);
         return bytes_read;
         }
       else
@@ -1067,12 +1068,11 @@ static int read_hls(bgav_input_context_t* ctx,
 
     bytes_read += result;
     }
-
+  /*
   if(bytes_read < len)
     {
-    bgav_signal_restart(ctx->b, GAVL_MSG_SRC_RESTART_ERROR);
     }
-  
+  */
   
   return bytes_read;
   }

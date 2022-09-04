@@ -480,6 +480,7 @@ void bgav_signal_restart(bgav_t * b, int reason)
 
     gavl_msg_init(&msg);
     gavl_msg_set_id_ns(&msg, GAVL_MSG_SRC_RESTART, GAVL_MSG_NS_SRC);
+    gavl_msg_set_arg_int(&msg, 0, reason);
     s->data.msg.msg_callback(s->data.msg.msg_callback_data, &msg);
     gavl_msg_free(&msg);
     }

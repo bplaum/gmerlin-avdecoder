@@ -32,6 +32,9 @@
 
 #define LOG_DOMAIN "m3u"
 
+#define META_AUDIO_GROUP    "audio-group"
+#define META_SUBTITLE_GROUP "subtitle-group"
+
 static int probe_m3u(bgav_input_context_t * input)
   {
   char probe_buffer[PROBE_BYTES];
@@ -123,11 +126,92 @@ static bgav_track_t * append_track(bgav_track_table_t * tt)
   return ret;
   }
 
+static void parse_ext_x_media(bgav_input_context_t * input, const char * pos, gavl_dictionary_t * ret)
+  {
+  char * pos1;
+  char * pos2;
+
+  char * type = NULL;
+  char * group_id = NULL;
+      
+  if((pos1 = strstr(pos, "TYPE=")))
+    {
+    pos1 += strlen("TYPE=");
+          
+    if((pos2 = strchr(pos1, ',')))
+      type = gavl_strndup(pos1, pos2);
+    else
+      type = gavl_strdup(pos1);
+    }
+
+  if((pos1 = strstr(pos, "GROUP-ID=\"")))
+    {
+    pos1 += strlen("GROUP-ID=\"");
+          
+    if((pos2 = strchr(pos1, '"')))
+      group_id = gavl_strndup(pos1, pos2);
+    else
+      group_id = gavl_strdup(pos1);
+    }
+
+  if(type && group_id)
+    {
+    gavl_value_t val;
+    gavl_array_t * arr;
+    gavl_dictionary_t * dict;
+          
+    gavl_value_init(&val);
+          
+    dict = gavl_dictionary_get_dictionary_create(ret, type);
+    arr = gavl_dictionary_get_array_create(dict, group_id);
+          
+    dict = gavl_value_set_dictionary(&val);
+    gavl_array_splice_val_nocopy(arr, -1, 0, &val);
+          
+    if((pos1 = strstr(pos, "NAME=\"")))
+      {
+      pos1 += strlen("NAME=\"");
+            
+      if((pos2 = strchr(pos1, '"')))
+        gavl_dictionary_set_string_nocopy(dict, GAVL_META_LABEL, gavl_strndup(pos1, pos2));
+      }
+
+    if((pos1 = strstr(pos, "URI=\"")))
+      {
+      char * tmp_string;
+          
+      pos1 += strlen("URI=\"");
+            
+      if((pos2 = strchr(pos1, '"')))
+        tmp_string = gavl_strndup(pos1, pos2);
+          
+      gavl_dictionary_set_string_nocopy(dict, GAVL_META_URI, bgav_input_absolute_url(input, tmp_string));
+      free(tmp_string);
+      }
+
+    if((pos1 = strstr(pos, "LANGUAGE=\"")))
+      {
+      pos1 += strlen("LANGUAGE=\"");
+            
+      if((pos2 = strchr(pos1, '"')))
+        gavl_dictionary_set_string_nocopy(dict, GAVL_META_LANGUAGE, gavl_strndup(pos1, pos2));
+      }
+          
+    }
+        
+  if(type)
+    free(type);
+  if(group_id)
+    free(group_id);
+  
+  }
+
 static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
   {
+  int i;
   char * buffer = NULL;
   uint32_t buffer_alloc = 0;
-  char * pos;
+  const char * pos;
   bgav_track_table_t * tt;
   bgav_track_t * t = NULL;
 
@@ -138,6 +222,7 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
   int height = 0;
   int bitrate = 0;
   double framerate = 0.0;
+  gavl_array_t lines;
   
   char * audio = NULL;
   char * subtitles = NULL;
@@ -151,6 +236,7 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
   gavl_dictionary_init(&metadata);
   gavl_dictionary_init(&http_vars);
   gavl_dictionary_init(&http_vars_global);
+  gavl_array_init(&lines);
 
   if(input->url)
     {
@@ -163,12 +249,33 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
   //  gavl_dictionary_dump(&http_vars_global, 2);
   
   tt = bgav_track_table_create(0);
-  
+
+  /* Read input and split into lines */
+
+  /* First pass: read lines, process #EXT-X-MEDIA lines */
   while(1)
     {
     if(!bgav_input_read_line(input, &buffer, &buffer_alloc, 0, NULL))
       break;
+
     pos = strip_spaces(buffer);
+    if(*pos == '\0') // Empty line
+      continue;
+
+    if(gavl_string_starts_with(pos, "#EXT-X-MEDIA:"))
+      {
+      parse_ext_x_media(input, pos, &ext_x_media);
+      }
+    else
+      {
+      /* Save for second pass */
+      gavl_string_array_insert_at(&lines, -1, pos);
+      }
+    }
+
+  for(i = 0; i < lines.num_entries; i++)
+    {
+    pos = gavl_string_array_get(&lines, i);
     
     if(!strcmp(pos, "--stop--"))
       break;
@@ -216,83 +323,6 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
         hls = 1;
         gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Detected HLS");
         }
-
-      if(gavl_string_starts_with(pos, "#EXT-X-MEDIA:"))
-        {
-        char * pos1;
-        char * pos2;
-
-        char * type = NULL;
-        char * group_id = NULL;
-
-        
-        if((pos1 = strstr(pos, "TYPE=")))
-          {
-          pos1 += strlen("TYPE=");
-          
-          if((pos2 = strchr(pos1, ',')))
-            type = gavl_strndup(pos1, pos2);
-          else
-            type = gavl_strdup(pos1);
-          }
-
-        if((pos1 = strstr(pos, "GROUP-ID=\"")))
-          {
-          pos1 += strlen("GROUP-ID=\"");
-          
-          if((pos2 = strchr(pos1, '"')))
-            group_id = gavl_strndup(pos1, pos2);
-          else
-            group_id = gavl_strdup(pos1);
-          }
-
-        if(type && group_id)
-          {
-          gavl_value_t val;
-          gavl_array_t * arr;
-          gavl_dictionary_t * dict;
-          
-          gavl_value_init(&val);
-          
-          dict = gavl_dictionary_get_dictionary_create(&ext_x_media, type);
-          arr = gavl_dictionary_get_array_create(dict, group_id);
-          
-          dict = gavl_value_set_dictionary(&val);
-          gavl_array_splice_val_nocopy(arr, -1, 0, &val);
-          
-          if((pos1 = strstr(pos, "NAME=\"")))
-            {
-            pos1 += strlen("NAME=\"");
-            
-            if((pos2 = strchr(pos1, '"')))
-              gavl_dictionary_set_string_nocopy(dict, GAVL_META_LABEL, gavl_strndup(pos1, pos2));
-            }
-
-          if((pos1 = strstr(pos, "URI=\"")))
-            {
-            pos1 += strlen("URI=\"");
-            
-            if((pos2 = strchr(pos1, '"')))
-              gavl_dictionary_set_string_nocopy(dict, GAVL_META_URI, gavl_strndup(pos1, pos2));
-            }
-
-          if((pos1 = strstr(pos, "LANGUAGE=\"")))
-            {
-            pos1 += strlen("LANGUAGE=\"");
-            
-            if((pos2 = strchr(pos1, '"')))
-              gavl_dictionary_set_string_nocopy(dict, GAVL_META_LANGUAGE, gavl_strndup(pos1, pos2));
-            }
-          
-          }
-        
-        if(type)
-          free(type);
-        if(group_id)
-          free(group_id);
-        
-        }
-      
       
       
       if(gavl_string_starts_with(pos, "#EXT-X-STREAM-INF:")) 
@@ -616,7 +646,7 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
               gavl_edl_segment_set_url(edl_segment, var);
             gavl_edl_segment_set(edl_segment, 0, 0, -1, -1, -1, -1);
             }
-#if 1 // TODO: Enable subtitles later
+#if 0 // TODO: Enable subtitles later
           if(subtitles && (dict = gavl_dictionary_get_dictionary_nc(&ext_x_media, "SUBTITLES")) &&
              (arr = gavl_dictionary_get_array(dict, subtitles)))
             {
@@ -736,18 +766,19 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
   gavl_dictionary_free(&ext_x_media);
   gavl_dictionary_free(&http_vars_global);
   gavl_dictionary_free(&http_vars);
-
+  gavl_array_free(&lines);
+  
 #if 1
   if(hls && t)
     {
     if(!gavl_metadata_sort_source(t->metadata,
-                               GAVL_META_SRC,
-                               GAVL_META_BITRATE,
-                               0))
+                                  GAVL_META_SRC,
+                                  GAVL_META_BITRATE,
+                                  0))
       gavl_metadata_sort_source(t->metadata,
                                 GAVL_META_SRC,
                                 GAVL_META_WIDTH,
-                             0);
+                                0);
     }
 #endif
   
