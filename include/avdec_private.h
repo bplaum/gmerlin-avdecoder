@@ -355,6 +355,7 @@ void bgav_packet_pool_destroy(bgav_packet_pool_t*);
 #define STREAM_EXTERN             (1<<19) // Exteral to the demultiplexer (subtitle file, message stream)
 
 #define STREAM_PES_TIMESTAMPS     (1<<20) // Use timestamps from the PES packets
+#define STREAM_NEED_START_PTS     (1<<21) /* Take start PTS from first packet */
 
 /* Stream could not get extract compression info from the
  * demuxer
@@ -1574,7 +1575,7 @@ void bgav_seek_window_changed(bgav_t * b,
                               gavl_time_t start, gavl_time_t end);
 
 // void bgav_abs_time_offset_changed(bgav_t * b, gavl_time_t off);
-void bgav_start_time_absolute_changed(bgav_t * b, gavl_time_t off);
+//void bgav_start_time_absolute_changed(bgav_t * b, gavl_time_t off);
 
 void bgav_send_state(bgav_t * b);
 

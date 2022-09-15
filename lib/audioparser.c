@@ -157,9 +157,13 @@ static int parse_frame(bgav_audio_parser_t * parser,
   if(parser->timestamp == GAVL_TIME_UNDEFINED)
     {
     if(p->pts != GAVL_TIME_UNDEFINED)
+      {
       parser->timestamp = gavl_time_rescale(parser->s->timescale,
                                             parser->s->data.audio.format->samplerate,
                                             p->pts);
+      
+      gavl_stream_set_start_pts(parser->s->info, p->pts, parser->s->timescale);
+      }
     else
       parser->timestamp = 0;
     }
@@ -216,7 +220,13 @@ static void get_out_packet(bgav_audio_parser_t * parser,
   if(parser->timestamp == GAVL_TIME_UNDEFINED)
     {
     if(parser->frame_pts != GAVL_TIME_UNDEFINED)
-      parser->timestamp = parser->frame_pts;
+      {
+      gavl_stream_set_start_pts(parser->s->info, parser->frame_pts, parser->s->timescale);
+      
+      parser->timestamp = gavl_time_rescale(parser->s->timescale,
+                                            parser->s->data.audio.format->samplerate,
+                                            parser->frame_pts);
+      }
     else
       parser->timestamp = 0;
     }
@@ -439,7 +449,6 @@ bgav_audio_parser_t * bgav_audio_parser_create(bgav_stream_t * s)
   ret->s = s;
   
   ret->timestamp = GAVL_TIME_UNDEFINED;
-  ret->raw_position = -1;
 
   bgav_packet_source_copy(&ret->src, &s->src);
 
@@ -482,7 +491,6 @@ void bgav_audio_parser_reset(bgav_audio_parser_t * parser,
   parser->num_packets = 0;
   parser->frame_samples = 0;
   parser->frame_bytes = 0;
-  parser->raw_position = -1;
   parser->eof = 0;
 
   if(parser->out_packet)
@@ -506,45 +514,30 @@ void bgav_audio_parser_reset(bgav_audio_parser_t * parser,
 
 
 
-void bgav_audio_parser_add_data(bgav_audio_parser_t * parser,
-                                uint8_t * data, int len, int64_t position)
-  {
-  parser->raw = 1;
-  gavl_buffer_append_data(&parser->buf, data, len);
-  if(parser->raw_position < 0)
-    parser->raw_position = position;
-  }
-
-
-
 void bgav_audio_parser_flush(bgav_audio_parser_t * parser, int bytes)
   {
+  int num_remove, i;
+
   //  fprintf(stderr, "bgav_audio_parser_flush %d\n", bytes);
   gavl_buffer_flush(&parser->buf, bytes);
-  if(parser->raw)
-    parser->raw_position += bytes;
-  else
+  for(i = 0; i < parser->num_packets; i++)
+    parser->packets[i].parser_position -= bytes;
+  
+  num_remove = 0;
+  for(i = 0; i < parser->num_packets; i++)
     {
-    int num_remove, i;
-    for(i = 0; i < parser->num_packets; i++)
-      parser->packets[i].parser_position -= bytes;
+    if(parser->packets[i].parser_position + parser->packets[i].size <= 0)
+      num_remove++;
+    else
+      break;
+    }
 
-    num_remove = 0;
-    for(i = 0; i < parser->num_packets; i++)
-      {
-      if(parser->packets[i].parser_position + parser->packets[i].size <= 0)
-        num_remove++;
-      else
-        break;
-      }
-
-    if(num_remove)
-      {
-      if(parser->num_packets - num_remove)
-        memmove(parser->packets, parser->packets + num_remove,
-                sizeof(*parser->packets) * (parser->num_packets - num_remove));
-      parser->num_packets -= num_remove;
-      }
+  if(num_remove)
+    {
+    if(parser->num_packets - num_remove)
+      memmove(parser->packets, parser->packets + num_remove,
+              sizeof(*parser->packets) * (parser->num_packets - num_remove));
+    parser->num_packets -= num_remove;
     }
   }
 
@@ -559,27 +552,17 @@ void bgav_audio_parser_set_frame(bgav_audio_parser_t * parser,
     bgav_audio_parser_flush(parser, pos);
   
   /* Get frame position */
-  if(parser->raw)
+  for(i = 0; i < parser->num_packets; i++)
     {
-    parser->frame_position = parser->raw_position;
-    parser->frame_pts      = 0;
-    }
-  else
-    {
-    for(i = 0; i < parser->num_packets; i++)
+    if(parser->packets[i].parser_position + parser->packets[i].size > 0)
       {
-      if(parser->packets[i].parser_position + parser->packets[i].size > 0)
-        {
-        parser->frame_position = parser->packets[i].packet_position;
+      parser->frame_position = parser->packets[i].packet_position;
 
-        if(parser->packets[i].pts != GAVL_TIME_UNDEFINED) 
-          parser->frame_pts      = gavl_time_rescale(parser->s->timescale,
-                                                     parser->s->data.audio.format->samplerate,
-                                                     parser->packets[i].pts);
-        else
-          parser->frame_pts      = GAVL_TIME_UNDEFINED;
-        break;
-        }
+      if(parser->packets[i].pts != GAVL_TIME_UNDEFINED) 
+        parser->frame_pts      = parser->packets[i].pts;
+      else
+        parser->frame_pts      = GAVL_TIME_UNDEFINED;
+      break;
       }
     }
   parser->frame_samples = samples;

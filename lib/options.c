@@ -512,13 +512,5 @@ void bgav_seek_window_changed(bgav_t * b,
   gavl_dictionary_set_long(dict, GAVL_STATE_SRC_SEEK_WINDOW_START, start);
   gavl_dictionary_set_long(dict, GAVL_STATE_SRC_SEEK_WINDOW_END, end);
   state_changed(b, GAVL_STATE_SRC_SEEK_WINDOW, &val);
-  
   }
 
-void bgav_start_time_absolute_changed(bgav_t * b, gavl_time_t off)
-  {
-  gavl_value_t val;
-  gavl_value_init(&val);
-  gavl_value_set_long(&val, off);
-  state_changed(b, GAVL_STATE_SRC_START_TIME_ABSOLUTE, &val);
-  }

@@ -90,6 +90,10 @@ static int open_adts(bgav_demuxer_context_t * ctx)
   uint8_t buf[ADTS_HEADER_LEN];
   bgav_adts_header_t adts;
 
+  int64_t pts_start_num = 0;
+  int     pts_start_den = 0;
+  
+  
   priv = calloc(1, sizeof(*priv));
   ctx->priv = priv;
 
@@ -115,6 +119,7 @@ static int open_adts(bgav_demuxer_context_t * ctx)
   /* Check for id3v1 tag at the end */
 
   if((ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE) &&
+     ctx->input->url &&
      (!gavl_string_starts_with(ctx->input->url, "http://")))
     {
     bgav_input_seek(ctx->input, -128, SEEK_END);
@@ -163,7 +168,8 @@ static int open_adts(bgav_demuxer_context_t * ctx)
 
   s->fourcc = BGAV_MK_FOURCC('A', 'D', 'T', 'S');
   s->stats.pts_start = GAVL_TIME_UNDEFINED;
- 
+  s->flags |= STREAM_NEED_START_PTS;
+  
   /* Initialize rest */
 
   if(bgav_input_get_data(ctx->input, buf, ADTS_HEADER_LEN) < ADTS_HEADER_LEN)
@@ -187,6 +193,13 @@ static int open_adts(bgav_demuxer_context_t * ctx)
   
   s->data.audio.format->samplerate = adts.samplerate;
   s->timescale = adts.samplerate; // Timescale will be the same even if the samplerate changes
+
+  if(gavl_dictionary_get_int(&ctx->input->m, META_START_PTS_DEN, &pts_start_den) &&
+     (pts_start_den > 0) &&
+     gavl_dictionary_get_long(&ctx->input->m, META_START_PTS_NUM, &pts_start_num))
+    {
+    gavl_stream_set_start_pts(s->info, pts_start_num, pts_start_den);
+    }
   
   //  adts_header_dump(&adts);
 
@@ -270,6 +283,7 @@ static int select_track_adts(bgav_demuxer_context_t * ctx, int track)
      gavl_dictionary_get_long(&ctx->input->m, META_START_PTS_NUM, &pts_start_num))
     {
     priv->sample_count = gavl_time_rescale(pts_start_den, s->timescale, pts_start_num);
+    gavl_stream_set_start_pts(s->info, pts_start_num, pts_start_den);
     }
   
   return 1;

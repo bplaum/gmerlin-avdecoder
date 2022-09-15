@@ -82,7 +82,7 @@ static void cleanup_stream_ffmpeg(bgav_stream_t * s)
 
 typedef struct
   {
-  const AVInputFormat *avif;
+  ff_const59 AVInputFormat *avif;
   AVFormatContext *avfc;
 #ifdef NEW_IO_API
 #define BUFFER_SIZE 1024 * 4
@@ -170,7 +170,7 @@ static URLProtocol bgav_protocol = {
 
 /* Demuxer functions */
 
-static const AVInputFormat * get_format(bgav_input_context_t * input)
+static ff_const59 AVInputFormat * get_format(bgav_input_context_t * input)
   {
   uint8_t data[PROBE_SIZE];
   AVProbeData avpd;

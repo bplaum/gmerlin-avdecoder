@@ -278,6 +278,9 @@ void bgav_stream_clear(bgav_stream_t * s)
   STREAM_UNSET_SYNC(s);
   s->flags &= ~(STREAM_EOF_C|STREAM_EOF_D);
 
+  if(s->flags & STREAM_NEED_START_PTS)
+    s->stats.pts_start = GAVL_TIME_UNDEFINED;
+  
   s->index_position  = -1;
   }
 

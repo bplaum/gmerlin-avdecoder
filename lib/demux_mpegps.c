@@ -1159,6 +1159,7 @@ static int open_mpegps(bgav_demuxer_context_t * ctx)
         s->flags |= STREAM_PARSE_FULL;
       
       s->stats.pts_start = GAVL_TIME_UNDEFINED;
+      s->flags |= STREAM_NEED_START_PTS;
       }
     for(j = 0; j < ctx->tt->tracks[i]->num_video_streams; j++)
       {
@@ -1166,12 +1167,14 @@ static int open_mpegps(bgav_demuxer_context_t * ctx)
 
       s->flags |= STREAM_PARSE_FULL;
       s->stats.pts_start = GAVL_TIME_UNDEFINED;
+      s->flags |= STREAM_NEED_START_PTS;
       }
     for(j = 0; j < ctx->tt->tracks[i]->num_overlay_streams; j++)
       {
       s = bgav_track_get_overlay_stream(ctx->tt->tracks[i], j);
       s->flags |= STREAM_PARSE_FULL;
       s->stats.pts_start = GAVL_TIME_UNDEFINED;
+      s->flags |= STREAM_NEED_START_PTS;
       }
     }
   ctx->index_mode = INDEX_MODE_MIXED;

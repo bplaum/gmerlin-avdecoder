@@ -299,7 +299,6 @@ static int init_psi(bgav_demuxer_context_t * ctx)
 
 static int open_mpegts(bgav_demuxer_context_t * ctx)
   {
-  
   mpegts_priv_t * priv;
 
   priv = calloc(1, sizeof(*priv));
@@ -320,6 +319,9 @@ static int open_mpegts(bgav_demuxer_context_t * ctx)
 
   gavl_buffer_alloc(&priv->buf, priv->packet_size);
   priv->pes_parser = bgav_input_open_memory(NULL, 0, ctx->opt);
+  
+  if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_TIME)
+    ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
   
   return 1;
   }
@@ -433,16 +435,13 @@ static int next_packet_mpegts(bgav_demuxer_context_t * ctx)
         }
       
       }
-    
     }
-  
   return 1;
   }
 
-
 static void resync_mpegts(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
   {
-  
+  fprintf(stderr, "resync_mpegts\n");
   }
 
 static void seek_mpegts(bgav_demuxer_context_t * ctx, int64_t time, int scale)

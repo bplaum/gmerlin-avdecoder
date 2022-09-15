@@ -355,6 +355,7 @@ static void init_stream_common(mkv_t * m,
   s->timescale = 1000000000 / m->segment_info.TimecodeScale;
 
   s->stats.pts_start = GAVL_TIME_UNDEFINED;
+  s->flags |= STREAM_NEED_START_PTS;
 
   if(set_lang)
     {

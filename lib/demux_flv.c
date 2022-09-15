@@ -164,6 +164,7 @@ static int init_audio_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
   priv = ctx->priv;
 
   s->stats.pts_start = GAVL_TIME_UNDEFINED;
+  s->flags |= STREAM_NEED_START_PTS;
   
   if(!s->fourcc) /* Initialize */
     {
@@ -219,6 +220,8 @@ static int init_audio_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
         //        s->index_mode = INDEX_MODE_MPEG;
         s->flags |= STREAM_PARSE_FULL;
         s->stats.pts_start = GAVL_TIME_UNDEFINED;
+        s->flags |= STREAM_NEED_START_PTS;
+
         s->index_mode = INDEX_MODE_SIMPLE;
         // ctx->index_mode = 0;
         s->stats.pts_end = 0;
@@ -243,6 +246,7 @@ static int init_video_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
   priv = ctx->priv;
 
   s->stats.pts_start = GAVL_TIME_UNDEFINED;
+  s->flags |= STREAM_NEED_START_PTS;
   
   switch(flags & 0xF)
     {

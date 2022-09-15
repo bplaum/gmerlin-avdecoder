@@ -143,8 +143,13 @@ void bgav_video_parser_reset(bgav_video_parser_t * parser,
     }
   
   if(in_pts != GAVL_TIME_UNDEFINED)
+    {
+    int64_t start_pts;
+    
+    
     parser->timestamp = gavl_time_rescale(parser->s->timescale,
                                           parser->format->timescale, in_pts);
+    }
   else if(out_pts != GAVL_TIME_UNDEFINED)
     parser->timestamp = out_pts;
   else
@@ -408,6 +413,7 @@ static void process_packet(bgav_video_parser_t * parser, bgav_packet_t * p, int6
     {
     if(!parser->keyframe_count)
       {
+      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Skipping initial non-keyframe");
       PACKET_SET_SKIP(p);
       return;
       }
@@ -455,9 +461,13 @@ static void process_packet(bgav_video_parser_t * parser, bgav_packet_t * p, int6
     if(parser->timestamp == GAVL_TIME_UNDEFINED)
       {
       if(pts_orig != GAVL_TIME_UNDEFINED)
+        {
         parser->timestamp = gavl_time_rescale(parser->s->timescale,
                                               parser->format->timescale,
                                               pts_orig);
+        
+        gavl_stream_set_start_pts(parser->s->info, pts_orig, parser->s->timescale);
+        }
       else
         parser->timestamp = 0;
       }

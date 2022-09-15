@@ -48,7 +48,7 @@ typedef struct
 
 struct bgav_audio_parser_s
   {
-  int raw;
+  //  int raw;
   gavl_buffer_t buf;
   
   bgav_stream_t * s;
@@ -63,7 +63,7 @@ struct bgav_audio_parser_s
   void * priv;
   
   /* Raw byte offset of the start of the parser buffer */
-  int64_t raw_position;
+  //  int64_t raw_position;
   
   int have_format;
   

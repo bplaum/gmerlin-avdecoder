@@ -1067,6 +1067,7 @@ static int init_raw(bgav_demuxer_context_t * ctx, int input_can_seek)
       s->timescale = 90000;
       s->stats.pts_start = GAVL_TIME_UNDEFINED;
       s->flags |= STREAM_PARSE_FULL;
+      s->flags |= STREAM_NEED_START_PTS;
       }
     if(!next_packet_scan(ctx))
         break;

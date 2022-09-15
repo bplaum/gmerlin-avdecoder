@@ -134,6 +134,7 @@ int bgav_audio_start(bgav_stream_t * s)
       {
       gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
                "EOF while getting start time");
+      return 0;
       }
     s->stats.pts_start = p->pts;
     sprintf(tmp_string, "%" PRId64, s->stats.pts_start);

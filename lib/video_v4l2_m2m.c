@@ -76,6 +76,8 @@ static int init_v4l2(bgav_stream_t * s)
     }
   s->data.video.vsrc = gavl_v4l2_device_get_video_source(priv->dev);
   s->decoder_priv = priv;
+  
+  gavl_dictionary_set_string(s->m, GAVL_META_FORMAT, gavl_compression_get_short_name(s->ci->id));
   return 1;
   }
 

@@ -28,13 +28,14 @@
 #include <gavl/gavlsocket.h>
 #include <gavl/value.h>
 #include <gavl/http.h>
+#include <gavl/state.h>
 
 #include <id3.h>
 
 #define LOG_DOMAIN "in_hls"
 
-#define SEGMENT_START_TIME "start"
-#define SEGMENT_END_TIME "end"
+#define SEGMENT_START_TIME_ABS "start_abs"
+#define SEGMENT_DURATION        "duration"
 
 #define SEGMENT_CIPHER         "cipher"
 #define SEGMENT_CIPHER_KEY_URI "cipherkeyuri"
@@ -74,14 +75,14 @@ typedef struct
   gavl_time_t window_start;
   gavl_time_t window_end;
   
-  gavl_time_t abs_offset;
-
   gavl_buffer_t cipher_key;
   gavl_buffer_t cipher_iv;
   
   gavl_dictionary_t http_vars;
 
   int next_state;
+  int end_of_sequence;
+  
   } hls_priv_t;
 
 static int parse_m3u8(bgav_input_context_t * ctx)
@@ -94,7 +95,7 @@ static int parse_m3u8(bgav_input_context_t * ctx)
   int skip;
   gavl_value_t val;
   gavl_dictionary_t * dict;
-  gavl_time_t segment_start_time = GAVL_TIME_UNDEFINED;
+  gavl_time_t segment_start_time_abs = GAVL_TIME_UNDEFINED;
   gavl_time_t segment_duration = 0;
   int window_changed = 0;
 
@@ -128,16 +129,24 @@ static int parse_m3u8(bgav_input_context_t * ctx)
     }
   else
     {
-    if(p->seq_start < new_seq)
+    const gavl_dictionary_t * d;
+    int i;
+    int num_deleted = new_seq - p->seq_start;
+    
+    if(num_deleted > 0)
       {
-      //      fprintf(stderr, "Deleting %"PRId64" elements\n", new_seq - p->seq_start);
-  
-      gavl_array_splice_val(&p->segments, 0, new_seq - p->seq_start, NULL);
-      p->seq_start = new_seq;
+      for(i = 0; i < num_deleted; i++)
+        {
+        if((d = gavl_value_get_dictionary(&p->segments.entries[i])) &&
+           gavl_dictionary_get_long(d, SEGMENT_DURATION, &segment_duration) &&
+           (segment_duration > 0))
+          p->window_start += segment_duration;
+        }
+      gavl_array_splice_val(&p->segments, 0, num_deleted, NULL);
+      p->seq_start += num_deleted;
       window_changed = 1;
       }
     }
-
   
   skip = p->segments.num_entries;
   //  fprintf(stderr, "seq_start: %"PRId64" skip: %d\n", p->seq_start, skip);
@@ -161,6 +170,25 @@ static int parse_m3u8(bgav_input_context_t * ctx)
   
   while(lines[idx])
     {
+    gavl_strtrim(lines[idx]);
+
+    if(*(lines[idx]) == '\0')
+      {
+      idx++;
+      continue;
+      }
+
+    /* Skip header lines to suppress fake warnings */
+    if(gavl_string_starts_with(lines[idx], "#EXTM3U") ||
+       gavl_string_starts_with(lines[idx], "#EXT-X-VERSION") ||
+       gavl_string_starts_with(lines[idx], "#EXT-X-MEDIA-SEQUENCE") ||
+       gavl_string_starts_with(lines[idx], "#EXT-X-TARGETDURATION"))
+      {
+      idx++;
+      continue;
+      }
+       
+    
     if(gavl_string_starts_with(lines[idx], "#EXT-X-KEY:"))
       {
       const char * start;
@@ -205,23 +233,14 @@ static int parse_m3u8(bgav_input_context_t * ctx)
         gavl_dictionary_set_string_nocopy(&cipher_params, SEGMENT_CIPHER_IV, gavl_strndup(start, end));
         }
       }
-    
-    gavl_strtrim(lines[idx]);
-
-    if(*(lines[idx]) == 0)
-      {
-      idx++;
-      continue;
-      }
-    
-    if(gavl_string_starts_with(lines[idx], "#EXT-X-PROGRAM-DATE-TIME:"))
+    else if(gavl_string_starts_with(lines[idx], "#EXT-X-PROGRAM-DATE-TIME:"))
       {
 
       /* Time in ISO-8601 format */
       // #EXT-X-PROGRAM-DATE-TIME:2022-04-26T21:15:13Z
       
-      if(!gavl_time_parse_iso8601(lines[idx] + strlen("#EXT-X-PROGRAM-DATE-TIME:") , &segment_start_time))
-        segment_start_time = GAVL_TIME_UNDEFINED;
+      if(!gavl_time_parse_iso8601(lines[idx] + strlen("#EXT-X-PROGRAM-DATE-TIME:") , &segment_start_time_abs))
+        segment_start_time_abs = GAVL_TIME_UNDEFINED;
       }
     else if(gavl_string_starts_with(lines[idx], "#EXTINF:"))
       {
@@ -232,12 +251,10 @@ static int parse_m3u8(bgav_input_context_t * ctx)
       {
       char * uri;
       
-      if(segment_start_time != GAVL_TIME_UNDEFINED)
-        {
-        gavl_dictionary_set_long(dict, SEGMENT_START_TIME, segment_start_time);
-        if(segment_duration >  0)
-          gavl_dictionary_set_long(dict, SEGMENT_END_TIME, segment_start_time + segment_duration);
-        }
+      if(segment_start_time_abs != GAVL_TIME_UNDEFINED)
+        gavl_dictionary_set_long(dict, SEGMENT_START_TIME_ABS, segment_start_time_abs);
+      if(segment_duration >  0)
+        gavl_dictionary_set_long(dict, SEGMENT_DURATION, segment_duration);
 
       gavl_dictionary_merge2(dict, &cipher_params);
 
@@ -249,13 +266,22 @@ static int parse_m3u8(bgav_input_context_t * ctx)
       gavl_dictionary_set_string_nocopy(dict, GAVL_META_URI, uri);
       gavl_array_splice_val_nocopy(&p->segments, -1, 0, &val);
 
-      segment_start_time = GAVL_TIME_UNDEFINED;
+      if(segment_duration > 0)
+        p->window_end += segment_duration;
+      
+      
+      segment_start_time_abs = GAVL_TIME_UNDEFINED;
       segment_duration = 0;
       
       gavl_value_reset(&val);
       dict = gavl_value_set_dictionary(&val);
       num_appended++;
       }
+    else
+      {
+      fprintf(stderr, "Unknown line %s\n", lines[idx]);
+      }
+    
     idx++;
     }
   
@@ -267,14 +293,11 @@ static int parse_m3u8(bgav_input_context_t * ctx)
 
   if(window_changed)
     {
-    const gavl_dictionary_t * d;
+    //    const gavl_dictionary_t * d;
+
     if(p->segments.num_entries)
       {
-      if((d = gavl_value_get_dictionary(&p->segments.entries[0])) &&
-         gavl_dictionary_get_long(d, SEGMENT_START_TIME, &p->window_start) &&
-         (d = gavl_value_get_dictionary(&p->segments.entries[p->segments.num_entries-1])) &&
-         gavl_dictionary_get_long(d, SEGMENT_END_TIME, &p->window_end))
-        bgav_seek_window_changed(ctx->b, p->window_start, p->window_end);
+      bgav_seek_window_changed(ctx->b, p->window_start, p->window_end);
       }
     }
   
@@ -287,261 +310,6 @@ static int parse_m3u8(bgav_input_context_t * ctx)
   return ret;
   
   }
-
-#if 0
-static int load_m3u8(bgav_input_context_t * ctx)
-  {
-  //  int ret = 0;
-  hls_priv_t * p = ctx->priv;
-  //  char ** lines;
-  //  int idx;
-  //  int64_t new_seq = -1;
-  //  int skip;
-  //  gavl_value_t val;
-  //  gavl_dictionary_t * dict;
-  //  gavl_time_t segment_start_time = GAVL_TIME_UNDEFINED;
-  //  gavl_time_t segment_duration = 0;
-  //  int window_changed = 0;
-
-  gavl_dictionary_t cipher_params;
-
-  //  int num_appended = 0;
-  
-  p->window_start = GAVL_TIME_UNDEFINED;
-  p->window_end = GAVL_TIME_UNDEFINED;
-
-  gavl_dictionary_init(&cipher_params);
-  
-  if(!gavl_http_client_open(p->m3u_io, "GET", ctx->url))
-    return 0;
-  
-  //  gavl_dprintf("Got response\n");
-  //  gavl_dictionary_dump(&res, 2);
-  
-  gavl_buffer_reset(&p->m3u_buf);
-  
-  if(!gavl_http_client_read_body(p->m3u_io, &p->m3u_buf))
-    return 0;
-
-  if(!parse_m3u8(ctx))
-    return 0;
-
-  return 1;
-  
-#if 0
-  
-  lines = gavl_strbreak((char*)p->m3u_buf.buf, '\n');
-
-  idx = 0;
-
-  while(lines[idx])
-    {
-    if(gavl_string_starts_with(lines[idx], "#EXT-X-MEDIA-SEQUENCE:"))
-      {
-      new_seq = strtoll(lines[idx] + 22, NULL, 10);
-      break;
-      }
-    idx++;
-    }
-
-  if(new_seq < 0)
-    goto fail;
-
-  if(p->seq_start < 0)
-    {
-    p->seq_start = new_seq;
-    window_changed = 1;
-    }
-  else
-    {
-    if(p->seq_start < new_seq)
-      {
-      //      fprintf(stderr, "Deleting %"PRId64" elements\n", new_seq - p->seq_start);
-  
-      gavl_array_splice_val(&p->segments, 0, new_seq - p->seq_start, NULL);
-      p->seq_start = new_seq;
-      window_changed = 1;
-      }
-    }
-
-  
-  skip = p->segments.num_entries;
-  //  fprintf(stderr, "seq_start: %"PRId64" skip: %d\n", p->seq_start, skip);
-  
-  idx = 0;
-  
-  gavl_value_init(&val);
-  dict = gavl_value_set_dictionary(&val);
-
-  while(skip)
-    {
-    gavl_strtrim(lines[idx]);
-
-    if((*(lines[idx]) != '\0') &&
-       !gavl_string_starts_with(lines[idx], "#"))
-      skip--;
-    idx++;
-    if(!lines[idx])
-      break;
-    }
-  
-  while(lines[idx])
-    {
-    if(gavl_string_starts_with(lines[idx], "#EXT-X-KEY:"))
-      {
-      const char * start;
-      const char * end;
-
-      gavl_dictionary_reset(&cipher_params);
-      
-      // #EXT-X-KEY:METHOD=AES-128,URI="https://livestreamdirect-three.mediaworks.nz/K110346488-2000.key",IV=0x0000000000000000000000000005497B
-
-      if((start = strstr(lines[idx], "METHOD=")))
-        {
-        start += strlen("METHOD=");
-
-        if(!(end = strchr(start, ',')))
-          end = start + strlen(start);
-
-        gavl_dictionary_set_string_nocopy(&cipher_params, SEGMENT_CIPHER, gavl_strndup(start, end));
-        }
-      
-      if((start = strstr(lines[idx], "URI=\"")))
-        {
-        
-        start += strlen("URI=\"");
-        
-        if((end = strchr(start, '"')))
-          {
-          char * tmp_string = gavl_strndup(start, end);
-          gavl_dictionary_set_string_nocopy(&cipher_params,
-                                            SEGMENT_CIPHER_KEY_URI,
-                                            gavl_get_absolute_uri(tmp_string, ctx->url));
-          free(tmp_string);
-          }
-        }
-
-      if((start = strstr(lines[idx], "IV=")))
-        {
-        start += strlen("IV=");
-
-        if(!(end = strchr(start, ',')))
-          end = start + strlen(start);
-        
-        gavl_dictionary_set_string_nocopy(&cipher_params, SEGMENT_CIPHER_IV, gavl_strndup(start, end));
-        }
-      }
-    
-    gavl_strtrim(lines[idx]);
-
-    if(*(lines[idx]) == 0)
-      {
-      idx++;
-      continue;
-      }
-    
-    if(gavl_string_starts_with(lines[idx], "#EXT-X-PROGRAM-DATE-TIME:"))
-      {
-
-      /* Time in ISO-8601 format */
-      // #EXT-X-PROGRAM-DATE-TIME:2022-04-26T21:15:13Z
-      
-      if(!gavl_time_parse_iso8601(lines[idx] + strlen("#EXT-X-PROGRAM-DATE-TIME:") , &segment_start_time))
-        segment_start_time = GAVL_TIME_UNDEFINED;
-      }
-    else if(gavl_string_starts_with(lines[idx], "#EXTINF:"))
-      {
-      double duration = strtod(lines[idx] + strlen("#EXTINF:"), NULL);
-      segment_duration = gavl_seconds_to_time(duration);
-      }
-    else if(!gavl_string_starts_with(lines[idx], "#"))
-      {
-      char * uri;
-      
-      if(segment_start_time != GAVL_TIME_UNDEFINED)
-        {
-        gavl_dictionary_set_long(dict, SEGMENT_START_TIME, segment_start_time);
-        if(segment_duration >  0)
-          gavl_dictionary_set_long(dict, SEGMENT_END_TIME, segment_start_time + segment_duration);
-        }
-
-      gavl_dictionary_merge2(dict, &cipher_params);
-
-      uri = bgav_input_absolute_url(ctx, lines[idx]);
-
-      uri = gavl_url_append_http_vars(uri, &p->http_vars);
-
-      
-      gavl_dictionary_set_string_nocopy(dict, GAVL_META_URI, uri);
-      gavl_array_splice_val_nocopy(&p->segments, -1, 0, &val);
-
-      segment_start_time = GAVL_TIME_UNDEFINED;
-      segment_duration = 0;
-      
-      gavl_value_reset(&val);
-      dict = gavl_value_set_dictionary(&val);
-      num_appended++;
-      }
-    idx++;
-    }
-  
-  gavl_strbreak_free(lines);
-  
-  ret = 1;
-  
-  fail:
-
-  if(window_changed)
-    {
-    const gavl_dictionary_t * d;
-    if(p->segments.num_entries)
-      {
-      if((d = gavl_value_get_dictionary(&p->segments.entries[0])) &&
-         gavl_dictionary_get_long(d, SEGMENT_START_TIME, &p->window_start) &&
-         (d = gavl_value_get_dictionary(&p->segments.entries[p->segments.num_entries-1])) &&
-         gavl_dictionary_get_long(d, SEGMENT_END_TIME, &p->window_end))
-        bgav_seek_window_changed(ctx->b, p->window_start, p->window_end);
-      }
-    }
-  
-  gavl_value_free(&val);
-
-  gavl_dictionary_free(&cipher_params);
-
-  //  fprintf(stderr, "*** Appended %d entries\n", num_appended);
-  
-  return ret;
-#endif
-  
-  }
-
-static int download_key(bgav_input_context_t * ctx, const char * uri, int len)
-  {
-  hls_priv_t * priv = ctx->priv;
-  
-  if(!priv->cipher_key_io)
-    {
-    priv->cipher_key_io = gavl_http_client_create();
-    gavl_http_client_set_req_vars(priv->cipher_key_io, &priv->http_vars);
-    }
-  
-  if(!gavl_http_client_open(priv->cipher_key_io,
-                                 "GET", uri))
-    return 0;
-
-  gavl_buffer_reset(&priv->cipher_key);
-  if(!gavl_http_client_read_body(priv->cipher_key_io, &priv->cipher_key))
-    return 0;
-
-  if(priv->cipher_key.len != len)
-    {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Invalid key length (expected %d got %d)", len, priv->cipher_key.len);
-    return 0;
-    }
-  //  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got key");
-  return 1;
-  }
-#endif
 
 static int parse_iv(bgav_input_context_t * ctx, const char * str, uint8_t * out, int len)
   {
@@ -699,55 +467,72 @@ static int init_cipher(bgav_input_context_t * ctx)
   return ret;
   }
 
+static void init_seek_window(bgav_input_context_t * ctx)
+  {
+  int idx;
+  int i;
+  const gavl_dictionary_t * d;
+  gavl_time_t segment_duration = 0;
+  gavl_time_t start_time_abs = 0;
+  hls_priv_t * p = ctx->priv;
+
+  gavl_value_t val;
+  gavl_dictionary_t * dict;
+  
+  idx = p->seq_cur - p->seq_start;
+
+  p->window_start = 0;
+  p->window_end = 0;
+
+  for(i = 0; i < idx; i++)
+    {
+    if((d = gavl_value_get_dictionary(&p->segments.entries[i])) &&
+       gavl_dictionary_get_long(d, SEGMENT_DURATION, &segment_duration) &&
+       (segment_duration > 0))
+      p->window_start -= segment_duration;
+    }
+  for(i = idx; i < p->segments.num_entries; i++)
+    {
+    if((d = gavl_value_get_dictionary(&p->segments.entries[i])))
+      {
+      if(gavl_dictionary_get_long(d, SEGMENT_DURATION, &segment_duration) &&
+         (segment_duration > 0))
+        p->window_end += segment_duration;
+      
+      if((i==idx) && gavl_dictionary_get_long(d, SEGMENT_START_TIME_ABS, &start_time_abs))
+        gavl_dictionary_set_long(&ctx->m, GAVL_STATE_SRC_SEEK_WINDOW_ABSOLUTE, start_time_abs);
+      
+      }
+    }
+
+  gavl_value_init(&val);
+  dict = gavl_value_set_dictionary(&val);  
+  gavl_dictionary_set_long(dict, GAVL_STATE_SRC_SEEK_WINDOW_START, p->window_start);
+  gavl_dictionary_set_long(dict, GAVL_STATE_SRC_SEEK_WINDOW_END, p->window_end);
+  gavl_dictionary_set_nocopy(&ctx->m, GAVL_STATE_SRC_SEEK_WINDOW, &val);
+  
+  }
+
 static int open_next_async(bgav_input_context_t * ctx, int timeout)
   {
   hls_priv_t * p = ctx->priv;
 
   if(p->next_state == NEXT_STATE_START)
     {
-    int idx;
-
-    if(p->seq_cur < 0)
-      {
-      gavl_buffer_reset(&p->m3u_buf);
-      
-      if(!gavl_http_client_run_async(p->m3u_io, "GET", ctx->url))
-        {
-        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Opening m3u8 failed");
-        return -1;
-        }
-      p->next_state = NEXT_STATE_READ_M3U;
-      }
-    else
-      {
-      idx = p->seq_cur + 1 - p->seq_start;
-
-      if(idx < 0)
-        {
-        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Lost sync");
-        return -1;
-        }
+    gavl_buffer_reset(&p->m3u_buf);
     
-      if(idx >= p->segments.num_entries)
-        {
-        gavl_buffer_reset(&p->m3u_buf);
-      
-        if(!gavl_http_client_run_async(p->m3u_io, "GET", ctx->url))
-          {
-          gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Downloading segment list failed");
-          return -1;
-          }
-        p->next_state = NEXT_STATE_READ_M3U;
-        }
-      else
-        p->next_state = NEXT_STATE_GOT_TS;
+    if(!gavl_http_client_run_async(p->m3u_io, "GET", ctx->url))
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Opening m3u8 failed");
+      return -1;
       }
+    p->next_state = NEXT_STATE_READ_M3U;
     }
-
+  
   if(p->next_state == NEXT_STATE_READ_M3U)
     {
     int result = gavl_http_client_run_async_done(p->m3u_io, timeout);
-
+    
     //    fprintf(stderr, "Read m3u %d %d\n", result,  p->m3u_buf.len);
     
     if(result <= 0)
@@ -763,22 +548,15 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
       }
     if(p->seq_cur < 0)
       {
-      if(p->segments.num_entries < 4)
+      if(p->segments.num_entries <= 10)
         p->seq_cur = p->seq_start;
       else
-        p->seq_cur = p->seq_start + p->segments.num_entries - 4;
+        p->seq_cur = p->seq_start + p->segments.num_entries - 2;
+      init_seek_window(ctx);
       }
-    
-    if(p->seq_cur + 1 - p->seq_start >= p->segments.num_entries)
-      {
-      p->next_state = NEXT_STATE_START;
-      return 0;
-      }
-    else
-      p->next_state = NEXT_STATE_GOT_TS;
-    
+    p->next_state = NEXT_STATE_GOT_TS;
     }
-
+  
   if(p->next_state == NEXT_STATE_GOT_TS)
     {
     const gavl_dictionary_t * dict;
@@ -788,17 +566,21 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
 
     /* Got m3u8 with the next TS segment */
     
-    idx = p->seq_cur + 1 - p->seq_start;
-    
+    idx = p->seq_cur - p->seq_start;
+
+    if((idx < 0) || (idx >= p->segments.num_entries))
+      {
+      bgav_signal_restart(ctx->b, GAVL_MSG_SRC_RESTART_ERROR);
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Lost sync %"PRId64" %"PRId64" %d %d",
+               p->seq_cur+1, p->seq_start, idx, p->segments.num_entries);
+      p->end_of_sequence = 1;
+      return -1;
+      }
+      
     dict = gavl_value_get_dictionary(&p->segments.entries[idx]);
 
     //    uri = gavl_dictionary_get_string(dict, GAVL_META_URI);
     
-    if(!p->abs_offset && gavl_dictionary_get_long(dict, SEGMENT_START_TIME, &p->abs_offset))
-      {
-      gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got absolute time 1 %"PRId64, p->abs_offset);
-      bgav_start_time_absolute_changed(ctx->b, p->abs_offset);
-      }
 
     if((cipher_key_uri = gavl_dictionary_get_string(dict, SEGMENT_CIPHER_KEY_URI)))
       {
@@ -860,7 +642,7 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
     int idx;
     const char * uri;
     
-    idx = p->seq_cur + 1 - p->seq_start;
+    idx = p->seq_cur - p->seq_start;
     dict = gavl_value_get_dictionary(&p->segments.entries[idx]);
     uri = gavl_dictionary_get_string(dict, GAVL_META_URI);
 
@@ -921,9 +703,11 @@ static void init_segment_io(bgav_input_context_t * ctx)
 
   p->next_state = NEXT_STATE_START;
   p->seq_cur++;
-  
   handle_id3(ctx);
-
+  
+  /* Some streams (NDR3) have two id3 tags with different infos */
+  handle_id3(ctx);
+  
   }
 
 static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
@@ -993,7 +777,7 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   if((priv->window_end == GAVL_TIME_UNDEFINED) ||
      (priv->window_start == GAVL_TIME_UNDEFINED))
     ctx->flags &= ~BGAV_INPUT_CAN_SEEK_TIME;
-
+  
   ret = 1;
   fail:
   
@@ -1027,7 +811,7 @@ static int read_hls(bgav_input_context_t* ctx,
 #endif
     //    fprintf(stderr, "read_hls 1 %d\n", len - bytes_read);
 
-    if(p->next_state != NEXT_STATE_DONE)
+    if((p->next_state != NEXT_STATE_DONE) && !p->end_of_sequence)
       open_next_async(ctx, 0);
     
     if(result < len - bytes_read)
@@ -1041,6 +825,9 @@ static int read_hls(bgav_input_context_t* ctx,
         {
         int i;
         int result1;
+
+        if(p->end_of_sequence)
+          return bytes_read;
         
         //  fprintf(stderr, "Opening next segment: %d %d %d\n", result, len, bytes_read);
         

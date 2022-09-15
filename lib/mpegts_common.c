@@ -519,6 +519,7 @@ int bgav_pmt_section_setup_track(pmt_section_t * pmts,
       s->stats.pts_start = GAVL_TIME_UNDEFINED;
       s->timescale = 90000;
       s->stream_id = pmts->streams[i].pid;
+      s->flags |= STREAM_NEED_START_PTS;
       ret++;
       }
     }

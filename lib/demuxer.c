@@ -184,7 +184,7 @@ static const demuxer_t demuxers[] =
 
 static const demuxer_t sync_demuxers[] =
   {
-    { &bgav_demuxer_mpegts2,    "MPEG-2 transport stream" },
+    { &bgav_demuxer_mpegts2,   "MPEG-2 transport stream" },
     { &bgav_demuxer_mpegts,    "MPEG-2 transport stream" },
     { &bgav_demuxer_mpegaudio, "MPEG Audio" },
     { &bgav_demuxer_adts,      "ADTS" },
@@ -214,6 +214,8 @@ static const int num_mimetypes = sizeof(mimetypes)/sizeof(mimetypes[0]);
 
 #define SYNC_BYTES (32*1024)
 
+
+
 const bgav_demuxer_t * bgav_demuxer_probe(bgav_input_context_t * input)
   {
   int i;
@@ -240,7 +242,13 @@ const bgav_demuxer_t * bgav_demuxer_probe(bgav_input_context_t * input)
         }
       }
     }
-    
+
+    {
+    uint8_t buf[16];
+    bgav_input_get_data(input, buf, 16);
+    gavl_hexdump(buf, 16, 16);
+    }
+  
   for(i = 0; i < num_demuxers; i++)
     {
     if(demuxers[i].demuxer->probe(input))
@@ -277,8 +285,8 @@ const bgav_demuxer_t * bgav_demuxer_probe(bgav_input_context_t * input)
       if(sync_demuxers[i].demuxer->probe(input))
         {
         gavl_log(GAVL_LOG_INFO, LOG_DOMAIN,
-                 "Detected %s format after skipping %d bytes",
-                 sync_demuxers[i].format_name, bytes_skipped);
+                 "Detected %s format after skipping %d bytes (position: %"PRId64")",
+                 sync_demuxers[i].format_name, bytes_skipped, input->position);
         return sync_demuxers[i].demuxer;
         }
       }

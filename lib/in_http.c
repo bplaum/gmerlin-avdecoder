@@ -278,9 +278,19 @@ static void resume_http(bgav_input_context_t * ctx)
 static int read_data(bgav_input_context_t* ctx,
                      uint8_t * buffer, int len)
   {
+  int ret;
   http_priv * p = ctx->priv;
   
-  return gavf_io_read_data(p->io, buffer, len);
+  ret = gavf_io_read_data(p->io, buffer, len);
+
+  if(ret < len)
+    {
+    if(gavf_io_got_error(p->io))
+      bgav_signal_restart(ctx->b, GAVL_MSG_SRC_RESTART_ERROR);
+    
+    //  fprintf(stderr, "Got %d exprected %d %d\n", ret, len, gavf_io_got_error(p->io));
+    }
+  return ret;
   }
 
 static void * memscan(void * mem_start, int size, void * key, int key_len)

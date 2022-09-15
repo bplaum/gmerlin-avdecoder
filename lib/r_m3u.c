@@ -572,9 +572,6 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
 
           m = gavl_dictionary_get_dictionary_create(t->info, GAVL_META_METADATA);
           
-          if(gavl_dictionary_get_src(m, GAVL_META_SRC, 0, NULL, NULL))
-            gavl_dictionary_set_int(m, GAVL_META_MULTIVARIANT, 1);
-          
           src = gavl_metadata_add_src(m, GAVL_META_SRC, NULL, NULL);
           
           edl = gavl_edl_create(src);
@@ -768,19 +765,8 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
   gavl_dictionary_free(&http_vars);
   gavl_array_free(&lines);
   
-#if 1
   if(hls && t)
-    {
-    if(!gavl_metadata_sort_source(t->metadata,
-                                  GAVL_META_SRC,
-                                  GAVL_META_BITRATE,
-                                  0))
-      gavl_metadata_sort_source(t->metadata,
-                                GAVL_META_SRC,
-                                GAVL_META_WIDTH,
-                                0);
-    }
-#endif
+    gavl_track_set_multivariant(t->info);
   
   if(buffer)
     free(buffer);
