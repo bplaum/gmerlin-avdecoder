@@ -243,12 +243,6 @@ const bgav_demuxer_t * bgav_demuxer_probe(bgav_input_context_t * input)
       }
     }
 
-    {
-    uint8_t buf[16];
-    bgav_input_get_data(input, buf, 16);
-    gavl_hexdump(buf, 16, 16);
-    }
-  
   for(i = 0; i < num_demuxers; i++)
     {
     if(demuxers[i].demuxer->probe(input))
