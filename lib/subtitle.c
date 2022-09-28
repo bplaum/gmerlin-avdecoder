@@ -500,7 +500,7 @@ bgav_get_overlay_source(bgav_t * b, int stream)
 int bgav_get_overlay_compression_info(bgav_t * b, int stream,
                                       gavl_compression_info_t * ret)
   {
-  gavl_codec_id_t id;
+  gavl_codec_id_t id = GAVL_CODEC_ID_NONE;
   bgav_stream_t * s;
   if(!(s = bgav_track_get_overlay_stream(b->tt->cur, stream)))
     return 0;

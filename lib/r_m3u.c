@@ -183,10 +183,11 @@ static void parse_ext_x_media(bgav_input_context_t * input, const char * pos, ga
       pos1 += strlen("URI=\"");
             
       if((pos2 = strchr(pos1, '"')))
+        {
         tmp_string = gavl_strndup(pos1, pos2);
-          
-      gavl_dictionary_set_string_nocopy(dict, GAVL_META_URI, bgav_input_absolute_url(input, tmp_string));
-      free(tmp_string);
+        gavl_dictionary_set_string_nocopy(dict, GAVL_META_URI, bgav_input_absolute_url(input, tmp_string));
+        free(tmp_string);
+        }
       }
 
     if((pos1 = strstr(pos, "LANGUAGE=\"")))
