@@ -39,6 +39,7 @@ bgav_track_table_t * bgav_track_table_create(int num_tracks)
 
   
   ret = calloc(1, sizeof(*ret));
+  ret->cur_idx = -1;
   
   gavl_dictionary_get_dictionary_create(&ret->info, GAVL_META_METADATA);
   
@@ -134,16 +135,10 @@ void bgav_track_table_create_message_streams(bgav_track_table_t * t, const bgav_
 
 void bgav_track_table_select_track(bgav_track_table_t * t, int track)
   {
-  /* Clear old track */
-  if(t->cur)
-    {
-    bgav_track_stop(t->cur);
-    bgav_track_clear(t->cur);
-    }
-  
   t->cur = t->tracks[track];
+  t->cur_idx = track;
+  
   bgav_track_mute(t->cur);
-  bgav_track_clear(t->cur);
   }
 
 void bgav_track_table_dump(bgav_track_table_t * t)

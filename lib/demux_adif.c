@@ -46,8 +46,6 @@ typedef struct
   
   uint32_t seek_table_size;
 
-  int64_t sample_count;
-  
   } aac_priv_t;
 
 static int probe_adif(bgav_input_context_t * input)
@@ -193,13 +191,6 @@ static int next_packet_adif(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int select_track_adif(bgav_demuxer_context_t * ctx, int track)
-  {
-  aac_priv_t * priv;
-  priv = ctx->priv;
-  priv->sample_count = 0;
-  return 1;
-  }
 
 static void close_adif(bgav_demuxer_context_t * ctx)
   {
@@ -213,7 +204,6 @@ const bgav_demuxer_t bgav_demuxer_adif =
   {
     .probe =       probe_adif,
     .open =        open_adif,
-    .select_track = select_track_adif,
     .next_packet = next_packet_adif,
     .close =       close_adif
   };

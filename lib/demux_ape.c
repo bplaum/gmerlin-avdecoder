@@ -224,7 +224,6 @@ typedef struct
 
   ape_index_entry * index;
   int index_size;
-  uint32_t current_frame;
   } ape_t;
 
 static int open_ape(bgav_demuxer_context_t * ctx)
@@ -353,57 +352,38 @@ static int next_packet_ape(bgav_demuxer_context_t * ctx)
   bgav_packet_t * p;
   ape_t * priv = ctx->priv;
 
-  if(priv->current_frame >= priv->h.totalframes)
-    return 0; // EOF
-  
   s = bgav_track_find_stream(ctx, 0);
-
   if(!s)
     return 0;
-
-#if 0
   
-  if(ctx->input->position < priv->index[priv->current_frame].pos)
-    bgav_input_skip(ctx->input,
-                    priv->index[priv->current_frame].pos -
-                    ctx->input->position);
-  else if(ctx->input->position > priv->index[priv->current_frame].pos)
-    {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-             "BUG: Backwards skip by %d bytes requested",
-             ctx->input->position - priv->index[priv->current_frame].pos);
-    return 0;
-    }
-#else
-  bgav_input_seek(ctx->input, priv->index[priv->current_frame].pos,
+  if(s->in_position >= priv->h.totalframes)
+    return 0; // EOF
+  
+  bgav_input_seek(ctx->input, priv->index[s->in_position].pos,
                        SEEK_SET);
-#endif
   p = bgav_stream_get_packet_write(s);
 
   p->position = ctx->input->position;
-    
   
-  bgav_packet_alloc(p, priv->index[priv->current_frame].size + EXTRA_SIZE);
+  bgav_packet_alloc(p, priv->index[s->in_position].size + EXTRA_SIZE);
   
-  if(priv->current_frame < priv->h.totalframes-1)
+  if(s->in_position < priv->h.totalframes-1)
     p->duration = priv->h.blocksperframe;
   else
     p->duration = priv->h.finalframeblocks;
   
   GAVL_32LE_2_PTR(p->duration, p->data);
-  GAVL_32LE_2_PTR(priv->index[priv->current_frame].skip, p->data+4);
-
-    
+  GAVL_32LE_2_PTR(priv->index[s->in_position].skip, p->data+4);
   
   p->data_size = EXTRA_SIZE;
   p->data_size += bgav_input_read_data(ctx->input,
                                        p->data + EXTRA_SIZE,
-                                       priv->index[priv->current_frame].size);
+                                       priv->index[s->in_position].size);
   
-  p->pts = priv->current_frame * priv->h.blocksperframe;
+  p->pts = s->in_position * priv->h.blocksperframe;
   
   bgav_stream_done_packet_write(s, p);
-  priv->current_frame++;
+  
   return 1;
   }
 
@@ -417,16 +397,9 @@ static void seek_ape(bgav_demuxer_context_t * ctx, int64_t time, int scale)
                                  priv->h.samplerate,
                                  time);
   
-  priv->current_frame = sample_pos / priv->h.blocksperframe;
-  STREAM_SET_SYNC(s, priv->current_frame * priv->h.blocksperframe);
+  s->in_position = sample_pos / priv->h.blocksperframe;
+  STREAM_SET_SYNC(s, s->in_position * priv->h.blocksperframe);
   
-  }
-
-static int select_track_ape(bgav_demuxer_context_t * ctx, int track)
-  {
-  ape_t * priv = ctx->priv;
-  priv->current_frame = 0;
-  return 1;
   }
 
 static void close_ape(bgav_demuxer_context_t * ctx)
@@ -443,7 +416,7 @@ static void close_ape(bgav_demuxer_context_t * ctx)
 static void resync_ape(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
   {
   ape_t * priv = ctx->priv;
-  priv->current_frame =  STREAM_GET_SYNC(s) / priv->h.blocksperframe;
+  s->in_position =  STREAM_GET_SYNC(s) / priv->h.blocksperframe;
   }
 
 const bgav_demuxer_t bgav_demuxer_ape =
@@ -451,7 +424,6 @@ const bgav_demuxer_t bgav_demuxer_ape =
     .probe =       probe_ape,
     .open =        open_ape,
     .next_packet = next_packet_ape,
-    .select_track = select_track_ape,
     .seek =        seek_ape,
     .resync        = resync_ape,
     .close =       close_ape

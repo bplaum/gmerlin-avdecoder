@@ -90,10 +90,29 @@ void bgav_stream_stop(bgav_stream_t * s)
         break;
       }
     }
+
+  bgav_stream_clear(s);
+  s->index_position = s->first_index_position;
+  
+  if(s->psrc)
+    {
+    gavl_packet_source_destroy(s->psrc);
+    s->psrc = NULL;
+    }
+  
+  if(s->demuxer)
+    {
+    s->src.data = s;
+    s->src.get_func = bgav_demuxer_get_packet_read;
+    s->src.peek_func = bgav_demuxer_peek_packet_read;
+    }
+  }
+
+void bgav_stream_clear(bgav_stream_t * s)
+  {
+  /* Clear possibly stored packets */
   if(s->packet_buffer)
     bgav_packet_buffer_clear(s->packet_buffer);
-
-  /* Clear possibly stored packets */
   if(s->packet)
     {
     bgav_packet_pool_put(s->pp, s->packet);
@@ -104,29 +123,19 @@ void bgav_stream_stop(bgav_stream_t * s)
     bgav_packet_pool_put(s->pp, s->out_packet_b);
     s->out_packet_b = NULL;
     }
-  if(s->psrc)
-    {
-    gavl_packet_source_destroy(s->psrc);
-    s->psrc = NULL;
-    }
   
-  s->index_position = s->first_index_position;
-  s->in_position = 0;
-  s->out_time = 0;
+  s->in_position  = 0;
+  s->out_time = GAVL_TIME_UNDEFINED;
+  STREAM_UNSET_SYNC(s);
+  s->flags &= ~(STREAM_EOF_C|STREAM_EOF_D);
   s->packet_seq = 0;
 
-  if(s->demuxer)
-    {
-    s->src.data = s;
-    s->src.get_func = bgav_demuxer_get_packet_read;
-    s->src.peek_func = bgav_demuxer_peek_packet_read;
-    }
+  if(s->flags & STREAM_NEED_START_PTS)
+    s->stats.pts_start = GAVL_TIME_UNDEFINED;
   
-  s->flags &= ~(STREAM_EOF_C|STREAM_EOF_D);
-  
-  STREAM_UNSET_SYNC(s);
-  
+  s->index_position  = -1;
   }
+
 
 void bgav_stream_create_packet_buffer(bgav_stream_t * stream)
   {
@@ -258,31 +267,6 @@ void bgav_stream_dump(bgav_stream_t * s)
   bgav_dprintf("  Codec header:      %d bytes\n", s->ci->global_header_len);
   }
 
-void bgav_stream_clear(bgav_stream_t * s)
-  {
-  if(s->packet_buffer)
-    bgav_packet_buffer_clear(s->packet_buffer);
-  if(s->packet)
-    {
-    bgav_packet_pool_put(s->pp, s->packet);
-    s->packet = NULL;
-    }
-  if(s->out_packet_b)
-    {
-    bgav_packet_pool_put(s->pp, s->out_packet_b);
-    s->out_packet_b = NULL;
-    }
-  
-  s->in_position  = 0;
-  s->out_time = GAVL_TIME_UNDEFINED;
-  STREAM_UNSET_SYNC(s);
-  s->flags &= ~(STREAM_EOF_C|STREAM_EOF_D);
-
-  if(s->flags & STREAM_NEED_START_PTS)
-    s->stats.pts_start = GAVL_TIME_UNDEFINED;
-  
-  s->index_position  = -1;
-  }
 
 int bgav_stream_skipto(bgav_stream_t * s, gavl_time_t * time, int scale)
   {

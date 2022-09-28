@@ -465,12 +465,14 @@ static void close_mpegts(bgav_demuxer_context_t * ctx)
   free(priv);
   }
 
+#if 0
 static int select_track_mpegts(bgav_demuxer_context_t * ctx,
                                int track)
   {
   
   return 1;
   }
+#endif
 
 const bgav_demuxer_t bgav_demuxer_mpegts2 =
   {
@@ -480,6 +482,6 @@ const bgav_demuxer_t bgav_demuxer_mpegts2 =
     .seek =         seek_mpegts,
     .resync =       resync_mpegts,
     .close =        close_mpegts,
-    .select_track = select_track_mpegts
+    //    .select_track = select_track_mpegts
   };
 

@@ -412,6 +412,10 @@ int bgav_select_track(bgav_t * b, int track)
   if((track < 0) || (track >= b->tt->num_tracks))
     return 0;
 
+  /* Shortcut */
+  if(!(b->flags & BGAV_FLAG_IS_RUNNING) && (track == b->tt->cur_idx))
+    return 1;
+  
   b->flags &= ~BGAV_FLAG_EOF;
 
   if(bgav_is_redirector(b))
@@ -517,8 +521,8 @@ int bgav_select_track(bgav_t * b, int track)
     
     if(b->demuxer->demuxer->select_track)
       {
-      if(b->tt->cur)
-        bgav_track_clear(b->tt->cur);
+      //      if(b->tt->cur)
+      //        bgav_track_clear(b->tt->cur);
       
       /* Demuxer switches track */
       bgav_track_table_select_track(b->tt, track);

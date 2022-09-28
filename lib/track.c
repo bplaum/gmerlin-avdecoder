@@ -366,6 +366,16 @@ void bgav_track_stop(bgav_track_t * t)
     bgav_stream_stop(&t->streams[i]);
   }
 
+#if 0
+void bgav_track_init(bgav_track_t * t)
+  {
+  int i;
+  //  fprintf(stderr, "Stop track\n");
+  for(i = 0; i < t->num_streams; i++)
+    bgav_stream_init(&t->streams[i]);
+  }
+#endif
+
 typedef struct
   {
   int num_active_subtitle_streams;
@@ -994,6 +1004,7 @@ void bgav_track_get_compression(bgav_track_t * t)
     bgav_stream_peek_packet_read(s, NULL, 0);
     }
 
+#if 1
   /* Stop the stream again */
 
   for(i = 0; i < t->num_audio_streams; i++)
@@ -1011,7 +1022,7 @@ void bgav_track_get_compression(bgav_track_t * t)
     s = bgav_track_get_overlay_stream(t, i);
     bgav_stream_stop(s);
     }
-  
+#endif
   
   /* Set all streams back to mute mode */
 

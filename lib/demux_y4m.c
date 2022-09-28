@@ -35,8 +35,6 @@ typedef struct
   {
   
   uint8_t * tmp_planes[4]; /* For YUVA4444 */
-  int64_t pts;
-
   uint32_t line_alloc;
   char * line;
   
@@ -232,14 +230,6 @@ static int open_y4m(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int select_track_y4m(bgav_demuxer_context_t * ctx, int track)
-  {
-  y4m_t * priv;
-  priv = ctx->priv;
-  priv->pts = 0;
-  return 1;
-  }
-
 
 static int next_packet_y4m(bgav_demuxer_context_t * ctx)
   {
@@ -270,7 +260,7 @@ static int next_packet_y4m(bgav_demuxer_context_t * ctx)
 
   p->data_size = priv->buf_size;
   
-  p->pts = priv->pts;
+  p->pts = s->in_position * s->data.video.format->frame_duration;
   
   PACKET_SET_KEYFRAME(p);
   p->duration = s->data.video.format->frame_duration;
@@ -319,16 +309,13 @@ static int next_packet_y4m(bgav_demuxer_context_t * ctx)
     pos = next_tag(priv->line);
     }
   
-  priv->pts += p->duration;
   bgav_stream_done_packet_write(s, p);
   return 1;
   }
 
 static void resync_y4m(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
   {
-  y4m_t * priv;
-  priv = ctx->priv;
-  priv->pts = STREAM_GET_SYNC(s);
+  s->in_position = STREAM_GET_SYNC(s) / s->data.video.format->frame_duration;
   }
 
 static void close_y4m(bgav_demuxer_context_t * ctx)
@@ -346,7 +333,6 @@ const bgav_demuxer_t bgav_demuxer_y4m =
   {
     .probe        = probe_y4m,
     .open         = open_y4m,
-    .select_track = select_track_y4m,
     .next_packet = next_packet_y4m,
     .resync      = resync_y4m,
     .close =       close_y4m

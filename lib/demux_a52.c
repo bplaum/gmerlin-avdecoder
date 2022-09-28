@@ -32,7 +32,6 @@
 
 typedef struct
   {
-  int64_t frame_count;
   int samplerate;
 
   int64_t data_size;
@@ -112,12 +111,9 @@ static int next_packet_a52(bgav_demuxer_context_t * ctx)
   int dummy_brate, dummy_srate, dummy_flags;
   bgav_packet_t * p;
   bgav_stream_t * s;
-  a52_priv_t * priv;
   uint8_t test_data[7];
   int packet_size, i;
     
-  priv = ctx->priv;
-  
   s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
   
   p = bgav_stream_get_packet_write(s);
@@ -136,13 +132,11 @@ static int next_packet_a52(bgav_demuxer_context_t * ctx)
   if(!packet_size)
     return 0;
 
-  p->pts = FRAME_SAMPLES * priv->frame_count;
+  p->pts = FRAME_SAMPLES * s->in_position;
   p->duration = FRAME_SAMPLES;
   PACKET_SET_KEYFRAME(p);
   p->position = ctx->input->position;
   
-  priv->frame_count++;
-
   bgav_packet_alloc(p, packet_size);
 
   p->data_size = bgav_input_read_data(ctx->input, p->data, packet_size);
@@ -174,19 +168,13 @@ static void seek_a52(bgav_demuxer_context_t * ctx, int64_t time, int scale)
     (s->container_bitrate / 8);
 
   STREAM_SET_SYNC(s, gavl_time_rescale(scale, priv->samplerate, t));
-  priv->frame_count = STREAM_GET_SYNC(s) / FRAME_SAMPLES;
+
+  s->in_position = STREAM_GET_SYNC(s) / FRAME_SAMPLES;
   
   file_position += ctx->data_start;
   bgav_input_seek(ctx->input, file_position, SEEK_SET);
   }
 
-static int select_track_a52(bgav_demuxer_context_t * ctx, int track)
-  {
-  a52_priv_t * priv;
-  priv = ctx->priv;
-  priv->frame_count = 0;
-  return 1;
-  }
 
 static void close_a52(bgav_demuxer_context_t * ctx)
   {
@@ -199,7 +187,6 @@ const bgav_demuxer_t bgav_demuxer_a52 =
   {
     .probe =       probe_a52,
     .open =        open_a52,
-    .select_track = select_track_a52,
     .next_packet = next_packet_a52,
     .seek =        seek_a52,
     .close =       close_a52

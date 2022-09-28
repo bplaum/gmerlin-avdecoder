@@ -1466,8 +1466,9 @@ typedef enum
   {
     BGAV_STREAM_MUTE    = 0,  /*!< Stream is switched off */
     BGAV_STREAM_DECODE  = 1, /*!< Stream is switched on and will be decoded */
-    BGAV_STREAM_PARSE   = 2, /*!< Used internally when building indices */
-    BGAV_STREAM_READRAW = 3 /*!< Read compressed packets from the stream */
+    BGAV_STREAM_PARSE   = 2, /*!< Used internally when building indices  */
+    BGAV_STREAM_READRAW = 3, /*!< Read compressed packets from the stream */
+    BGAV_STREAM_INIT    = 4 /*!< Used internally during initialization   */
   }
 bgav_stream_action_t;
 

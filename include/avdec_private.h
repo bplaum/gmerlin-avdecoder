@@ -806,6 +806,7 @@ typedef struct
   int num_tracks;
   bgav_track_t ** tracks;
   bgav_track_t * cur;
+  int cur_idx;
   int refcount;
   
   gavl_dictionary_t info;
