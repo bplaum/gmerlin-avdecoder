@@ -52,9 +52,34 @@ int bgav_stream_start(bgav_stream_t * stream)
   gavl_stream_set_stats(stream->info, &stream->stats);
   
   if(result)
-    stream->initialized = 1;
+    stream->flags |= STREAM_STARTED;
   return result;
   }
+
+int bgav_stream_init_read(bgav_stream_t * stream)
+  {
+  int result = 1;
+  switch(stream->type)
+    {
+    case GAVL_STREAM_VIDEO:
+      result = bgav_video_init(stream);
+      break;
+    case GAVL_STREAM_AUDIO:
+      result = bgav_audio_init(stream);
+      break;
+    case GAVL_STREAM_OVERLAY:
+      result = bgav_overlay_init(stream);
+      break;
+    case GAVL_STREAM_TEXT:
+      result = bgav_text_init(stream);
+      break;
+    default:
+      break;
+    }
+
+  return result;
+  }
+
 
 int64_t bgav_stream_get_duration(bgav_stream_t * s)
   {

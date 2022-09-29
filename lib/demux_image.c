@@ -148,11 +148,6 @@ static int open_image(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int select_track_image(bgav_demuxer_context_t * ctx, int track)
-  {
-  return 1;
-  }
-
 
 static int next_packet_image(bgav_demuxer_context_t * ctx)
   {
@@ -191,7 +186,6 @@ const bgav_demuxer_t bgav_demuxer_image =
   {
     .probe        = probe_image,
     .open         = open_image,
-    .select_track = select_track_image,
     .next_packet = next_packet_image,
     .resync      = resync_image,
     .close =       close_image

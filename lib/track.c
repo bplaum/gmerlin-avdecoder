@@ -407,7 +407,7 @@ static int start_subtitle(void * data, bgav_stream_t * s)
     video_format = video_stream->data.video.format;
 
     if((video_stream->action == BGAV_STREAM_MUTE) &&
-       !video_stream->initialized)
+       !(video_stream->flags & STREAM_STARTED))
       {
       /* Start the video decoder to get the format */
       video_stream->action = BGAV_STREAM_DECODE;
@@ -757,6 +757,52 @@ void bgav_track_clear(bgav_track_t * track)
   bgav_track_foreach(track, clear_stream, NULL);
   }
 
+static int init_stream_read(void * priv, bgav_stream_t * s)
+  {
+  bgav_stream_init_read(s);
+  return 1;
+  }
+
+void bgav_track_init_read(bgav_track_t * track)
+  {
+  int i;
+  /* Set all streams to read mode */
+  for(i = 0; i < track->num_streams; i++)
+    {
+    switch(track->streams[i].type)
+      {
+      case GAVL_STREAM_AUDIO:
+      case GAVL_STREAM_VIDEO:
+      case GAVL_STREAM_OVERLAY:
+      case GAVL_STREAM_TEXT:
+        track->streams[i].action = BGAV_STREAM_INIT;
+        break;
+      case GAVL_STREAM_MSG:
+      case GAVL_STREAM_NONE:
+        break;
+      }
+    }
+    
+  bgav_track_foreach(track, init_stream_read, NULL);
+
+  /* Set all streams back to mute mode */
+  for(i = 0; i < track->num_streams; i++)
+    {
+    switch(track->streams[i].type)
+      {
+      case GAVL_STREAM_AUDIO:
+      case GAVL_STREAM_VIDEO:
+      case GAVL_STREAM_OVERLAY:
+      case GAVL_STREAM_TEXT:
+        track->streams[i].action = BGAV_STREAM_MUTE;
+        break;
+      case GAVL_STREAM_MSG:
+      case GAVL_STREAM_NONE:
+        break;
+      }
+    }
+  }
+
 void bgav_track_resync(bgav_track_t * track)
   {
   int i;
@@ -959,6 +1005,7 @@ int bgav_track_eof_d(bgav_track_t * t)
   return bgav_track_foreach(t, has_eof_d, NULL);
   }
 
+#if 0
 void bgav_track_get_compression(bgav_track_t * t)
   {
   int i;
@@ -1044,6 +1091,7 @@ void bgav_track_get_compression(bgav_track_t * t)
   
   t->flags |= TRACK_HAS_COMPRESSION;
   }
+#endif
 
 void bgav_track_compute_info(bgav_track_t * t)
   {

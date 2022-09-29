@@ -231,6 +231,10 @@ read_video_nocopy(void * sp,
   return GAVL_SOURCE_OK;
   }
 
+int bgav_text_init(bgav_stream_t * s)
+  {
+  return 1;
+  }
 
 int bgav_text_start(bgav_stream_t * s)
   {
@@ -256,13 +260,8 @@ const uint32_t bgav_dvdsub_fourccs[] =
     0x00
   };
 
-
-int bgav_overlay_start(bgav_stream_t * s)
+int bgav_overlay_init(bgav_stream_t * s)
   {
-  bgav_video_decoder_t * dec;
-  
-  s->flags &= ~(STREAM_EOF_C|STREAM_EOF_D);
-  
   if(s->data.subtitle.subreader)
     {
     if(!bgav_subtitle_reader_start(s))
@@ -291,7 +290,15 @@ int bgav_overlay_start(bgav_stream_t * s)
       }
     s->index_mode = INDEX_MODE_SIMPLE;
     }
+  return 1;
+  }
 
+int bgav_overlay_start(bgav_stream_t * s)
+  {
+  bgav_video_decoder_t * dec;
+  
+  s->flags &= ~(STREAM_EOF_C|STREAM_EOF_D);
+  
   if(s->action == BGAV_STREAM_DECODE)
     {
     dec = bgav_find_video_decoder(s->fourcc);
@@ -497,27 +504,21 @@ bgav_get_overlay_source(bgav_t * b, int stream)
   return s->data.subtitle.video.vsrc;
   }
 
-int bgav_get_overlay_compression_info(bgav_t * b, int stream,
-                                      gavl_compression_info_t * ret)
+int bgav_get_overlay_compression_info(bgav_t * bgav, int stream,
+                                    gavl_compression_info_t * info)
+  {
+  bgav_stream_t * s;
+  if(!(s = bgav_track_get_overlay_stream(bgav->tt->cur, stream)))
+    return 0;
+  return gavl_stream_get_compression_info(s->info, info);
+  
+  }
+
+int bgav_set_overlay_compression_info(bgav_stream_t * s)
   {
   gavl_codec_id_t id = GAVL_CODEC_ID_NONE;
-  bgav_stream_t * s;
-  if(!(s = bgav_track_get_overlay_stream(b->tt->cur, stream)))
-    return 0;
   
-  if(ret)
-    memset(ret, 0, sizeof(*ret));
-  
-  if(s->flags & STREAM_GOT_CI)
-    {
-    if(ret)
-      gavl_compression_info_copy(ret, s->ci);
-    return 1;
-    }
-  else if(s->flags & STREAM_GOT_NO_CI)
-    return 0;
-
-  bgav_track_get_compression(b->tt->cur);
+  //  bgav_track_get_compression(b->tt->cur);
   
   if(bgav_check_fourcc(s->fourcc, bgav_png_fourccs))
     id = GAVL_CODEC_ID_PNG;
@@ -531,9 +532,9 @@ int bgav_get_overlay_compression_info(bgav_t * b, int stream,
   else if(s->container_bitrate)
     s->ci->bitrate = s->container_bitrate;
   
-  if(ret)
-    gavl_compression_info_copy(ret, s->ci);
   s->flags |= STREAM_GOT_CI;
+
+  bgav_set_video_compression_info(s);
   
   return 1;
   }

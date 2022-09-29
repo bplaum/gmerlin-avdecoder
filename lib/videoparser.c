@@ -144,9 +144,7 @@ void bgav_video_parser_reset(bgav_video_parser_t * parser,
   
   if(in_pts != GAVL_TIME_UNDEFINED)
     {
-    int64_t start_pts;
-    
-    
+    //    int64_t start_pts;
     parser->timestamp = gavl_time_rescale(parser->s->timescale,
                                           parser->format->timescale, in_pts);
     }

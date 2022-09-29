@@ -78,7 +78,7 @@ create_demuxer(bgav_t * b, const bgav_demuxer_t * demuxer)
    
 int bgav_init(bgav_t * ret)
   {
-  int i, j;
+  int i;
   int is_redirector = 0;
   const bgav_demuxer_t * demuxer = NULL;
   const bgav_redirector_t * redirector = NULL;
@@ -211,7 +211,7 @@ int bgav_init(bgav_t * ret)
     }
 
   /* Get compression infos */
-
+#if 0
   for(i = 0; i < ret->tt->num_tracks; i++)
     {
     bgav_stream_t * s;
@@ -238,6 +238,7 @@ int bgav_init(bgav_t * ret)
       }
     
     }
+#endif
   
   return 1;
     
@@ -255,6 +256,7 @@ int bgav_init(bgav_t * ret)
     }
   return 0;
   }
+// #endif
 
 int bgav_num_tracks(bgav_t * b)
   {
@@ -558,12 +560,12 @@ int bgav_select_track(bgav_t * b, int track)
     for(i = 0; i < b->tt->cur->num_streams; i++)
       b->tt->cur->streams[i].index_position = 0;
     }
-
-  
   
   done:
 
   set_stream_demuxers(b->tt->cur, b->demuxer);
+  
+  bgav_track_init_read(b->tt->cur);
   
   return 1;
   }

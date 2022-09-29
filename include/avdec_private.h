@@ -357,6 +357,8 @@ void bgav_packet_pool_destroy(bgav_packet_pool_t*);
 #define STREAM_PES_TIMESTAMPS     (1<<20) // Use timestamps from the PES packets
 #define STREAM_NEED_START_PTS     (1<<21) /* Take start PTS from first packet */
 
+#define STREAM_STARTED            (1<<22) /* Stream started already */
+
 /* Stream could not get extract compression info from the
  * demuxer
  */
@@ -412,7 +414,7 @@ struct bgav_stream_s
   void * priv;
   void * decoder_priv;
   
-  int initialized; /* Mostly means, that the format is valid */
+  //  int initialized; /* Mostly means, that the format is valid */
 
   int64_t dts; // Auxillary variable for generating timestamps on the fly
   
@@ -653,6 +655,13 @@ gavl_time_t bgav_stream_next_timestamp(bgav_stream_t *);
 void bgav_stream_clear(bgav_stream_t * s);
 
 /*
+ *  Initialize for reading packets, get the compression info,
+ *  called after a track is selected
+ */
+
+int bgav_stream_init_read(bgav_stream_t * s);
+
+/*
  * Skip to a specific point which must be larger than the current stream time
  */
 
@@ -756,6 +765,9 @@ void bgav_track_compute_info(bgav_track_t * t);
 
 void bgav_track_clear(bgav_track_t * track);
 
+/* Initialize track (called after the track is selected */
+void bgav_track_init_read(bgav_track_t * track);
+
 /* Call after the track becomes current */
 void bgav_track_mute(bgav_track_t * t);
 
@@ -781,8 +793,6 @@ int64_t bgav_track_out_time(bgav_track_t * t, int scale);
 void bgav_track_set_eof_d(bgav_track_t * t);
 void bgav_track_clear_eof_d(bgav_track_t * t);
 int bgav_track_eof_d(bgav_track_t * t);
-
-void bgav_track_get_compression(bgav_track_t * t);
 
 
 /* Remove unsupported streams */
@@ -1726,7 +1736,9 @@ void bgav_subtitle_converter_reset(bgav_subtitle_converter_t * cnv);
 
 /* audio.c */
 
+int bgav_set_audio_compression_info(bgav_stream_t * s);
 void bgav_audio_dump(bgav_stream_t * s);
+int bgav_audio_init(bgav_stream_t * s);
 
 int bgav_audio_start(bgav_stream_t * s);
 void bgav_audio_stop(bgav_stream_t * s);
@@ -1753,7 +1765,9 @@ extern const uint32_t bgav_png_fourccs[];
 void bgav_set_video_frame_from_packet(const bgav_packet_t * p,
                                       gavl_video_frame_t * f);
 
+int bgav_set_video_compression_info(bgav_stream_t * s);
 void bgav_video_dump(bgav_stream_t * s);
+int bgav_video_init(bgav_stream_t * s);
 
 int bgav_video_start(bgav_stream_t * s);
 void bgav_video_stop(bgav_stream_t * s);
@@ -1777,7 +1791,10 @@ void bgav_video_set_still(bgav_stream_t * stream);
 void bgav_subtitle_dump(bgav_stream_t * s);
 
 int bgav_text_start(bgav_stream_t * s);
+int bgav_text_init(bgav_stream_t * s);
+
 int bgav_overlay_start(bgav_stream_t * s);
+int bgav_overlay_init(bgav_stream_t * s);
 
 void bgav_subtitle_stop(bgav_stream_t * s);
 
@@ -1785,6 +1802,7 @@ void bgav_subtitle_resync(bgav_stream_t * stream);
 
 int bgav_subtitle_skipto(bgav_stream_t * stream, int64_t * t, int scale);
 
+int bgav_set_overlay_compression_info(bgav_stream_t * s);
 
 
 extern const uint32_t bgav_dvdsub_fourccs[];

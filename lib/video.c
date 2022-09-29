@@ -157,12 +157,8 @@ static gavl_source_status_t read_video_copy(void * sp,
   return GAVL_SOURCE_OK;
   }
 
-int bgav_video_start(bgav_stream_t * s)
+int bgav_video_init(bgav_stream_t * s)
   {
-  int result;
-  int src_flags;
-  bgav_video_decoder_t * dec;
-
   if(!s->timescale && s->data.video.format->timescale)
     s->timescale = s->data.video.format->timescale;
 
@@ -247,6 +243,19 @@ int bgav_video_start(bgav_stream_t * s)
       return 0;
       }
     }
+
+  /*
+   *  Set max ref frames. Needs to be set before the decoder is started.
+   *  Multiple references should already be set by the H.264 parser
+   */
+  
+  if(!s->ci->max_ref_frames)
+    {
+    if(s->ci->flags & GAVL_COMPRESSION_HAS_B_FRAMES)
+      s->ci->max_ref_frames = 2;
+    else if(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES)
+      s->ci->max_ref_frames = 1;
+    }
   
   if(s->stats.pts_start == GAVL_TIME_UNDEFINED)
     {
@@ -266,25 +275,23 @@ int bgav_video_start(bgav_stream_t * s)
              "Got initial video timestamp: %s",
              tmp_string);
     }
+
+  bgav_set_video_compression_info(s);
+  return 1;
+  }
+
+int bgav_video_start(bgav_stream_t * s)
+  {
+  int result;
+  int src_flags;
+  bgav_video_decoder_t * dec;
+
   
   if((s->action == BGAV_STREAM_PARSE) &&
      ((s->data.video.format->framerate_mode == GAVL_FRAMERATE_VARIABLE) ||
       (s->data.video.format->interlace_mode == GAVL_INTERLACE_MIXED)))
     {
     s->data.video.ft = bgav_video_format_tracker_create(s);
-    }
-
-  /*
-   *  Set max ref frames. Needs to be set before the decoder is started.
-   *  Multiple references should already be set by the H.264 parser
-   */
-  
-  if(!s->ci->max_ref_frames)
-    {
-    if(s->ci->flags & GAVL_COMPRESSION_HAS_B_FRAMES)
-      s->ci->max_ref_frames = 2;
-    else if(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES)
-      s->ci->max_ref_frames = 1;
     }
   
   if(s->action == BGAV_STREAM_DECODE)
@@ -889,26 +896,21 @@ const uint32_t div3_fourccs[] =
   };
 
 int bgav_get_video_compression_info(bgav_t * bgav, int stream,
-                                    gavl_compression_info_t * ret)
+                                    gavl_compression_info_t * info)
+  {
+  bgav_stream_t * s;
+  if(!(s = bgav_track_get_video_stream(bgav->tt->cur, stream)))
+    return 0;
+  return gavl_stream_get_compression_info(s->info, info);
+  
+  }
+
+
+int bgav_set_video_compression_info(bgav_stream_t * s)
   {
   gavl_codec_id_t id;
-  bgav_stream_t * s = bgav_track_get_video_stream(bgav->tt->cur, stream);
   int need_bitrate = 0;
   bgav_bsf_t * bsf = NULL;
-
-  if(ret)
-    memset(ret, 0, sizeof(*ret));
-  
-  if(s->flags & STREAM_GOT_CI)
-    {
-    if(ret)
-      gavl_compression_info_copy(ret, s->ci);
-    return 1;
-    }
-  else if(s->flags & STREAM_GOT_NO_CI)
-    return 0;
-
-  bgav_track_get_compression(bgav->tt->cur);
   
   if(bgav_check_fourcc(s->fourcc, bgav_png_fourccs))
     id = GAVL_CODEC_ID_PNG;
@@ -992,9 +994,9 @@ int bgav_get_video_compression_info(bgav_t * bgav, int stream,
     return 0;
     }
   
-  if(ret)
-    gavl_compression_info_copy(ret, s->ci);
   s->flags |= STREAM_GOT_CI;
+
+  gavl_stream_set_compression_info(s->info, s->ci);
   
   return 1;
   }

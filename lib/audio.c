@@ -81,10 +81,8 @@ static gavl_source_status_t get_frame(void * sp, gavl_audio_frame_t ** frame)
   return GAVL_SOURCE_OK;
   }
 
-int bgav_audio_start(bgav_stream_t * s)
+int bgav_audio_init(bgav_stream_t * s)
   {
-  bgav_audio_decoder_t * dec;
-  
   if((s->flags & (STREAM_PARSE_FULL|STREAM_PARSE_FRAME)) &&
      !s->data.audio.parser)
     {
@@ -113,8 +111,7 @@ int bgav_audio_start(bgav_stream_t * s)
     s->index_mode = INDEX_MODE_SIMPLE;
     }
 
-  if((s->action == BGAV_STREAM_READRAW) &&
-     (s->flags & STREAM_FILTER_PACKETS) && !s->bsf)
+  if((s->flags & STREAM_FILTER_PACKETS) && !s->bsf)
     {
     s->bsf = bgav_bsf_create(s);
     if(bgav_stream_peek_packet_read(s, NULL, 1) != GAVL_SOURCE_OK)
@@ -148,6 +145,23 @@ int bgav_audio_start(bgav_stream_t * s)
   
   if(!s->timescale && s->data.audio.format->samplerate)
     s->timescale = s->data.audio.format->samplerate;
+
+  if(s->container_bitrate)
+    gavl_dictionary_set_int(s->m, GAVL_META_BITRATE,
+                            s->container_bitrate);
+
+  if(s->data.audio.bits_per_sample)
+    gavl_dictionary_set_int(s->m, GAVL_META_AUDIO_BITS ,
+                            s->data.audio.bits_per_sample);
+
+  bgav_set_audio_compression_info(s);
+  return 1;
+  }
+
+int bgav_audio_start(bgav_stream_t * s)
+  {
+  bgav_audio_decoder_t * dec;
+  
   
   if(s->action == BGAV_STREAM_DECODE)
     {
@@ -183,21 +197,13 @@ int bgav_audio_start(bgav_stream_t * s)
     //    s->out_time -= s->data.audio.pre_skip;
     }
 
-  if(s->data.audio.bits_per_sample)
-    gavl_dictionary_set_int(s->m, GAVL_META_AUDIO_BITS ,
-                          s->data.audio.bits_per_sample);
-
-
   //  if(s->container_bitrate == GAVL_BITRATE_VBR)
   //    gavl_dictionary_set_string(&s->m, GAVL_META_BITRATE,
   //                      "VBR");
   else if(s->codec_bitrate)
     gavl_dictionary_set_int(s->m, GAVL_META_BITRATE,
                           s->codec_bitrate);
-  else if(s->container_bitrate)
-    gavl_dictionary_set_int(s->m, GAVL_META_BITRATE,
-                          s->container_bitrate);
-
+  
   if(s->action == BGAV_STREAM_DECODE)
     s->data.audio.source =
       gavl_audio_source_create(get_frame, s,
@@ -477,30 +483,22 @@ static uint32_t dts_fourccs[] =
   };
 
 int bgav_get_audio_compression_info(bgav_t * bgav, int stream,
-                                    gavl_compression_info_t * ret)
+                                    gavl_compression_info_t * info)
+  {
+  bgav_stream_t * s;
+  if(!(s = bgav_track_get_audio_stream(bgav->tt->cur, stream)))
+    return 0;
+  return gavl_stream_get_compression_info(s->info, info);
+  
+  }
+
+int bgav_set_audio_compression_info(bgav_stream_t * s)
   {
   int need_header = 0;
   int need_bitrate = 1;
   gavl_codec_id_t id = GAVL_CODEC_ID_NONE;
-
-  bgav_stream_t * s;
   
-  if(!(s = bgav_track_get_audio_stream(bgav->tt->cur, stream)))
-    return 0;
-  
-  if(ret)
-    memset(ret, 0, sizeof(*ret));
-  
-  if(s->flags & STREAM_GOT_CI)
-    {
-    if(ret)
-      gavl_compression_info_copy(ret, s->ci);
-    return 1;
-    }
-  else if(s->flags & STREAM_GOT_NO_CI)
-    return 0;
-
-  bgav_track_get_compression(bgav->tt->cur);
+  //  bgav_track_get_compression(bgav->tt->cur);
   
   if(bgav_check_fourcc(s->fourcc, alaw_fourccs))
     id = GAVL_CODEC_ID_ALAW;
@@ -555,24 +553,21 @@ int bgav_get_audio_compression_info(bgav_t * bgav, int stream,
   if(id == GAVL_CODEC_ID_NONE)
     {
     gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-             "Cannot output compressed audio stream %d: Unsupported codec",
-             stream+1);
+             "Cannot output compressed audio stream: Unsupported codec");
     s->flags |= STREAM_GOT_NO_CI;
     return 0;
     }
   if(need_header && !s->ci->global_header_len)
     {
     gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-             "Cannot output compressed audio stream %d: Global header missing",
-             stream+1);
+             "Cannot output compressed audio stream: Global header missing");
     s->flags |= STREAM_GOT_NO_CI;
     return 0;
     }
   if(need_bitrate && !s->container_bitrate && !s->codec_bitrate)
     {
     gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-             "Cannot output compressed audio stream %d: No bitrate specified",
-             stream+1);
+             "Cannot output compressed audio stream: No bitrate specified");
     s->flags |= STREAM_GOT_NO_CI;
     return 0;
     }
@@ -583,11 +578,10 @@ int bgav_get_audio_compression_info(bgav_t * bgav, int stream,
     s->ci->bitrate = s->codec_bitrate;
   else if(s->container_bitrate)
     s->ci->bitrate = s->container_bitrate;
-
-  if(ret)
-    gavl_compression_info_copy(ret, s->ci);
   
+  gavl_stream_set_compression_info(s->info, s->ci);
   s->flags |= STREAM_GOT_CI;
+  
   return 1;
   }
 
