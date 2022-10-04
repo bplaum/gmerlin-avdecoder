@@ -181,11 +181,13 @@ static int open_adts(bgav_demuxer_context_t * ctx)
   //  bgav_adts_header_dump(&adts);
 
   // One block per frame: That means we can convert these
+#if 0
   if(adts.num_blocks == 1) 
     {
     s->flags |= STREAM_FILTER_PACKETS;
     }
-    
+#endif
+  
   if(adts.profile == 2) 
     priv->block_samples = 960;
   else

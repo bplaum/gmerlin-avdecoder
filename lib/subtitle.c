@@ -129,16 +129,16 @@ int bgav_read_subtitle_text(bgav_t * b, char ** ret, int *ret_alloc,
 
   gavl_packet_init(&p);
   
-  p.data = (uint8_t*)(*ret);
-  p.data_alloc = *ret_alloc;
+  p.buf.buf = (uint8_t*)(*ret);
+  p.buf.alloc = *ret_alloc;
 
   pp = &p;
   
   if(gavl_packet_source_read_packet(s->psrc, &pp) != GAVL_SOURCE_OK)
     return 0;
 
-  *ret = (char*)p.data;
-  *ret_alloc = p.data_alloc;
+  *ret = (char*)p.buf.buf;
+  *ret_alloc = p.buf.alloc;
   
   *start_time = p.pts;
   *duration   = p.duration;

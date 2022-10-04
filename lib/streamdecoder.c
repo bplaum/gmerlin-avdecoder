@@ -65,8 +65,8 @@ static void packet_from_gavl(gavl_packet_t * src,
                              bgav_packet_t * dst)
   {
   bgav_packet_from_gavl(src, dst);
-  dst->data = src->data;
-  dst->data_size = src->data_len; 
+  dst->data = src->buf.buf;
+  dst->data_size = src->buf.len; 
   }
 
 static gavl_source_status_t get_func(void * priv, bgav_packet_t ** ret)

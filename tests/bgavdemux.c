@@ -139,7 +139,7 @@ static int write_audio(bgav_t * b, int index, stream_t * s, gavl_packet_t * p)
     gavl_packet_dump(p);
     }
   
-  if(fwrite(p->data, 1, p->data_len, s->out) < p->data_len)
+  if(fwrite(p->buf.buf, 1, p->buf.len, s->out) < p->buf.len)
     {
     fprintf(stderr, "Writing data failed: %s\n",
             strerror(errno));
@@ -180,7 +180,7 @@ static int write_video(bgav_t * b, int index, stream_t * s, gavl_packet_t * p)
 
   /* Write data */
   
-  if(fwrite(p->data, 1, p->data_len, s->out) < p->data_len)
+  if(fwrite(p->buf.buf, 1, p->buf.len, s->out) < p->buf.len)
     {
     fprintf(stderr, "Writing data failed: %s\n",
             strerror(errno));

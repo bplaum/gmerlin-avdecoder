@@ -37,8 +37,6 @@ void bgav_packet_free(bgav_packet_t * p)
     free(p->data);
   if(p->audio_frame)
     gavl_audio_frame_destroy(p->audio_frame);
-  if(p->video_frame)
-    gavl_video_frame_destroy(p->video_frame);
   
   bgav_packet_free_palette(p);
   memset(p, 0, sizeof(*p));
@@ -232,9 +230,9 @@ void bgav_packet_2_gavl(bgav_packet_t * src,
 
   dst->flags    = src->flags & 0xFFFF;
 
-  dst->data = src->data;
-  dst->data_len = src->data_size;
-  dst->data_alloc = src->data_alloc;
+  dst->buf.buf = src->data;
+  dst->buf.len = src->data_size;
+  //  dst->buf.alloc = src->data_alloc;
   dst->interlace_mode = src->ilace;
   dst->timecode = src->tc;
 

@@ -1568,7 +1568,7 @@ static void process_packet_iavs_stream(bgav_stream_t * s, bgav_packet_t * p)
     if(s->demuxer->flags & BGAV_DEMUXER_BUILD_INDEX)
       {
       p->pts = priv->iavs_sample_counter;
-      p->audio_frame->timestamp = p->pts;
+      //      p->audio_frame->timestamp = p->pts;
       priv->iavs_sample_counter += p->duration;
       }
     else
@@ -1576,14 +1576,13 @@ static void process_packet_iavs_stream(bgav_stream_t * s, bgav_packet_t * p)
       p->pts      = s->demuxer->si->entries[s->index_position].pts;
       p->duration = s->demuxer->si->entries[s->index_position].duration;
       }
-    p->audio_frame->timestamp = p->pts;
+    //    p->audio_frame->timestamp = p->pts;
     }
   else if(s->type == GAVL_STREAM_VIDEO)
     {
     if(s->demuxer->flags & BGAV_DEMUXER_BUILD_INDEX)
       {
       p->pts = priv->iavs_frame_counter * s->data.video.format->frame_duration;
-      p->video_frame->timestamp = p->pts;
       priv->iavs_frame_counter++;
       }
     else

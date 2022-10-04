@@ -122,13 +122,13 @@ bgav_bsf_init_adts(bgav_bsf_t * bsf)
     if((extradata = av_packet_get_side_data(&pkt, AV_PKT_DATA_NEW_EXTRADATA,
                                             &extradata_size)))
       {
-      //      fprintf(stderr, "Got extradata %d bytes\n", extradata_size);
-      //      gavl_hexdump(extradata, extradata_size, 16);
+      fprintf(stderr, "Got extradata %d bytes\n", extradata_size);
+      gavl_hexdump(extradata, extradata_size, 16);
       break;
       }
     
     }
-
+  
   gavl_compression_info_set_global_header(&bsf->ci, extradata, extradata_size);
   
   //  fprintf(stderr, "

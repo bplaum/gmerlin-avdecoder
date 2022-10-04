@@ -319,8 +319,6 @@ a52_header.c \
 adts_header.c \
 apetag.c \
 audio.c \
-audio_gavf.c \
-audio_gavl.c \
 audio_pcm.c \
 audioparser.c \
 asmrp.c \
@@ -541,8 +539,6 @@ utils.c \
 vc1_header.c \
 video.c \
 videoparser.c \
-video_gavf.c \
-video_gavl.c \
 video_qtraw.c \
 video_aviraw.c \
 video_tga.c \
