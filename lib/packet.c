@@ -103,15 +103,15 @@ void bgav_packet_dump(const bgav_packet_t * p)
   if(p->flags & PACKET_FLAG_FIELD_PIC)
     bgav_dprintf(", field-pic");
   
-  if(p->tc != GAVL_TIMECODE_UNDEFINED)
+  if(p->timecode != GAVL_TIMECODE_UNDEFINED)
     {
     bgav_dprintf(", TC: ");
-    gavl_timecode_dump(NULL, p->tc);
+    gavl_timecode_dump(NULL, p->timecode);
     }
   
-  if(p->ilace == GAVL_INTERLACE_TOP_FIRST)
+  if(p->interlace_mode == GAVL_INTERLACE_TOP_FIRST)
     bgav_dprintf(", il: t");
-  else if(p->ilace == GAVL_INTERLACE_BOTTOM_FIRST)
+  else if(p->interlace_mode == GAVL_INTERLACE_BOTTOM_FIRST)
     bgav_dprintf(", il: b");
 
   if(p->end_pts != GAVL_TIME_UNDEFINED)
@@ -150,7 +150,7 @@ void bgav_packet_reset(bgav_packet_t * p)
   p->dts     = GAVL_TIME_UNDEFINED;
   p->end_pts = GAVL_TIME_UNDEFINED;
 
-  p->tc = GAVL_TIMECODE_UNDEFINED;
+  p->timecode = GAVL_TIMECODE_UNDEFINED;
   p->flags = 0;
   p->data_size = 0;
   p->header_size = 0;
@@ -166,7 +166,7 @@ void bgav_packet_copy_metadata(bgav_packet_t * dst,
   dst->dts      = src->dts;
   dst->duration = src->duration;
   dst->flags    = src->flags;
-  dst->tc       = src->tc;
+  dst->timecode       = src->timecode;
   }
 
 void bgav_packet_copy(bgav_packet_t * dst,
@@ -233,8 +233,8 @@ void bgav_packet_2_gavl(bgav_packet_t * src,
   dst->buf.buf = src->data;
   dst->buf.len = src->data_size;
   //  dst->buf.alloc = src->data_alloc;
-  dst->interlace_mode = src->ilace;
-  dst->timecode = src->tc;
+  dst->interlace_mode = src->interlace_mode;
+  dst->timecode = src->timecode;
 
   dst->dst_x = src->dst_x;
   dst->dst_y = src->dst_y;
@@ -252,8 +252,8 @@ void bgav_packet_from_gavl(gavl_packet_t * src,
   dst->header_size      = src->header_size;
   dst->field2_offset    = src->field2_offset;
   dst->sequence_end_pos = src->sequence_end_pos;
-  dst->ilace = src->interlace_mode;
-  dst->tc = src->timecode;
+  dst->interlace_mode = src->interlace_mode;
+  dst->timecode = src->timecode;
 
   dst->dst_x = src->dst_x;
   dst->dst_y = src->dst_y;

@@ -859,7 +859,7 @@ static void flush_stream_simple(bgav_stream_t * s, int force)
     if(p->pts != GAVL_TIME_UNDEFINED)
       {
       bgav_file_index_append_packet(s->file_index,
-                                    p->position, t, p->flags, p->tc);
+                                    p->position, t, p->flags, p->timecode);
       if(t + p->duration >= s->stats.pts_end)
         s->stats.pts_end = t + p->duration;
       }

@@ -1031,7 +1031,7 @@ void bgav_set_video_frame_from_packet(const bgav_packet_t * p,
   {
   f->timestamp = p->pts;
   f->duration = p->duration;
-  f->timecode = p->tc;
+  f->timecode = p->timecode;
 
   f->dst_x = p->dst_x;
   f->dst_y = p->dst_y;

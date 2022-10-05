@@ -78,7 +78,7 @@ void bgav_pts_cache_push(bgav_pts_cache_t * c,
   c->entries[i].used      = 1;
   c->entries[i].pts       = p->pts;
   c->entries[i].duration  = p->duration;
-  c->entries[i].tc        = p->tc;
+  c->entries[i].tc        = p->timecode;
   
   if(index)
     *index = i;

@@ -393,7 +393,7 @@ bgav_stream_get_packet_read(bgav_stream_t * s, bgav_packet_t ** ret)
     return st;
     }
   if(s->timecode_table)
-    p->tc =
+    p->timecode =
       bgav_timecode_table_get_timecode(s->timecode_table,
                                        p->pts);
   if(s->opt->dump_packets)

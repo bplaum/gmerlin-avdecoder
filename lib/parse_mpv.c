@@ -286,11 +286,11 @@ static int parse_frame_mpeg12(bgav_video_parser_t * parser, bgav_packet_t * p,
           {
           case MPEG_PICTURE_TOP_FIELD:
             PACKET_SET_FIELD_PIC(p);
-            p->ilace = GAVL_INTERLACE_TOP_FIRST;
+            p->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
             break;
           case MPEG_PICTURE_BOTTOM_FIELD:
             PACKET_SET_FIELD_PIC(p);
-            p->ilace = GAVL_INTERLACE_BOTTOM_FIRST;
+            p->interlace_mode = GAVL_INTERLACE_BOTTOM_FIRST;
             break;
           case MPEG_PICTURE_FRAME:
 
@@ -316,11 +316,11 @@ static int parse_frame_mpeg12(bgav_video_parser_t * parser, bgav_packet_t * p,
             if(!pe.repeat_first_field && !priv->sh.ext.progressive_sequence)
               {
               if(pe.progressive_frame)
-                p->ilace = GAVL_INTERLACE_NONE;
+                p->interlace_mode = GAVL_INTERLACE_NONE;
               else if(pe.top_field_first)
-                p->ilace = GAVL_INTERLACE_TOP_FIRST;
+                p->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
               else
-                p->ilace = GAVL_INTERLACE_BOTTOM_FIRST;
+                p->interlace_mode = GAVL_INTERLACE_BOTTOM_FIRST;
               }
             break;
           }
@@ -354,7 +354,7 @@ static int parse_frame_mpeg12(bgav_video_parser_t * parser, bgav_packet_t * p,
 
         if(parser->format->timecode_format.int_framerate)
           {
-          gavl_timecode_from_hmsf(&p->tc,
+          gavl_timecode_from_hmsf(&p->timecode,
                                   gh.hours,
                                   gh.minutes,
                                   gh.seconds,

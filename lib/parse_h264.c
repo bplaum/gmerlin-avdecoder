@@ -146,28 +146,28 @@ handle_sei_new(bgav_video_parser_t * parser, bgav_packet_t * p)
         switch(pt.pic_struct)
           {
           case 0: // frame
-            p->ilace = GAVL_INTERLACE_NONE;
+            p->interlace_mode = GAVL_INTERLACE_NONE;
             break;
           case 1: // top field
             PACKET_SET_FIELD_PIC(p);
-            p->ilace = GAVL_INTERLACE_TOP_FIRST;
+            p->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
             break;
           case 2: // bottom field
             PACKET_SET_FIELD_PIC(p);
-            p->ilace = GAVL_INTERLACE_BOTTOM_FIRST;
+            p->interlace_mode = GAVL_INTERLACE_BOTTOM_FIRST;
             break;
           case 3: // top field, bottom field, in that order
-            p->ilace = GAVL_INTERLACE_TOP_FIRST;
+            p->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
             break;
           case 4: // bottom field, top field, in that order 
-            p->ilace = GAVL_INTERLACE_BOTTOM_FIRST;
+            p->interlace_mode = GAVL_INTERLACE_BOTTOM_FIRST;
             break;
           case 5: // top field, bottom field, top field repeated, in that order
-            p->ilace = GAVL_INTERLACE_TOP_FIRST;
+            p->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
             p->duration = (parser->format->frame_duration*3)/2;
             break;
           case 6: // bottom field, top field, bottom field 
-            p->ilace = GAVL_INTERLACE_BOTTOM_FIRST;
+            p->interlace_mode = GAVL_INTERLACE_BOTTOM_FIRST;
             p->duration = (parser->format->frame_duration*3)/2;
             break;
           case 7: // frame doubling                         
@@ -272,12 +272,12 @@ handle_sei_new(bgav_video_parser_t * parser, bgav_packet_t * p)
                 parser->format->timecode_format.flags |= GAVL_TIMECODE_DROP_FRAME;
               
               /* We output only the first timecode in the file since the rest is redundant */
-              gavl_timecode_from_hmsf(&p->tc,
+              gavl_timecode_from_hmsf(&p->timecode,
                                       hour,
                                       minute,
                                       second,
                                       0);
-              gavl_timecode_from_ymd(&p->tc,
+              gavl_timecode_from_ymd(&p->timecode,
                                      year,
                                      month,
                                      day);

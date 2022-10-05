@@ -79,7 +79,7 @@ static int parse_frame_dv(bgav_video_parser_t * parser, bgav_packet_t * p, int64
   
   /* Extract timecode */  
   if(fmt->timecode_format.int_framerate)
-    bgav_dv_dec_get_timecode(priv->dv, &p->tc);
+    bgav_dv_dec_get_timecode(priv->dv, &p->timecode);
   
   return PARSER_CONTINUE;
   }

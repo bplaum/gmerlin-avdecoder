@@ -217,9 +217,8 @@ struct bgav_packet_s
   uint32_t data_alloc;
   uint8_t * data;
 
-  gavl_timecode_t tc;
-  
-  gavl_interlace_mode_t ilace;
+  gavl_timecode_t timecode;
+  gavl_interlace_mode_t interlace_mode;
   
   int field2_offset; /* Offset of 2nd field if 2 field pictures are in the
                         packet (0 else) */

@@ -165,7 +165,7 @@ get_func(void * ft1, bgav_packet_t ** ret)
   
   if(ft->do_track & TRACK_INTERLACING)
     {
-    switch((*ret)->ilace)
+    switch((*ret)->interlace_mode)
       {
       case GAVL_INTERLACE_NONE:
         ft->have_progressive = 1;
