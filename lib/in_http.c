@@ -49,7 +49,7 @@ typedef struct
 static void create_header(gavl_dictionary_t * ret, const bgav_options_t * opt)
   {
   gavl_dictionary_set_string(ret, "User-Agent", PACKAGE"/"VERSION);
-  gavl_dictionary_set_string(ret, "Accept", "*");
+  //  gavl_dictionary_set_string(ret, "Accept", "*");
   
   if(opt->http_shoutcast_metadata)
     gavl_dictionary_set_string(ret, "Icy-MetaData", "1");

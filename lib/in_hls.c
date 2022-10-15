@@ -571,8 +571,11 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
     if((idx < 0) || (idx >= p->segments.num_entries))
       {
       bgav_signal_restart(ctx->b, GAVL_MSG_SRC_RESTART_ERROR);
-      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Lost sync %"PRId64" %"PRId64" %d %d",
-               p->seq_cur+1, p->seq_start, idx, p->segments.num_entries);
+
+      if(idx < 0)
+        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Lost sync: Position before m3u8 segments %d", -idx);
+      else // Probably just wait a bit?
+        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Lost sync: Position after m3u8 segments %d", idx - (p->segments.num_entries - 1));
       p->end_of_sequence = 1;
       return -1;
       }

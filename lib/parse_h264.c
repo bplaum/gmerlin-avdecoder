@@ -558,6 +558,9 @@ static const uint8_t * get_nal_end(bgav_packet_t * p,
   return ret;
   }
 
+
+
+
 static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int64_t pts_orig)
   {
   bgav_h264_nal_header_t nh;
@@ -578,11 +581,6 @@ static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int
 
   //  fprintf(stderr, "parse_frame %"PRId64"\n", pts_orig);
 
-  if(parser->s->flags & STREAM_PES_TIMESTAMPS)
-    {
-    p->pts = pts_orig;
-    p->duration = -1;
-    }
   nal_start = p->data; // Assume that we have a startcode
   
   while(nal_start < p->data + p->data_size)
@@ -627,10 +625,8 @@ static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int
             parser->format->timescale = parser->s->timescale;
             parser->format->framerate_mode = GAVL_FRAMERATE_VARIABLE;
             parser->s->flags |= (STREAM_NO_DURATIONS | STREAM_PES_TIMESTAMPS);
-            
-            parser->flags &= ~PARSER_GEN_PTS;
             }
-
+          
           if(parser->s->flags & STREAM_PES_TIMESTAMPS)
             parser->flags &= ~PARSER_GEN_PTS;
           }
@@ -673,6 +669,13 @@ static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int
         if((priv->flags & (FLAG_HAVE_SPS|FLAG_HAVE_PPS)) != (FLAG_HAVE_SPS|FLAG_HAVE_PPS))
           {
           PACKET_SET_SKIP(p);
+
+          if(parser->s->flags & STREAM_PES_TIMESTAMPS)
+            {
+            p->pts = pts_orig;
+            p->duration = -1;
+            }
+          
           return 1;
           }
 #if 0
@@ -719,10 +722,24 @@ static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int
           }
         if(sh.field_pic_flag)
           p->flags |= PACKET_FLAG_FIELD_PIC;
+
+        if(parser->s->flags & STREAM_PES_TIMESTAMPS)
+          {
+          p->pts = pts_orig;
+          p->duration = -1;
+          }
+        
         return 1;
         break;
       case H264_NAL_SLICE_PARTITION_B:
       case H264_NAL_SLICE_PARTITION_C:
+
+        if(parser->s->flags & STREAM_PES_TIMESTAMPS)
+          {
+          p->pts = pts_orig;
+          p->duration = -1;
+          }
+
         return 1;
         break;
       case H264_NAL_ACCESS_UNIT_DEL:
