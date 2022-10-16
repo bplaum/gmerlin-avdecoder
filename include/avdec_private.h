@@ -235,7 +235,7 @@ struct bgav_packet_s
   int64_t duration;
   //  bgav_stream_t * stream; /* The stream this packet belongs to */
 
-#if 1
+#if 0
   gavl_audio_frame_t * audio_frame; /* For demuxers, which deliver audio
                                        frames directly */
 #endif

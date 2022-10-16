@@ -368,6 +368,9 @@ struct bgav_dv_dec_s
   int64_t frame_counter;
   int64_t sample_counter;
   int ach;
+
+  gavl_audio_frame_t * audio_frame;
+  
   };
 
 
@@ -380,6 +383,11 @@ bgav_dv_dec_t * bgav_dv_dec_create()
 
 void bgav_dv_dec_destroy(bgav_dv_dec_t * d)
   {
+  if(d->audio_frame)
+    {
+    gavl_audio_frame_null(d->audio_frame);
+    gavl_audio_frame_destroy(d->audio_frame);
+    }
   free(d);
   }
 
@@ -637,15 +645,22 @@ int bgav_dv_dec_get_audio_packet(bgav_dv_dec_t * d, bgav_packet_t * p)
   int samples, i;
 
   uint8_t * pcm[4];
-
   
   if(p)
     {
-    if(!p->audio_frame)
-      p->audio_frame = gavl_audio_frame_create(&d->audio_format);
+    int buf_len = gavl_audio_format_buffer_size(&d->audio_format);
+    
+    bgav_packet_alloc(p, buf_len);
+    
+    if(!d->audio_frame)
+      d->audio_frame = gavl_audio_frame_create(NULL);
 
+    gavl_audio_frame_from_data(d->audio_frame,
+                               &d->audio_format,
+                               p->data, p->data_size);
+    
     for(i = 0; i < d->ach; i++)
-      pcm[i] = p->audio_frame->channels.u_8[i*2];
+      pcm[i] = d->audio_frame->channels.u_8[i*2];
     for(i = d->ach; i < 4; i++)
       pcm[i] = NULL;
     
@@ -653,7 +668,6 @@ int bgav_dv_dec_get_audio_packet(bgav_dv_dec_t * d, bgav_packet_t * p)
                                pcm, d->profile);
     PACKET_SET_KEYFRAME(p);
     p->pts = d->sample_counter;
-    p->audio_frame->valid_samples = samples;
     p->duration                   = samples;
     d->sample_counter             += samples;
     }

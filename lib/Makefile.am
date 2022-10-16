@@ -319,6 +319,7 @@ a52_header.c \
 adts_header.c \
 apetag.c \
 audio.c \
+audio_gavl.c \
 audio_pcm.c \
 audioparser.c \
 asmrp.c \

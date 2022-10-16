@@ -652,8 +652,6 @@ void bgav_track_remove_unsupported(bgav_track_t * track)
     s = bgav_track_get_audio_stream(track, i);
     if(!bgav_find_audio_decoder(s->fourcc))
       {
-      bgav_track_remove_audio_stream(track, i);
-
       if(!(s->fourcc & 0xffff0000))
         gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
                  "No audio decoder found for WAVId 0x%04x",
@@ -666,6 +664,7 @@ void bgav_track_remove_unsupported(bgav_track_t * track)
                  (s->fourcc & 0x0000FF00) >> 8,
                  (s->fourcc & 0x000000FF),
                  s->fourcc);
+      bgav_track_remove_audio_stream(track, i);
       }
     else if((s->flags & (STREAM_PARSE_FULL|STREAM_PARSE_FRAME)) &&
        !bgav_audio_parser_supported(s->fourcc))

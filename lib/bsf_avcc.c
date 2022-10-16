@@ -127,8 +127,9 @@ bgav_bsf_init_avcC(bgav_bsf_t * bsf)
   priv = calloc(1, sizeof(*priv));
   bsf->priv = priv;
 
-  bsf->ci.id = bsf->s->ci->id;
-  bsf->ci.flags = bsf->s->ci->flags;
+  memcpy(&bsf->ci, bsf->s->ci, sizeof(bsf->ci));
+  bsf->ci.global_header = NULL;
+  bsf->ci.global_header_len = 0;
   
   /* Parse extradata */
   ptr = bsf->s->ci->global_header;
@@ -154,5 +155,6 @@ bgav_bsf_init_avcC(bgav_bsf_t * bsf)
     append_extradata(bsf, ptr, len);
     ptr += len;
     }
+  bsf->ci.id = GAVL_CODEC_ID_H264;
   return 1;
   }

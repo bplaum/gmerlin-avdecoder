@@ -173,6 +173,9 @@ void bgav_codecs_init(bgav_options_t * opt)
 #ifdef HAVE_LIBGSM
   bgav_init_audio_decoders_gsm();
 #endif
+
+  bgav_init_audio_decoders_gavl();
+  
   bgav_init_video_decoders_aviraw();
   bgav_init_video_decoders_qtraw();
   bgav_init_video_decoders_yuv();
@@ -180,6 +183,8 @@ void bgav_codecs_init(bgav_options_t * opt)
   bgav_init_video_decoders_tga();
   bgav_init_video_decoders_rtjpeg();
   bgav_init_video_decoders_dvdsub();
+
+
   
   codecs_unlock();
   

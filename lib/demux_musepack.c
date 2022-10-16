@@ -22,7 +22,7 @@
 
 #include <avdec_private.h>
 
-#include <mpcdec/mpcdec.h>
+#include <mpc/mpcdec.h>
 
 /*
  *  Musepack "demuxer": It's somewhat weird because libmusepack doesn't
@@ -55,7 +55,7 @@ typedef struct
   {
   mpc_reader     reader;
   mpc_streaminfo si;
-  mpc_decoder    dec;
+  mpc_demux * demux;
   read_struct    rs;
   } mpc_priv_t;
 
@@ -72,35 +72,35 @@ static int probe_mpc(bgav_input_context_t * input)
   return 0;
   }
 
-static mpc_int32_t mpc_read(void *t, void *ptr, mpc_int32_t size)
+static mpc_int32_t mpc_read(mpc_reader * reader, void *ptr, mpc_int32_t size)
   {
-  read_struct * r = t;
+  read_struct * r = reader->data;
   return bgav_input_read_data(r->ctx, ptr, size);
   }
 
-static mpc_bool_t mpc_seek(void *t, mpc_int32_t offset)
+static mpc_bool_t mpc_seek(mpc_reader * reader, mpc_int32_t offset)
   {
-  read_struct * r = t;
+  read_struct * r = reader->data;
   bgav_input_seek(r->ctx, offset + r->start_bytes, SEEK_SET);
-  return TRUE;
+  return MPC_TRUE;
   }
 
-static mpc_int32_t mpc_tell(void *t)
+static mpc_int32_t mpc_tell(mpc_reader * reader)
   {
-  read_struct * r = t;
+  read_struct * r = reader->data;
   return r->ctx->position - r->start_bytes;
   }
 
-static mpc_int32_t mpc_get_size(void *t)
+static mpc_int32_t mpc_get_size(mpc_reader * reader)
   {
-  read_struct * r = t;
+  read_struct * r = reader->data;
   return r->ctx->total_bytes - r->start_bytes - r->end_bytes;
   }
 
-static mpc_bool_t mpc_canseek(void *t)
+static mpc_bool_t mpc_canseek(mpc_reader * reader)
   {
-  read_struct * r = t;
-  return (r->ctx->flags & BGAV_INPUT_CAN_SEEK_BYTE) ? TRUE : FALSE;
+  read_struct * r = reader->data;
+  return (r->ctx->flags & BGAV_INPUT_CAN_SEEK_BYTE) ? MPC_TRUE : MPC_FALSE;
   }
 
 static int open_mpc(bgav_demuxer_context_t * ctx)
@@ -205,18 +205,20 @@ static int open_mpc(bgav_demuxer_context_t * ctx)
   if(apetag)
     bgav_ape_tag_destroy(apetag);
   
-  /* Get stream info */
+  /* Initialize demuxer */
+  priv->demux = mpc_demux_init(&priv->reader);
+  mpc_demux_get_info(priv->demux, &priv->si);
   
-  mpc_streaminfo_init(&priv->si);
+  //  mpc_streaminfo_init(&priv->si);
   
-  if(mpc_streaminfo_read(&priv->si, &priv->reader) != ERROR_CODE_OK)
-    return 0;
+  //  if(mpc_streaminfo_read(&priv->si, &priv->reader) != ERROR_CODE_OK)
+  //    return 0;
   
   /* Fire up decoder and set up stream */
   
-  mpc_decoder_setup(&priv->dec, &priv->reader);
-  if(!mpc_decoder_initialize(&priv->dec, &priv->si))
-    return 0;
+  //  mpc_decoder_setup(&priv->dec, &priv->reader);
+  //  if(!mpc_decoder_initialize(&priv->dec, &priv->si))
+  //    return 0;
   
   s = bgav_track_add_audio_stream(ctx->tt->cur, ctx->opt);
   
@@ -243,28 +245,31 @@ static int open_mpc(bgav_demuxer_context_t * ctx)
 
 static int next_packet_mpc(bgav_demuxer_context_t * ctx)
   {
-  unsigned int result;
   bgav_stream_t * s;
   bgav_packet_t * p;
   mpc_priv_t * priv;
+
+  mpc_frame_info fi;
+  
   priv = ctx->priv;
 
   s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
-
   p = bgav_stream_get_packet_write(s);
-
-  //  bgav_packet_alloc(p, MPC_DECODER_BUFFER_LENGTH * sizeof(float));
-
-  if(!p->audio_frame)
-    p->audio_frame = gavl_audio_frame_create(s->data.audio.format);
   
-  result = mpc_decoder_decode(&priv->dec,
-                              p->audio_frame->samples.f, 0, 0);
+  bgav_packet_alloc(p, MPC_DECODER_BUFFER_LENGTH * sizeof(float));
   
-  if(!result || (result == (unsigned int)(-1)))
+  //  if(!p->audio_frame)
+  //    p->audio_frame = gavl_audio_frame_create(s->data.audio.format);
+
+  fi.buffer = (float*)p->data;
+  
+  if(mpc_demux_decode(priv->demux, &fi) != MPC_STATUS_OK)
     return 0;
   
-  p->audio_frame->valid_samples = result;
+  p->duration = fi.samples;
+  p->data_size = fi.samples * s->data.audio.format->num_channels * sizeof(float);
+  p->pts = s->in_position * MPC_FRAME_LENGTH;
+  //  p->audio_frame->valid_samples = result;
   
   bgav_stream_done_packet_write(s, p);
   
@@ -280,14 +285,24 @@ static void seek_mpc(bgav_demuxer_context_t * ctx, int64_t time, int scale)
 
   s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
 
-  STREAM_SET_SYNC(s, gavl_time_rescale(scale, s->timescale, time));
-  mpc_decoder_seek_sample(&priv->dec, STREAM_GET_SYNC(s));
+  time = gavl_time_rescale(scale, s->timescale, time);
+  time /= MPC_FRAME_LENGTH;
+  time *= MPC_FRAME_LENGTH;
+  
+  STREAM_SET_SYNC(s, time);
+  mpc_demux_seek_sample(priv->demux, STREAM_GET_SYNC(s));
+  
+  s->in_position = STREAM_GET_SYNC(s) / MPC_FRAME_LENGTH;
   }
 
 static void close_mpc(bgav_demuxer_context_t * ctx)
   {
   mpc_priv_t * priv;
   priv = ctx->priv;
+
+  if(priv->demux)
+    mpc_demux_exit(priv->demux);
+  
   free(priv);
   }
 

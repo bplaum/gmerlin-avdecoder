@@ -45,8 +45,14 @@ static gavl_source_status_t decode_frame_gavl(bgav_stream_t * s)
  
   if((st = bgav_stream_get_packet_read(s, &priv->p)) != GAVL_SOURCE_OK)
     return st;  
+
+  gavl_audio_frame_from_data(s->data.audio.frame,
+                             s->data.audio.format,
+                             priv->p->data, priv->p->data_size);
+  s->data.audio.frame->timestamp = priv->p->pts;
+  s->data.audio.frame->valid_samples = priv->p->duration;
   
-  gavl_audio_frame_copy_ptrs(s->data.audio.format, s->data.audio.frame, priv->p->audio_frame);
+  //  gavl_audio_frame_copy_ptrs(s->data.audio.format, s->data.audio.frame, priv->p->audio_frame);
   return GAVL_SOURCE_OK;
   }
 
@@ -64,8 +70,6 @@ static int init_gavl(bgav_stream_t * s)
      won't know the format before */
 #if 1
   if(bgav_stream_get_packet_read(s, &priv->p) != GAVL_SOURCE_OK)
-    return 0;
-  if(!priv->p->audio_frame)
     return 0;
 #endif
 

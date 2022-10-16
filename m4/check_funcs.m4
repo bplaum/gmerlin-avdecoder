@@ -977,11 +977,11 @@ AH_TEMPLATE([HAVE_MUSEPACK], [Enable Musepack])
 AC_MSG_CHECKING(for libmpcdec)
 
   AC_TRY_LINK([
-    #include <mpcdec/mpcdec.h>
+    #include <mpc/mpcdec.h>
     #include <stdio.h>
-  ],[
-    mpc_streaminfo si;
-    mpc_streaminfo_init(&si);
+   ],[
+    mpc_reader reader;
+    mpc_demux_init(&reader);
     return 0;
   ],[
     # program could be run

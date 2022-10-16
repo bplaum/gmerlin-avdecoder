@@ -32,6 +32,131 @@
 
 #define LOG_DOMAIN "video"
 
+const uint32_t bgav_png_fourccs[] =
+  {
+    BGAV_MK_FOURCC('p', 'n', 'g', ' '),
+    BGAV_MK_FOURCC('M', 'P', 'N', 'G'),
+    0x00
+  };
+
+static uint32_t jpeg_fourccs[] =
+  {
+    BGAV_MK_FOURCC('j', 'p', 'e', 'g'),
+    0x00
+  };
+
+static uint32_t tiff_fourccs[] =
+  {
+    BGAV_MK_FOURCC('t', 'i', 'f', 'f'),
+    0x00
+  };
+
+static uint32_t tga_fourccs[] =
+  {
+    BGAV_MK_FOURCC('t', 'g', 'a', ' '),
+    0x00
+  };
+
+static uint32_t mpeg1_fourccs[] =
+  {
+    BGAV_MK_FOURCC('m', 'p', 'v', '1'),
+    0x00
+  };
+
+static uint32_t mpeg2_fourccs[] =
+  {
+    BGAV_MK_FOURCC('m', 'p', 'v', '2'),
+    0x00
+  };
+
+static uint32_t theora_fourccs[] =
+  {
+    BGAV_MK_FOURCC('T','H','R','A'),
+    0x00
+  };
+
+static uint32_t dirac_fourccs[] =
+  {
+    BGAV_MK_FOURCC('d','r','a','c'),
+    0x00
+  };
+
+static uint32_t h264_fourccs[] =
+  {
+    BGAV_MK_FOURCC('H','2','6','4'),
+    BGAV_MK_FOURCC('h','2','6','4'),
+    0x00
+  };
+
+static uint32_t avc1_fourccs[] =
+  {
+    BGAV_MK_FOURCC('a','v','c','1'),
+    0x00
+  };
+
+static uint32_t mpeg4_fourccs[] =
+  {
+    BGAV_MK_FOURCC('m','p','4','v'),
+    0x00
+  };
+
+static uint32_t vp8_fourccs[] =
+  {
+    BGAV_MK_FOURCC('V','P','8','0'),
+    0x00
+  };
+
+static uint32_t d10_fourccs[] =
+  {
+    BGAV_MK_FOURCC('m', 'x', '5', 'p'),
+    BGAV_MK_FOURCC('m', 'x', '4', 'p'),
+    BGAV_MK_FOURCC('m', 'x', '3', 'p'),
+    BGAV_MK_FOURCC('m', 'x', '5', 'n'),
+    BGAV_MK_FOURCC('m', 'x', '4', 'n'),
+    BGAV_MK_FOURCC('m', 'x', '3', 'n'),
+    0x00,
+  };
+
+const uint32_t bgav_dv_fourccs[] =
+  {
+    BGAV_MK_FOURCC('d', 'v', 's', 'd'), 
+    BGAV_MK_FOURCC('D', 'V', 'S', 'D'), 
+    BGAV_MK_FOURCC('d', 'v', 'h', 'd'), 
+    BGAV_MK_FOURCC('d', 'v', 's', 'l'), 
+    BGAV_MK_FOURCC('d', 'v', '2', '5'),
+    /* Generic DV */
+    BGAV_MK_FOURCC('D', 'V', ' ', ' '),
+
+    BGAV_MK_FOURCC('d', 'v', 'c', 'p') , /* DV PAL */
+    BGAV_MK_FOURCC('d', 'v', 'c', ' ') , /* DV NTSC */
+    BGAV_MK_FOURCC('d', 'v', 'p', 'p') , /* DVCPRO PAL produced by FCP */
+    BGAV_MK_FOURCC('d', 'v', '5', 'p') , /* DVCPRO50 PAL produced by FCP */
+    BGAV_MK_FOURCC('d', 'v', '5', 'n') , /* DVCPRO50 NTSC produced by FCP */
+    BGAV_MK_FOURCC('A', 'V', 'd', 'v') , /* AVID DV */
+    BGAV_MK_FOURCC('A', 'V', 'd', '1') , /* AVID DV */
+    BGAV_MK_FOURCC('d', 'v', 'h', 'q') , /* DVCPRO HD 720p50 */
+    BGAV_MK_FOURCC('d', 'v', 'h', 'p') , /* DVCPRO HD 720p60 */
+    BGAV_MK_FOURCC('d', 'v', 'h', '5') , /* DVCPRO HD 50i produced by FCP */
+    BGAV_MK_FOURCC('d', 'v', 'h', '6') , /* DVCPRO HD 60i produced by FCP */
+    BGAV_MK_FOURCC('d', 'v', 'h', '3') , /* DVCPRO HD 30p produced by FCP */
+    0x00,
+  };
+
+const uint32_t div3_fourccs[] =
+  {
+    BGAV_MK_FOURCC('D', 'I', 'V', '3'),
+    BGAV_MK_FOURCC('M', 'P', '4', '3'), 
+    BGAV_MK_FOURCC('M', 'P', 'G', '3'), 
+    BGAV_MK_FOURCC('D', 'I', 'V', '5'), 
+    BGAV_MK_FOURCC('D', 'I', 'V', '6'), 
+    BGAV_MK_FOURCC('D', 'I', 'V', '4'), 
+    BGAV_MK_FOURCC('A', 'P', '4', '1'),
+    BGAV_MK_FOURCC('C', 'O', 'L', '1'),
+    BGAV_MK_FOURCC('C', 'O', 'L', '0'),
+    0x00
+  };
+
+
 int bgav_num_video_streams(bgav_t *  bgav, int track)
   {
   return bgav->tt->tracks[track]->num_video_streams;
@@ -177,6 +302,9 @@ int bgav_video_init(bgav_stream_t * s)
        (s->fourcc == BGAV_MK_FOURCC('V', 'P', '8', '0')) ||
        (s->fourcc == BGAV_MK_FOURCC('V', 'P', '9', '0')))
       s->flags |= STREAM_PARSE_FRAME;
+
+    if(bgav_check_fourcc(s->fourcc, avc1_fourccs))
+      s->flags |= STREAM_FILTER_PACKETS;
     }
   
   if((s->flags & (STREAM_PARSE_FULL|STREAM_PARSE_FRAME)) &&
@@ -771,129 +899,6 @@ gavl_frame_table_t * bgav_get_frame_table(bgav_t * bgav, int stream)
     return NULL;
   }
 
-const uint32_t bgav_png_fourccs[] =
-  {
-    BGAV_MK_FOURCC('p', 'n', 'g', ' '),
-    BGAV_MK_FOURCC('M', 'P', 'N', 'G'),
-    0x00
-  };
-
-static uint32_t jpeg_fourccs[] =
-  {
-    BGAV_MK_FOURCC('j', 'p', 'e', 'g'),
-    0x00
-  };
-
-static uint32_t tiff_fourccs[] =
-  {
-    BGAV_MK_FOURCC('t', 'i', 'f', 'f'),
-    0x00
-  };
-
-static uint32_t tga_fourccs[] =
-  {
-    BGAV_MK_FOURCC('t', 'g', 'a', ' '),
-    0x00
-  };
-
-static uint32_t mpeg1_fourccs[] =
-  {
-    BGAV_MK_FOURCC('m', 'p', 'v', '1'),
-    0x00
-  };
-
-static uint32_t mpeg2_fourccs[] =
-  {
-    BGAV_MK_FOURCC('m', 'p', 'v', '2'),
-    0x00
-  };
-
-static uint32_t theora_fourccs[] =
-  {
-    BGAV_MK_FOURCC('T','H','R','A'),
-    0x00
-  };
-
-static uint32_t dirac_fourccs[] =
-  {
-    BGAV_MK_FOURCC('d','r','a','c'),
-    0x00
-  };
-
-static uint32_t h264_fourccs[] =
-  {
-    BGAV_MK_FOURCC('H','2','6','4'),
-    BGAV_MK_FOURCC('h','2','6','4'),
-    0x00
-  };
-
-static uint32_t avc1_fourccs[] =
-  {
-    BGAV_MK_FOURCC('a','v','c','1'),
-    0x00
-  };
-
-static uint32_t mpeg4_fourccs[] =
-  {
-    BGAV_MK_FOURCC('m','p','4','v'),
-    0x00
-  };
-
-static uint32_t vp8_fourccs[] =
-  {
-    BGAV_MK_FOURCC('V','P','8','0'),
-    0x00
-  };
-
-static uint32_t d10_fourccs[] =
-  {
-    BGAV_MK_FOURCC('m', 'x', '5', 'p'),
-    BGAV_MK_FOURCC('m', 'x', '4', 'p'),
-    BGAV_MK_FOURCC('m', 'x', '3', 'p'),
-    BGAV_MK_FOURCC('m', 'x', '5', 'n'),
-    BGAV_MK_FOURCC('m', 'x', '4', 'n'),
-    BGAV_MK_FOURCC('m', 'x', '3', 'n'),
-    0x00,
-  };
-
-const uint32_t bgav_dv_fourccs[] =
-  {
-    BGAV_MK_FOURCC('d', 'v', 's', 'd'), 
-    BGAV_MK_FOURCC('D', 'V', 'S', 'D'), 
-    BGAV_MK_FOURCC('d', 'v', 'h', 'd'), 
-    BGAV_MK_FOURCC('d', 'v', 's', 'l'), 
-    BGAV_MK_FOURCC('d', 'v', '2', '5'),
-    /* Generic DV */
-    BGAV_MK_FOURCC('D', 'V', ' ', ' '),
-
-    BGAV_MK_FOURCC('d', 'v', 'c', 'p') , /* DV PAL */
-    BGAV_MK_FOURCC('d', 'v', 'c', ' ') , /* DV NTSC */
-    BGAV_MK_FOURCC('d', 'v', 'p', 'p') , /* DVCPRO PAL produced by FCP */
-    BGAV_MK_FOURCC('d', 'v', '5', 'p') , /* DVCPRO50 PAL produced by FCP */
-    BGAV_MK_FOURCC('d', 'v', '5', 'n') , /* DVCPRO50 NTSC produced by FCP */
-    BGAV_MK_FOURCC('A', 'V', 'd', 'v') , /* AVID DV */
-    BGAV_MK_FOURCC('A', 'V', 'd', '1') , /* AVID DV */
-    BGAV_MK_FOURCC('d', 'v', 'h', 'q') , /* DVCPRO HD 720p50 */
-    BGAV_MK_FOURCC('d', 'v', 'h', 'p') , /* DVCPRO HD 720p60 */
-    BGAV_MK_FOURCC('d', 'v', 'h', '5') , /* DVCPRO HD 50i produced by FCP */
-    BGAV_MK_FOURCC('d', 'v', 'h', '6') , /* DVCPRO HD 60i produced by FCP */
-    BGAV_MK_FOURCC('d', 'v', 'h', '3') , /* DVCPRO HD 30p produced by FCP */
-    0x00,
-  };
-
-const uint32_t div3_fourccs[] =
-  {
-    BGAV_MK_FOURCC('D', 'I', 'V', '3'),
-    BGAV_MK_FOURCC('M', 'P', '4', '3'), 
-    BGAV_MK_FOURCC('M', 'P', 'G', '3'), 
-    BGAV_MK_FOURCC('D', 'I', 'V', '5'), 
-    BGAV_MK_FOURCC('D', 'I', 'V', '6'), 
-    BGAV_MK_FOURCC('D', 'I', 'V', '4'), 
-    BGAV_MK_FOURCC('A', 'P', '4', '1'),
-    BGAV_MK_FOURCC('C', 'O', 'L', '1'),
-    BGAV_MK_FOURCC('C', 'O', 'L', '0'),
-    0x00
-  };
 
 int bgav_get_video_compression_info(bgav_t * bgav, int stream,
                                     gavl_compression_info_t * info)
@@ -910,7 +915,7 @@ int bgav_set_video_compression_info(bgav_stream_t * s)
   {
   gavl_codec_id_t id;
   int need_bitrate = 0;
-  bgav_bsf_t * bsf = NULL;
+  //  bgav_bsf_t * bsf = NULL;
   
   if(bgav_check_fourcc(s->fourcc, bgav_png_fourccs))
     id = GAVL_CODEC_ID_PNG;
@@ -939,10 +944,7 @@ int bgav_set_video_compression_info(bgav_stream_t * s)
   else if(bgav_check_fourcc(s->fourcc, div3_fourccs))
     id = GAVL_CODEC_ID_DIV3;
   else if(bgav_check_fourcc(s->fourcc, avc1_fourccs))
-    {
     id = GAVL_CODEC_ID_H264;
-    s->flags |= STREAM_FILTER_PACKETS;
-    }
   else if(bgav_check_fourcc(s->fourcc, d10_fourccs))
     {
     id = GAVL_CODEC_ID_MPEG2;
@@ -967,8 +969,8 @@ int bgav_set_video_compression_info(bgav_stream_t * s)
   s->ci->id = id;
 
   /* Create the filtered extradata */
-  if((s->flags & STREAM_FILTER_PACKETS) && !s->bsf)
-    bsf = bgav_bsf_create(s);
+  //  if((s->flags & STREAM_FILTER_PACKETS) && !s->bsf)
+  //    bsf = bgav_bsf_create(s);
   
   if((s->ci->global_header_len) && (bgav_video_is_divx4(s->fourcc)))
     {
@@ -978,8 +980,8 @@ int bgav_set_video_compression_info(bgav_stream_t * s)
     }
   
   /* Restore everything */
-  if(bsf)
-    bgav_bsf_destroy(bsf);
+  //  if(bsf)
+  //    bgav_bsf_destroy(bsf);
   
   if(s->codec_bitrate)
     s->ci->bitrate = s->codec_bitrate;

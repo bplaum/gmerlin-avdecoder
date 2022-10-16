@@ -35,8 +35,6 @@ void bgav_packet_free(bgav_packet_t * p)
   {
   if(p->data)
     free(p->data);
-  if(p->audio_frame)
-    gavl_audio_frame_destroy(p->audio_frame);
   
   bgav_packet_free_palette(p);
   memset(p, 0, sizeof(*p));
