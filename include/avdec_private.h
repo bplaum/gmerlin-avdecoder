@@ -1879,7 +1879,7 @@ struct bgav_subtitle_reader_context_s
   /* Timestamps are scaled with out_pts = pts * scale_num / scale_den */
   int scale_num;
   int scale_den;
-    
+  
   char * line;
   uint32_t line_alloc;
   
