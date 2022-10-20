@@ -139,9 +139,9 @@ static int next_packet_a52(bgav_demuxer_context_t * ctx)
   
   bgav_packet_alloc(p, packet_size);
 
-  p->data_size = bgav_input_read_data(ctx->input, p->data, packet_size);
+  p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, packet_size);
   
-  if(p->data_size < packet_size)
+  if(p->buf.len < packet_size)
     return 0;
   
   bgav_stream_done_packet_write(s, p);

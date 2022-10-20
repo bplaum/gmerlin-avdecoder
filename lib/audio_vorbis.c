@@ -79,9 +79,9 @@ static gavl_source_status_t read_data(bgav_stream_t * s)
   if((st = bgav_stream_get_packet_read(s, &p)) != GAVL_SOURCE_OK)
     return st;
   
-  buffer = ogg_sync_buffer(&priv->dec_oy, p->data_size);
-  memcpy(buffer, p->data, p->data_size);
-  ogg_sync_wrote(&priv->dec_oy, p->data_size);
+  buffer = ogg_sync_buffer(&priv->dec_oy, p->buf.len);
+  memcpy(buffer, p->buf.buf, p->buf.len);
+  ogg_sync_wrote(&priv->dec_oy, p->buf.len);
   bgav_stream_done_packet_read(s, p);
   return GAVL_SOURCE_OK;
   }
@@ -140,8 +140,8 @@ static gavl_source_status_t next_packet(bgav_stream_t * s)
       bgav_packet_copy(&priv->p, p);
     
       memset(&priv->dec_op, 0, sizeof(priv->dec_op));
-      priv->dec_op.bytes  = priv->p.data_size;
-      priv->dec_op.packet = priv->p.data;
+      priv->dec_op.bytes  = priv->p.buf.len;
+      priv->dec_op.packet = priv->p.buf.buf;
     
       priv->dec_op.granulepos = priv->p.pts + priv->p.duration;
     

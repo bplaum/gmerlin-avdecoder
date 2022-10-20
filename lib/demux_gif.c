@@ -275,27 +275,27 @@ static int next_packet_gif(bgav_demuxer_context_t * ctx)
                     GCE_LEN + // GCE length
                     IMAGE_DESCRIPTOR_LEN); // Image Descriptor length
 
-  p->data_size = 0;
+  p->buf.len = 0;
 
   /* Global header */
-  memcpy(p->data, priv->header, GLOBAL_HEADER_LEN);
-  p->data_size += GLOBAL_HEADER_LEN;
+  memcpy(p->buf.buf, priv->header, GLOBAL_HEADER_LEN);
+  p->buf.len += GLOBAL_HEADER_LEN;
 
   /* Global cmap */
   if(priv->global_cmap_bytes)
     {
-    memcpy(p->data + p->data_size, priv->global_cmap, priv->global_cmap_bytes);
-    p->data_size += priv->global_cmap_bytes;
+    memcpy(p->buf.buf + p->buf.len, priv->global_cmap, priv->global_cmap_bytes);
+    p->buf.len += priv->global_cmap_bytes;
     }
 
   /* GCE */
-  memcpy(p->data + p->data_size, gce, GCE_LEN);
-  p->data_size += GCE_LEN;
+  memcpy(p->buf.buf + p->buf.len, gce, GCE_LEN);
+  p->buf.len += GCE_LEN;
 
   /* Image descriptor */
 
-  memcpy(p->data + p->data_size, image_descriptor, IMAGE_DESCRIPTOR_LEN);
-  p->data_size += IMAGE_DESCRIPTOR_LEN;
+  memcpy(p->buf.buf + p->buf.len, image_descriptor, IMAGE_DESCRIPTOR_LEN);
+  p->buf.len += IMAGE_DESCRIPTOR_LEN;
   
   /* Local colormap (if present) */
 
@@ -304,42 +304,42 @@ static int next_packet_gif(bgav_demuxer_context_t * ctx)
     local_cmap_len =
       3*(1 << ((image_descriptor[IMAGE_DESCRIPTOR_LEN-1] & 0x07) + 1));
 
-    bgav_packet_alloc(p, p->data_size + local_cmap_len);
+    bgav_packet_alloc(p, p->buf.len + local_cmap_len);
     
-    if(bgav_input_read_data(ctx->input, p->data + p->data_size,
+    if(bgav_input_read_data(ctx->input, p->buf.buf + p->buf.len,
                             local_cmap_len) < local_cmap_len)
       return 0;
-    p->data_size += local_cmap_len;
+    p->buf.len += local_cmap_len;
     }
   
   /* Image data */
 
   /* Initial code length */
 
-  bgav_packet_alloc(p, p->data_size + 1);
-  if(!bgav_input_read_data(ctx->input, p->data + p->data_size, 1))
+  bgav_packet_alloc(p, p->buf.len + 1);
+  if(!bgav_input_read_data(ctx->input, p->buf.buf + p->buf.len, 1))
     return 0;
-  p->data_size++;
+  p->buf.len++;
   /* Data blocks */
   while(1)
     {
     if(!bgav_input_get_data(ctx->input, buf, 1))
       return 0;
 
-    bgav_packet_alloc(p, p->data_size + buf[0]+1);
+    bgav_packet_alloc(p, p->buf.len + buf[0]+1);
 
-    if(bgav_input_read_data(ctx->input, p->data +
-                            p->data_size, buf[0]+1) < buf[0]+1)
+    if(bgav_input_read_data(ctx->input, p->buf.buf +
+                            p->buf.len, buf[0]+1) < buf[0]+1)
       return 0;
-    p->data_size += buf[0]+1;
+    p->buf.len += buf[0]+1;
     if(!buf[0])
       break;
     }
   
   /* Trailer */
-  bgav_packet_alloc(p, p->data_size + 1);
-  p->data[p->data_size] = ';';
-  p->data_size++;
+  bgav_packet_alloc(p, p->buf.len + 1);
+  p->buf.buf[p->buf.len] = ';';
+  p->buf.len++;
   
   p->pts = priv->video_pts;
   p->duration = frame_duration;

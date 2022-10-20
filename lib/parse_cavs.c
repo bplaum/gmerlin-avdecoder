@@ -64,8 +64,8 @@ static int parse_frame_cavs(bgav_video_parser_t * parser, bgav_packet_t * p,
   int len;
   bgav_cavs_picture_header_t ph;
   const uint8_t * sc;
-  const uint8_t * ptr = p->data;
-  const uint8_t * end = p->data + p->data_size;
+  const uint8_t * ptr = p->buf.buf;
+  const uint8_t * end = p->buf.buf + p->buf.len;
   cavs_priv_t * priv = parser->priv;
   
   while(1)

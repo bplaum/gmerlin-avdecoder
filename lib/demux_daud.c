@@ -80,8 +80,8 @@ static int next_packet_daud(bgav_demuxer_context_t * ctx)
     {
     p = bgav_stream_get_packet_write(s);
     bgav_packet_alloc(p, size);
-    p->data_size = bgav_input_read_data(ctx->input, p->data, size);
-    if(!p->data_size)
+    p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, size);
+    if(!p->buf.len)
       return 0;
     bgav_stream_done_packet_write(s, p);
     }

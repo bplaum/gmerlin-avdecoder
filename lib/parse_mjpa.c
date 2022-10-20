@@ -35,8 +35,8 @@ static int parse_frame_mjpa(bgav_video_parser_t * parser,
 
   /* Look for APP1 marker */
   
-  ptr = p->data;
-  for(i = 0; i < p->data_size - 2; i++)
+  ptr = p->buf.buf;
+  for(i = 0; i < p->buf.len - 2; i++)
     {
     num = GAVL_PTR_2_16BE(ptr);
     if(num == 0xffe1) // APP1

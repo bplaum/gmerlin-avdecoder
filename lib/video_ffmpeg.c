@@ -107,7 +107,7 @@ typedef struct
   
 
   uint8_t * extradata;
-  uint32_t extradata_size;
+  int extradata_size;
   
   /* State variables */
   int flags;
@@ -258,22 +258,22 @@ get_data(bgav_stream_t * s, bgav_packet_t ** ret_p)
     if(!priv->p)
       priv->p = bgav_packet_create();
     
-    bgav_packet_alloc(priv->p, ret->data_size);
+    bgav_packet_alloc(priv->p, ret->buf.len);
 
     priv->p->field2_offset =
-      ret->data_size - ret->field2_offset;
+      ret->buf.len - ret->field2_offset;
     
     /* Second field -> first field */
-    memcpy(priv->p->data,
-           ret->data + ret->field2_offset,
-           ret->data_size - ret->field2_offset);
+    memcpy(priv->p->buf.buf,
+           ret->buf.buf + ret->field2_offset,
+           ret->buf.len - ret->field2_offset);
 
     /* First field -> second field */
-    memcpy(priv->p->data + priv->p->field2_offset,
-           ret->data,
+    memcpy(priv->p->buf.buf + priv->p->field2_offset,
+           ret->buf.buf,
            ret->field2_offset);
     bgav_packet_copy_metadata(priv->p, ret);
-    priv->p->data_size = ret->data_size;
+    priv->p->buf.len = ret->buf.len;
     bgav_stream_done_packet_read(s, ret);
     *ret_p = priv->p;
     }
@@ -435,11 +435,11 @@ static gavl_source_status_t get_packet(bgav_stream_t * s)
      !(p->flags & GAVL_PACKET_NOOUTPUT))
     bgav_pts_cache_push(&priv->pts_cache, p, NULL, &e);
     
-  priv->pkt.data = p->data;
+  priv->pkt.data = p->buf.buf;
   if(p->field2_offset)
     priv->pkt.size = p->field2_offset;
   else
-    priv->pkt.size = p->data_size;
+    priv->pkt.size = p->buf.len;
       
   /* Palette handling */
   if(p->palette)
@@ -522,8 +522,8 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
   /* Decode 2nd field for field pictures */
   if(p && p->field2_offset && (bytes_used > 0))
     {
-    priv->pkt.data = p->data + p->field2_offset;
-    priv->pkt.size = p->data_size - p->field2_offset;
+    priv->pkt.data = p->buf.buf + p->field2_offset;
+    priv->pkt.size = p->buf.len - p->field2_offset;
     
 #ifdef DUMP_DECODE
     bgav_dprintf("Decode (f2): out_time: %" PRId64 " len: %d\n", s->out_time,

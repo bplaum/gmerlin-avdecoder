@@ -95,7 +95,7 @@ static void reset_mpeg4(bgav_video_parser_t * parser)
   mpeg4_priv_t * priv = parser->priv;
   priv->state = STATE_SYNC;
   priv->has_picture_start = 0;
-  priv->saved_packet->data_size = 0;
+  priv->saved_packet->buf.len = 0;
   }
 
 static int extract_user_data(bgav_video_parser_t * parser,
@@ -206,7 +206,7 @@ static void set_header_end(bgav_video_parser_t * parser, bgav_packet_t * p,
     {
     parser->s->ci->global_header_len = pos;
     parser->s->ci->global_header = malloc(parser->s->ci->global_header_len);
-    memcpy(parser->s->ci->global_header, p->data, parser->s->ci->global_header_len);
+    memcpy(parser->s->ci->global_header, p->buf.buf, parser->s->ci->global_header_len);
     }
   p->header_size = pos;
   }
@@ -226,14 +226,14 @@ static int parse_frame_mpeg4(bgav_video_parser_t * parser, bgav_packet_t * p,
   int num_pictures = 0;
 
   /* Skip weird packets with just one 0x7f byte */
-  if((p->data_size == 1) && (p->data[0] == 0x7f))
+  if((p->buf.len == 1) && (p->buf.buf[0] == 0x7f))
     {
     p->flags |= GAVL_PACKET_NOOUTPUT; 
     return 1;
     }
   
-  data = p->data;
-  data_end = p->data + p->data_size;
+  data = p->buf.buf;
+  data_end = p->buf.buf + p->buf.len;
   
   while(1)
     {
@@ -289,16 +289,16 @@ static int parse_frame_mpeg4(bgav_video_parser_t * parser, bgav_packet_t * p,
 #endif
 
         /* Check whether to copy a saved frame back */
-        if(priv->saved_packet->data_size)
+        if(priv->saved_packet->buf.len)
           {
           if(!vh.vop_coded)
             {
             /* Copy stuff back, overwriting the packet */
-            bgav_packet_alloc(p, priv->saved_packet->data_size);
-            memcpy(p->data, priv->saved_packet->data,
-                   priv->saved_packet->data_size);
-            p->data_size = priv->saved_packet->data_size;
-            priv->saved_packet->data_size = 0;
+            bgav_packet_alloc(p, priv->saved_packet->buf.len);
+            memcpy(p->buf.buf, priv->saved_packet->buf.buf,
+                   priv->saved_packet->buf.len);
+            p->buf.len = priv->saved_packet->buf.len;
+            priv->saved_packet->buf.len = 0;
             p->flags = priv->saved_packet->flags;
             p->position = priv->saved_packet->position;
             }
@@ -317,33 +317,33 @@ static int parse_frame_mpeg4(bgav_video_parser_t * parser, bgav_packet_t * p,
         else if(priv->packed_b_frames && (num_pictures == 1))
           {
           bgav_packet_reset(priv->saved_packet);
-          priv->saved_packet->data_size = data_end - data;
+          priv->saved_packet->buf.len = data_end - data;
           bgav_packet_alloc(priv->saved_packet,
-                            priv->saved_packet->data_size);
-          memcpy(priv->saved_packet->data, data,
-                 priv->saved_packet->data_size);
+                            priv->saved_packet->buf.len);
+          memcpy(priv->saved_packet->buf.buf, data,
+                 priv->saved_packet->buf.len);
           PACKET_SET_CODING_TYPE(priv->saved_packet, vh.coding_type);
           priv->saved_packet->position = p->position;
-          p->data_size -= priv->saved_packet->data_size;
+          p->buf.len -= priv->saved_packet->buf.len;
           num_pictures++;
           }
         else
           {
-          set_header_end(parser, p, data - p->data);
+          set_header_end(parser, p, data - p->buf.buf);
           
           PACKET_SET_CODING_TYPE(p, vh.coding_type);
           data += result;
           
           if(p->header_size && priv->packed_b_frames)
-            bgav_mpeg4_remove_packed_flag(p->data,
-                                          &p->data_size, &p->header_size);
+            bgav_mpeg4_remove_packed_flag(p->buf.buf,
+                                          &p->buf.len, &p->header_size);
           num_pictures++;
           }
         if(!priv->packed_b_frames || (num_pictures == 2))
           return 1;
         break;
       case MPEG4_CODE_GOV_START:
-        set_header_end(parser, p, data - p->data);
+        set_header_end(parser, p, data - p->buf.buf);
         data += 4;
         break;
       case MPEG4_CODE_USER_DATA:

@@ -48,7 +48,7 @@ static gavl_source_status_t decode_frame_gavl(bgav_stream_t * s)
 
   gavl_audio_frame_from_data(s->data.audio.frame,
                              s->data.audio.format,
-                             priv->p->data, priv->p->data_size);
+                             priv->p->buf.buf, priv->p->buf.len);
   s->data.audio.frame->timestamp = priv->p->pts;
   s->data.audio.frame->valid_samples = priv->p->duration;
   

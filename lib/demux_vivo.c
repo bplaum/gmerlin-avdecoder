@@ -613,19 +613,19 @@ static int next_packet_vivo(bgav_demuxer_context_t * ctx)
     {
     stream->packet = bgav_stream_get_packet_write(stream);
     stream->packet_seq = seq;
-    stream->packet->data_size = 0;
+    stream->packet->buf.len = 0;
     }
 
   /* Append data */
   bgav_packet_alloc(stream->packet,
-                    stream->packet->data_size + len);
+                    stream->packet->buf.len + len);
   if(bgav_input_read_data(ctx->input,
-                          stream->packet->data + stream->packet->data_size,
+                          stream->packet->buf.buf + stream->packet->buf.len,
                           len) < len)
     {
     return 0;
     }
-  stream->packet->data_size += len;
+  stream->packet->buf.len += len;
   if((h & 0xf0) == 0x20)
     stream->packet_seq--;
   return 1;

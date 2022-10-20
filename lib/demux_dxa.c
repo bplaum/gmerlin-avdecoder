@@ -268,8 +268,8 @@ static int next_packet_dxa(bgav_demuxer_context_t * ctx)
     bgav_packet_alloc(p, bytes_to_read);
 
     bgav_input_seek(ctx->input, priv->audio_position, SEEK_SET);
-    p->data_size = bgav_input_read_data(ctx->input, p->data, bytes_to_read);
-    if(p->data_size < bytes_to_read)
+    p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
+    if(p->buf.len < bytes_to_read)
       return 0;
     
     bgav_stream_done_packet_write(s, p);
@@ -298,9 +298,9 @@ static int next_packet_dxa(bgav_demuxer_context_t * ctx)
           p = bgav_stream_get_packet_write(s);
           bgav_packet_alloc(p, 4 + pal_size);
           if(pal_size)
-            memcpy(p->data, pal, pal_size);
-          bgav_input_read_data(ctx->input, p->data + pal_size, 4);
-          p->data_size = 4 + pal_size;
+            memcpy(p->buf.buf, pal, pal_size);
+          bgav_input_read_data(ctx->input, p->buf.buf + pal_size, 4);
+          p->buf.len = 4 + pal_size;
           p->pts = s->data.video.format->frame_duration * priv->current_frame;
           
           bgav_stream_done_packet_write(s, p);
@@ -323,12 +323,12 @@ static int next_packet_dxa(bgav_demuxer_context_t * ctx)
           bgav_packet_alloc(p, size + DXA_EXTRA_SIZE + pal_size);
 
           if(pal_size)
-            memcpy(p->data, pal, pal_size);
-          memcpy(p->data + pal_size, buf, DXA_EXTRA_SIZE);
-          if(bgav_input_read_data(ctx->input, p->data + pal_size + DXA_EXTRA_SIZE, size) < size)
+            memcpy(p->buf.buf, pal, pal_size);
+          memcpy(p->buf.buf + pal_size, buf, DXA_EXTRA_SIZE);
+          if(bgav_input_read_data(ctx->input, p->buf.buf + pal_size + DXA_EXTRA_SIZE, size) < size)
             return 0;
           
-          p->data_size = size + DXA_EXTRA_SIZE + pal_size;
+          p->buf.len = size + DXA_EXTRA_SIZE + pal_size;
           p->pts = s->data.video.format->frame_duration * priv->current_frame;
           
           bgav_stream_done_packet_write(s, p);

@@ -168,12 +168,12 @@ static int next_packet_tta(bgav_demuxer_context_t * ctx)
 
   bgav_packet_alloc(p, priv->seek_table[priv->current_frame]);
   if(bgav_input_read_data(ctx->input,
-                          p->data,
+                          p->buf.buf,
                           priv->seek_table[priv->current_frame]) <
      priv->seek_table[priv->current_frame])
     return 0; // Truncated file
 
-  p->data_size = priv->seek_table[priv->current_frame];
+  p->buf.len = priv->seek_table[priv->current_frame];
   priv->current_frame++;
   bgav_stream_done_packet_write(s, p);
   return 1;

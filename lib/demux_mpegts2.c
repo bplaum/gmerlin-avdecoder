@@ -408,8 +408,8 @@ static int next_packet_mpegts(bgav_demuxer_context_t * ctx)
       len = 188 - (ptr - priv->buf.buf);
       
       bgav_packet_alloc(s->packet, len);
-      memcpy(s->packet->data, ptr, len);
-      s->packet->data_size = len;
+      memcpy(s->packet->buf.buf, ptr, len);
+      s->packet->buf.len = len;
       }
     else
       {
@@ -426,12 +426,12 @@ static int next_packet_mpegts(bgav_demuxer_context_t * ctx)
       else
         {
         bgav_packet_alloc(s->packet,
-                          s->packet->data_size +
+                          s->packet->buf.len +
                           pkt.payload_size);
         
-        memcpy(s->packet->data + s->packet->data_size, ptr,
+        memcpy(s->packet->buf.buf + s->packet->buf.len, ptr,
                pkt.payload_size);
-        s->packet->data_size += pkt.payload_size;
+        s->packet->buf.len += pkt.payload_size;
         }
       
       }

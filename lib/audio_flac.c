@@ -87,11 +87,11 @@ read_callback(const FLAC__StreamDecoder *decoder,
       gavl_source_status_t st;
       if((st = bgav_stream_get_packet_read(s, &priv->p)) != GAVL_SOURCE_OK)
         break;
-      priv->data_ptr = priv->p->data;
+      priv->data_ptr = priv->p->buf.buf;
       }
 
     /* Bytes, which are left from the packet */
-    bytes_to_copy = (priv->p->data_size - (priv->data_ptr - priv->p->data));
+    bytes_to_copy = (priv->p->buf.len - (priv->data_ptr - priv->p->buf.buf));
     if(bytes_to_copy > *bytes - bytes_read)
       bytes_to_copy = *bytes - bytes_read;
 
@@ -100,7 +100,7 @@ read_callback(const FLAC__StreamDecoder *decoder,
     bytes_read += bytes_to_copy;
     priv->data_ptr += bytes_to_copy;
 
-    if(priv->data_ptr - priv->p->data == priv->p->data_size)
+    if(priv->data_ptr - priv->p->buf.buf == priv->p->buf.len)
       {
       bgav_stream_done_packet_read(s, priv->p);
       priv->p = NULL;

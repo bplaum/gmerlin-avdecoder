@@ -34,7 +34,7 @@ typedef struct
 
 static gavl_pixelformat_t get_pixelformat(bgav_packet_t * p)
   {
-  const uint8_t * ptr = p->data;
+  const uint8_t * ptr = p->buf.buf;
   int marker;
   int len;
   int components[3];

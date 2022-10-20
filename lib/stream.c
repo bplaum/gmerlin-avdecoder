@@ -348,9 +348,9 @@ void bgav_stream_done_packet_write(bgav_stream_t * s, bgav_packet_t * p)
       }
     }
   /* Padding (if fourcc != gavl) */
-  if(p->data)
-    memset(p->data + p->data_size, 0, GAVL_PACKET_PADDING);
-
+  if(p->buf.buf)
+    memset(p->buf.buf + p->buf.len, 0, GAVL_PACKET_PADDING);
+  
   /* Set timestamps from file index because the
      demuxer might have them messed up */
   if((s->action != BGAV_STREAM_PARSE) && s->file_index)
@@ -400,18 +400,18 @@ bgav_stream_get_packet_read(bgav_stream_t * s, bgav_packet_t ** ret)
     {
     bgav_dprintf("Packet out (stream %d): ", s->stream_id);
     bgav_packet_dump(p);
-    gavl_hexdump(p->data, p->data_size < 16 ? p->data_size : 16, 16);
+    gavl_hexdump(p->buf.buf, p->buf.len < 16 ? p->buf.len : 16, 16);
     }
   
-  if(s->max_packet_size_tmp < p->data_size)
-    s->max_packet_size_tmp = p->data_size;
+  if(s->max_packet_size_tmp < p->buf.len)
+    s->max_packet_size_tmp = p->buf.len;
   
   *ret = p;
 
   if(s->action == BGAV_STREAM_PARSE)
     {
     gavl_stream_stats_update_params(&s->stats,
-                                    p->pts, p->duration, p->data_size,
+                                    p->pts, p->duration, p->buf.len,
                                     p->flags & 0x0000ffff);
     }
     

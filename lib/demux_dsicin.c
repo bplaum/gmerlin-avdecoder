@@ -195,15 +195,15 @@ static int next_packet_dsicin(bgav_demuxer_context_t * ctx)
     
     bgav_packet_alloc(p, pkt_size + 4);
     
-    p->data[0] = palette_type;
-    p->data[1] = frame_header.num_palette_colors & 0xFF;
-    p->data[2] = frame_header.num_palette_colors >> 8;
-    p->data[3] = frame_header.video_type;
+    p->buf.buf[0] = palette_type;
+    p->buf.buf[1] = frame_header.num_palette_colors & 0xFF;
+    p->buf.buf[2] = frame_header.num_palette_colors >> 8;
+    p->buf.buf[3] = frame_header.video_type;
     
-    if(bgav_input_read_data(ctx->input, p->data+4, pkt_size) < pkt_size)
+    if(bgav_input_read_data(ctx->input, p->buf.buf+4, pkt_size) < pkt_size)
       return 0;
     
-    p->data_size = pkt_size + 4;
+    p->buf.len = pkt_size + 4;
     p->pts = s->in_position;
     
     bgav_stream_done_packet_write(s, p);
@@ -222,9 +222,9 @@ static int next_packet_dsicin(bgav_demuxer_context_t * ctx)
 
     bgav_packet_alloc(p, pkt_size + frame_header.audio_size);
     
-    if(bgav_input_read_data(ctx->input, p->data, frame_header.audio_size) < frame_header.audio_size)
+    if(bgav_input_read_data(ctx->input, p->buf.buf, frame_header.audio_size) < frame_header.audio_size)
       return 0;
-    p->data_size = frame_header.audio_size;
+    p->buf.len = frame_header.audio_size;
     bgav_stream_done_packet_write(s, p);
     }
   else

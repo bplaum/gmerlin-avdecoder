@@ -282,13 +282,13 @@ static int next_packet_ra(bgav_demuxer_context_t * ctx)
 
   len = s->data.audio.block_align * priv->sub_packet_h;
   bgav_packet_alloc(p, len);
-  if(bgav_input_read_data(ctx->input, p->data, len) < len)
+  if(bgav_input_read_data(ctx->input, p->buf.buf, len) < len)
     return 0;
   
-  p->data_size = len;
+  p->buf.len = len;
 
   if(s->fourcc == BGAV_MK_FOURCC('d', 'n', 'e', 't'))
-    swap_bytes_dnet(p->data, p->data_size);
+    swap_bytes_dnet(p->buf.buf, p->buf.len);
   
   PACKET_SET_KEYFRAME(p);
   bgav_stream_done_packet_write(s, p);

@@ -259,9 +259,9 @@ static int next_packet_thp(bgav_demuxer_context_t * ctx)
     {
     p = bgav_stream_get_packet_write(s);
     bgav_packet_alloc(p, video_size);
-    p->data_size = bgav_input_read_data(ctx->input, p->data, video_size);
+    p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, video_size);
 
-    if(p->data_size < video_size)
+    if(p->buf.len < video_size)
       return 0;
 
     p->pts = priv->next_frame * s->data.video.format->frame_duration;
@@ -282,9 +282,9 @@ static int next_packet_thp(bgav_demuxer_context_t * ctx)
     {
     p = bgav_stream_get_packet_write(s);
     bgav_packet_alloc(p, audio_size);
-    p->data_size = bgav_input_read_data(ctx->input, p->data, audio_size);
+    p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, audio_size);
 
-    if(p->data_size < audio_size)
+    if(p->buf.len < audio_size)
       return 0;
     
     bgav_stream_done_packet_write(s, p);

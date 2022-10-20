@@ -140,19 +140,19 @@ static int next_packet_avs(bgav_demuxer_context_t * ctx)
           {
           vs->packet =
             bgav_stream_get_packet_write(vs);
-          vs->packet->data_size = 0;
+          vs->packet->buf.len = 0;
           }
 
-        bgav_packet_alloc(vs->packet, vs->packet->data_size + block_size);
+        bgav_packet_alloc(vs->packet, vs->packet->buf.len + block_size);
 
-        memcpy(vs->packet->data + vs->packet->data_size, block_header, 4);
-        vs->packet->data_size += 4;
+        memcpy(vs->packet->buf.buf + vs->packet->buf.len, block_header, 4);
+        vs->packet->buf.len += 4;
         
         if(bgav_input_read_data(ctx->input,
-                                vs->packet->data + vs->packet->data_size,
+                                vs->packet->buf.buf + vs->packet->buf.len,
                                 block_size - 4) < block_size - 4)
           return 0;
-        vs->packet->data_size += (block_size - 4);
+        vs->packet->buf.len += (block_size - 4);
         vs->packet->pts = vs->in_position;
         bgav_stream_done_packet_write(vs, vs->packet);
         vs->packet = NULL;
@@ -172,18 +172,18 @@ static int next_packet_avs(bgav_demuxer_context_t * ctx)
           }
         vs->packet =
           bgav_stream_get_packet_write(vs);
-        vs->packet->data_size = 0;
+        vs->packet->buf.len = 0;
         
         bgav_packet_alloc(vs->packet, block_size);
         
-        memcpy(vs->packet->data + vs->packet->data_size, block_header, 4);
-        vs->packet->data_size += 4;
+        memcpy(vs->packet->buf.buf + vs->packet->buf.len, block_header, 4);
+        vs->packet->buf.len += 4;
 
         if(bgav_input_read_data(ctx->input,
-                                vs->packet->data + vs->packet->data_size,
+                                vs->packet->buf.buf + vs->packet->buf.len,
                                 block_size - 4) < block_size - 4)
           return 0;
-        vs->packet->data_size += block_size - 4;
+        vs->packet->buf.len += block_size - 4;
         break;
       case 0x02: /* Audio data */
 
@@ -223,7 +223,7 @@ static int next_packet_avs(bgav_demuxer_context_t * ctx)
               {
               as->packet =
                 bgav_stream_get_packet_write(as);
-              as->packet->data_size = 0;
+              as->packet->buf.len = 0;
               }
             //            dump_audio_header(&ah);
             priv->audio_bytes_remaining = ah.size - 2;
@@ -236,13 +236,13 @@ static int next_packet_avs(bgav_demuxer_context_t * ctx)
           if(as->packet)
             {
             bgav_packet_alloc(as->packet,
-                              as->packet->data_size + bytes_to_read);
+                              as->packet->buf.len + bytes_to_read);
             if(bgav_input_read_data(ctx->input,
-                                    as->packet->data + as->packet->data_size,
+                                    as->packet->buf.buf + as->packet->buf.len,
                                     bytes_to_read) < bytes_to_read)
               return 0;
             
-            as->packet->data_size += bytes_to_read;
+            as->packet->buf.len += bytes_to_read;
             }
           else
             bgav_input_skip(ctx->input, bytes_to_read);

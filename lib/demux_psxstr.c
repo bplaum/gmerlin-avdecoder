@@ -209,7 +209,7 @@ static int next_packet_psxstr(bgav_demuxer_context_t * ctx)
         {
         s->packet = bgav_stream_get_packet_write(s);
         bgav_packet_alloc(s->packet, frame_size);
-        s->packet->data_size = 0;
+        s->packet->buf.len = 0;
         }
       bytes_to_copy = frame_size - current_sector*VIDEO_DATA_CHUNK_SIZE;
       
@@ -217,9 +217,9 @@ static int next_packet_psxstr(bgav_demuxer_context_t * ctx)
         {
         if(bytes_to_copy > VIDEO_DATA_CHUNK_SIZE)
           bytes_to_copy=VIDEO_DATA_CHUNK_SIZE;
-        memcpy(s->packet->data + current_sector*VIDEO_DATA_CHUNK_SIZE,
+        memcpy(s->packet->buf.buf + current_sector*VIDEO_DATA_CHUNK_SIZE,
                sector + VIDEO_DATA_HEADER_SIZE, bytes_to_copy);
-        s->packet->data_size += bytes_to_copy;
+        s->packet->buf.len += bytes_to_copy;
         }
       
       if(current_sector == sector_count-1)
@@ -238,8 +238,8 @@ static int next_packet_psxstr(bgav_demuxer_context_t * ctx)
       p = bgav_stream_get_packet_write(s);
       bgav_packet_alloc(p, RAW_CD_SECTOR_DATA_SIZE);
 
-      memcpy(p->data, sector + 24, RAW_CD_SECTOR_DATA_SIZE);
-      p->data_size = RAW_CD_SECTOR_DATA_SIZE;
+      memcpy(p->buf.buf, sector + 24, RAW_CD_SECTOR_DATA_SIZE);
+      p->buf.len = RAW_CD_SECTOR_DATA_SIZE;
       bgav_stream_done_packet_write(s, p);
       
       break;

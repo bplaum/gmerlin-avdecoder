@@ -107,9 +107,9 @@ static int next_packet_mpegvideo(bgav_demuxer_context_t * ctx)
 
   bgav_packet_alloc(p, bytes_to_read);
   p->position = ctx->input->position;
-  p->data_size = bgav_input_read_data(ctx->input, p->data,
-                                      bytes_to_read);
-  ret = !!p->data_size;
+  p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf,
+                                    bytes_to_read);
+  ret = !!p->buf.len;
   bgav_stream_done_packet_write(s, p);
   return ret;
   }

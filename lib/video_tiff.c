@@ -128,8 +128,8 @@ read_header_tiff(bgav_stream_t * s,
   
   //  tiff_read_mem(priv, filename);
   
-  p->buffer = p->packet->data;
-  p->buffer_size = p->packet->data_size;
+  p->buffer = p->packet->buf.buf;
+  p->buffer_size = p->packet->buf.len;
   p->buffer_position = 0;
   
   if(!(p->tiff = open_tiff_mem("rm", p))) return 0;

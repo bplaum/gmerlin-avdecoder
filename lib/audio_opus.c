@@ -67,16 +67,16 @@ static gavl_source_status_t decode_frame_opus(bgav_stream_t * s)
 #ifdef USE_FLOAT  
   result =
     opus_multistream_decode_float(priv->dec,
-                                  p->data,
-                                  p->data_size,
+                                  p->buf.buf,
+                                  p->buf.len,
                                   priv->frame->samples.f,
                                   MAX_FRAME_SIZE,
                                   0); 
 #else
   result =
     opus_multistream_decode(priv->dec,
-                            p->data,
-                            p->data_size,
+                            p->buf.buf,
+                            p->buf.len,
                             priv->frame->samples.s_16,
                             MAX_FRAME_SIZE,
                             0); 

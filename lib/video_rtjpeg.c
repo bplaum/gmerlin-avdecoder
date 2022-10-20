@@ -77,7 +77,7 @@ static gavl_source_status_t decode_rtjpeg(bgav_stream_t * s, gavl_video_frame_t 
     return GAVL_SOURCE_OK;
     }
 
-  RTjpeg_decompress(priv->rtjpeg, p->data, priv->frame->planes);  
+  RTjpeg_decompress(priv->rtjpeg, p->buf.buf, priv->frame->planes);  
   gavl_video_frame_copy(s->data.video.format,
                         f, priv->frame);
 

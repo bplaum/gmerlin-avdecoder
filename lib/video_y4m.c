@@ -86,7 +86,7 @@ static void decode_mono(bgav_stream_t * s, bgav_packet_t * p, gavl_video_frame_t
   const uint8_t * src;
   uint8_t * dst;
   
-  src = p->data;
+  src = p->buf.buf;
   
   for(i = 0; i < s->data.video.format->image_height; i++)
     {
@@ -113,7 +113,7 @@ static void decode_yuva(bgav_stream_t * s, bgav_packet_t * p, gavl_video_frame_t
   yuv_priv_t * priv;
   priv = s->decoder_priv;
 
-  src_y = p->data;
+  src_y = p->buf.buf;
   src_u = src_y + priv->plane_sizes[0];
   src_v = src_u + priv->plane_sizes[1];
   src_a = src_v + priv->plane_sizes[1];
@@ -166,7 +166,7 @@ static gavl_source_status_t decode(bgav_stream_t * s, gavl_video_frame_t * f)
     }
   else
     {
-    priv->frame->planes[0] = priv->p->data;
+    priv->frame->planes[0] = priv->p->buf.buf;
     priv->frame->planes[1] = priv->frame->planes[0] + priv->plane_sizes[0];
     priv->frame->planes[2] = priv->frame->planes[1] + priv->plane_sizes[1];
     bgav_set_video_frame_from_packet(priv->p, priv->frame);

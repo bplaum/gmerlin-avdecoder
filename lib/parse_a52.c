@@ -62,7 +62,7 @@ static int parse_frame_a52(bgav_audio_parser_t * parser,
 
   if(!parser->have_format)
     {
-    if(!bgav_a52_header_read(&h, p->data))
+    if(!bgav_a52_header_read(&h, p->buf.buf))
       return 0;
     bgav_a52_header_get_format(&h, parser->s->data.audio.format);
     parser->s->codec_bitrate = h.bitrate;

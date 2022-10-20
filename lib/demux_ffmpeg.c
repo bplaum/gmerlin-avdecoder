@@ -861,8 +861,8 @@ static int next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
   
   p = bgav_stream_get_packet_write(s);
   bgav_packet_alloc(p, pkt.size);
-  memcpy(p->data, pkt.data, pkt.size);
-  p->data_size = pkt.size;
+  memcpy(p->buf.buf, pkt.data, pkt.size);
+  p->buf.len = pkt.size;
   
   if(pkt.pts != AV_NOPTS_VALUE)
     {

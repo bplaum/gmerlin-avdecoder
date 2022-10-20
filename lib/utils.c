@@ -457,13 +457,13 @@ int bgav_slurp_file(const char * location,
 
   bgav_packet_alloc(p, input->total_bytes);
   
-  if(bgav_input_read_data(input, p->data, input->total_bytes) <
+  if(bgav_input_read_data(input, p->buf.buf, input->total_bytes) <
      input->total_bytes)
     {
     bgav_input_destroy(input);
     return 0;
     }
-  p->data_size = input->total_bytes;
+  p->buf.len = input->total_bytes;
   bgav_input_destroy(input);
   return 1;
   }

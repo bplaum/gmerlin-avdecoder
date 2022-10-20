@@ -186,15 +186,15 @@ static int next_packet_fli(bgav_demuxer_context_t * ctx)
       p = bgav_stream_get_packet_write(s);
       bgav_packet_alloc(p, size);
       
-      memcpy(p->data, preamble, FLIC_PREAMBLE_SIZE);
-      if(bgav_input_read_data(ctx->input, p->data + FLIC_PREAMBLE_SIZE,
+      memcpy(p->buf.buf, preamble, FLIC_PREAMBLE_SIZE);
+      if(bgav_input_read_data(ctx->input, p->buf.buf + FLIC_PREAMBLE_SIZE,
                               size - FLIC_PREAMBLE_SIZE) < size - FLIC_PREAMBLE_SIZE)
         {
         return 0;
         }
       
       p->pts = s->in_position * s->data.video.format->frame_duration;
-      p->data_size = size;
+      p->buf.len = size;
       
       bgav_stream_done_packet_write(s, p);
       return 1;

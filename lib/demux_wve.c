@@ -208,10 +208,10 @@ static int next_packet_wve(bgav_demuxer_context_t * ctx)
 
         bgav_packet_alloc(p, chunk_size);
 
-        if(bgav_input_read_data(ctx->input, p->data, chunk_size) < chunk_size)
+        if(bgav_input_read_data(ctx->input, p->buf.buf, chunk_size) < chunk_size)
           return 0;
 
-        p->data_size = chunk_size;
+        p->buf.len = chunk_size;
         bgav_stream_done_packet_write(s, p);
         }
       break;

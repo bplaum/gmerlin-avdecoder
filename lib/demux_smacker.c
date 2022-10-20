@@ -385,8 +385,8 @@ static int next_packet_smacker(bgav_demuxer_context_t * ctx)
         p = bgav_stream_get_packet_write(s);
 
         bgav_packet_alloc(p, size);
-        p->data_size = bgav_input_read_data(ctx->input, p->data, size);
-        if(!p->data_size)
+        p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, size);
+        if(!p->buf.len)
           return 0;
         bgav_stream_done_packet_write(s, p);
         }
@@ -407,23 +407,23 @@ static int next_packet_smacker(bgav_demuxer_context_t * ctx)
 
   bgav_packet_alloc(p, frame_end - ctx->input->position + 769);
 
-  p->data[0] = 0;
+  p->buf.buf[0] = 0;
   if(palette_change)
-    p->data[0] |= 1;
+    p->buf.buf[0] |= 1;
   if(priv->h.frame_sizes[priv->current_frame] & 1)
-    p->data[0] |= 2;
+    p->buf.buf[0] |= 2;
 
   /* Palette is always needed */
-  memcpy(p->data + 1, priv->pal, 768);
+  memcpy(p->buf.buf + 1, priv->pal, 768);
 
   /* Get rest of the frame */
 
   size = frame_end - ctx->input->position;
   
-  if(bgav_input_read_data(ctx->input, p->data + 769, size) < size)
+  if(bgav_input_read_data(ctx->input, p->buf.buf + 769, size) < size)
     return 0;
 
-  p->data_size = size + 769;
+  p->buf.len = size + 769;
   
   p->pts = s->in_position * s->data.video.format->frame_duration;
   

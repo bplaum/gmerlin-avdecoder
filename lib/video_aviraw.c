@@ -156,7 +156,7 @@ static gavl_source_status_t decode_aviraw(bgav_stream_t * s, gavl_video_frame_t 
     {
     if((st = bgav_stream_get_packet_read(s, &p)) != GAVL_SOURCE_OK)
       return st;
-    if(!p->data_size)
+    if(!p->buf.len)
       bgav_stream_done_packet_read(s, p);
     else
       break;
@@ -181,7 +181,7 @@ static gavl_source_status_t decode_aviraw(bgav_stream_t * s, gavl_video_frame_t 
   if(f)
     {
     /* RGB AVIs are upside down */
-    src = p->data;
+    src = p->buf.buf;
     dst = f->planes[0] + (s->data.video.format->image_height-1) * f->strides[0];
     for(i = 0; i < s->data.video.format->image_height; i++)
       {

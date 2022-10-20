@@ -323,8 +323,8 @@ static int next_packet_sphere(bgav_demuxer_context_t * ctx)
   
   p->pts = (ctx->input->position - HEADERSIZE) / s->data.audio.block_align;
   PACKET_SET_KEYFRAME(p);
-  bytes_read = bgav_input_read_data(ctx->input, p->data, bytes_to_read);
-  p->data_size = bytes_read;
+  bytes_read = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
+  p->buf.len = bytes_read;
 
   if(bytes_read < s->data.audio.block_align)
     return 0;

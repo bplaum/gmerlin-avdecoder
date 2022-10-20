@@ -271,12 +271,12 @@ static int next_packet_vmd(bgav_demuxer_context_t * ctx)
     p = bgav_stream_get_packet_write(s);
 
     bgav_packet_alloc(p, frame->frame_size + BYTES_PER_FRAME_RECORD);
-    memcpy(p->data, frame->frame_record, BYTES_PER_FRAME_RECORD);
-    if(bgav_input_read_data(ctx->input, p->data + BYTES_PER_FRAME_RECORD,
+    memcpy(p->buf.buf, frame->frame_record, BYTES_PER_FRAME_RECORD);
+    if(bgav_input_read_data(ctx->input, p->buf.buf + BYTES_PER_FRAME_RECORD,
                             frame->frame_size) < frame->frame_size)
       return 0;
-
-    p->data_size = frame->frame_size + BYTES_PER_FRAME_RECORD;
+    
+    p->buf.len = frame->frame_size + BYTES_PER_FRAME_RECORD;
     if(s->type == GAVL_STREAM_VIDEO)
       {
       p->pts = frame->pts;

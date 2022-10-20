@@ -44,8 +44,8 @@ static int parse_frame_dv(bgav_video_parser_t * parser, bgav_packet_t * p, int64
   /* Extract format */
   if(!priv->have_format)
     {
-    bgav_dv_dec_set_header(priv->dv, p->data);
-    bgav_dv_dec_set_frame(priv->dv, p->data);
+    bgav_dv_dec_set_header(priv->dv, p->buf.buf);
+    bgav_dv_dec_set_frame(priv->dv, p->buf.buf);
 
     bgav_dv_dec_get_video_format(priv->dv, fmt);
     fmt->pixelformat = bgav_dv_dec_get_pixelformat(priv->dv);
@@ -75,7 +75,7 @@ static int parse_frame_dv(bgav_video_parser_t * parser, bgav_packet_t * p, int64
       }
     }
   else
-    bgav_dv_dec_set_frame(priv->dv, p->data);
+    bgav_dv_dec_set_frame(priv->dv, p->buf.buf);
   
   /* Extract timecode */  
   if(fmt->timecode_format.int_framerate)

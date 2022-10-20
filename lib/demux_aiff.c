@@ -420,8 +420,8 @@ static int next_packet_aiff(bgav_demuxer_context_t * ctx)
   
   p->pts = pos_2_time(ctx, ctx->input->position);
   
-  bytes_read = bgav_input_read_data(ctx->input, p->data, bytes_to_read);
-  p->data_size = bytes_read;
+  bytes_read = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
+  p->buf.len = bytes_read;
   PACKET_SET_KEYFRAME(p);
   bgav_stream_done_packet_write(s, p);
 

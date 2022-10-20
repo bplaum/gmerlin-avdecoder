@@ -588,9 +588,9 @@ static int next_packet_gxf(bgav_demuxer_context_t * ctx)
 
       p->position = position;
       
-      if(bgav_input_read_data(ctx->input, p->data, length) < length)
+      if(bgav_input_read_data(ctx->input, p->buf.buf, length) < length)
         return 0;
-      p->data_size = length;
+      p->buf.len = length;
 #if 0
       if(s->type == GAVF_STREAM_VIDEO)
         {

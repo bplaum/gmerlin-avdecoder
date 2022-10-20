@@ -182,11 +182,11 @@ static gavl_source_status_t decode_dvdsub(bgav_stream_t * s, gavl_overlay_t * ov
                         fill_color);
   
   /* Data size */
-  ctrl_offset = GAVL_PTR_2_16BE(p->data+2);
+  ctrl_offset = GAVL_PTR_2_16BE(p->buf.buf+2);
   ctrl_start = ctrl_offset;
   
   /* Decode command section */
-  ptr = p->data + ctrl_offset;
+  ptr = p->buf.buf + ctrl_offset;
 
   while(1) /* Control packet loop */
     {
@@ -290,13 +290,13 @@ static gavl_source_status_t decode_dvdsub(bgav_stream_t * s, gavl_overlay_t * ov
 #endif
   /* Decode the image */
   
-  decode_field(p->data + offset1, offset2 - offset1,
+  decode_field(p->buf.buf + offset1, offset2 - offset1,
                ovl->planes[0],
                x2 - x1 + 1,
                2 * ovl->strides[0],
                local_palette, priv->field_height);
   
-  decode_field(p->data + offset2, ctrl_start - offset2,
+  decode_field(p->buf.buf + offset2, ctrl_start - offset2,
                ovl->planes[0] + ovl->strides[0],
                x2 - x1 + 1,
                2 * ovl->strides[0],

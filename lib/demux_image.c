@@ -161,10 +161,10 @@ static int next_packet_image(bgav_demuxer_context_t * ctx)
 
   bgav_packet_alloc(p, ctx->input->total_bytes);
 
-  if(bgav_input_read_data(ctx->input, p->data, ctx->input->total_bytes) < ctx->input->total_bytes)
+  if(bgav_input_read_data(ctx->input, p->buf.buf, ctx->input->total_bytes) < ctx->input->total_bytes)
     return 0;
 
-  p->data_size = ctx->input->total_bytes;
+  p->buf.len = ctx->input->total_bytes;
   
   p->pts = 0;
   

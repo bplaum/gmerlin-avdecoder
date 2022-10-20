@@ -372,12 +372,12 @@ static int next_packet_ape(bgav_demuxer_context_t * ctx)
   else
     p->duration = priv->h.finalframeblocks;
   
-  GAVL_32LE_2_PTR(p->duration, p->data);
-  GAVL_32LE_2_PTR(priv->index[s->in_position].skip, p->data+4);
+  GAVL_32LE_2_PTR(p->duration, p->buf.buf);
+  GAVL_32LE_2_PTR(priv->index[s->in_position].skip, p->buf.buf+4);
   
-  p->data_size = EXTRA_SIZE;
-  p->data_size += bgav_input_read_data(ctx->input,
-                                       p->data + EXTRA_SIZE,
+  p->buf.len = EXTRA_SIZE;
+  p->buf.len += bgav_input_read_data(ctx->input,
+                                       p->buf.buf + EXTRA_SIZE,
                                        priv->index[s->in_position].size);
   
   p->pts = s->in_position * priv->h.blocksperframe;

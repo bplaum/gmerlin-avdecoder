@@ -99,8 +99,8 @@ static int parse_frame_dirac(bgav_video_parser_t * parser,
   {
   int code, len;
   dirac_priv_t * priv;
-  uint8_t * start =   p->data;
-  uint8_t * end = p->data + p->data_size;
+  uint8_t * start =   p->buf.buf;
+  uint8_t * end = p->buf.buf + p->buf.len;
   bgav_dirac_picture_header_t ph;
   priv = parser->priv;
 #if 0

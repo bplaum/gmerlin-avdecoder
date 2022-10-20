@@ -436,10 +436,10 @@ static int next_packet_4xm(bgav_demuxer_context_t * ctx)
         
         p = bgav_stream_get_packet_write(s);
         bgav_packet_alloc(p, size + 8);
-        memcpy(p->data, header, 8);
-        p->data_size = 8 + bgav_input_read_data(ctx->input, p->data+8, size);
+        memcpy(p->buf.buf, header, 8);
+        p->buf.len = 8 + bgav_input_read_data(ctx->input, p->buf.buf+8, size);
 
-        if(p->data_size < size + 8)
+        if(p->buf.len < size + 8)
           return 0;
                 
         p->pts = priv->video_pts;
@@ -467,9 +467,9 @@ static int next_packet_4xm(bgav_demuxer_context_t * ctx)
         
         p = bgav_stream_get_packet_write(s);
         bgav_packet_alloc(p, size - 8);
-        p->data_size = bgav_input_read_data(ctx->input, p->data, size-8);
+        p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, size-8);
 
-        if(p->data_size < size-8)
+        if(p->buf.len < size-8)
           return 0;
         bgav_stream_done_packet_write(s, p);
         done = 1;

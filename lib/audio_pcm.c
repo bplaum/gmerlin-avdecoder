@@ -796,12 +796,12 @@ static gavl_source_status_t get_packet(bgav_stream_t * s)
   bgav_packet_dump(priv->p);
 #endif
 
-  priv->bytes_in_packet = priv->p->data_size;
+  priv->bytes_in_packet = priv->p->buf.len;
   
   if((priv->p->duration > 0) && (priv->p->duration * priv->block_align <
                            priv->bytes_in_packet))
     priv->bytes_in_packet = priv->p->duration * priv->block_align;
-  priv->packet_ptr = priv->p->data;
+  priv->packet_ptr = priv->p->buf.buf;
     
   return 1;
   }

@@ -213,10 +213,15 @@ struct bgav_packet_s
   /* For superindex files, it's the index position, for all other files,
      it's the file position */
   int64_t position;
+
+#if 0  
   uint32_t data_size;
   uint32_t data_alloc;
   uint8_t * data;
-
+#else
+  gavl_buffer_t buf;
+#endif
+  
   gavl_timecode_t timecode;
   gavl_interlace_mode_t interlace_mode;
   
@@ -235,11 +240,6 @@ struct bgav_packet_s
   int64_t duration;
   //  bgav_stream_t * stream; /* The stream this packet belongs to */
 
-#if 0
-  gavl_audio_frame_t * audio_frame; /* For demuxers, which deliver audio
-                                       frames directly */
-#endif
-  
   struct bgav_packet_s * next;
 
   uint32_t flags;

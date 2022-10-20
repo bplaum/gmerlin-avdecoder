@@ -63,10 +63,10 @@ static int parse_frame_dvdsub(bgav_video_parser_t * parser, bgav_packet_t * p,
   
   PACKET_SET_CODING_TYPE(p, BGAV_CODING_TYPE_I);
 
-  ctrl_offset = GAVL_PTR_2_16BE(p->data+2);
+  ctrl_offset = GAVL_PTR_2_16BE(p->buf.buf+2);
   //  ctrl_start = ctrl_offset;
   
-  ptr = p->data + ctrl_offset;
+  ptr = p->buf.buf + ctrl_offset;
   
   while(1) /* Control packet loop */
     {

@@ -255,22 +255,22 @@ static int next_packet_tiertex(bgav_demuxer_context_t * ctx)
       p = bgav_stream_get_packet_write(s);
 
       bgav_packet_alloc(p, video_size + palette_size + 1);
-      p->data[0] = 0;
+      p->buf.buf[0] = 0;
 
       if(palette_size)
         {
-        memcpy(p->data + 1, buf + fh.palette_offset, palette_size);
-        p->data[0] |= 1;
+        memcpy(p->buf.buf + 1, buf + fh.palette_offset, palette_size);
+        p->buf.buf[0] |= 1;
         }
       if(video_size)
         {
-        memcpy(p->data + palette_size + 1,
+        memcpy(p->buf.buf + palette_size + 1,
                priv->frame_buffers[fh.buffer_num[0]].data,
                priv->frame_buffers[fh.buffer_num[0]].fill_size);
         priv->frame_buffers[fh.buffer_num[0]].fill_size = 0;
-        p->data[0] |= 2;
+        p->buf.buf[0] |= 2;
         }
-      p->data_size = video_size + palette_size + 1;
+      p->buf.len = video_size + palette_size + 1;
       p->pts = priv->video_pts;
       bgav_stream_done_packet_write(s, p);
       }
@@ -289,8 +289,8 @@ static int next_packet_tiertex(bgav_demuxer_context_t * ctx)
       p = bgav_stream_get_packet_write(s);
       
       bgav_packet_alloc(p, SEQ_AUDIO_BUFFER_SIZE);
-      memcpy(p->data, buf + fh.sound_data_offset, SEQ_AUDIO_BUFFER_SIZE);
-      p->data_size = SEQ_AUDIO_BUFFER_SIZE;
+      memcpy(p->buf.buf, buf + fh.sound_data_offset, SEQ_AUDIO_BUFFER_SIZE);
+      p->buf.len = SEQ_AUDIO_BUFFER_SIZE;
       bgav_stream_done_packet_write(s, p);
       }
     priv->video_pts++;

@@ -389,17 +389,17 @@ static int next_packet_flac(bgav_demuxer_context_t * ctx)
 
   if(ctx->next_packet_pos)
     {
-    if(bgav_input_read_data(ctx->input, p->data, size) < size)
+    if(bgav_input_read_data(ctx->input, p->buf.buf, size) < size)
       return 0;
     p->position = ctx->input->position - size;
 
-    if(!bgav_flac_frame_header_read(p->data, size,
+    if(!bgav_flac_frame_header_read(p->buf.buf, size,
                                     &priv->streaminfo, &priv->this_fh))
       return 0;
     }
   else
     {
-    memcpy(p->data, priv->buf.buf, size);
+    memcpy(p->buf.buf, priv->buf.buf, size);
     p->position = ctx->input->position - priv->buf.len;
     gavl_buffer_flush(&priv->buf, size);
     }
@@ -423,7 +423,7 @@ static int next_packet_flac(bgav_demuxer_context_t * ctx)
   //  fprintf(stderr, "%ld\n", p->duration);
   
   priv->pts += p->duration;
-  p->data_size = size;
+  p->buf.len = size;
   
   //  memcpy(&priv->fh, &fh, sizeof(fh));
 

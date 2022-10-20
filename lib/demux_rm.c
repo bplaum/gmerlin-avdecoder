@@ -1056,7 +1056,7 @@ static void set_vpacket_flags(bgav_stream_t * s, int len,
   rm_video_stream_t * sp = s->priv;
 
   memset(&fi, 0, sizeof(fi));
-  sp->parse_frame_info(s->packet->data + 9, len, &fi, sp->sub_id);
+  sp->parse_frame_info(s->packet->buf.buf + 9, len, &fi, sp->sub_id);
   //  dump_frame_info(&fi);
   
   /* Set picture type and keyframe flag */
@@ -1168,13 +1168,13 @@ static int process_video_chunk(bgav_demuxer_context_t * ctx,
     
       bgav_packet_alloc(s->packet, packet_size);
 
-      if(bgav_input_read_data(ctx->input, s->packet->data + 9, frame_size) < frame_size)
+      if(bgav_input_read_data(ctx->input, s->packet->buf.buf + 9, frame_size) < frame_size)
         return 0;
       
-      s->packet->data[0] = 0;
-      GAVL_32LE_2_PTR(1, s->packet->data+1);
-      GAVL_32LE_2_PTR(0, s->packet->data+5);
-      s->packet->data_size = packet_size;
+      s->packet->buf.buf[0] = 0;
+      GAVL_32LE_2_PTR(1, s->packet->buf.buf+1);
+      GAVL_32LE_2_PTR(0, s->packet->buf.buf+5);
+      s->packet->buf.len = packet_size;
       
       len -= frame_size;
 
@@ -1198,14 +1198,14 @@ static int process_video_chunk(bgav_demuxer_context_t * ctx,
         
         bgav_packet_alloc(s->packet, bytes_to_read + 9);
 
-        s->packet->data[0] = 0;
-        GAVL_32LE_2_PTR(1, s->packet->data+1);
-        GAVL_32LE_2_PTR(0, s->packet->data+5);
+        s->packet->buf.buf[0] = 0;
+        GAVL_32LE_2_PTR(1, s->packet->buf.buf+1);
+        GAVL_32LE_2_PTR(0, s->packet->buf.buf+5);
         
-        if(bgav_input_read_data(ctx->input, s->packet->data + 9, bytes_to_read) < bytes_to_read)
+        if(bgav_input_read_data(ctx->input, s->packet->buf.buf + 9, bytes_to_read) < bytes_to_read)
           return 0;
         
-        s->packet->data_size = bytes_to_read + 9;
+        s->packet->buf.len = bytes_to_read + 9;
         sp->num_slices = 1;
 
         // fprintf(stderr, "slice: %d (%d bytes)\n", sp->num_slices, bytes_to_read);
@@ -1215,26 +1215,26 @@ static int process_video_chunk(bgav_demuxer_context_t * ctx,
         }
       else /* Append slice */
         {
-        bgav_packet_alloc(s->packet, s->packet->data_size + bytes_to_read + 8);
+        bgav_packet_alloc(s->packet, s->packet->buf.len + bytes_to_read + 8);
 
         /* Move payload up by 8 bytes */
-        memmove(s->packet->data + 1 + (sp->num_slices+1) * 8,
-                s->packet->data + 1 + sp->num_slices * 8,
-                s->packet->data_size - (1 + sp->num_slices * 8));
+        memmove(s->packet->buf.buf + 1 + (sp->num_slices+1) * 8,
+                s->packet->buf.buf + 1 + sp->num_slices * 8,
+                s->packet->buf.len - (1 + sp->num_slices * 8));
 
-        GAVL_32LE_2_PTR(1, s->packet->data + 1 + 8 * sp->num_slices);
-        GAVL_32LE_2_PTR(s->packet->data_size - (1 + sp->num_slices * 8),
-                        s->packet->data + 1 + 8 * sp->num_slices + 4);
-        s->packet->data_size += 8;
+        GAVL_32LE_2_PTR(1, s->packet->buf.buf + 1 + 8 * sp->num_slices);
+        GAVL_32LE_2_PTR(s->packet->buf.len - (1 + sp->num_slices * 8),
+                        s->packet->buf.buf + 1 + 8 * sp->num_slices + 4);
+        s->packet->buf.len += 8;
 
         if(bgav_input_read_data(ctx->input,
-                                s->packet->data + s->packet->data_size, bytes_to_read) < bytes_to_read)
+                                s->packet->buf.buf + s->packet->buf.len, bytes_to_read) < bytes_to_read)
           return 0;
         
         sp->num_slices++;
-        s->packet->data[0] += 1;
-        s->packet->data_size += bytes_to_read;
-
+        s->packet->buf.buf[0] += 1;
+        s->packet->buf.len += bytes_to_read;
+        
         // fprintf(stderr, "slice: %d (%d bytes)\n", sp->num_slices, bytes_to_read);
         }
       len -= bytes_to_read;
@@ -1345,8 +1345,8 @@ static int process_audio_chunk(bgav_demuxer_context_t * ctx,
         {
         p = bgav_stream_get_packet_write(stream);
         bgav_packet_alloc(p, apk_usize);
-        p->data_size = apk_usize;
-        memcpy(p->data, as->audio_buf + x * apk_usize, apk_usize);
+        p->buf.len = apk_usize;
+        memcpy(p->buf.buf, as->audio_buf + x * apk_usize, apk_usize);
         if(!x)
           PACKET_SET_KEYFRAME(p);
         bgav_stream_done_packet_write(stream, p);
@@ -1358,17 +1358,17 @@ static int process_audio_chunk(bgav_demuxer_context_t * ctx,
     {
     p = bgav_stream_get_packet_write(stream);
     bgav_packet_alloc(p, packet_size);
-    if(bgav_input_read_data(ctx->input, p->data, packet_size) < packet_size)
+    if(bgav_input_read_data(ctx->input, p->buf.buf, packet_size) < packet_size)
       return 0;
 
     for(x = 0; x < packet_size; x += 2)
       {
-      swp = p->data[x];
-      p->data[x] = p->data[x+1];
-      p->data[x+1] = swp;
+      swp = p->buf.buf[x];
+      p->buf.buf[x] = p->buf.buf[x+1];
+      p->buf.buf[x+1] = swp;
       }
     
-    p->data_size = packet_size;
+    p->buf.len = packet_size;
     bgav_stream_done_packet_write(stream, p);
     }
   else if((stream->fourcc == BGAV_MK_FOURCC('r', 'a', 'a', 'c')) ||
@@ -1388,8 +1388,8 @@ static int process_audio_chunk(bgav_demuxer_context_t * ctx,
       p = bgav_stream_get_packet_write(stream);
       bgav_packet_alloc(p, packet_size);
       
-      bgav_input_read_data(ctx->input, p->data, aac_packet_lengths[x]);
-      p->data_size = aac_packet_lengths[x];
+      bgav_input_read_data(ctx->input, p->buf.buf, aac_packet_lengths[x]);
+      p->buf.len = aac_packet_lengths[x];
       bgav_stream_done_packet_write(stream, p);
       }
     }
@@ -1398,8 +1398,8 @@ static int process_audio_chunk(bgav_demuxer_context_t * ctx,
     p = bgav_stream_get_packet_write(stream);
     bgav_packet_alloc(p, packet_size);
     
-    bgav_input_read_data(ctx->input, p->data, packet_size);
-    p->data_size = packet_size;
+    bgav_input_read_data(ctx->input, p->buf.buf, packet_size);
+    p->buf.len = packet_size;
     bgav_stream_done_packet_write(stream, p);
 
     

@@ -262,20 +262,20 @@ static int parse_frame_vc1(bgav_video_parser_t * parser, bgav_packet_t * p,
   const uint8_t * chunk_end;
   vc1_priv_t * priv = parser->priv;
   
-  ptr = p->data;
+  ptr = p->buf.buf;
 
-  chunk_start = p->data;
+  chunk_start = p->buf.buf;
   
-  while(chunk_start < p->data + p->data_size)
+  while(chunk_start < p->buf.buf + p->buf.len)
     {
     ptr = chunk_start + 4;
     
     chunk_end =
-      bgav_mpv_find_startcode(ptr, p->data +
-                              (p->data_size - (ptr - p->data)));
+      bgav_mpv_find_startcode(ptr, p->buf.buf +
+                              (p->buf.len - (ptr - p->buf.buf)));
 
     if(!chunk_end)
-      chunk_end = p->data + p->data_size;
+      chunk_end = p->buf.buf + p->buf.len;
     
     switch(chunk_start[3])
       {

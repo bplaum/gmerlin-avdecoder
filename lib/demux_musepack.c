@@ -261,13 +261,13 @@ static int next_packet_mpc(bgav_demuxer_context_t * ctx)
   //  if(!p->audio_frame)
   //    p->audio_frame = gavl_audio_frame_create(s->data.audio.format);
 
-  fi.buffer = (float*)p->data;
+  fi.buffer = (float*)p->buf.buf;
   
   if(mpc_demux_decode(priv->demux, &fi) != MPC_STATUS_OK)
     return 0;
   
   p->duration = fi.samples;
-  p->data_size = fi.samples * s->data.audio.format->num_channels * sizeof(float);
+  p->buf.len = fi.samples * s->data.audio.format->num_channels * sizeof(float);
   p->pts = s->in_position * MPC_FRAME_LENGTH;
   //  p->audio_frame->valid_samples = result;
   

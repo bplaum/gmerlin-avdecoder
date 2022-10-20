@@ -390,8 +390,8 @@ static int next_packet_ircam(bgav_demuxer_context_t * ctx)
   bgav_packet_alloc(p, bytes_to_read);
   p->pts = (ctx->input->position - HEADER_SIZE) / s->data.audio.block_align;
   PACKET_SET_KEYFRAME(p);
-  bytes_read = bgav_input_read_data(ctx->input, p->data, bytes_to_read);
-  p->data_size = bytes_read;
+  bytes_read = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
+  p->buf.len = bytes_read;
 
   if(bytes_read < s->data.audio.block_align)
     return 0;

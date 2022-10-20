@@ -252,23 +252,23 @@ static int next_packet_vtt(bgav_demuxer_context_t * ctx)
 
         len = strlen(priv->buf);
         
-        if(p->data_size)
+        if(p->buf.len)
           {
-          bgav_packet_alloc(p, p->data_size + len + 1);
-          p->data[p->data_size] = '\n';
-          p->data_size++;
-          memcpy(p->data + p->data_size, priv->buf, len);
-          p->data_size+=len;
+          bgav_packet_alloc(p, p->buf.len + len + 1);
+          p->buf.buf[p->buf.len] = '\n';
+          p->buf.len++;
+          memcpy(p->buf.buf + p->buf.len, priv->buf, len);
+          p->buf.len += len;
           }
         else
           {
-          bgav_packet_alloc(p, p->data_size + len);
-          memcpy(p->data + p->data_size, priv->buf, len);
-          p->data_size+=len;
+          bgav_packet_alloc(p, p->buf.len + len);
+          memcpy(p->buf.buf + p->buf.len, priv->buf, len);
+          p->buf.len += len;
           }
         }
 
-      if(!p->data_size)
+      if(!p->buf.len)
         return 0;
       
       PACKET_SET_KEYFRAME(p);

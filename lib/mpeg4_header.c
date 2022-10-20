@@ -361,7 +361,7 @@ void bgav_mpeg4_vop_header_dump(bgav_mpeg4_vop_header_t * h)
   
   }
 
-static void remove_byte(uint8_t * data, int byte, uint32_t * len, uint32_t * header_end)
+static void remove_byte(uint8_t * data, int byte, int * len, int * header_end)
   {
   /* Byte if the last one */
   if(byte < *len - 1)
@@ -373,7 +373,7 @@ static void remove_byte(uint8_t * data, int byte, uint32_t * len, uint32_t * hea
     (*header_end)--;
   }
 
-void bgav_mpeg4_remove_packed_flag(uint8_t * data, uint32_t * len, uint32_t * header_len)
+void bgav_mpeg4_remove_packed_flag(uint8_t * data, int * len, int * header_len)
   {
   const uint8_t * sc2;
   uint8_t * hend = data + *header_len;

@@ -1034,25 +1034,25 @@ static void process_packet_subtitle_qt(bgav_stream_t * s, bgav_packet_t * p)
   {
   int i;
   uint16_t len;
-  len = GAVL_PTR_2_16BE(p->data);
+  len = GAVL_PTR_2_16BE(p->buf.buf);
 
   if(!len)
     {
-    *(p->data) = '\0'; // Empty string
-    p->data_size = 1;
+    *(p->buf.buf) = '\0'; // Empty string
+    p->buf.len = 1;
     }
   else
     {
-    memmove(p->data, p->data+2, len);
+    memmove(p->buf.buf, p->buf.buf+2, len);
 
     /* De-Macify linebreaks */
     for(i = 0; i < len; i++)
       {
-      if(p->data[i] == '\r')
-        p->data[i] = '\n';
+      if(p->buf.buf[i] == '\r')
+        p->buf.buf[i] = '\n';
       }
     }
-  p->data_size = len;
+  p->buf.len = len;
   // p->duration = -1;
   }
 
@@ -1061,17 +1061,17 @@ static void process_packet_subtitle_tx3g(bgav_stream_t * s, bgav_packet_t * p)
   //  int i;
   uint16_t len;
 
-  len = GAVL_PTR_2_16BE(p->data);
+  len = GAVL_PTR_2_16BE(p->buf.buf);
   
   if(len)
     {
-    memmove(p->data, p->data+2, len);
-    p->data_size = len;
+    memmove(p->buf.buf, p->buf.buf+2, len);
+    p->buf.len = len;
     }
   else
     {
-    *(p->data) = '\0'; // Empty string
-    p->data_size = 1;
+    *(p->buf.buf) = '\0'; // Empty string
+    p->buf.len = 1;
     }
   //  p->duration = -1;
   
@@ -1079,8 +1079,8 @@ static void process_packet_subtitle_tx3g(bgav_stream_t * s, bgav_packet_t * p)
   /* De-Macify linebreaks */
   for(i = 0; i < len; i++)
     {
-    if(p->data[i] == '\r')
-      p->data[i] = '\n';
+    if(p->buf.buf[i] == '\r')
+      p->buf.buf[i] = '\n';
     }
 #endif
   }

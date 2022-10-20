@@ -42,10 +42,10 @@ static int parse_frame_dca(bgav_audio_parser_t * parser,
   int flags, sample_rate, bit_rate, frame_length, frame_bytes;
   dca_t * priv = parser->priv;
 
-  if(p->data_size < DCA_HEADER_BYTES)
+  if(p->buf.len < DCA_HEADER_BYTES)
     return 0;
   
-  frame_bytes = dts_syncinfo(priv->state, p->data,
+  frame_bytes = dts_syncinfo(priv->state, p->buf.buf,
                              &flags, &sample_rate, &bit_rate, &frame_length);
   if(frame_bytes <= 0)
     return 0;

@@ -58,7 +58,7 @@ static void decode_yuv2(bgav_stream_t * s, bgav_packet_t * p, gavl_video_frame_t
   yuv_priv_t * priv;
   priv = s->decoder_priv;
 
-  priv->frame->planes[0] = p->data;
+  priv->frame->planes[0] = p->buf.buf;
   
   for(i = 0; i < s->data.video.format->image_height; i++)
     {
@@ -144,7 +144,7 @@ static void decode_v408(bgav_stream_t * s, bgav_packet_t * p, gavl_video_frame_t
   yuv_priv_t * priv;
   priv = s->decoder_priv;
 
-  priv->frame->planes[0] = p->data;
+  priv->frame->planes[0] = p->buf.buf;
   
   for(i = 0; i < s->data.video.format->image_height; i++)
     {
@@ -191,7 +191,7 @@ static void decode_2vuy(bgav_stream_t * s, bgav_packet_t * p, gavl_video_frame_t
   {
   yuv_priv_t * priv;
   priv = s->decoder_priv;
-  priv->frame->planes[0] = p->data;
+  priv->frame->planes[0] = p->buf.buf;
   }
 
 static int init_2vuy(bgav_stream_t * s)
@@ -221,7 +221,7 @@ static void decode_VYUY(bgav_stream_t * s, bgav_packet_t * p, gavl_video_frame_t
   {
   yuv_priv_t * priv;
   priv = s->decoder_priv;
-  priv->frame->planes[0] = p->data;
+  priv->frame->planes[0] = p->buf.buf;
   }
 
 static int init_VYUY(bgav_stream_t * s)
@@ -249,7 +249,7 @@ static void decode_yv12(bgav_stream_t * s, bgav_packet_t * p, gavl_video_frame_t
   yuv_priv_t * priv;
   priv = s->decoder_priv;
 
-  priv->frame->planes[0] = p->data;
+  priv->frame->planes[0] = p->buf.buf;
   priv->frame->planes[1] = priv->frame->planes[0] + s->data.video.format->image_height * priv->frame->strides[0];
   priv->frame->planes[2] = priv->frame->planes[1] + s->data.video.format->image_height/2 * priv->frame->strides[1];
   }
@@ -281,7 +281,7 @@ static void decode_YV12(bgav_stream_t * s, bgav_packet_t * p, gavl_video_frame_t
   yuv_priv_t * priv;
   priv = s->decoder_priv;
 
-  priv->frame->planes[0] = p->data;
+  priv->frame->planes[0] = p->buf.buf;
   priv->frame->planes[2] = priv->frame->planes[0] + s->data.video.format->image_height * priv->frame->strides[0];
   priv->frame->planes[1] = priv->frame->planes[2] + s->data.video.format->image_height/2 * priv->frame->strides[1];
   gavl_video_frame_copy(s->data.video.format, f, priv->frame);
@@ -316,7 +316,7 @@ static void decode_YVU9(bgav_stream_t * s, bgav_packet_t * p, gavl_video_frame_t
   yuv_priv_t * priv;
   priv = s->decoder_priv;
 
-  priv->frame->planes[0] = p->data;
+  priv->frame->planes[0] = p->buf.buf;
   priv->frame->planes[2] = priv->frame->planes[0] + s->data.video.format->image_height * priv->frame->strides[0];
   priv->frame->planes[1] = priv->frame->planes[2] + (s->data.video.format->image_height)/4 * priv->frame->strides[1];
   }
@@ -352,7 +352,7 @@ static void decode_v308(bgav_stream_t * s, bgav_packet_t * p, gavl_video_frame_t
   yuv_priv_t * priv;
   priv = s->decoder_priv;
 
-  priv->frame->planes[0] = p->data;
+  priv->frame->planes[0] = p->buf.buf;
   
   for(i = 0; i < s->data.video.format->image_height; i++)
     {
@@ -408,7 +408,7 @@ static void decode_v410(bgav_stream_t * s, bgav_packet_t * p, gavl_video_frame_t
   yuv_priv_t * priv;
   priv = s->decoder_priv;
 
-  priv->frame->planes[0] = p->data;
+  priv->frame->planes[0] = p->buf.buf;
   
   for(i = 0; i < s->data.video.format->image_height; i++)
     {
@@ -462,7 +462,7 @@ static void decode_v210(bgav_stream_t * s, bgav_packet_t * p, gavl_video_frame_t
   yuv_priv_t * priv;
   priv = s->decoder_priv;
 
-  priv->frame->planes[0] = p->data;
+  priv->frame->planes[0] = p->buf.buf;
   
   for(i = 0; i < s->data.video.format->image_height; i++)
     {
@@ -552,7 +552,7 @@ static void decode_yuv4(bgav_stream_t * s, bgav_packet_t * p, gavl_video_frame_t
   yuv_priv_t * priv;
   priv = s->decoder_priv;
 
-  priv->frame->planes[0] = p->data;
+  priv->frame->planes[0] = p->buf.buf;
 
   /* Packing order for one macropixel is U0V0Y0Y1Y2Y3 */
 
@@ -619,7 +619,7 @@ static gavl_source_status_t decode(bgav_stream_t * s, gavl_video_frame_t * f)
   if((st = bgav_stream_get_packet_read(s, &priv->p)) != GAVL_SOURCE_OK)
     return st;
 
-  if(!priv->p->data_size)
+  if(!priv->p->buf.len)
     return GAVL_SOURCE_OK; /* Libquicktime/qt4l bug */
   
   priv->decode_func(s, priv->p, f);

@@ -57,7 +57,7 @@ decode_png(bgav_stream_t * s, gavl_video_frame_t * frame)
   
   if(!bgav_png_reader_read_header(s->opt,
                                   priv->png_reader,
-                                  p->data, p->data_size,
+                                  p->buf.buf, p->buf.len,
                                   s->data.video.format))
     {
     return GAVL_SOURCE_EOF;
@@ -69,7 +69,7 @@ decode_png(bgav_stream_t * s, gavl_video_frame_t * frame)
     if(!priv->have_header &&
        !bgav_png_reader_read_header(s->opt,
                                     priv->png_reader,
-                                    p->data, p->data_size,
+                                    p->buf.buf, p->buf.len,
                                     &priv->format))
       return GAVL_SOURCE_EOF;
     if(!bgav_png_reader_read_image(priv->png_reader, frame))

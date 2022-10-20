@@ -693,20 +693,20 @@ static int next_packet_nsv(bgav_demuxer_context_t * ctx)
       {
       p = bgav_stream_get_packet_write(s);
       bgav_packet_alloc(p, video_len);
-      if(bgav_input_read_data(ctx->input, p->data, video_len) < video_len)
+      if(bgav_input_read_data(ctx->input, p->buf.buf, video_len) < video_len)
         return 0;
-      p->data_size = video_len;
+      p->buf.len = video_len;
       p->pts =
         s->in_position * s->data.video.format->frame_duration;
       
       if(s->fourcc == BGAV_MK_FOURCC('V','P','6','1'))
         {
-        if(p->data[1] == 0x36)
+        if(p->buf.buf[1] == 0x36)
           PACKET_SET_KEYFRAME(p);
         }
       else if(s->fourcc == BGAV_MK_FOURCC('V','P','6','2'))
         {
-        if(p->data[1] == 0x46)
+        if(p->buf.buf[1] == 0x46)
           PACKET_SET_KEYFRAME(p);
         }
       else
@@ -746,9 +746,9 @@ static int next_packet_nsv(bgav_demuxer_context_t * ctx)
         {
         p = bgav_stream_get_packet_write(s);
         bgav_packet_alloc(p, audio_len);
-        if(bgav_input_read_data(ctx->input, p->data, audio_len) < audio_len)
+        if(bgav_input_read_data(ctx->input, p->buf.buf, audio_len) < audio_len)
           return 0;
-        p->data_size = audio_len;
+        p->buf.len = audio_len;
         bgav_stream_done_packet_write(s, p);
         }
       }

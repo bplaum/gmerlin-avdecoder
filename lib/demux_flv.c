@@ -725,9 +725,9 @@ static int next_packet_flv(bgav_demuxer_context_t * ctx)
     {
     p = bgav_stream_get_packet_write(s);
     bgav_packet_alloc(p, packet_size);
-    p->data_size = bgav_input_read_data(ctx->input, p->data, packet_size);
+    p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, packet_size);
     p->position = position;
-    if(p->data_size < packet_size) /* Got EOF in the middle of a packet */
+    if(p->buf.len < packet_size) /* Got EOF in the middle of a packet */
       return 0;
     if(s->type == GAVL_STREAM_AUDIO)
       {
@@ -742,7 +742,7 @@ static int next_packet_flv(bgav_demuxer_context_t * ctx)
           }
         
         p->pts = priv->audio_sample_counter;
-        p->duration = p->data_size / s->data.audio.block_align;
+        p->duration = p->buf.len / s->data.audio.block_align;
         priv->audio_sample_counter += p->duration;
         }
       else

@@ -66,13 +66,13 @@ static int extract_header(bgav_video_parser_t * parser, bgav_packet_t * p,
   mpeg12_priv_t * priv = parser->priv;
   
   if(!p->header_size)
-    p->header_size = header_end - p->data;
+    p->header_size = header_end - p->buf.buf;
   
   if(priv->have_header)
     return 1;
 
   if(!parser->s->ci->global_header)
-    bgav_stream_set_extradata(parser->s, p->data, header_end - p->data);
+    bgav_stream_set_extradata(parser->s, p->buf.buf, header_end - p->buf.buf);
   
   if(parser->s->fourcc == BGAV_MK_FOURCC('m','p','g','v'))
     {
@@ -163,20 +163,20 @@ static int parse_frame_mpeg12(bgav_video_parser_t * parser, bgav_packet_t * p,
   int got_sh = 0;
   int ret = 0;
   
-  const uint8_t * start =   p->data;
-  const uint8_t * end = p->data + p->data_size;
+  const uint8_t * start =   p->buf.buf;
+  const uint8_t * end = p->buf.buf + p->buf.len;
   
   /* Check for sequence end code within this frame */
 
-  if(p->data_size >= 4)
+  if(p->buf.len >= 4)
     {
-    end = p->data + (p->data_size - 4);
+    end = p->buf.buf + (p->buf.len - 4);
     if(GAVL_PTR_2_32BE(end) == 0x000001B7)
-      p->sequence_end_pos = p->data_size - 4;
+      p->sequence_end_pos = p->buf.len - 4;
     }
 
   
-  end = p->data + p->data_size;
+  end = p->buf.buf + p->buf.len;
   
   while(1)
     {

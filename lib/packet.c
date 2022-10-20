@@ -33,8 +33,7 @@ bgav_packet_t * bgav_packet_create()
 
 void bgav_packet_free(bgav_packet_t * p)
   {
-  if(p->data)
-    free(p->data);
+  gavl_buffer_free(&p->buf);
   
   bgav_packet_free_palette(p);
   memset(p, 0, sizeof(*p));
@@ -48,19 +47,16 @@ void bgav_packet_destroy(bgav_packet_t * p)
 
 void bgav_packet_alloc(bgav_packet_t * p, int size)
   {
-  if(size + GAVL_PACKET_PADDING > p->data_alloc)
-    {
-    p->data_alloc = size + GAVL_PACKET_PADDING + 1024;
-    p->data = realloc(p->data, p->data_alloc);
-    }
+  gavl_buffer_alloc(&p->buf, size + GAVL_PACKET_PADDING);
+  
   /* Pad in advance */
-  memset(p->data + size, 0, GAVL_PACKET_PADDING);
+  memset(p->buf.buf + size, 0, GAVL_PACKET_PADDING);
   }
 
 void bgav_packet_pad(bgav_packet_t * p)
   {
   /* Padding */
-  memset(p->data + p->data_size, 0, GAVL_PACKET_PADDING);
+  memset(p->buf.buf + p->buf.len, 0, GAVL_PACKET_PADDING);
   }
 
 
@@ -81,7 +77,7 @@ void bgav_packet_dump(const bgav_packet_t * p)
   else
     bgav_dprintf("pts: %"PRId64", ", p->pts);
   
-  bgav_dprintf("Len: %d, dur: %"PRId64, p->data_size, p->duration);
+  bgav_dprintf("Len: %d, dur: %"PRId64, p->buf.len, p->duration);
 
   if(p->header_size)
     bgav_dprintf(", head: %d", p->header_size);
@@ -121,25 +117,19 @@ void bgav_packet_dump(const bgav_packet_t * p)
 
 void bgav_packet_dump_data(bgav_packet_t * p, int bytes)
   {
-  if(bytes > p->data_size)
-    bytes = p->data_size;
-  gavl_hexdump(p->data, bytes, 16);
+  if(bytes > p->buf.len)
+    bytes = p->buf.len;
+  gavl_hexdump(p->buf.buf, bytes, 16);
   }
 
-#define SWAP(n1, n2) \
-  swp = n1; n1 = n2; n2 = swp;
 
 void bgav_packet_swap_data(bgav_packet_t * p1, bgav_packet_t * p2)
   {
-  uint8_t * swp_ptr;
-  int64_t swp;
-  
-  swp_ptr = p1->data;
-  p1->data = p2->data;
-  p2->data = swp_ptr;
-  
-  SWAP(p1->data_size, p2->data_size);
-  SWAP(p1->data_alloc, p2->data_alloc);
+  gavl_buffer_t swp;
+
+  memcpy(&swp, &p1->buf, sizeof(swp));
+  memcpy(&p1->buf, &p2->buf, sizeof(swp));
+  memcpy(&p2->buf, &swp, sizeof(swp));
   }
 
 void bgav_packet_reset(bgav_packet_t * p)
@@ -148,9 +138,10 @@ void bgav_packet_reset(bgav_packet_t * p)
   p->dts     = GAVL_TIME_UNDEFINED;
   p->end_pts = GAVL_TIME_UNDEFINED;
 
+  gavl_buffer_reset(&p->buf);
+  
   p->timecode = GAVL_TIMECODE_UNDEFINED;
   p->flags = 0;
-  p->data_size = 0;
   p->header_size = 0;
   p->sequence_end_pos = 0;
   p->duration = -1;
@@ -170,19 +161,9 @@ void bgav_packet_copy_metadata(bgav_packet_t * dst,
 void bgav_packet_copy(bgav_packet_t * dst,
                       const bgav_packet_t * src)
   {
-  uint32_t data_alloc;
-  uint8_t * data;
-
-  data_alloc = dst->data_alloc;
-  data = dst->data;
-
   memcpy(dst, src, sizeof(*dst));
-
-  dst->data = data;
-  dst->data_alloc = data_alloc;
-
-  bgav_packet_alloc(dst, src->data_size);
-  memcpy(dst->data, src->data, src->data_size);
+  memset(&dst->buf, 0, sizeof(dst->buf));
+  gavl_buffer_copy(&dst->buf, &src->buf);
   }
 
 
@@ -211,9 +192,9 @@ void bgav_packet_free_palette(bgav_packet_t * p)
 void bgav_packet_merge_field2(bgav_packet_t * p,
                               const bgav_packet_t * field2)
   {
-  bgav_packet_alloc(p, p->data_size + field2->data_size);
-  memcpy(p->data + p->data_size, field2->data, field2->data_size);
-  p->data_size += field2->data_size;
+  bgav_packet_alloc(p, p->buf.len + field2->buf.len);
+  memcpy(p->buf.buf + p->buf.len, field2->buf.buf, field2->buf.len);
+  p->buf.len += field2->buf.len;
   }
 
 void bgav_packet_2_gavl(bgav_packet_t * src,
@@ -228,9 +209,10 @@ void bgav_packet_2_gavl(bgav_packet_t * src,
 
   dst->flags    = src->flags & 0xFFFF;
 
-  dst->buf.buf = src->data;
-  dst->buf.len = src->data_size;
-  //  dst->buf.alloc = src->data_alloc;
+  dst->buf.buf = src->buf.buf;
+  dst->buf.len = src->buf.len;
+  dst->buf.alloc = src->buf.alloc;
+  
   dst->interlace_mode = src->interlace_mode;
   dst->timecode = src->timecode;
 

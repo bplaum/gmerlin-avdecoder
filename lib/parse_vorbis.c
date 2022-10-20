@@ -47,8 +47,8 @@ static int parse_frame_vorbis(bgav_audio_parser_t * parser, bgav_packet_t * p)
 
   memset(&op, 0, sizeof(op));
   
-  op.bytes = p->data_size;
-  op.packet = p->data;
+  op.bytes = p->buf.len;
+  op.packet = p->buf.buf;
 
   blocksize = vorbis_packet_blocksize(&priv->vi, &op);
 

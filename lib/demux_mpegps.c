@@ -737,14 +737,14 @@ static int next_packet(bgav_demuxer_context_t * ctx,
           p = bgav_stream_get_packet_write(stream);
           p->position = priv->position;
           bgav_packet_alloc(p, priv->pes_header.payload_size);
-          if(bgav_input_read_data(input, p->data, 
+          if(bgav_input_read_data(input, p->buf.buf, 
                                   priv->pes_header.payload_size) <
              priv->pes_header.payload_size)
             {
             bgav_stream_done_packet_write(stream, p);
             return 0;
             }
-          p->data_size = priv->pes_header.payload_size;
+          p->buf.len = priv->pes_header.payload_size;
         
           if(priv->pes_header.pts != GAVL_TIME_UNDEFINED)
             {
@@ -774,17 +774,17 @@ static int next_packet(bgav_demuxer_context_t * ctx,
               {
               case 16:
                 /* 4 bytes -> 2 samples */
-                p->duration = p->data_size / (stream->data.audio.format->num_channels*2);
+                p->duration = p->buf.len / (stream->data.audio.format->num_channels*2);
                 break;
               case 20:
                 /* 5 bytes -> 2 samples */
                 /* http://lists.mplayerhq.hu/pipermail/ffmpeg-devel/2006-September/016319.html */
-                p->duration = (2 * p->data_size) /
+                p->duration = (2 * p->buf.len) /
                   (stream->data.audio.format->num_channels*5);
                 break;
               case 24:
                 /* 6 bytes -> 2 samples */
-                p->duration = p->data_size / (stream->data.audio.format->num_channels*3);
+                p->duration = p->buf.len / (stream->data.audio.format->num_channels*3);
                 break;
               }
             if(lp->out_pts == GAVL_TIME_UNDEFINED)

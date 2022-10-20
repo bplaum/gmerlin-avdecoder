@@ -366,8 +366,8 @@ static int parse_frame_avc(bgav_video_parser_t * parser,
   //  bgav_h264_slice_header_t sh;
   
   h264_priv_t * priv = parser->priv;
-  const uint8_t * ptr =   p->data;
-  const uint8_t * end = p->data + p->data_size;
+  const uint8_t * ptr =   p->buf.buf;
+  const uint8_t * end = p->buf.buf + p->buf.len;
 
   while(ptr < end)
     {
@@ -551,10 +551,10 @@ static const uint8_t * get_nal_end(bgav_packet_t * p,
                                    const uint8_t * ptr)
   {
   const uint8_t * ret;
-  ret = bgav_h264_find_nal_start(ptr, p->data_size - (ptr - p->data));
+  ret = bgav_h264_find_nal_start(ptr, p->buf.len - (ptr - p->buf.buf));
   
   if(!ret)
-    ret = p->data + p->data_size;
+    ret = p->buf.buf + p->buf.len;
   return ret;
   }
 
@@ -581,15 +581,15 @@ static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int
 
   //  fprintf(stderr, "parse_frame %"PRId64"\n", pts_orig);
 
-  nal_start = p->data; // Assume that we have a startcode
+  nal_start = p->buf.buf; // Assume that we have a startcode
   
-  while(nal_start < p->data + p->data_size)
+  while(nal_start < p->buf.buf + p->buf.len)
     {
     nal_end = NULL;
 
     ptr = nal_start;
     
-    header_len = bgav_h264_decode_nal_header(ptr, p->data_size - (ptr - p->data), &nh);
+    header_len = bgav_h264_decode_nal_header(ptr, p->buf.len - (ptr - p->buf.buf), &nh);
     
     ptr += header_len;
     

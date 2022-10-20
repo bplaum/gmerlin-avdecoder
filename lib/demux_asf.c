@@ -1018,8 +1018,8 @@ static void add_packet(bgav_demuxer_context_t * ctx,
         as = s->priv;
         if((as->descramble_w > 1) && (as->descramble_h > 1))
           asf_descramble(as,
-                         s->packet->data,
-                         s->packet->data_size);
+                         s->packet->buf.buf,
+                         s->packet->buf.len);
         }
 #if 0
       if(s->type == GAVL_STREAM_AUDIO)
@@ -1039,14 +1039,15 @@ static void add_packet(bgav_demuxer_context_t * ctx,
     else
       {
       // append data to it!
-      if((s->packet->data_size != offs) &&
+      if((s->packet->buf.len != offs) &&
          (offs != -1))
         gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "data_size %d, Offset: %d",
-                s->packet->data_size, offs);
+                s->packet->buf.len, offs);
+
       bgav_packet_alloc(s->packet,
-                        s->packet->data_size + len);
-      memcpy(&s->packet->data[s->packet->data_size], data, len);
-      s->packet->data_size += len;
+                        s->packet->buf.len + len);
+      memcpy(s->packet->buf.buf + s->packet->buf.len, data, len);
+      s->packet->buf.len += len;
       return;
       }
     }
@@ -1076,8 +1077,8 @@ static void add_packet(bgav_demuxer_context_t * ctx,
   if(keyframe)
     PACKET_SET_KEYFRAME(s->packet);
   s->packet_seq = seq;
-  memcpy(s->packet->data,data,len);
-  s->packet->data_size = len;
+  memcpy(s->packet->buf.buf, data, len);
+  s->packet->buf.len = len;
   }
 
 static int next_packet_asf(bgav_demuxer_context_t * ctx)

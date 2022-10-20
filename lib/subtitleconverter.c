@@ -83,10 +83,10 @@ next_packet(bgav_subtitle_converter_t * cnv,
   
   /* Make sure we have a '\0' at the end */
 
-  if(in_packet->data_size > 0)
+  if(in_packet->buf.len > 0)
     {
-    pos = (char*)&in_packet->data[in_packet->data_size-1];
-    in_len = in_packet->data_size;
+    pos = (char*)&in_packet->buf.buf[in_packet->buf.len-1];
+    in_len = in_packet->buf.len;
 
     while(*pos == '\0')
       {
@@ -109,10 +109,10 @@ next_packet(bgav_subtitle_converter_t * cnv,
 
     /* Convert character set */
     if(!bgav_convert_string_realloc(cnv->cnv,
-                                    (const char *)in_packet->data,
+                                    (const char *)in_packet->buf.buf,
                                     in_len,
-                                    &ret->data_size,
-                                    (char **)&ret->data, &ret->data_alloc))
+                                    &ret->buf.len,
+                                    (char **)&ret->buf.buf, &ret->buf.alloc))
       {
       bgav_packet_pool_put(cnv->s->pp, in_packet);
       bgav_packet_pool_put(cnv->s->pp, ret);
@@ -125,11 +125,11 @@ next_packet(bgav_subtitle_converter_t * cnv,
   else
     {
     ret = in_packet;
-    ret->data_size = in_len;
+    ret->buf.len = in_len;
     }
   /* Remove \r */
 
-  remove_cr((char*)ret->data, &ret->data_size);
+  remove_cr((char*)ret->buf.buf, &ret->buf.len);
   
   PACKET_SET_KEYFRAME(ret);
 

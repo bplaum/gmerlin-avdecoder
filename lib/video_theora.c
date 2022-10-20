@@ -208,8 +208,8 @@ decode_theora(bgav_stream_t * s, gavl_video_frame_t * frame)
 
     memset(&op, 0, sizeof(op));
 
-    op.bytes = p->data_size;
-    op.packet = p->data;
+    op.bytes = p->buf.len;
+    op.packet = p->buf.buf;
     if(PACKET_GET_LAST(p))
       op.e_o_s = 1;
     

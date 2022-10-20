@@ -70,14 +70,14 @@ static gavl_source_status_t decode_frame_a52(bgav_stream_t * s)
 #ifdef DUMP_PACKET
   bgav_dprintf("a52 packet: ");
   bgav_packet_dump(p);
-  gavl_hexdump((uint8_t*)p->data, 16, 16);
+  gavl_hexdump((uint8_t*)p->buf.buf, 16, 16);
 #endif
   
   if(priv->need_format)
     {
     bgav_a52_header_t h;
     
-    if(!bgav_a52_header_read(&h, p->data))
+    if(!bgav_a52_header_read(&h, p->buf.buf))
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Getting initial AC3 frame failed");
       return GAVL_SOURCE_EOF;
@@ -101,7 +101,7 @@ static gavl_source_status_t decode_frame_a52(bgav_stream_t * s)
   
   /* Now, decode this */
   
-  frame_bytes = a52_syncinfo(p->data, &flags,
+  frame_bytes = a52_syncinfo(p->buf.buf, &flags,
                              &sample_rate, &bit_rate);
 
   if(!frame_bytes)
@@ -109,12 +109,12 @@ static gavl_source_status_t decode_frame_a52(bgav_stream_t * s)
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Getting initial AC3 frame failed");
     return GAVL_SOURCE_EOF;
     }
-  if(frame_bytes > p->data_size)
+  if(frame_bytes > p->buf.len)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Too little data");
     return GAVL_SOURCE_EOF;
     }
-  a52_frame(priv->state, p->data, &flags, &level, 0.0);
+  a52_frame(priv->state, p->buf.buf, &flags, &level, 0.0);
   if(!s->opt->audio_dynrange)
     {
     a52_dynrng(priv->state, NULL, NULL);

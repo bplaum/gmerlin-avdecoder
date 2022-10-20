@@ -45,7 +45,7 @@ static int parse_frame_vp9(bgav_video_parser_t * parser,
   
   memset(&b, 0, sizeof(b));
   
-  bgav_bitstream_init(&b, p->data, p->data_size);
+  bgav_bitstream_init(&b, p->buf.buf, p->buf.len);
 
   // frame_marker shall be equal to 2
 

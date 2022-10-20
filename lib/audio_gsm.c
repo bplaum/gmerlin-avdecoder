@@ -112,16 +112,16 @@ static gavl_source_status_t decode_frame_gsm(bgav_stream_t * s)
     {
     if((st = bgav_stream_get_packet_read(s, &priv->packet)) != GAVL_SOURCE_OK)
       return st;
-    priv->packet_ptr = priv->packet->data;
+    priv->packet_ptr = priv->packet->buf.buf;
     }
-  else if(priv->packet_ptr - priv->packet->data + // Data already decoded
+  else if(priv->packet_ptr - priv->packet->buf.buf + // Data already decoded
           GSM_BLOCK_SIZE + priv->ms * (GSM_BLOCK_SIZE-1) // Next packet
-          > priv->packet->data_size)
+          > priv->packet->buf.len)
     {
     bgav_stream_done_packet_read(s, priv->packet);
     if((st = bgav_stream_get_packet_read(s, &priv->packet)) != GAVL_SOURCE_OK)
       return st;
-    priv->packet_ptr = priv->packet->data;
+    priv->packet_ptr = priv->packet->buf.buf;
     }
   gsm_decode(priv->gsm_state, priv->packet_ptr, priv->frame->samples.s_16);
   priv->frame->valid_samples = GSM_FRAME_SAMPLES;

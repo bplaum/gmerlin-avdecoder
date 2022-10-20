@@ -140,7 +140,7 @@ static gavl_source_status_t read_srt(bgav_stream_t * s, bgav_packet_t * p)
                                   ctx->scale_num,
                                   p->duration);
   
-  p->data_size = 0;
+  p->buf.len = 0;
   
   /* Read lines until we are done */
 
@@ -160,7 +160,7 @@ static gavl_source_status_t read_srt(bgav_stream_t * s, bgav_packet_t * p)
       /* Zero terminate */
       if(lines_read)
         {
-        p->data[p->data_size] = '\0';
+        p->buf.buf[p->buf.len] = '\0';
         // Terminator doesn't count for data size
         // p->data_size++;
         }
@@ -168,14 +168,14 @@ static gavl_source_status_t read_srt(bgav_stream_t * s, bgav_packet_t * p)
       }
     if(lines_read)
       {
-      p->data[p->data_size] = '\n';
-      p->data_size++;
+      p->buf.buf[p->buf.len] = '\n';
+      p->buf.len++;
       }
     
     lines_read++;
-    bgav_packet_alloc(p, p->data_size + line_len + 2);
-    memcpy(p->data + p->data_size, ctx->line, line_len);
-    p->data_size += line_len;
+    bgav_packet_alloc(p, p->buf.len + line_len + 2);
+    memcpy(p->buf.buf + p->buf.len, ctx->line, line_len);
+    p->buf.len += line_len;
     }
   
   return GAVL_SOURCE_EOF;
@@ -300,7 +300,7 @@ static gavl_source_status_t read_mpsub(bgav_stream_t * s, bgav_packet_t * p)
   priv->last_end_time = p->pts + p->duration;
   
   /* Read the actual stuff */
-  p->data_size = 0;
+  p->buf.len = 0;
   
   /* Read lines until we are done */
 
@@ -322,21 +322,21 @@ static gavl_source_status_t read_mpsub(bgav_stream_t * s, bgav_packet_t * p)
       if(lines_read)
         {
         // Terminator doesn't count to data size
-        p->data[p->data_size] = '\0';
+        p->buf.buf[p->buf.len] = '\0';
         //        p->data_size++;
         }
       return GAVL_SOURCE_OK;
       }
     if(lines_read)
       {
-      p->data[p->data_size] = '\n';
-      p->data_size++;
+      p->buf.buf[p->buf.len] = '\n';
+      p->buf.len++;
       }
     
     lines_read++;
-    bgav_packet_alloc(p, p->data_size + line_len + 2);
-    memcpy(p->data + p->data_size, ctx->line, line_len);
-    p->data_size += line_len;
+    bgav_packet_alloc(p, p->buf.len + line_len + 2);
+    memcpy(p->buf.buf + p->buf.len, ctx->line, line_len);
+    p->buf.len += line_len;
     }
   return GAVL_SOURCE_EOF;
   }
@@ -649,26 +649,26 @@ read_vobsub(bgav_stream_t * s, bgav_packet_t * p)
           continue;
           }
 
-        bgav_packet_alloc(p, p->data_size + pes_header.payload_size);
+        bgav_packet_alloc(p, p->buf.len + pes_header.payload_size);
         if(bgav_input_read_data(priv->sub,
-                                p->data + p->data_size,
+                                p->buf.buf + p->buf.len,
                                 pes_header.payload_size) <
            pes_header.payload_size)
           return GAVL_SOURCE_EOF;
         
         if(!packet_size)
           {
-          packet_size = GAVL_PTR_2_16BE(p->data);
+          packet_size = GAVL_PTR_2_16BE(p->buf.buf);
           //          fprintf(stderr, "packet_size: %d\n", packet_size);
           }
-        p->data_size += pes_header.payload_size;
+        p->buf.len += pes_header.payload_size;
         break;
       default:
         fprintf(stderr, "Unknown startcode %08x\n", header);
         return GAVL_SOURCE_EOF;
       }
     
-    if((packet_size > 0) && (p->data_size >= packet_size))
+    if((packet_size > 0) && (p->buf.len >= packet_size))
       break;
     }
   p->pts = pts;

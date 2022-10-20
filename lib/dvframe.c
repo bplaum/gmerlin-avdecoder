@@ -657,7 +657,7 @@ int bgav_dv_dec_get_audio_packet(bgav_dv_dec_t * d, bgav_packet_t * p)
 
     gavl_audio_frame_from_data(d->audio_frame,
                                &d->audio_format,
-                               p->data, p->data_size);
+                               p->buf.buf, p->buf.len);
     
     for(i = 0; i < d->ach; i++)
       pcm[i] = d->audio_frame->channels.u_8[i*2];
@@ -687,8 +687,8 @@ void bgav_dv_dec_get_video_packet(bgav_dv_dec_t * d, bgav_packet_t * p)
       }
     
     bgav_packet_alloc(p, d->profile->frame_size);
-    memcpy(p->data, d->buffer, d->profile->frame_size);
-    p->data_size = d->profile->frame_size;
+    memcpy(p->buf.buf, d->buffer, d->profile->frame_size);
+    p->buf.len = d->profile->frame_size;
     d->frame_counter++;
     }
   }

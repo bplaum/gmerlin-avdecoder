@@ -1531,7 +1531,7 @@ static void process_packet_iavs_stream(bgav_stream_t * s, bgav_packet_t * p)
     priv->dv_dec = bgav_dv_dec_create();
     do_init = 1;
 
-    bgav_dv_dec_set_header(priv->dv_dec, p->data);
+    bgav_dv_dec_set_header(priv->dv_dec, p->buf.buf);
     priv->dv_frame_size = bgav_dv_dec_get_frame_size(priv->dv_dec);
     priv->iavs_sample_counter = 0;
     priv->iavs_frame_counter = 0;
@@ -1550,9 +1550,9 @@ static void process_packet_iavs_stream(bgav_stream_t * s, bgav_packet_t * p)
     }
   
   if(!do_init)
-    bgav_dv_dec_set_header(priv->dv_dec, p->data);
+    bgav_dv_dec_set_header(priv->dv_dec, p->buf.buf);
   
-  bgav_dv_dec_set_frame(priv->dv_dec, p->data);
+  bgav_dv_dec_set_frame(priv->dv_dec, p->buf.buf);
   
   if(do_init)
     {
@@ -2206,11 +2206,11 @@ static int next_packet_avi(bgav_demuxer_context_t * ctx)
       p->position = position;
       bgav_packet_alloc(p, PADD(ch.ckSize));
       
-      if(bgav_input_read_data(ctx->input, p->data, ch.ckSize) < ch.ckSize)
+      if(bgav_input_read_data(ctx->input, p->buf.buf, ch.ckSize) < ch.ckSize)
         {
         return 0;
         }
-      p->data_size = ch.ckSize;
+      p->buf.len = ch.ckSize;
       
       if(s->type == GAVL_STREAM_VIDEO)
         {
@@ -2220,7 +2220,7 @@ static int next_packet_avi(bgav_demuxer_context_t * ctx)
         if(s->action == BGAV_STREAM_PARSE)
           s->stats.pts_end = avi_vs->frame_counter * s->data.video.format->frame_duration;
         
-        if(!avi_vs->is_keyframe || avi_vs->is_keyframe(p->data)) 
+        if(!avi_vs->is_keyframe || avi_vs->is_keyframe(p->buf.buf)) 
           PACKET_SET_KEYFRAME(p);
         }
       else if(s->type == GAVL_STREAM_AUDIO)
@@ -2229,7 +2229,7 @@ static int next_packet_avi(bgav_demuxer_context_t * ctx)
           {
           avi_as = s->priv;
           p->pts = avi_as->sample_counter;
-          avi_as->sample_counter += p->data_size / s->data.audio.block_align;
+          avi_as->sample_counter += p->buf.len / s->data.audio.block_align;
           if(s->action == BGAV_STREAM_PARSE)
             s->stats.pts_end = avi_as->sample_counter;
           PACKET_SET_KEYFRAME(p);

@@ -240,12 +240,12 @@ static int next_packet_wavpack(bgav_demuxer_context_t * ctx)
   
   bgav_packet_alloc(p, size + HEADER_SIZE);
   
-  memcpy(p->data, header, HEADER_SIZE);
+  memcpy(p->buf.buf, header, HEADER_SIZE);
   
-  if(bgav_input_read_data(ctx->input, p->data + HEADER_SIZE, size) < size)
+  if(bgav_input_read_data(ctx->input, p->buf.buf + HEADER_SIZE, size) < size)
     return 0; // EOF
   
-  p->data_size = HEADER_SIZE + size;
+  p->buf.len = HEADER_SIZE + size;
 
   p->pts = priv->pts;
   p->duration = h.block_samples;
@@ -260,12 +260,12 @@ static int next_packet_wavpack(bgav_demuxer_context_t * ctx)
 
     parse_header(&h, header);
 
-    bgav_packet_alloc(p, p->data_size + h.block_size - 24 + HEADER_SIZE);
+    bgav_packet_alloc(p, p->buf.len + h.block_size - 24 + HEADER_SIZE);
 
-    memcpy(p->data + p->data_size, header, HEADER_SIZE);
-    p->data_size += HEADER_SIZE;
+    memcpy(p->buf.buf + p->buf.len, header, HEADER_SIZE);
+    p->buf.len += HEADER_SIZE;
 
-    if(bgav_input_read_data(ctx->input, p->data + p->data_size, h.block_size - 24) < h.block_size - 24)
+    if(bgav_input_read_data(ctx->input, p->buf.buf + p->buf.len, h.block_size - 24) < h.block_size - 24)
       return 0; // EOF
     
     }

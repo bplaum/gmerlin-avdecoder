@@ -25,7 +25,7 @@
 
 void bgav_bytebuffer_append_packet(gavl_buffer_t * b, bgav_packet_t * p, int padding)
   {
-  gavl_buffer_append_data_pad(b, p->data, p->data_size, padding);
+  gavl_buffer_append_data_pad(b, p->buf.buf, p->buf.len, padding);
   }
 
 int bgav_bytebuffer_append_read(gavl_buffer_t * b, bgav_input_context_t * input,

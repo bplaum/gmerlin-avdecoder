@@ -926,22 +926,22 @@ static void set_packet_data(bgav_stream_t * s,
     
       while(1)
         {
-        out_len = p->data_alloc;
-        err = uncompress(p->data, &out_len, data, len);
+        out_len = p->buf.alloc;
+        err = uncompress(p->buf.buf, &out_len, data, len);
 
         if(err == Z_OK)
           {
-          p->data_size = out_len;
+          p->buf.len = out_len;
           // fprintf(stderr, "Uncompressed packet %d -> %d\n", len, p->data_size);
           break;
           }
         else if(err == Z_BUF_ERROR)
-          bgav_packet_alloc(p, p->data_alloc * 2); // Double the compression ratio
+          bgav_packet_alloc(p, p->buf.alloc * 2); // Double the compression ratio
         else
           {
           gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
                    "Decompression of matroska packet failed");
-          p->data_size = 0;
+          p->buf.len = 0;
           break;
           }
         }
@@ -950,19 +950,19 @@ static void set_packet_data(bgav_stream_t * s,
             (t->encodings[0].ContentCompression.ContentCompAlgo == MKV_CONTENT_COMP_ALGO_HEADER_STRIPPING))
       {
       bgav_packet_alloc(p, len + t->encodings[0].ContentCompression.ContentCompSettingsLen);
-      memcpy(p->data,
+      memcpy(p->buf.buf,
              t->encodings[0].ContentCompression.ContentCompSettings,
              t->encodings[0].ContentCompression.ContentCompSettingsLen);
-      memcpy(p->data + t->encodings[0].ContentCompression.ContentCompSettingsLen, data, len);
-      p->data_size = t->encodings[0].ContentCompression.ContentCompSettingsLen + len;
+      memcpy(p->buf.buf + t->encodings[0].ContentCompression.ContentCompSettingsLen, data, len);
+      p->buf.len = t->encodings[0].ContentCompression.ContentCompSettingsLen + len;
       }
     }
   else if(t->num_encodings == 0)
     {
     /* Plain packet */
     bgav_packet_alloc(p, len);
-    memcpy(p->data, data, len);
-    p->data_size = len;
+    memcpy(p->buf.buf, data, len);
+    p->buf.len = len;
     }
   }
 
@@ -1048,7 +1048,7 @@ static int process_block(bgav_demuxer_context_t * ctx,
     {
     case MKV_LACING_NONE:
       p = bgav_stream_get_packet_write(s);
-      p->data_size = 0;
+      p->buf.len = 0;
       set_packet_data(s, p, b->data, b->data_size);
       setup_packet(m, s, p, pts, keyframe, 0);
 
@@ -1110,7 +1110,7 @@ static int process_block(bgav_demuxer_context_t * ctx,
       for(i = 0; i < b->num_laces; i++)
         {
         p = bgav_stream_get_packet_write(s);
-        p->data_size = 0;
+        p->buf.len = 0;
         set_packet_data(s, p, ptr, m->lace_sizes[i]);
         ptr += m->lace_sizes[i];
         setup_packet(m, s, p, pts, keyframe, i);
@@ -1153,7 +1153,7 @@ static int process_block(bgav_demuxer_context_t * ctx,
       for(i = 0; i < b->num_laces; i++)
         {
         p = bgav_stream_get_packet_write(s);
-        p->data_size = 0;
+        p->buf.len = 0;
         set_packet_data(s, p, ptr, m->lace_sizes[i]);
         ptr += m->lace_sizes[i];
         setup_packet(m, s, p, pts, keyframe, i);
@@ -1175,7 +1175,7 @@ static int process_block(bgav_demuxer_context_t * ctx,
       for(i = 0; i < b->num_laces; i++)
         {
         p = bgav_stream_get_packet_write(s);
-        p->data_size = 0;
+        p->buf.len = 0;
         set_packet_data(s, p, ptr, frame_size);
         ptr += frame_size;
         setup_packet(m, s, p, pts, keyframe, i);

@@ -1707,9 +1707,9 @@ static int process_packet(bgav_demuxer_context_t * ctx)
 
       /* Read data */
       
-      memcpy(s->packet->data, priv->ptr, bytes_to_copy);
+      memcpy(s->packet->buf.buf, priv->ptr, bytes_to_copy);
 
-      s->packet->data_size = bytes_to_copy;
+      s->packet->buf.len = bytes_to_copy;
       
       if(pes_header.pts > 0)
         {
@@ -1723,12 +1723,12 @@ static int process_packet(bgav_demuxer_context_t * ctx)
       /* Read data */
       
       bgav_packet_alloc(s->packet,
-                        s->packet->data_size +
+                        s->packet->buf.len +
                         priv->packet.payload_size);
       
-      memcpy(s->packet->data + s->packet->data_size, priv->ptr,
+      memcpy(s->packet->buf.buf + s->packet->buf.len, priv->ptr,
              priv->packet.payload_size);
-      s->packet->data_size  += priv->packet.payload_size;
+      s->packet->buf.len  += priv->packet.payload_size;
       }
     next_packet(priv);
     position += priv->packet_size;

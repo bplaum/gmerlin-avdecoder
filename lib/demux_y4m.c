@@ -255,10 +255,10 @@ static int next_packet_y4m(bgav_demuxer_context_t * ctx)
   
   bgav_packet_alloc(p, priv->buf_size);
 
-  if(bgav_input_read_data(ctx->input, p->data, priv->buf_size) < priv->buf_size)
+  if(bgav_input_read_data(ctx->input, p->buf.buf, priv->buf_size) < priv->buf_size)
     return 0;
 
-  p->data_size = priv->buf_size;
+  p->buf.len = priv->buf_size;
   
   p->pts = s->in_position * s->data.video.format->frame_duration;
   

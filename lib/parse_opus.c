@@ -65,7 +65,7 @@ static int get_format(bgav_audio_parser_t * parser)
 static int parse_frame_opus(bgav_audio_parser_t * parser, bgav_packet_t * p)
   {
   opus_priv_t * priv = parser->priv;
-  int nb_frames = opus_packet_get_nb_frames(p->data, p->data_size);
+  int nb_frames = opus_packet_get_nb_frames(p->buf.buf, p->buf.len);
 
   if(!parser->have_format)
     return 0;
@@ -77,7 +77,7 @@ static int parse_frame_opus(bgav_audio_parser_t * parser, bgav_packet_t * p)
     p->duration = nb_frames;
   else
     p->duration =
-      opus_packet_get_samples_per_frame(p->data, 48000) * nb_frames;
+      opus_packet_get_samples_per_frame(p->buf.buf, 48000) * nb_frames;
   
   return 1;
   }

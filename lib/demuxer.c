@@ -543,7 +543,7 @@ int bgav_demuxer_next_packet_interleaved(bgav_demuxer_context_t * ctx)
   
   p = bgav_stream_get_packet_write(stream);
   bgav_packet_alloc(p, ctx->si->entries[ctx->si->current_position].size);
-  p->data_size = ctx->si->entries[ctx->si->current_position].size;
+  p->buf.len = ctx->si->entries[ctx->si->current_position].size;
   p->flags = ctx->si->entries[ctx->si->current_position].flags;
   
   p->pts = ctx->si->entries[ctx->si->current_position].pts;
@@ -557,7 +557,7 @@ int bgav_demuxer_next_packet_interleaved(bgav_demuxer_context_t * ctx)
                     ctx->si->entries[ctx->si->current_position].offset - ctx->input->position);
     }
   
-  if(bgav_input_read_data(ctx->input, p->data, p->data_size) < p->data_size)
+  if(bgav_input_read_data(ctx->input, p->buf.buf, p->buf.len) < p->buf.len)
     return 0;
   
   if(stream->process_packet)
@@ -596,8 +596,8 @@ static int next_packet_noninterleaved(bgav_demuxer_context_t * ctx)
     }
   
   p = bgav_stream_get_packet_write(s);
-  p->data_size = ctx->si->entries[s->index_position].size;
-  bgav_packet_alloc(p, p->data_size);
+  p->buf.len = ctx->si->entries[s->index_position].size;
+  bgav_packet_alloc(p, p->buf.len);
   
   p->pts = ctx->si->entries[s->index_position].pts;
   p->duration = ctx->si->entries[s->index_position].duration;
@@ -605,7 +605,7 @@ static int next_packet_noninterleaved(bgav_demuxer_context_t * ctx)
   p->flags = ctx->si->entries[s->index_position].flags;
   p->position = s->index_position;
   
-  if(bgav_input_read_data(ctx->input, p->data, p->data_size) < p->data_size)
+  if(bgav_input_read_data(ctx->input, p->buf.buf, p->buf.len) < p->buf.len)
     return 0;
 
   if(s->process_packet)

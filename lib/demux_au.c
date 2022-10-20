@@ -221,9 +221,9 @@ static int next_packet_au(bgav_demuxer_context_t * ctx)
 
   p->pts = pos_2_time(ctx, ctx->input->position);
   PACKET_SET_KEYFRAME(p);
-  bytes_read = bgav_input_read_data(ctx->input, p->data,
+  bytes_read = bgav_input_read_data(ctx->input, p->buf.buf,
                                     s->data.audio.block_align * BLOCKS_PER_PACKET);
-  p->data_size = bytes_read;
+  p->buf.len = bytes_read;
   bgav_stream_done_packet_write(s, p);
   if(!bytes_read)
     return 0;

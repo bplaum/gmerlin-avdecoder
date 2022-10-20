@@ -219,17 +219,17 @@ static int next_packet_roq(bgav_demuxer_context_t * ctx)
           }
         video_packet = bgav_stream_get_packet_write(s);
         bgav_packet_alloc(video_packet, h.size + PREAMBLE_SIZE);
-        video_packet->data_size = 0;
+        video_packet->buf.len = 0;
         
-        memcpy(video_packet->data, preamble, PREAMBLE_SIZE);
-        video_packet->data_size += PREAMBLE_SIZE;
+        memcpy(video_packet->buf.buf, preamble, PREAMBLE_SIZE);
+        video_packet->buf.len += PREAMBLE_SIZE;
         
         if(bgav_input_read_data(ctx->input,
-                                video_packet->data+video_packet->data_size,
+                                video_packet->buf.buf + video_packet->buf.len,
                                 h.size) < h.size)
           return 0;
         
-        video_packet->data_size += h.size;
+        video_packet->buf.len += h.size;
         break;
       case RoQ_QUAD_VQ:
         s = bgav_track_find_stream(ctx, VIDEO_ID);
@@ -243,20 +243,20 @@ static int next_packet_roq(bgav_demuxer_context_t * ctx)
           gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN,
                    "No CODEBOOK chunk before VQ chunk");
           video_packet = bgav_stream_get_packet_write(s);
-          video_packet->data_size = 0;
+          video_packet->buf.len = 0;
           }
         bgav_packet_alloc(video_packet,
-                          video_packet->data_size + h.size + PREAMBLE_SIZE);
+                          video_packet->buf.len + h.size + PREAMBLE_SIZE);
 
-        memcpy(video_packet->data + video_packet->data_size, preamble, PREAMBLE_SIZE);
-        video_packet->data_size += PREAMBLE_SIZE;
+        memcpy(video_packet->buf.buf + video_packet->buf.len, preamble, PREAMBLE_SIZE);
+        video_packet->buf.len += PREAMBLE_SIZE;
         
         if(bgav_input_read_data(ctx->input,
-                                video_packet->data + video_packet->data_size,
+                                video_packet->buf.buf + video_packet->buf.len,
                                 h.size) < h.size)
           return 0;
 
-        video_packet->data_size += h.size;
+        video_packet->buf.len += h.size;
         video_packet->pts = s->in_position;
         bgav_stream_done_packet_write(s, video_packet);
         video_packet = NULL;
@@ -273,13 +273,13 @@ static int next_packet_roq(bgav_demuxer_context_t * ctx)
         audio_packet = bgav_stream_get_packet_write(s);
 
         bgav_packet_alloc(audio_packet, h.size + PREAMBLE_SIZE);
-        memcpy(audio_packet->data, preamble, 8);
+        memcpy(audio_packet->buf.buf, preamble, 8);
         
         if(bgav_input_read_data(ctx->input,
-                                audio_packet->data+PREAMBLE_SIZE,
+                                audio_packet->buf.buf+PREAMBLE_SIZE,
                                 h.size) < h.size)
           return 0;
-        audio_packet->data_size = h.size + PREAMBLE_SIZE;
+        audio_packet->buf.len = h.size + PREAMBLE_SIZE;
 
         bgav_stream_done_packet_write(s, audio_packet);
         done = 1;

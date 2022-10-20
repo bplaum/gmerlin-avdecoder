@@ -122,13 +122,13 @@ static gavl_source_status_t decode_frame_dts(bgav_stream_t * s)
     
     /* Now, decode this */
 
-    frame_bytes = dts_syncinfo(priv->state, priv->packet->data, &flags,
+    frame_bytes = dts_syncinfo(priv->state, priv->packet->buf.buf, &flags,
                                &sample_rate, &bit_rate, &dummy);
     
     if(!frame_bytes)
       return GAVL_SOURCE_EOF;
     
-    if(priv->packet->data_size < frame_bytes)
+    if(priv->packet->buf.len < frame_bytes)
       return GAVL_SOURCE_EOF;
 
     if(priv->need_format)
@@ -146,7 +146,7 @@ static gavl_source_status_t decode_frame_dts(bgav_stream_t * s)
                         "DTS");
       }
     
-    dts_frame(priv->state, priv->packet->data, &flags, &level, 0.0);
+    dts_frame(priv->state, priv->packet->buf.buf, &flags, &level, 0.0);
     
     if(!s->opt->audio_dynrange)
       dts_dynrng(priv->state, NULL, NULL);

@@ -42,18 +42,18 @@ filter_adts(bgav_bsf_t* bsf, bgav_packet_t * in, bgav_packet_t * out)
   bgav_adts_header_t h;
   int header_len = 7;
   
-  if((in->data_size < 7) || !bgav_adts_header_read(in->data, &h))
+  if((in->buf.len < 7) || !bgav_adts_header_read(in->buf.buf, &h))
     {
-    out->data_size = 0;
+    out->buf.len = 0;
     return;
     }
 
   if(!h.protection_absent)
     header_len += 2;
 
-  bgav_packet_alloc(out, in->data_size - header_len);
-  memcpy(out->data, in->data + header_len, in->data_size - header_len);
-  out->data_size = in->data_size - header_len;
+  bgav_packet_alloc(out, in->buf.len - header_len);
+  memcpy(out->buf.buf, in->buf.buf + header_len, in->buf.len - header_len);
+  out->buf.len = in->buf.len - header_len;
   }
 
 static void
@@ -108,8 +108,8 @@ bgav_bsf_init_adts(bgav_bsf_t * bsf)
 
   av_init_packet(&pkt);
 
-  av_new_packet(&pkt, p->data_size);
-  memcpy(pkt.data, p->data, p->data_size);
+  av_new_packet(&pkt, p->buf.len);
+  memcpy(pkt.data, p->buf.buf, p->buf.len);
   
   av_bsf_send_packet(ctx, &pkt);
 

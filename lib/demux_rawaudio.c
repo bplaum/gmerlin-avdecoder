@@ -171,12 +171,12 @@ static int next_packet_rawaudio(bgav_demuxer_context_t * ctx)
   p->pts = ctx->input->position / s->data.audio.block_align;
 
   bgav_packet_alloc(p, bytes_to_read);
-  p->data_size = bgav_input_read_data(ctx->input, p->data, bytes_to_read);
-  p->duration = p->data_size/s->data.audio.block_align;
+  p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
+  p->duration = p->buf.len/s->data.audio.block_align;
   
   PACKET_SET_KEYFRAME(p);
   
-  if(!p->data_size)
+  if(!p->buf.len)
     return 0;
   
   bgav_stream_done_packet_write(s, p);

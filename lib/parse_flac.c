@@ -39,9 +39,9 @@ static int parse_frame_flac(bgav_audio_parser_t * parser, bgav_packet_t * p)
   bgav_flac_frame_header_t fh;
   flac_priv_t * priv = parser->priv;
 
-  if(p->data_size < BGAV_FLAC_FRAMEHEADER_MIN)
+  if(p->buf.len < BGAV_FLAC_FRAMEHEADER_MIN)
     return 0;
-  bgav_flac_frame_header_read(p->data, p->data_size, &priv->si, &fh);
+  bgav_flac_frame_header_read(p->buf.buf, p->buf.len, &priv->si, &fh);
   p->duration = fh.blocksize;
 
   if((priv->si.total_samples > 0) &&

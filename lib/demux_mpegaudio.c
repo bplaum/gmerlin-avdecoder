@@ -596,11 +596,11 @@ static int next_packet_mpegaudio(bgav_demuxer_context_t * ctx)
 
   p->position = ctx->input->position;
   
-  if(bgav_input_read_data(ctx->input, p->data, bytes_left) < bytes_left)
+  if(bgav_input_read_data(ctx->input, p->buf.buf, bytes_left) < bytes_left)
     {
     return 0;
     }
-  p->data_size = bytes_left;
+  p->buf.len = bytes_left;
   PACKET_SET_KEYFRAME(p);
   p->pts = priv->frames * (int64_t)priv->header.samples_per_frame;
   p->duration = priv->header.samples_per_frame;

@@ -1892,8 +1892,8 @@ static int next_packet_ogg(bgav_demuxer_context_t * ctx)
         
           p = bgav_stream_get_packet_write(s);
           bgav_packet_alloc(p, priv->op.bytes);
-          memcpy(p->data, priv->op.packet, priv->op.bytes);
-          p->data_size = priv->op.bytes;
+          memcpy(p->buf.buf, priv->op.packet, priv->op.bytes);
+          p->buf.len = priv->op.bytes;
 
           if(!(priv->op.packet[0] & 0x40))
             {
@@ -1945,8 +1945,8 @@ static int next_packet_ogg(bgav_demuxer_context_t * ctx)
         
           p = bgav_stream_get_packet_write(s);
           bgav_packet_alloc(p, priv->op.bytes);
-          memcpy(p->data, priv->op.packet, priv->op.bytes);
-          p->data_size = priv->op.bytes;
+          memcpy(p->buf.buf, priv->op.packet, priv->op.bytes);
+          p->buf.len = priv->op.bytes;
 
           if(!((priv->op.granulepos >> 22) & 0xff) &&
              !(priv->op.granulepos & 0xff))
@@ -2008,9 +2008,9 @@ static int next_packet_ogg(bgav_demuxer_context_t * ctx)
           p = bgav_stream_get_packet_write(s);
         
           bgav_packet_alloc(p, priv->op.bytes - 1 - len_bytes);
-          memcpy(p->data, priv->op.packet + 1 + len_bytes,
+          memcpy(p->buf.buf, priv->op.packet + 1 + len_bytes,
                  priv->op.bytes - 1 - len_bytes);
-          p->data_size = priv->op.bytes - 1 - len_bytes;
+          p->buf.len = priv->op.bytes - 1 - len_bytes;
           if(priv->op.packet[0] & 0x08)
             PACKET_SET_KEYFRAME(p);
           p->pts =
@@ -2056,8 +2056,8 @@ static int next_packet_ogg(bgav_demuxer_context_t * ctx)
           PACKET_SET_KEYFRAME(p);
                     
           bgav_packet_alloc(p, priv->op.bytes);
-          memcpy(p->data, priv->op.packet, priv->op.bytes);
-          p->data_size = priv->op.bytes;
+          memcpy(p->buf.buf, priv->op.packet, priv->op.bytes);
+          p->buf.len = priv->op.bytes;
           
           // fprintf(stderr, "priv->op.granulepos: %ld\n", priv->op.granulepos);
 
@@ -2100,11 +2100,11 @@ static int next_packet_ogg(bgav_demuxer_context_t * ctx)
           
           p = bgav_stream_get_packet_write(s);
           bgav_packet_alloc(p, priv->op.bytes);
-          memcpy(p->data, priv->op.packet, priv->op.bytes);
-          p->data_size = priv->op.bytes;
+          memcpy(p->buf.buf, priv->op.packet, priv->op.bytes);
+          p->buf.len = priv->op.bytes;
 
           //  fprintf(stderr, "Flac packet:\n");
-          //  gavl_hexdump(p->data, 16, 16);
+          //  gavl_hexdump(p->buf.buf, 16, 16);
           
           if(stream_priv->prev_granulepos >= 0)
             p->pts = stream_priv->prev_granulepos;
@@ -2151,8 +2151,8 @@ static int next_packet_ogg(bgav_demuxer_context_t * ctx)
           pos = (char*)(priv->op.packet + 1 + len_bytes);
           len = strlen(pos);
           bgav_packet_alloc(p, len);
-          memcpy(p->data, pos, len);
-          p->data_size = len;
+          memcpy(p->buf.buf, pos, len);
+          p->buf.len = len;
           PACKET_SET_KEYFRAME(p);
           
           set_packet_pos(priv, stream_priv, &page_continued, p);

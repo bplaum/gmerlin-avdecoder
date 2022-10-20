@@ -1127,14 +1127,14 @@ process_aac(bgav_stream_t * s, rtp_header_t * h,
     if(!s->packet)
       {
       s->packet = bgav_stream_get_packet_write(s);
-      s->packet->data_size = 0;
+      s->packet->buf.len = 0;
       s->packet->pts = h->timestamp;
       }
-    bgav_packet_alloc(s->packet, s->packet->data_size +
+    bgav_packet_alloc(s->packet, s->packet->buf.len +
                       sp->priv.mpeg4_generic.aus[0].size);
-    memcpy(s->packet->data + s->packet->data_size,
+    memcpy(s->packet->buf.buf + s->packet->buf.len,
            data, sp->priv.mpeg4_generic.aus[0].size);
-    s->packet->data_size += sp->priv.mpeg4_generic.aus[0].size;
+    s->packet->buf.len += sp->priv.mpeg4_generic.aus[0].size;
     }
   else /* Multiple AUs */
     {
@@ -1160,8 +1160,8 @@ process_aac(bgav_stream_t * s, rtp_header_t * h,
     s->packet = bgav_stream_get_packet_write(s);
     s->packet->pts = h->timestamp;
     bgav_packet_alloc(s->packet, packet_size);
-    memcpy(s->packet->data, data, packet_size);
-    s->packet->data_size = packet_size;
+    memcpy(s->packet->buf.buf, data, packet_size);
+    s->packet->buf.len = packet_size;
     bgav_stream_done_packet_write(s, s->packet);
     s->packet = NULL;
     }
@@ -1275,16 +1275,16 @@ static void send_nal(bgav_stream_t * s, uint8_t * nal, int len,
   if(!s->packet)
     {
     s->packet = bgav_stream_get_packet_write(s);
-    s->packet->data_size = 0;
+    s->packet->buf.len = 0;
     s->packet->pts = time;
     }
   
-  bgav_packet_alloc(s->packet, s->packet->data_size + sizeof(start_sequence) + len);
-  memcpy(s->packet->data + s->packet->data_size, start_sequence, sizeof(start_sequence));
-  s->packet->data_size += sizeof(start_sequence);
+  bgav_packet_alloc(s->packet, s->packet->buf.len + sizeof(start_sequence) + len);
+  memcpy(s->packet->buf.buf + s->packet->buf.len, start_sequence, sizeof(start_sequence));
+  s->packet->buf.len += sizeof(start_sequence);
 
-  memcpy(s->packet->data + s->packet->data_size, nal, len);
-  s->packet->data_size += len;
+  memcpy(s->packet->buf.buf + s->packet->buf.len, nal, len);
+  s->packet->buf.len += len;
   
   }
 
@@ -1292,9 +1292,9 @@ static void append_nal(bgav_stream_t * s, uint8_t * nal, int len)
   {
   if(!s->packet)
     return;
-  bgav_packet_alloc(s->packet, s->packet->data_size + len);
-  memcpy(s->packet->data + s->packet->data_size, nal, len);
-  s->packet->data_size += len;
+  bgav_packet_alloc(s->packet, s->packet->buf.len + len);
+  memcpy(s->packet->buf.buf + s->packet->buf.len, nal, len);
+  s->packet->buf.len += len;
   }
 
 static int process_h264(bgav_stream_t * s, rtp_header_t * h, uint8_t * data, int len)
@@ -1420,8 +1420,8 @@ process_mpa(bgav_stream_t * s, rtp_header_t * h, uint8_t * data, int len)
 
   PACKET_SET_KEYFRAME(p);
   p->pts      = h->timestamp;
-  memcpy(p->data, data + 4, len - 4);
-  p->data_size = len - 4;
+  memcpy(p->buf.buf, data + 4, len - 4);
+  p->buf.len = len - 4;
   bgav_stream_done_packet_write(s, p);
   return 1;
   }
@@ -1459,8 +1459,8 @@ process_mpv(bgav_stream_t * s, rtp_header_t * h, uint8_t * data, int len)
   bgav_packet_alloc(p, len);
   
   p->pts      = h->timestamp;
-  memcpy(p->data, data, len);
-  p->data_size = len;
+  memcpy(p->buf.buf, data, len);
+  p->buf.len = len;
   bgav_stream_done_packet_write(s, p);
   return 1;
   }
@@ -1485,20 +1485,20 @@ static int process_mp4v_es(bgav_stream_t * s,
     if(!s->packet)
       {
       s->packet = bgav_stream_get_packet_write(s);
-      s->packet->data_size = 0;
+      s->packet->buf.len = 0;
       s->packet->pts = h->timestamp;
       }
-    bgav_packet_alloc(s->packet, s->packet->data_size + len);
-    memcpy(s->packet->data + s->packet->data_size, data, len);
-    s->packet->data_size += len;
+    bgav_packet_alloc(s->packet, s->packet->buf.len + len);
+    memcpy(s->packet->buf.buf + s->packet->buf.len, data, len);
+    s->packet->buf.len += len;
     }
   else
     {
     if(s->packet)
       {
-      bgav_packet_alloc(s->packet, s->packet->data_size + len);
-      memcpy(s->packet->data + s->packet->data_size, data, len);
-      s->packet->data_size += len;
+      bgav_packet_alloc(s->packet, s->packet->buf.len + len);
+      memcpy(s->packet->buf.buf + s->packet->buf.len, data, len);
+      s->packet->buf.len += len;
       //      gavl_hexdump(s->packet->data, 16, 16);
       bgav_stream_done_packet_write(s, s->packet);
       s->packet = NULL;
@@ -1508,9 +1508,9 @@ static int process_mp4v_es(bgav_stream_t * s,
       bgav_packet_t * p;
       p = bgav_stream_get_packet_write(s);
       bgav_packet_alloc(p, len);
-      memcpy(p->data, data, len);
+      memcpy(p->buf.buf, data, len);
       //      gavl_hexdump(p->data, 16, 16);
-      p->data_size = len;
+      p->buf.len = len;
       bgav_stream_done_packet_write(s, p);
       }
     }
@@ -1571,7 +1571,7 @@ static int process_h263_1998(bgav_stream_t * s,
     if(!p_bit)
       return 1;
     s->packet = bgav_stream_get_packet_write(s);
-    s->packet->data_size = 0;
+    s->packet->buf.len = 0;
     s->packet->pts = h->timestamp;
     }
 
@@ -1586,18 +1586,18 @@ static int process_h263_1998(bgav_stream_t * s,
 
   if(p_bit)
     {
-    bgav_packet_alloc(s->packet, s->packet->data_size + len + 2);
+    bgav_packet_alloc(s->packet, s->packet->buf.len + len + 2);
     /* Make startcodes complete */
-    s->packet->data[s->packet->data_size]   = 0;
-    s->packet->data[s->packet->data_size+1] = 0;
-    s->packet->data_size += 2;
+    s->packet->buf.buf[s->packet->buf.len]   = 0;
+    s->packet->buf.buf[s->packet->buf.len+1] = 0;
+    s->packet->buf.len += 2;
     }
   else
-    bgav_packet_alloc(s->packet, s->packet->data_size + len);
+    bgav_packet_alloc(s->packet, s->packet->buf.len + len);
   
-  memcpy(s->packet->data + s->packet->data_size, data, len);
+  memcpy(s->packet->buf.buf + s->packet->buf.len, data, len);
   //  gavl_hexdump(p->data, 16, 16);
-  s->packet->data_size += len;
+  s->packet->buf.len += len;
   
   if(h->marker)
     {
@@ -1628,20 +1628,20 @@ static void start_packet_ogg(bgav_stream_t * s, int64_t pts)
   s->packet = bgav_stream_get_packet_write(s);
   
   bgav_packet_alloc(s->packet, sizeof(ogg_packet));
-  memset(s->packet->data, 0, sizeof(ogg_packet));
-  s->packet->data_size = sizeof(ogg_packet);
+  memset(s->packet->buf.buf, 0, sizeof(ogg_packet));
+  s->packet->buf.len = sizeof(ogg_packet);
   s->packet->pts = pts;
   }
 
 static void append_packet_ogg(bgav_stream_t * s, uint8_t * data, int len)
   {
   ogg_packet * op;
-  bgav_packet_alloc(s->packet, s->packet->data_size + len);
-  op = (ogg_packet *)s->packet->data;
-  op->packet = s->packet->data + sizeof(*op);
+  bgav_packet_alloc(s->packet, s->packet->buf.len + len);
+  op = (ogg_packet *)s->packet->buf.buf;
+  op->packet = s->packet->buf.buf + sizeof(*op);
   op->bytes += len;
-  memcpy(s->packet->data + s->packet->data_size, data, len);
-  s->packet->data_size += len;
+  memcpy(s->packet->buf.buf + s->packet->buf.len, data, len);
+  s->packet->buf.len += len;
   }
 
 static void end_packet_ogg(bgav_stream_t * s)

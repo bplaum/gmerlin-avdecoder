@@ -42,18 +42,18 @@ static void append_data(bgav_packet_t * p, uint8_t * data, int len,
   switch(header_len)
     {
     case 3:
-      bgav_packet_alloc(p, p->data_size + 3 + len);
-      memcpy(p->data + p->data_size, &nal_header[1], 3);
-      p->data_size += 3;
+      bgav_packet_alloc(p, p->buf.len + 3 + len);
+      memcpy(p->buf.buf + p->buf.len, &nal_header[1], 3);
+      p->buf.len += 3;
       break;
     case 4:
-      bgav_packet_alloc(p, p->data_size + 4 + len);
-      memcpy(p->data + p->data_size, nal_header, 4);
-      p->data_size += 4;
+      bgav_packet_alloc(p, p->buf.len + 4 + len);
+      memcpy(p->buf.buf + p->buf.len, nal_header, 4);
+      p->buf.len += 4;
       break;
     }
-  memcpy(p->data + p->data_size, data, len);
-  p->data_size += len;
+  memcpy(p->buf.buf + p->buf.len, data, len);
+  p->buf.len += len;
   }
 
 static void
@@ -65,10 +65,10 @@ filter_avcc(bgav_bsf_t* bsf, bgav_packet_t * in, bgav_packet_t * out)
   avcc_t * priv = bsf->priv;
   int unit_type;
   
-  ptr = in->data;
-  end = in->data + in->data_size;
+  ptr = in->buf.buf;
+  end = in->buf.buf + in->buf.len;
 
-  out->data_size = 0;
+  out->buf.len = 0;
     
   while(ptr < end - priv->nal_size_length)
     {

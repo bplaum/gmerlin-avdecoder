@@ -42,7 +42,7 @@ static int get_format(bgav_stream_t * s, bgav_packet_t * p,
   bgav_png_reader_t * png = bgav_png_reader_create(s->data.video.depth);
   
   if(!bgav_png_reader_read_header(s->opt, png,
-                                  p->data, p->data_size,
+                                  p->buf.buf, p->buf.len,
                                   fmt))
     {
     ret = 0;

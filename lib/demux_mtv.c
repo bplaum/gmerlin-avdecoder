@@ -194,15 +194,15 @@ static int next_packet_mtv(bgav_demuxer_context_t * ctx)
       p = bgav_stream_get_packet_write(s);
       
       bgav_packet_alloc(p, MTV_ASUBCHUNK_DATA_SIZE * priv->h.audio_subsegments);
-      p->data_size = 0;
+      p->buf.len = 0;
       
       for(i = 0; i < priv->h.audio_subsegments; i++)
         {
         bgav_input_skip(ctx->input, MTV_AUDIO_PADDING_SIZE);
-        if(bgav_input_read_data(ctx->input, p->data + p->data_size,
+        if(bgav_input_read_data(ctx->input, p->buf.buf + p->buf.len,
                                 MTV_ASUBCHUNK_DATA_SIZE) < MTV_ASUBCHUNK_DATA_SIZE)
           return 0;
-        p->data_size += MTV_ASUBCHUNK_DATA_SIZE;
+        p->buf.len += MTV_ASUBCHUNK_DATA_SIZE;
         }
       bgav_stream_done_packet_write(s, p);
       }
@@ -222,10 +222,10 @@ static int next_packet_mtv(bgav_demuxer_context_t * ctx)
       
       bgav_packet_alloc(p, priv->h.img_segment_size);
 
-      if(bgav_input_read_data(ctx->input, p->data,
+      if(bgav_input_read_data(ctx->input, p->buf.buf,
                               priv->h.img_segment_size) < priv->h.img_segment_size)
         return 0;
-      p->data_size = priv->h.img_segment_size;
+      p->buf.len = priv->h.img_segment_size;
       p->pts = s->in_position;
       bgav_stream_done_packet_write(s, p);
       }

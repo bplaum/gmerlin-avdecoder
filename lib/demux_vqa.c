@@ -243,9 +243,9 @@ static int next_packet_vqa(bgav_demuxer_context_t * ctx)
   p = bgav_stream_get_packet_write(s);
 
   bgav_packet_alloc(p, size);
-  if(bgav_input_read_data(ctx->input, p->data, size) < size)
+  if(bgav_input_read_data(ctx->input, p->buf.buf, size) < size)
     return 0;
-  p->data_size = size;
+  p->buf.len = size;
 
   if(size & 1)
     bgav_input_skip(ctx->input, 1);

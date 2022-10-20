@@ -250,9 +250,9 @@ static int next_packet_adts(bgav_demuxer_context_t * ctx)
   
   bgav_packet_alloc(p, adts.frame_bytes);
 
-  p->data_size = bgav_input_read_data(ctx->input, p->data, adts.frame_bytes);
+  p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, adts.frame_bytes);
 
-  if(p->data_size < adts.frame_bytes)
+  if(p->buf.len < adts.frame_bytes)
     return 0;
   
   bgav_stream_done_packet_write(s, p);

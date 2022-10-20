@@ -122,7 +122,7 @@ static gavl_source_status_t decode_frame_speex(bgav_stream_t * s)
   if((st = bgav_stream_get_packet_read(s, &p)) != GAVL_SOURCE_OK)
     return st;
 
-  speex_bits_read_from(&priv->bits, (char*)p->data, p->data_size);
+  speex_bits_read_from(&priv->bits, (char*)p->buf.buf, p->buf.len);
   
   for(i = 0; i < priv->header->frames_per_packet; i++)
     {

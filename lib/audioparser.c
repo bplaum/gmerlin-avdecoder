@@ -136,7 +136,7 @@ static void add_packet(bgav_audio_parser_t * parser, bgav_packet_t * p)
     }
   parser->packets[parser->num_packets].packet_position = p->position;
   parser->packets[parser->num_packets].parser_position = parser->buf.len;
-  parser->packets[parser->num_packets].size = p->data_size;
+  parser->packets[parser->num_packets].size = p->buf.len;
   parser->packets[parser->num_packets].pts  = p->pts;
   parser->num_packets++;
   bgav_bytebuffer_append_packet(&parser->buf, p, 0);
@@ -212,8 +212,8 @@ static void get_out_packet(bgav_audio_parser_t * parser,
                            bgav_packet_t * p)
   {
   bgav_packet_alloc(p, parser->frame_bytes);
-  memcpy(p->data, parser->buf.buf, parser->frame_bytes);
-  p->data_size = parser->frame_bytes;
+  memcpy(p->buf.buf, parser->buf.buf, parser->frame_bytes);
+  p->buf.len = parser->frame_bytes;
   bgav_packet_pad(p);
   bgav_audio_parser_flush(parser, parser->frame_bytes);
 

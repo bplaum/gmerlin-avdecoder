@@ -395,7 +395,7 @@ static gavl_source_status_t decode_qtraw(bgav_stream_t * s, gavl_video_frame_t *
     bgav_stream_done_packet_read(s, p);
     return GAVL_SOURCE_OK;
     }
-  src = p->data;
+  src = p->buf.buf;
   dst = f->planes[0];
   
   for(i = 0; i < s->data.video.format->image_height; i++)

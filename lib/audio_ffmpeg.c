@@ -208,15 +208,15 @@ static gavl_source_status_t decode_frame_ffmpeg(bgav_stream_t * s)
         }
       else
         {
-        priv->pkt.data = p->data;
-        priv->pkt.size = p->data_size;
+        priv->pkt.data = p->buf.buf;
+        priv->pkt.size = p->buf.len;
         }
 #ifdef DUMP_PACKET
       if(p)
         {
         bgav_dprintf("Got packet\n");
         bgav_packet_dump(p);
-        gavl_hexdump(p->data, 16, 16);
+        gavl_hexdump(p->buf.buf, 16, 16);
         }
 #endif
       avcodec_send_packet(priv->ctx, &priv->pkt);

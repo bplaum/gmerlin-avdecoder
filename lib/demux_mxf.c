@@ -89,7 +89,7 @@ static void set_pts(bgav_stream_t * s, stream_priv_t * sp,
     {
     p->pts = sp->pts_counter;
     if(s->data.audio.block_align)
-      p->duration = p->data_size / s->data.audio.block_align;
+      p->duration = p->buf.len / s->data.audio.block_align;
     sp->pts_counter += p->duration;
     PACKET_SET_KEYFRAME(p);
     }
@@ -144,11 +144,11 @@ static int next_packet_clip_wrapped_const(bgav_demuxer_context_t * ctx, bgav_str
   p = bgav_stream_get_packet_write(s);
   p->position = ctx->input->position;
   bgav_packet_alloc(p, bytes_to_read);
-  p->data_size = bgav_input_read_data(ctx->input, p->data, bytes_to_read);
+  p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
 
   sp->pos += bytes_to_read;
 
-  if(p->data_size < bytes_to_read)
+  if(p->buf.len < bytes_to_read)
     return 0;
   
   set_pts(s, sp, p);
@@ -199,8 +199,8 @@ static int process_packet_frame_wrapped(bgav_demuxer_context_t * ctx)
     num_samples = (end_pos - ctx->input->position) / 32; /* 8 channels*4 bytes/channel */
     
     bgav_packet_alloc(p, num_samples * s->data.audio.block_align);
-    ptr = p->data;
-    p->data_size = 0;
+    ptr = p->buf.buf;
+    p->buf.len = 0;
     for(i = 0; i < num_samples; i++)
       {
       for(j = 0; j < s->data.audio.format->num_channels; j++)
@@ -212,14 +212,14 @@ static int process_packet_frame_wrapped(bgav_demuxer_context_t * ctx)
           sample = (sample >> 4) & 0xffffff;
           GAVL_24LE_2_PTR(sample, ptr);
           ptr += 3;
-          p->data_size += 3;
+          p->buf.len += 3;
           }
         else if(s->data.audio.bits_per_sample == 16)
           {
           sample = (sample >> 12) & 0xffff;
           GAVL_16LE_2_PTR(sample, ptr);
           ptr += 2;
-          p->data_size += 2;
+          p->buf.len += 2;
           }
         }
       bgav_input_skip(ctx->input, 32 - s->data.audio.format->num_channels * 4);
@@ -231,7 +231,7 @@ static int process_packet_frame_wrapped(bgav_demuxer_context_t * ctx)
   else
     {
     bgav_packet_alloc(p, klv.length);
-    if((p->data_size = bgav_input_read_data(ctx->input, p->data, klv.length)) < klv.length)
+    if((p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, klv.length)) < klv.length)
       return 0;
 
     set_pts(s, sp, p);

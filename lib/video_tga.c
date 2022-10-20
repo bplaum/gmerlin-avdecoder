@@ -137,14 +137,14 @@ static gavl_source_status_t decode_tga(bgav_stream_t * s, gavl_video_frame_t * f
     if(priv->p->palette_size && !set_palette(s, priv->p))
       return GAVL_SOURCE_EOF;
     
-    result = tga_read_from_memory(&priv->tga, priv->p->data,
-                                  priv->p->data_size,
+    result = tga_read_from_memory(&priv->tga, priv->p->buf.buf,
+                                  priv->p->buf.len,
                                   priv->ctab, priv->ctab_size);
     if(result != TGA_NOERR)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
                "tga_read_from_memory failed: %s (%d bytes)",
-              tga_error(result), priv->p->data_size);
+              tga_error(result), priv->p->buf.len);
       //      dump_packet(p->data, p->data_size);
       return GAVL_SOURCE_EOF;
       }
