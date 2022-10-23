@@ -1523,17 +1523,15 @@ static void init_video(bgav_demuxer_context_t * ctx,
     bg_vs->data.video.format->framerate_mode = GAVL_FRAMERATE_CONSTANT;
   else
     bg_vs->data.video.format->framerate_mode = GAVL_FRAMERATE_VARIABLE;
-      
-  bg_vs->data.video.pal.size = desc->format.video.ctab_size;
-  if(bg_vs->data.video.pal.size)
+
+  if(desc->format.video.ctab_size)
     {
-    int len = bg_vs->data.video.pal.size *
-      sizeof(*bg_vs->data.video.pal.entries);
-        
-    bg_vs->data.video.pal.entries = malloc(len);
-    memcpy(bg_vs->data.video.pal.entries, desc->format.video.ctab, len);
+    bg_vs->data.video.pal = gavl_palette_create();
+    gavl_palette_alloc(bg_vs->data.video.pal, desc->format.video.ctab_size);
+    memcpy(bg_vs->data.video.pal->entries, desc->format.video.ctab, desc->format.video.ctab_size *
+           sizeof(bg_vs->data.video.pal->entries[0]));
     }
-      
+  
   /* Set extradata suitable for Sorenson 3 */
       
   if(bg_vs->fourcc == BGAV_MK_FOURCC('S', 'V', 'Q', '3'))

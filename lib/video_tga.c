@@ -93,28 +93,28 @@ static int set_palette(bgav_stream_t * s, bgav_packet_t * p)
   int i;
   tga_priv_t * priv;
   priv = s->decoder_priv;
-  if(priv->ctab_size && (priv->ctab_size != p->palette_size * 4))
+  if(priv->ctab_size && (priv->ctab_size != p->pal->num_entries * 4))
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
              "Palette size changed %d -> %d",
-             priv->ctab_size/4, p->palette_size);
+             priv->ctab_size/4, p->pal->num_entries);
     return 0;
     }
   
-  priv->ctab_size = p->palette_size * 4;
+  priv->ctab_size = p->pal->num_entries * 4;
 
   if(!priv->ctab)
     priv->ctab = malloc(priv->ctab_size);
   
-  for(i = 0; i < p->palette_size; i++)
+  for(i = 0; i < p->pal->num_entries; i++)
     {
-    priv->ctab[i*4+0] = (p->palette[i].r) >> 8;
-    priv->ctab[i*4+1] = (p->palette[i].g) >> 8;
-    priv->ctab[i*4+2] = (p->palette[i].b) >> 8;
-    priv->ctab[i*4+3] = (p->palette[i].a) >> 8;
+    priv->ctab[i*4+0] = (p->pal->entries[i].r) >> 8;
+    priv->ctab[i*4+1] = (p->pal->entries[i].g) >> 8;
+    priv->ctab[i*4+2] = (p->pal->entries[i].b) >> 8;
+    priv->ctab[i*4+3] = (p->pal->entries[i].a) >> 8;
     }
   gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN,
-           "Setting palette %d entries", p->palette_size);
+           "Setting palette %d entries", p->pal->num_entries);
   return 1;
   }
 
@@ -134,7 +134,7 @@ static gavl_source_status_t decode_tga(bgav_stream_t * s, gavl_video_frame_t * f
       return st;
 
     /* Set palette */
-    if(priv->p->palette_size && !set_palette(s, priv->p))
+    if(priv->p->pal && !set_palette(s, priv->p))
       return GAVL_SOURCE_EOF;
     
     result = tga_read_from_memory(&priv->tga, priv->p->buf.buf,

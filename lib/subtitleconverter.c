@@ -111,8 +111,7 @@ next_packet(bgav_subtitle_converter_t * cnv,
     if(!bgav_convert_string_realloc(cnv->cnv,
                                     (const char *)in_packet->buf.buf,
                                     in_len,
-                                    &ret->buf.len,
-                                    (char **)&ret->buf.buf, &ret->buf.alloc))
+                                    &ret->buf))
       {
       bgav_packet_pool_put(cnv->s->pp, in_packet);
       bgav_packet_pool_put(cnv->s->pp, ret);

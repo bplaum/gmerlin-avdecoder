@@ -216,8 +216,8 @@ void bgav_stream_free(bgav_stream_t * s)
   
   if(s->type == GAVL_STREAM_VIDEO)
     {
-    if(s->data.video.pal.entries)
-      free(s->data.video.pal.entries);
+    if(s->data.video.pal)
+      gavl_palette_destroy(s->data.video.pal);
     }
   
   if(s->timecode_table)
@@ -339,12 +339,13 @@ void bgav_stream_done_packet_write(bgav_stream_t * s, bgav_packet_t * p)
        !p->duration)
       p->duration = s->data.video.format->frame_duration;
 
-    if(s->data.video.pal.size && !s->data.video.pal.sent)
+    if(s->data.video.pal && !s->data.video.pal_sent)
       {
-      bgav_packet_alloc_palette(p, s->data.video.pal.size);
-      memcpy(p->palette, s->data.video.pal.entries,
-             s->data.video.pal.size * sizeof(*p->palette));
-      s->data.video.pal.sent = 1;
+      p->pal = gavl_palette_create();
+      gavl_palette_alloc(p->pal, s->data.video.pal->num_entries);
+      memcpy(p->pal->entries, s->data.video.pal->entries,
+             s->data.video.pal->num_entries * sizeof(*p->pal->entries));
+      s->data.video.pal_sent = 1;
       }
     }
   /* Padding (if fourcc != gavl) */

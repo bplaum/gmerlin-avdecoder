@@ -245,9 +245,11 @@ struct bgav_packet_s
   uint32_t flags;
 
   /* Palette data */
-  int palette_size;
-  bgav_palette_entry_t * palette;
-
+  //  int palette_size;
+  //  bgav_palette_entry_t * palette;
+  
+  gavl_palette_t * pal;
+  
   /* For overlay streams: Save coordinates out-of-band so we can
      use any alpha capable I-frame format */
   
@@ -271,7 +273,7 @@ void bgav_packet_swap_data(bgav_packet_t * p1, bgav_packet_t * p2);
 void bgav_packet_pad(bgav_packet_t * p);
 void bgav_packet_reset(bgav_packet_t * p);
 
-void bgav_packet_alloc_palette(bgav_packet_t * p, int size);
+// void bgav_packet_alloc_palette(bgav_packet_t * p, int size);
 void bgav_packet_free_palette(bgav_packet_t * p);
 void bgav_packet_copy_metadata(bgav_packet_t * dst,
                                const bgav_packet_t * src);
@@ -391,13 +393,17 @@ typedef struct
   //  int max_ref_frames; /* Needed for VDPAU */
       
   bgav_video_format_tracker_t * ft;
-
+  /* Palette */
+  int pal_sent;
+  gavl_palette_t * pal;
+#if 0  
   struct
     {
     bgav_palette_entry_t * entries;
     int size;
     int sent;
     } pal;
+#endif
   
   gavl_video_source_t * vsrc;
   gavl_video_source_t * vsrc_priv;
@@ -1108,16 +1114,14 @@ char * bgav_input_absolute_url(bgav_input_context_t * ctx, const char * rel_url)
  */
 
 int bgav_input_read_line(bgav_input_context_t*,
-                         char ** buffer, uint32_t * buffer_alloc,
-                         int buffer_offset, uint32_t * len);
+                         gavl_buffer_t * ret);
 
 void bgav_input_detect_charset(bgav_input_context_t*);
 int bgav_utf8_validate(const uint8_t * str, const uint8_t * end);
 
 
 int bgav_input_read_convert_line(bgav_input_context_t*,
-                                 char ** buffer, uint32_t * buffer_alloc,
-                                 uint32_t * len);
+                                 gavl_buffer_t * ret);
 
 int bgav_input_read_sector(bgav_input_context_t*, uint8_t*);
 
@@ -1720,8 +1724,7 @@ char * bgav_convert_string(bgav_charset_converter_t *,
 
 int bgav_convert_string_realloc(bgav_charset_converter_t * cnv,
                                 const char * str, int len,
-                                uint32_t * out_len,
-                                char ** ret, uint32_t * ret_alloc);
+                                gavl_buffer_t * out);
 
 /* subtitleconverter.c */
 /* Subtitle converter (converts character sets and removes \r */
@@ -1879,9 +1882,8 @@ struct bgav_subtitle_reader_context_s
   /* Timestamps are scaled with out_pts = pts * scale_num / scale_den */
   int scale_num;
   int scale_den;
-  
-  char * line;
-  uint32_t line_alloc;
+
+  gavl_buffer_t line_buf;
   
   /* Some formats have a header... */
   int64_t data_start;

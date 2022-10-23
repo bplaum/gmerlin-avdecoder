@@ -39,28 +39,32 @@ static int probe_ref(bgav_input_context_t * input)
 
 static bgav_track_table_t * parse_ref(bgav_input_context_t * input)
   {
-  char * buffer = NULL;
-  uint32_t buffer_alloc = 0;
   char * pos;
+  char * str;
   bgav_track_table_t * ret;
   bgav_track_t * t;
+  gavl_buffer_t line_buf;
+  gavl_buffer_init(&line_buf);
+    
+  if(!bgav_input_read_line(input, &line_buf))
+    return NULL;
+  str = (char*)line_buf.buf;
   
-  if(!bgav_input_read_line(input, &buffer, &buffer_alloc, 0, NULL))
+  if(!gavl_string_starts_with_i(str, "[Reference]"))
     return NULL;
-
-  if(strncasecmp(buffer, "[Reference]", 11))
-    return NULL;
-
+  
   ret = bgav_track_table_create(0);
   
   while(1)
     {
-    if(!bgav_input_read_line(input, &buffer, &buffer_alloc, 0, NULL))
+    if(!bgav_input_read_line(input, &line_buf))
       break;
 
-    if(!strncasecmp(buffer, "ref", 3) && isdigit(buffer[3]))
+    str = (char*)line_buf.buf;
+    
+    if(!strncasecmp(str, "ref", 3) && isdigit(str[3]))
       {
-      pos = strchr(buffer, '=');
+      pos = strchr(str, '=');
       if(pos)
         {
         pos++;

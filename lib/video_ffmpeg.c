@@ -319,27 +319,23 @@ static void update_palette(bgav_stream_t * s, bgav_packet_t * p)
   priv = s->decoder_priv;
   
   imax =
-    (p->palette_size > AVPALETTE_COUNT)
-    ? AVPALETTE_COUNT : p->palette_size;
-
+    (p->pal->num_entries > AVPALETTE_COUNT)
+    ? AVPALETTE_COUNT : p->pal->num_entries;
+  
   gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN,
-           "Got palette %d entries", p->palette_size);
+           "Got palette %d entries", p->pal->num_entries);
       
-#if LIBAVCODEC_VERSION_MAJOR < 54
-  priv->palette.palette_changed = 1;
-  pal_i = priv->palette.palette;
-#else
   pal_i =
     (uint32_t*)av_packet_new_side_data(&priv->pkt, AV_PKT_DATA_PALETTE,
                                        AVPALETTE_COUNT * 4);
-#endif
+
   for(i = 0; i < imax; i++)
     {
     pal_i[i] =
-      ((p->palette[i].a >> 8) << 24) |
-      ((p->palette[i].r >> 8) << 16) |
-      ((p->palette[i].g >> 8) << 8) |
-      ((p->palette[i].b >> 8));
+      ((p->pal->entries[i].a >> 8) << 24) |
+      ((p->pal->entries[i].r >> 8) << 16) |
+      ((p->pal->entries[i].g >> 8) << 8) |
+      ((p->pal->entries[i].b >> 8));
     }
   for(i = imax; i < AVPALETTE_COUNT; i++)
     pal_i[i] = 0;
@@ -442,9 +438,9 @@ static gavl_source_status_t get_packet(bgav_stream_t * s)
     priv->pkt.size = p->buf.len;
       
   /* Palette handling */
-  if(p->palette)
+  if(p->pal)
     update_palette(s, p);
-      
+  
   /* Check for EOS */
   if(p->sequence_end_pos > 0)
     priv->flags |= GOT_EOS;

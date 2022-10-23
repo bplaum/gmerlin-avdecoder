@@ -36,13 +36,13 @@ typedef struct
   void (*scanline_func)(uint8_t * src,
                         uint8_t * dst,
                         int num_pixels,
-                        bgav_palette_entry_t * pal);
+                        gavl_palette_entry_t * pal);
   } raw_priv_t;
 
 static void scanline_raw_1(uint8_t * src,
                            uint8_t * dst,
                            int num_pixels,
-                           bgav_palette_entry_t * pal)
+                           gavl_palette_entry_t * pal)
   {
   int i;
   int counter = 0;
@@ -63,7 +63,7 @@ static void scanline_raw_1(uint8_t * src,
 static void scanline_raw_2(uint8_t * src,
                            uint8_t * dst,
                            int num_pixels,
-                           bgav_palette_entry_t * pal)
+                           gavl_palette_entry_t * pal)
   {
   int i;
   int counter = 0;
@@ -84,7 +84,7 @@ static void scanline_raw_2(uint8_t * src,
 static void scanline_raw_4(uint8_t * src,
                            uint8_t * dst,
                            int num_pixels,
-                           bgav_palette_entry_t * pal)
+                           gavl_palette_entry_t * pal)
   {
   int i;
   int counter = 0;
@@ -105,7 +105,7 @@ static void scanline_raw_4(uint8_t * src,
 static void scanline_raw_8(uint8_t * src,
                            uint8_t * dst,
                            int num_pixels,
-                           bgav_palette_entry_t * pal)
+                           gavl_palette_entry_t * pal)
   {
   int i;
   for(i = 0; i < num_pixels; i++)
@@ -119,7 +119,7 @@ static void scanline_raw_8(uint8_t * src,
 static void scanline_raw_16(uint8_t * src,
                             uint8_t * dst,
                             int num_pixels,
-                            bgav_palette_entry_t * pal)
+                            gavl_palette_entry_t * pal)
   {
   int i;
   uint16_t pixel;
@@ -136,7 +136,7 @@ static void scanline_raw_16(uint8_t * src,
 static void scanline_raw_24(uint8_t * src,
                             uint8_t * dst,
                             int num_pixels,
-                            bgav_palette_entry_t * pal)
+                            gavl_palette_entry_t * pal)
   {
   memcpy(dst, src, num_pixels * 3);
   }
@@ -144,7 +144,7 @@ static void scanline_raw_24(uint8_t * src,
 static void scanline_raw_32(uint8_t * src,
                             uint8_t * dst,
                             int num_pixels,
-                            bgav_palette_entry_t * pal)
+                            gavl_palette_entry_t * pal)
   {
   int i;
   for(i = 0; i < num_pixels; i++)
@@ -161,7 +161,7 @@ static void scanline_raw_32(uint8_t * src,
 static void scanline_raw_2_gray(uint8_t * src,
                                 uint8_t * dst,
                                 int num_pixels,
-                                bgav_palette_entry_t * pal)
+                                gavl_palette_entry_t * pal)
   {
   int i;
   int counter = 0;
@@ -185,7 +185,7 @@ static void scanline_raw_2_gray(uint8_t * src,
 static void scanline_raw_4_gray(uint8_t * src,
                                 uint8_t * dst,
                                 int num_pixels,
-                                bgav_palette_entry_t * pal)
+                                gavl_palette_entry_t * pal)
   {
   int i;
 
@@ -210,7 +210,7 @@ static void scanline_raw_4_gray(uint8_t * src,
 static void scanline_raw_8_gray(uint8_t * src,
                                 uint8_t * dst,
                                 int num_pixels,
-                                bgav_palette_entry_t * pal)
+                                gavl_palette_entry_t * pal)
   {
   int i;
   for(i = 0; i < num_pixels; i++)
@@ -238,11 +238,10 @@ static int init_qtraw(bgav_stream_t * s)
       /* 1 bpp palette */
       priv->bytes_per_line = width / 8;
       priv->scanline_func = scanline_raw_1;
-      if(s->data.video.pal.size < 2)
+      if(!s->data.video.pal || (s->data.video.pal->num_entries < 2))
         {
         gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-                 "Palette missing or too small %d",
-                s->data.video.pal.size);
+                 "Palette missing or too small");
         goto fail;
         }
       s->data.video.format->pixelformat = GAVL_RGB_24;
@@ -256,11 +255,10 @@ static int init_qtraw(bgav_stream_t * s)
       /* 2 bpp palette */
       priv->bytes_per_line = width / 4;
       priv->scanline_func = scanline_raw_2;
-      if(s->data.video.pal.size < 4)
+      if(!s->data.video.pal || (s->data.video.pal->num_entries < 4))
         {
         gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-                 "Palette missing or too small %d",
-                 s->data.video.pal.size);
+                 "Palette missing or too small");
         goto fail;
         }
       s->data.video.format->pixelformat = GAVL_RGB_24;
@@ -274,11 +272,10 @@ static int init_qtraw(bgav_stream_t * s)
       /* 4 bpp palette */
       priv->bytes_per_line = width / 2;
       priv->scanline_func = scanline_raw_4;
-      if(s->data.video.pal.size < 16)
+      if(s->data.video.pal || (s->data.video.pal->num_entries < 16))
         {
         gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-                 "Palette missing or too small %d",
-                 s->data.video.pal.size);
+                 "Palette missing or too small");
         goto fail;
         }
       s->data.video.format->pixelformat = GAVL_RGB_24;
@@ -291,11 +288,10 @@ static int init_qtraw(bgav_stream_t * s)
       /* 8 bpp palette */
       priv->bytes_per_line = width;
       priv->scanline_func = scanline_raw_8;
-      if(s->data.video.pal.size < 256)
+      if(!s->data.video.pal || s->data.video.pal->num_entries < 256)
         {
         gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-                 "Palette missing or too small %d",
-                 s->data.video.pal.size);
+                 "Palette missing or too small");
         goto fail;
         }
       s->data.video.format->pixelformat = GAVL_RGB_24;
@@ -401,7 +397,7 @@ static gavl_source_status_t decode_qtraw(bgav_stream_t * s, gavl_video_frame_t *
   for(i = 0; i < s->data.video.format->image_height; i++)
     {
     priv->scanline_func(src, dst, s->data.video.format->image_width,
-                        s->data.video.pal.entries);
+                        s->data.video.pal->entries);
     src += priv->bytes_per_line;
     dst += f->strides[0];
     

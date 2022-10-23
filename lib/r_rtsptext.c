@@ -42,15 +42,17 @@ static int probe_rtsptext(bgav_input_context_t * input)
 
 static bgav_track_table_t * parse_rtsptext(bgav_input_context_t * input)
   {
-  char * buffer = NULL;
-  uint32_t buffer_alloc = 0;
   char * pos;
   bgav_track_table_t * ret;
+  char * str;
+  gavl_buffer_t line_buf;
+  gavl_buffer_init(&line_buf);
   
-  if(!bgav_input_read_line(input, &buffer, &buffer_alloc, 0, NULL))
+  if(!bgav_input_read_line(input, &line_buf))
     return 0;
-
-  pos = buffer + 8;
+  str = (char*)line_buf.buf;
+  
+  pos = str + 8;
 
   while(isspace(*pos) && (*pos != '\0'))
     pos++;
@@ -64,15 +66,15 @@ static bgav_track_table_t * parse_rtsptext(bgav_input_context_t * input)
     }
   else
     {
-    if(!bgav_input_read_line(input, &buffer, &buffer_alloc, 0, NULL))
+    if(!bgav_input_read_line(input, &line_buf))
       return 0;
+    str = (char*)line_buf.buf;
 
     gavl_dictionary_set_string(ret->tracks[0]->metadata, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_LOCATION);
-    gavl_metadata_add_src(ret->tracks[0]->metadata, GAVL_META_SRC, NULL, buffer);
+    gavl_metadata_add_src(ret->tracks[0]->metadata, GAVL_META_SRC, NULL, str);
     }
-  
-  if(buffer)
-    free(buffer);
+
+  gavl_buffer_free(&line_buf);
   return ret;
   }
 

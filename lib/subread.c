@@ -65,34 +65,32 @@ static int init_srt(bgav_stream_t * s)
 static gavl_source_status_t read_srt(bgav_stream_t * s, bgav_packet_t * p)
   {
   int lines_read;
-  uint32_t line_len;
   int a1,a2,a3,a4,b1,b2,b3,b4;
   int i,len;
   bgav_subtitle_reader_context_t * ctx;
   gavl_time_t start, end;
-  
+  char * str;
   ctx = s->data.subtitle.subreader;
   
   /* Read lines */
   while(1)
     {
-    if(!bgav_input_read_convert_line(ctx->input, &ctx->line,
-                                     &ctx->line_alloc, &line_len))
+    if(!bgav_input_read_convert_line(ctx->input, &ctx->line_buf))
       return GAVL_SOURCE_EOF;
-
+    str = (char*)ctx->line_buf.buf;
     // fprintf(stderr, "Line: %s (%c)\n", ctx->line, ctx->line[0]);
     
-    if(ctx->line[0] == '@')
+    if(str[0] == '@')
       {
-      if(!strncasecmp(ctx->line, "@OFF=", 5))
+      if(!strncasecmp(str, "@OFF=", 5))
         {
-        ctx->time_offset += (int)(atof(ctx->line+5) * 1000);
+        ctx->time_offset += (int)(atof(str+5) * 1000);
         gavl_log(GAVL_LOG_INFO, LOG_DOMAIN,
                  "new time offset: %"PRId64, ctx->time_offset);
         }
-      else if(!strncasecmp(ctx->line, "@SCALE=", 7))
+      else if(!strncasecmp(str, "@SCALE=", 7))
         {
-        sscanf(ctx->line + 7, "%d:%d", &ctx->scale_num, &ctx->scale_den);
+        sscanf(str + 7, "%d:%d", &ctx->scale_num, &ctx->scale_den);
         gavl_log(GAVL_LOG_INFO, LOG_DOMAIN,
                  "new scale factor: %d:%d", ctx->scale_num, ctx->scale_den);
         
@@ -104,7 +102,7 @@ static gavl_source_status_t read_srt(bgav_stream_t * s, bgav_packet_t * p)
       }
     
     
-    else if((len=sscanf (ctx->line,
+    else if((len=sscanf (str,
                          "%d:%d:%d%[,.:]%d --> %d:%d:%d%[,.:]%d",
                          &a1,&a2,&a3,(char *)&i,&a4,
                          &b1,&b2,&b3,(char *)&i,&b4)) == 10)
@@ -147,15 +145,14 @@ static gavl_source_status_t read_srt(bgav_stream_t * s, bgav_packet_t * p)
   lines_read = 0;
   while(1)
     {
-    if(!bgav_input_read_convert_line(ctx->input, &ctx->line, &ctx->line_alloc,
-                                     &line_len))
+    if(!bgav_input_read_convert_line(ctx->input, &ctx->line_buf))
       {
-      line_len = 0;
+      ctx->line_buf.len = 0;
       if(!lines_read)
         return GAVL_SOURCE_EOF;
       }
     
-    if(!line_len)
+    if(!ctx->line_buf.len)
       {
       /* Zero terminate */
       if(lines_read)
@@ -173,9 +170,8 @@ static gavl_source_status_t read_srt(bgav_stream_t * s, bgav_packet_t * p)
       }
     
     lines_read++;
-    bgav_packet_alloc(p, p->buf.len + line_len + 2);
-    memcpy(p->buf.buf + p->buf.len, ctx->line, line_len);
-    p->buf.len += line_len;
+    bgav_packet_alloc(p, p->buf.len + ctx->line_buf.len + 2);
+    gavl_buffer_append(&p->buf, &ctx->line_buf);
     }
   
   return GAVL_SOURCE_EOF;
@@ -207,21 +203,20 @@ static int probe_mpsub(char * line, bgav_input_context_t * ctx)
 
 static int init_mpsub(bgav_stream_t * s)
   {
-  uint32_t line_len;
   double framerate;
   char * ptr;
   bgav_subtitle_reader_context_t * ctx;
+  char * str;
   mpsub_priv_t * priv = calloc(1, sizeof(*priv));
   ctx = s->data.subtitle.subreader;
   ctx->priv = priv;
   s->timescale = GAVL_TIME_SCALE;
   while(1)
     {
-    if(!bgav_input_read_line(ctx->input, &ctx->line,
-                             &ctx->line_alloc, 0, &line_len))
+    if(!bgav_input_read_line(ctx->input, &ctx->line_buf))
       return 0;
-
-    ptr = ctx->line;
+    str = (char*)ctx->line_buf.buf;
+    ptr = str;
     
     while(isspace(*ptr) && (*ptr != '\0'))
       ptr++;
@@ -244,22 +239,21 @@ static gavl_source_status_t read_mpsub(bgav_stream_t * s, bgav_packet_t * p)
   double d1, d2;
   gavl_time_t t1 = 0, t2 = 0;
   
-  uint32_t line_len;
   int lines_read;
   bgav_subtitle_reader_context_t * ctx;
   mpsub_priv_t * priv;
   char * ptr;
+  char * str;
   
   ctx = s->data.subtitle.subreader;
   priv = ctx->priv;
     
   while(1)
     {
-    if(!bgav_input_read_line(ctx->input, &ctx->line,
-                             &ctx->line_alloc, 0, &line_len))
+    if(!bgav_input_read_line(ctx->input, &ctx->line_buf))
       return GAVL_SOURCE_EOF;
-
-    ptr = ctx->line;
+    str = (char*)ctx->line_buf.buf;
+    ptr = str;
     
     while(isspace(*ptr) && (*ptr != '\0'))
       ptr++;
@@ -308,15 +302,14 @@ static gavl_source_status_t read_mpsub(bgav_stream_t * s, bgav_packet_t * p)
 
   while(1)
     {
-    if(!bgav_input_read_convert_line(ctx->input, &ctx->line, &ctx->line_alloc,
-                                     &line_len))
+    if(!bgav_input_read_convert_line(ctx->input, &ctx->line_buf))
       {
-      line_len = 0;
+      ctx->line_buf.len = 0;
       if(!lines_read)
         return GAVL_SOURCE_EOF;
       }
     
-    if(!line_len)
+    if(!ctx->line_buf.len)
       {
       /* Zero terminate */
       if(lines_read)
@@ -334,9 +327,8 @@ static gavl_source_status_t read_mpsub(bgav_stream_t * s, bgav_packet_t * p)
       }
     
     lines_read++;
-    bgav_packet_alloc(p, p->buf.len + line_len + 2);
-    memcpy(p->buf.buf + p->buf.len, ctx->line, line_len);
-    p->buf.len += line_len;
+    bgav_packet_alloc(p, p->buf.len + ctx->line_buf.len + 2);
+    gavl_buffer_append(&p->buf, &ctx->line_buf);
     }
   return GAVL_SOURCE_EOF;
   }
@@ -440,22 +432,23 @@ static int probe_vobsub(char * line, bgav_input_context_t * ctx)
   {
   int ret = 0;
   char * str = NULL;
-  uint32_t str_alloc = 0;
-  uint32_t str_len;
   if(!strncasecmp(line, "# VobSub index file, v7", 23) &&
      (str = find_vobsub_file(ctx->filename)))
     {
+    gavl_buffer_t line_buf;
+    gavl_buffer_init(&line_buf);
+    
     free(str);
     str = NULL;
     /* Need to count the number of streams */
-    while(bgav_input_read_convert_line(ctx, &str, &str_alloc, &str_len))
+    while(bgav_input_read_convert_line(ctx, &line_buf))
       {
+      str = (char*)line_buf.buf;
       if(!strncmp(str, "id:", 3) &&
          !strstr(str, "--") && strstr(str, "index:"))
         ret++;
       }
-    if(str)
-      free(str);
+    gavl_buffer_free(&line_buf);
     }
   if(ret)
     gavl_log(GAVL_LOG_INFO, LOG_DOMAIN,
@@ -468,11 +461,13 @@ static int setup_stream_vobsub(bgav_stream_t * s)
   {
   bgav_input_context_t * input = NULL;
   bgav_subtitle_reader_context_t * ctx;
-  char *line = NULL;
-  uint32_t line_alloc = 0;
-  uint32_t line_len = 0;
+  char * str;
+  gavl_buffer_t line_buf;
+
   int idx = 0;
   int ret = 0;
+
+  gavl_buffer_init(&line_buf);
   
   ctx = s->data.subtitle.subreader;
   
@@ -482,14 +477,15 @@ static int setup_stream_vobsub(bgav_stream_t * s)
     goto fail;
   
   /* Read lines */
-  while(bgav_input_read_line(input, &line,
-                             &line_alloc, 0, &line_len))
+  while(bgav_input_read_line(input, &line_buf))
     {
-    if(*line == '#')
+    str = (char*)line_buf.buf;
+    
+    if(*str == '#')
       continue;
-    else if(!strncmp(line, "size:", 5)) // size: 720x576
+    else if(!strncmp(str, "size:", 5)) // size: 720x576
       {
-      sscanf(line + 5, "%dx%d",
+      sscanf(str + 5, "%dx%d",
              &s->data.subtitle.video.format->image_width,
              &s->data.subtitle.video.format->image_height);
       s->data.subtitle.video.format->frame_width =
@@ -497,16 +493,16 @@ static int setup_stream_vobsub(bgav_stream_t * s)
       s->data.subtitle.video.format->frame_height =
         s->data.subtitle.video.format->image_height;
       }
-    else if(!strncmp(line, "palette:", 8)) // palette: 000000, 828282...
+    else if(!strncmp(str, "palette:", 8)) // palette: 000000, 828282...
       {
-      if((s->ci->global_header = (uint8_t*)bgav_get_vobsub_palette(line + 8)))
+      if((s->ci->global_header = (uint8_t*)bgav_get_vobsub_palette(str + 8)))
         {
         s->ci->global_header_len = 16 * 4;
         s->fourcc = BGAV_MK_FOURCC('D', 'V', 'D', 'S');
         }
       }
-    else if(!strncmp(line, "id:", 3) &&
-            !strstr(line, "--") && strstr(line, "index:"))
+    else if(!strncmp(str, "id:", 3) &&
+            !strstr(str, "--") && strstr(str, "index:"))
       {
       if(idx == ctx->stream)
         {
@@ -514,7 +510,7 @@ static int setup_stream_vobsub(bgav_stream_t * s)
         char language_2cc[3];
         const char * language_3cc;
         
-        pos = line + 3;
+        pos = str + 3;
         while(isspace(*pos) && (*pos != '\0'))
           pos++;
 
@@ -537,9 +533,8 @@ static int setup_stream_vobsub(bgav_stream_t * s)
 
   ret = 1;
   fail:
-  
-  if(line)
-    free(line);
+
+  gavl_buffer_free(&line_buf);
   if(input)
     bgav_input_destroy(input);
   return ret;
@@ -583,7 +578,6 @@ read_vobsub(bgav_stream_t * s, bgav_packet_t * p)
   {
   bgav_subtitle_reader_context_t * ctx;
   vobsub_priv_t * priv;
-  uint32_t line_len;
   const char * pos;
   int64_t pts, position;
   bgav_pes_header_t pes_header;
@@ -592,26 +586,26 @@ read_vobsub(bgav_stream_t * s, bgav_packet_t * p)
   int packet_size = 0;
   int substream_id = -1;
   uint8_t byte;
-  
+  char * str;
   ctx = s->data.subtitle.subreader;
   priv = ctx->priv;
 
   while(1)
     {
-    if(!bgav_input_read_line(ctx->input, &ctx->line,
-                             &ctx->line_alloc, 0, &line_len))
+    if(!bgav_input_read_line(ctx->input, &ctx->line_buf))
       return GAVL_SOURCE_EOF; // EOF
-
-    if(gavl_string_starts_with(ctx->line, "id:"))
+    str = (char*)ctx->line_buf.buf;
+    
+    if(gavl_string_starts_with(str, "id:"))
       return GAVL_SOURCE_EOF; // Next stream
 
-    if(gavl_string_starts_with(ctx->line, "timestamp:") &&
-       (pos = strstr(ctx->line, "filepos:")))
+    if(gavl_string_starts_with(str, "timestamp:") &&
+       (pos = strstr(str, "filepos:")))
       break;
     
     }
   
-  if((pts = vobsub_parse_pts(ctx->line + 10)) == GAVL_TIME_UNDEFINED)
+  if((pts = vobsub_parse_pts(str + 10)) == GAVL_TIME_UNDEFINED)
     return GAVL_SOURCE_EOF;
 
   position = strtoll(pos + 8, NULL, 16);
@@ -1069,11 +1063,10 @@ find_subtitle_reader(const char * filename,
   bgav_input_context_t * input;
   const char * extension;
   const bgav_subtitle_reader_t* ret = NULL;
+  gavl_buffer_t line_buf;
+  char * str;
+  gavl_buffer_init(&line_buf);
   
-  char * line = NULL;
-  uint32_t line_alloc = 0;
-  uint32_t line_len;
-
   *num_streams = 0;
   
   /* 1. Check if we have a supported extension */
@@ -1101,13 +1094,14 @@ find_subtitle_reader(const char * filename,
     }
 
   bgav_input_detect_charset(input);
-  while(bgav_input_read_convert_line(input, &line, &line_alloc, &line_len))
+  while(bgav_input_read_convert_line(input, &line_buf))
     {
+    str = (char*)line_buf.buf;
     i = 0;
     
     while(subtitle_readers[i].name)
       {
-      if((*num_streams = subtitle_readers[i].probe(line, input)))
+      if((*num_streams = subtitle_readers[i].probe(str, input)))
         {
         ret = &subtitle_readers[i];
         break;
@@ -1124,7 +1118,8 @@ find_subtitle_reader(const char * filename,
     *charset = NULL;
   
   bgav_input_destroy(input);
-  free(line);
+
+  gavl_buffer_free(&line_buf);
   
   return ret;
   }
@@ -1258,8 +1253,7 @@ void bgav_subtitle_reader_destroy(bgav_stream_t * s)
     free(ctx->filename);
   if(ctx->charset)
     free(ctx->charset);
-  if(ctx->line)
-    free(ctx->line);
+  gavl_buffer_free(&ctx->line_buf);
   if(ctx->input)
     bgav_input_destroy(ctx->input);
   free(ctx);

@@ -173,20 +173,21 @@ void bgav_packet_source_copy(bgav_packet_source_t * dst,
   memcpy(dst, src, sizeof(*dst));
   }
 
+#if 0
 void bgav_packet_alloc_palette(bgav_packet_t * p, int size)
   {
   p->palette = malloc(sizeof(*p->palette) * size);
   p->palette_size = size;
   }
+#endif
 
 void bgav_packet_free_palette(bgav_packet_t * p)
   {
-  if(p->palette)
+  if(p->pal)
     {
-    free(p->palette);
-    p->palette = NULL;
+    gavl_palette_destroy(p->pal);
+    p->pal = NULL;
     }
-  p->palette_size = 0;
   }
 
 void bgav_packet_merge_field2(bgav_packet_t * p,

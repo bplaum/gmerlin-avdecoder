@@ -123,46 +123,59 @@ static int find_num(const char * buf)
 
 static int sphere_header_read(bgav_input_context_t * input, sphere_header_t * ret)
   {
-  char * buffer = NULL;
-  uint32_t buffer_alloc = 0;
+  int result = 0;
 
+  gavl_buffer_t buf;
+
+  gavl_buffer_init(&buf);
   memset(ret, 0, sizeof(*ret));
-    
+  
   while(1)
     {
-    if(!bgav_input_read_line(input, &buffer, &buffer_alloc, 0, NULL))
-      return 0;
-    if(check_key(buffer, "NIST_1A"))
+    char * str;
+    
+    if(!bgav_input_read_line(input, &buf))
+      goto fail;
+
+    str = (char*)buf.buf;
+
+    if(check_key(str, "NIST_1A"))
       {
-      if(!bgav_input_read_line(input, &buffer, &buffer_alloc, 0, NULL))
-        return 0;
-      ret->HeaderSize = atoi(buffer);
+      if(!bgav_input_read_line(input, &buf))
+        goto fail;
+      ret->HeaderSize = atoi(str);
       }
-    if(check_key(buffer, "sample_rate "))
-      ret->SampleRate = find_num(buffer);
-    if(check_key(buffer, "channel_count "))
-      ret->Channels = find_num(buffer);      
-    if(check_key(buffer, "sample_sig_bits "))
-      ret->BitsPerSample = find_num(buffer);      
-    if(check_key(buffer, "sample_n_bytes "))
-      ret->SampleNBytes = find_num(buffer);
-    if(check_key(buffer, "sample_byte_format "))
-      if(!find_string(buffer, &ret->SampleByteFormat))
-        return 0;
-    if(check_key(buffer, "sample_count "))
-      ret->SampleCount = find_num(buffer);
-    if(check_key(buffer, "sample_coding "))
-      if(!find_string(buffer, &ret->SampleCoding))
-        return 0;
-    if(check_key(buffer, "end_head"))
+    if(check_key(str, "sample_rate "))
+      ret->SampleRate = find_num(str);
+    if(check_key(str, "channel_count "))
+      ret->Channels = find_num(str);      
+    if(check_key(str, "sample_sig_bits "))
+      ret->BitsPerSample = find_num(str);      
+    if(check_key(str, "sample_n_bytes "))
+      ret->SampleNBytes = find_num(str);
+    if(check_key(str, "sample_byte_format "))
+      if(!find_string(str, &ret->SampleByteFormat))
+        goto fail;
+    if(check_key(str, "sample_count "))
+      ret->SampleCount = find_num(str);
+    if(check_key(str, "sample_coding "))
+      if(!find_string(str, &ret->SampleCoding))
+        goto fail;
+    if(check_key(str, "end_head"))
       break;
     if(input->position > ret->HeaderSize)
       {
-      return 0;
+      goto fail;
       break;
       }
     }
-  return 1;
+  
+  result = 1;
+  fail:
+
+  gavl_buffer_free(&buf);
+    
+  return result;
   }
 
 #if 0

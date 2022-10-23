@@ -831,7 +831,7 @@ static int next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
   ffmpeg_priv_t * priv;
   AVPacket pkt;
   AVStream * avs;
-  bgav_palette_entry_t * pal;
+  gavl_palette_entry_t * pal;
   bgav_packet_t * p;
   bgav_stream_t * s;
   int i_tmp;
@@ -891,9 +891,10 @@ static int next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
 #else
     pal_i_len /= 4;
 
-    bgav_packet_alloc_palette(p, pal_i_len);
+    p->pal = gavl_palette_create();
+    gavl_palette_alloc(p->pal, pal_i_len);
     
-    pal = p->palette;
+    pal = p->pal->entries;
 #endif
     for(i = 0; i < pal_i_len; i++)
       {

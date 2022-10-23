@@ -210,9 +210,10 @@ static void parse_ext_x_media(bgav_input_context_t * input, const char * pos, ga
 static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
   {
   int i;
-  char * buffer = NULL;
-  uint32_t buffer_alloc = 0;
+  gavl_buffer_t line_buf;
   const char * pos;
+  char * str;
+  
   bgav_track_table_t * tt;
   bgav_track_t * t = NULL;
 
@@ -232,6 +233,8 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
   gavl_dictionary_t metadata;
   gavl_dictionary_t http_vars;
   gavl_dictionary_t http_vars_global;
+
+  gavl_buffer_init(&line_buf);
 
   gavl_dictionary_init(&ext_x_media);
   gavl_dictionary_init(&metadata);
@@ -256,10 +259,10 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
   /* First pass: read lines, process #EXT-X-MEDIA lines */
   while(1)
     {
-    if(!bgav_input_read_line(input, &buffer, &buffer_alloc, 0, NULL))
+    if(!bgav_input_read_line(input, &line_buf))
       break;
-
-    pos = strip_spaces(buffer);
+    str = (char*)line_buf.buf;
+    pos = strip_spaces(str);
     if(*pos == '\0') // Empty line
       continue;
 
@@ -768,9 +771,9 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
   
   if(hls && t)
     gavl_track_set_multivariant(t->info);
+
+  gavl_buffer_free(&line_buf);
   
-  if(buffer)
-    free(buffer);
   return tt;
   }
 

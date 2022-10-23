@@ -197,12 +197,13 @@ static int vivo_header_read(vivo_header_t * ret, bgav_input_context_t * input)
   uint8_t c;
   int len;
   int64_t header_start;
-  char * buffer = NULL;
+  char * str = NULL;
   char * pos = NULL;
   int result = 0;
   int record_type;
-    
-  uint32_t buffer_alloc = 0;
+
+  gavl_buffer_t buf;
+  gavl_buffer_init(&buf);
   
   /* First, read the main stuff */
 
@@ -220,10 +221,10 @@ static int vivo_header_read(vivo_header_t * ret, bgav_input_context_t * input)
   
   while(input->position < header_start + len)
     {
-    if(!bgav_input_read_line(input, &buffer, &buffer_alloc, 0, NULL))
+    if(!bgav_input_read_line(input, &buf))
       goto fail;
-
-    if(check_key(buffer, "Version", &pos))
+    str = (char*)buf.buf;
+    if(check_key(str, "Version", &pos))
       {
       while(!isdigit(*pos) && (*pos != '\0'))
         pos++;
@@ -231,37 +232,37 @@ static int vivo_header_read(vivo_header_t * ret, bgav_input_context_t * input)
         goto fail;
       ret->version = atoi(pos);
       }
-    else if(check_key(buffer, "FPS", &pos))
+    else if(check_key(str, "FPS", &pos))
       ret->fps = atof(pos);
-    else if(check_key(buffer, "Duration", &pos))
+    else if(check_key(str, "Duration", &pos))
       ret->duration = strtoul(pos, NULL, 10);
-    else if(check_key(buffer, "Rate", &pos))
+    else if(check_key(str, "Rate", &pos))
       ret->rate = strtoul(pos, NULL, 10);
-    else if(check_key(buffer, "VidRate", &pos))
+    else if(check_key(str, "VidRate", &pos))
       ret->vid_rate = strtoul(pos, NULL, 10);
-    else if(check_key(buffer, "Playtime1", &pos))
+    else if(check_key(str, "Playtime1", &pos))
       ret->playtime1 = strtoul(pos, NULL, 10);
-    else if(check_key(buffer, "Playtime2", &pos))
+    else if(check_key(str, "Playtime2", &pos))
       ret->playtime2 = strtoul(pos, NULL, 10);
-    else if(check_key(buffer, "Buffer", &pos))
+    else if(check_key(str, "Buffer", &pos))
       ret->buffer = strtol(pos, NULL, 10);
-    else if(check_key(buffer, "Preroll", &pos))
+    else if(check_key(str, "Preroll", &pos))
       ret->preroll = strtoul(pos, NULL, 10);
-    else if(check_key(buffer, "Title", &pos))
+    else if(check_key(str, "Title", &pos))
       ret->title = gavl_strdup(pos);
-    else if(check_key(buffer, "Author", &pos))
+    else if(check_key(str, "Author", &pos))
       ret->author = gavl_strdup(pos);
-    else if(check_key(buffer, "Copyright", &pos))
+    else if(check_key(str, "Copyright", &pos))
       ret->copyright = gavl_strdup(pos);
-    else if(check_key(buffer, "Producer", &pos))
+    else if(check_key(str, "Producer", &pos))
       ret->producer = gavl_strdup(pos);
-    else if(check_key(buffer, "Width", &pos))
+    else if(check_key(str, "Width", &pos))
       ret->width = strtoul(pos, NULL, 10);
-    else if(check_key(buffer, "Height", &pos))
+    else if(check_key(str, "Height", &pos))
       ret->height = strtoul(pos, NULL, 10);
-    else if(check_key(buffer, "DisplayWidth", &pos))
+    else if(check_key(str, "DisplayWidth", &pos))
       ret->display_width = strtoul(pos, NULL, 10);
-    else if(check_key(buffer, "DisplayHeight", &pos))
+    else if(check_key(str, "DisplayHeight", &pos))
       ret->display_height = strtoul(pos, NULL, 10);
     }
 
@@ -288,17 +289,18 @@ static int vivo_header_read(vivo_header_t * ret, bgav_input_context_t * input)
     record_type = -1;
     while(input->position < header_start + len)
       {
-      if(!bgav_input_read_line(input, &buffer, &buffer_alloc, 0, NULL))
+      if(!bgav_input_read_line(input, &buf))
         goto fail;
-
+      str = (char*)buf.buf;
+      
       /* Skip empty lines */
-      if(*buffer == '\0')
+      if(*str == '\0')
         continue;
       
-      if(!check_key(buffer, "RecordType", &pos))
+      if(!check_key(str, "RecordType", &pos))
         {
         gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-                 "Unknown extended header: %s", buffer);
+                 "Unknown extended header: %s", str);
         break;
         }
       record_type = atoi(pos);
@@ -313,21 +315,22 @@ static int vivo_header_read(vivo_header_t * ret, bgav_input_context_t * input)
       case 2:
         while(input->position < header_start + len)
           {
-          if(!bgav_input_read_line(input, &buffer, &buffer_alloc, 0, NULL))
+          if(!bgav_input_read_line(input, &buf))
             goto fail;
-
-          if(check_key(buffer, "TimestampType", &pos))
+          str = (char*)buf.buf;
+          
+          if(check_key(str, "TimestampType", &pos))
             {
             if(strcmp(pos, "relative"))
               gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
                        "Unknown timestamp type: %s",
                       pos);
             }
-          else if(check_key(buffer, "TimeUnitNumerator", &pos))
+          else if(check_key(str, "TimeUnitNumerator", &pos))
             {
             ret->record_2.time_unit_num = strtoul(pos, NULL, 10);
             }
-          else if(check_key(buffer, "TimeUnitDenominator", &pos))
+          else if(check_key(str, "TimeUnitDenominator", &pos))
             {
             ret->record_2.time_unit_den = strtoul(pos, NULL, 10);
             }
@@ -338,22 +341,23 @@ static int vivo_header_read(vivo_header_t * ret, bgav_input_context_t * input)
       case 4:
         while(input->position < header_start + len)
           {
-          if(!bgav_input_read_line(input, &buffer, &buffer_alloc, 0, NULL))
+          if(!bgav_input_read_line(input, &buf))
             goto fail;
-
-          if(check_key(buffer, "Length", &pos))
+          str = (char*)buf.buf;
+          
+          if(check_key(str, "Length", &pos))
             ret->record_3_4.length = strtoul(pos, NULL, 10);
 
-          else if(check_key(buffer, "InitialFrameLength", &pos))
+          else if(check_key(str, "InitialFrameLength", &pos))
             ret->record_3_4.initial_frame_length = strtoul(pos, NULL, 10);
 
-          else if(check_key(buffer, "NominalBitrate", &pos))
+          else if(check_key(str, "NominalBitrate", &pos))
             ret->record_3_4.nominal_bitrate = strtoul(pos, NULL, 10);
 
-          else if(check_key(buffer, "SamplingFrequency", &pos))
+          else if(check_key(str, "SamplingFrequency", &pos))
             ret->record_3_4.sampling_frequency = strtoul(pos, NULL, 10);
 
-          else if(check_key(buffer, "GainFactor", &pos))
+          else if(check_key(str, "GainFactor", &pos))
             ret->record_3_4.gain_factor = strtoul(pos, NULL, 10);
           
           }
@@ -367,8 +371,7 @@ static int vivo_header_read(vivo_header_t * ret, bgav_input_context_t * input)
   if(input->opt->dump_headers)
     vivo_header_dump(ret);
   fail:
-  if(buffer)
-    free(buffer);
+  gavl_buffer_free(&buf);
   return result;
   }
 

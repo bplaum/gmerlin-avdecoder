@@ -162,24 +162,26 @@ bgav_cue_t *
 bgav_cue_read(bgav_input_context_t * audio_file)
   {
   bgav_cue_t * ret = NULL;
-  char * line = NULL;
-  uint32_t line_alloc = 0;
   const char * pos;
   char * rest;
   cue_track_t * cur = NULL;
+
+  gavl_buffer_t line_buf;
   
   bgav_input_context_t * ctx = get_cue_file(audio_file);
 
   if(!ctx)
     goto fail;
+
+  gavl_buffer_init(&line_buf);
   
   ret = calloc(1, sizeof(*ret));
 
   while(1)
     {
-    if(!bgav_input_read_line(ctx, &line, &line_alloc, 0, NULL))
+    if(!bgav_input_read_line(ctx, &line_buf))
       break;
-    pos = skip_space(line);
+    pos = skip_space((char*)line_buf.buf);
 
     if(!pos)
       continue;
@@ -274,8 +276,8 @@ bgav_cue_read(bgav_input_context_t * audio_file)
 
   bgav_input_close(ctx);
   bgav_input_destroy(ctx);
-  MY_FREE(line);
-  
+  gavl_buffer_free(&line_buf);
+
   return ret;
 
   fail:
@@ -286,7 +288,7 @@ bgav_cue_read(bgav_input_context_t * audio_file)
     bgav_input_close(ctx);
     bgav_input_destroy(ctx);
     }
-  MY_FREE(line);
+  gavl_buffer_free(&line_buf);
   return NULL;
   
   }

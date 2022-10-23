@@ -54,27 +54,32 @@ static int probe_pls(bgav_input_context_t * input)
 
 static bgav_track_table_t * parse_pls(bgav_input_context_t * input)
   {
-  char * buffer = NULL;
-  uint32_t buffer_alloc = 0;
+  char * str = NULL;
+  gavl_buffer_t line_buf;
   char * pos;
   bgav_track_table_t * tt = 0;
   bgav_track_t * t;
   int have_file = 0;
   int have_title = 0;
+
+  gavl_buffer_init(&line_buf);
   
   /* Get the first nonempty line */
   while(1)
     {
-    if(!bgav_input_read_line(input, &buffer, &buffer_alloc, 0, NULL))
+    if(!bgav_input_read_line(input, &line_buf))
       goto fail;
-    pos = buffer;
+
+    str = (char*)line_buf.buf;
+
+    pos = str;
     while(isspace(*pos))
       pos++;
     if(*pos != '\0')
       break;
     }
   
-  if(strncasecmp(buffer, "[playlist]", 10))
+  if(gavl_string_starts_with_i(str, "[playlist]"))
     goto fail;
   
   /* Get number of entries */
@@ -86,15 +91,17 @@ static bgav_track_table_t * parse_pls(bgav_input_context_t * input)
   
   while(1)
     {
-    if(!bgav_input_read_line(input, &buffer, &buffer_alloc, 0, NULL))
+    if(!bgav_input_read_line(input, &line_buf))
       break;
-
-    if(!strncasecmp(buffer, "Title", 5))
+    
+    str = (char*)line_buf.buf;
+    
+    if(!strncasecmp(str, "Title", 5))
       {
       if(!t)
         t = bgav_track_table_append_track(tt);
       
-      pos = strchr(buffer, '=');
+      pos = strchr(str, '=');
       if(pos)
         {
         pos++;
@@ -102,7 +109,7 @@ static bgav_track_table_t * parse_pls(bgav_input_context_t * input)
         have_title = 1;
         }
       }
-    else if(!strncasecmp(buffer, "File", 4))
+    else if(!strncasecmp(str, "File", 4))
       {
       if(have_file)
         t = NULL;
@@ -110,7 +117,7 @@ static bgav_track_table_t * parse_pls(bgav_input_context_t * input)
       if(!t)
         t = bgav_track_table_append_track(tt);
       
-      pos = strchr(buffer, '=');
+      pos = strchr(str, '=');
       if(pos)
         {
         pos++;
@@ -132,8 +139,8 @@ static bgav_track_table_t * parse_pls(bgav_input_context_t * input)
     
     }
   fail:
-  if(buffer)
-    free(buffer);
+
+  gavl_buffer_free(&line_buf);
   
   return tt;
   }

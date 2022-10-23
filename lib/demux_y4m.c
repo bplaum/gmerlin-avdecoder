@@ -35,8 +35,9 @@ typedef struct
   {
   
   uint8_t * tmp_planes[4]; /* For YUVA4444 */
-  uint32_t line_alloc;
-  char * line;
+
+  gavl_buffer_t line_buf;
+
   
   int buf_size;
   } y4m_t;
@@ -98,9 +99,7 @@ static int open_y4m(bgav_demuxer_context_t * ctx)
   
   /* Read the stream header */
 
-  if(!bgav_input_read_line(ctx->input,
-                           &priv->line, &priv->line_alloc,
-                           0, NULL))
+  if(!bgav_input_read_line(ctx->input, &priv->line_buf))
     return 0;
   
   /* Create track table */
@@ -110,7 +109,7 @@ static int open_y4m(bgav_demuxer_context_t * ctx)
   /* Set up the stream */
   s = bgav_track_add_video_stream(ctx->tt->cur, ctx->opt);
 
-  pos = next_tag(priv->line);
+  pos = next_tag((char*)priv->line_buf.buf);
 
   while(1)
     {
@@ -246,11 +245,10 @@ static int next_packet_y4m(bgav_demuxer_context_t * ctx)
   p->position = ctx->input->position;
 
   if(!bgav_input_read_line(ctx->input,
-                           &priv->line, &priv->line_alloc,
-                           0, NULL))
+                           &priv->line_buf))
     return 0;
-
-  if(strncmp(priv->line, "FRAME", 5))
+  
+  if(strncmp((char*)priv->line_buf.buf, "FRAME", 5))
     return 0;
   
   bgav_packet_alloc(p, priv->buf_size);
@@ -265,7 +263,7 @@ static int next_packet_y4m(bgav_demuxer_context_t * ctx)
   PACKET_SET_KEYFRAME(p);
   p->duration = s->data.video.format->frame_duration;
   
-  pos = next_tag(priv->line);
+  pos = next_tag((char*)priv->line_buf.buf);
   while(pos)
     {
     switch(pos[0])
@@ -306,7 +304,7 @@ static int next_packet_y4m(bgav_demuxer_context_t * ctx)
       default:
         break;
       }
-    pos = next_tag(priv->line);
+    pos = next_tag(pos);
     }
   
   bgav_stream_done_packet_write(s, p);
@@ -323,8 +321,7 @@ static void close_y4m(bgav_demuxer_context_t * ctx)
   y4m_t * priv;
   priv = ctx->priv;
 
-  if(priv->line)
-    free(priv->line);
+  gavl_buffer_free(&priv->line_buf);
   
   free(priv);
   }

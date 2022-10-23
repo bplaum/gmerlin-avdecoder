@@ -350,7 +350,7 @@ int bgav_overlay_start(bgav_stream_t * s)
                                       s,
                                       GAVL_SOURCE_SRC_ALLOC,
                                       s->ci,
-                                      s->data.subtitle.video.format);
+                                      s->data.subtitle.video.format, GAVL_STREAM_OVERLAY);
     }
   
   return 1;

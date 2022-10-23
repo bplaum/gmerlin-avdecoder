@@ -504,31 +504,35 @@ static int init_subtitle(bgav_demuxer_context_t * ctx,
     }
   else if(!strcmp(track->CodecID, "S_VOBSUB"))
     {
-    char * line = NULL;
-    uint32_t line_alloc = 0;
+    gavl_buffer_t buf;
+    
+    char * str = NULL;
     uint32_t * pal = NULL;
     bgav_input_context_t * input_mem;
     int width = 0, height = 0;
+
+    gavl_buffer_init(&buf);
     
     input_mem =
       bgav_input_open_memory(track->CodecPrivate, track->CodecPrivateLen,
                              ctx->opt);
     
     /* Get the palette from the codec data */
-    while(bgav_input_read_line(input_mem, &line, &line_alloc, 0, NULL))
+    while(bgav_input_read_line(input_mem, &buf))
       {
+      str = (char*)buf.buf;
       // fprintf(stderr, "Got line: %s\n", line);
-      if(!strncmp(line, "palette:", 8))
-        pal = bgav_get_vobsub_palette(line + 8);
+      if(!strncmp(str, "palette:", 8))
+        pal = bgav_get_vobsub_palette(str + 8);
 
-      if(!strncmp(line, "size:", 5))
-        sscanf(line + 5, "%dx%d", &width, &height);
+      if(!strncmp(str, "size:", 5))
+        sscanf(str + 5, "%dx%d", &width, &height);
       
       if(pal && width && height)
         break;
       }
-    if(line)
-      free(line);
+    gavl_buffer_free(&buf);
+
     bgav_input_close(input_mem);
     bgav_input_destroy(input_mem);
 

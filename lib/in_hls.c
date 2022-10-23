@@ -45,16 +45,20 @@
 
 #define NEXT_STATE_START           0
 #define NEXT_STATE_READ_M3U        1
-#define NEXT_STATE_READ_CIPHER_KEY 2
-#define NEXT_STATE_GOT_TS          3
-#define NEXT_STATE_START_OPEN_TS   4
-#define NEXT_STATE_OPEN_TS         5
-#define NEXT_STATE_DONE            6
-#define NEXT_STATE_LOST_SYNC       7
+#define NEXT_STATE_WAIT_M3U        2
+#define NEXT_STATE_READ_CIPHER_KEY 3
+#define NEXT_STATE_GOT_TS          4
+#define NEXT_STATE_START_OPEN_TS   5
+#define NEXT_STATE_OPEN_TS         6
+#define NEXT_STATE_DONE            7
+#define NEXT_STATE_LOST_SYNC       8
 
 
 typedef struct
   {
+  gavl_timer_t * m3u_timer;
+  gavl_time_t m3u_time;
+  
   gavf_io_t * m3u_io;
   gavf_io_t * ts_io;
   gavf_io_t * ts_io_next;
@@ -82,6 +86,7 @@ typedef struct
 
   int next_state;
   int end_of_sequence;
+
   
   } hls_priv_t;
 
@@ -517,6 +522,12 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
   {
   hls_priv_t * p = ctx->priv;
 
+  if(p->next_state == NEXT_STATE_WAIT_M3U)
+    {
+    if(gavl_timer_get(p->m3u_timer) >= p->m3u_time)
+      p->next_state = NEXT_STATE_START;
+    }
+  
   if(p->next_state == NEXT_STATE_START)
     {
     gavl_buffer_reset(&p->m3u_buf);
@@ -554,8 +565,18 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
         p->seq_cur = p->seq_start + p->segments.num_entries - 2;
       init_seek_window(ctx);
       }
-    p->next_state = NEXT_STATE_GOT_TS;
+
+    if(p->seq_cur >= p->seq_start + p->segments.num_entries)
+      {
+      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Next segment not available in m3u8. Trying again in 1 sec.");
+      p->m3u_time = gavl_timer_get(p->m3u_timer) + GAVL_TIME_SCALE;
+      p->next_state = NEXT_STATE_WAIT_M3U;
+      return 0;
+      }
+    else
+      p->next_state = NEXT_STATE_GOT_TS;
     }
+
   
   if(p->next_state == NEXT_STATE_GOT_TS)
     {
@@ -724,7 +745,9 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   //  fprintf(stderr, "Open HLS: %s\n", url1);
   
   ctx->priv = priv;
-
+  priv->m3u_timer = gavl_timer_create();
+  gavl_timer_start(priv->m3u_timer);
+  
   ctx->url = gavl_strdup(url1);
   
   priv->m3u_io = gavl_http_client_create();
@@ -872,6 +895,8 @@ static void close_hls(bgav_input_context_t * ctx)
   hls_priv_t * p = ctx->priv;
 
   //  fprintf(stderr, "Close HLS\n");
+  if(p->m3u_timer)
+    gavl_timer_destroy(p->m3u_timer);
   
   if(p->m3u_io)
     gavf_io_destroy(p->m3u_io);

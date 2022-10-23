@@ -227,13 +227,16 @@ bgav_dvb_channels_load(bgav_t * b,
   int is_open = 0;
   
   char * line = NULL;
-  uint32_t line_alloc = 0;
   char ** entries;
   
   bgav_dvb_channel_info_t * ret = NULL;
   bgav_dvb_channel_info_t * channel;
   bgav_input_context_t * input;
 
+  gavl_buffer_t line_buf;
+  
+  gavl_buffer_init(&line_buf);
+  
   //  bgav_options_t * opt = &b->opt;
    
   input = bgav_input_create(b, NULL);
@@ -257,8 +260,9 @@ bgav_dvb_channels_load(bgav_t * b,
   *num = 0;
   while(1)
     {
+    
     i = 0;
-    if(!bgav_input_read_line(input, &line, &line_alloc, 0, NULL))
+    if(!bgav_input_read_line(input, &line_buf))
       break;
     
     entries = gavl_strbreak(line, ':');
@@ -377,8 +381,7 @@ bgav_dvb_channels_load(bgav_t * b,
 
   fail:
 
-  if(line)
-    free(line);
+  gavl_buffer_free(&line_buf);
   
   if(is_open)
     bgav_input_close(input);

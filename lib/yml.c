@@ -62,10 +62,9 @@ int bgav_yml_probe(bgav_input_context_t * input)
 typedef struct
   {
   bgav_input_context_t * input;
-  char * buffer;
   char * buffer_ptr;
-  int buffer_size;
-  uint32_t buffer_alloc;
+  gavl_buffer_t line_buf;
+  gavl_buffer_t buffer;
   //  int eof;
   } parser_t;
 
@@ -76,31 +75,26 @@ static int more_data(parser_t * p)
   int bytes_read = 0;
   while(1)
     {
-    if(!bgav_input_read_line(p->input, &p->buffer, &p->buffer_alloc,
-                             p->buffer_size, NULL))
+    if(!bgav_input_read_line(p->input, &p->line_buf))
       {
       return bytes_read;
       }
-    bytes_read = strlen(p->buffer + p->buffer_size);
-    p->buffer_size += bytes_read;
+    bytes_read = p->line_buf.len;
+    gavl_buffer_append(&p->buffer, &p->line_buf);
+    
     if(bytes_read)
-      {
       return bytes_read;
-      }
     }
   return 0; /* Never get here */
   }
 
 static void advance(parser_t * p, int bytes)
   {
-  if(bytes > p->buffer_size)
-    {
+  if(bytes > p->buffer.len)
     return;
-    }
-  if(bytes < p->buffer_size)
-    memmove(p->buffer, p->buffer + bytes, p->buffer_size - bytes);
-  p->buffer_size -= bytes;
-  p->buffer[p->buffer_size] = '\0';
+  
+  gavl_buffer_flush(&p->buffer, bytes);
+  p->buffer.buf[p->buffer.len] = '\0';
   }
 
 static char * find_chars(parser_t * p, const char * chars)
@@ -108,7 +102,7 @@ static char * find_chars(parser_t * p, const char * chars)
   char * pos = NULL;
   while(1)
     {
-    pos = strpbrk(p->buffer, chars);
+    pos = strpbrk((char*)p->buffer.buf, chars);
     if(pos)
       return pos;
     if(!more_data(p))
@@ -119,15 +113,15 @@ static char * find_chars(parser_t * p, const char * chars)
 
 static int skip_space(parser_t * p)
   {
-  if(!p->buffer_size)
+  if(!p->buffer.len)
     {
     if(!more_data(p))
       return 0;
     }
-  while(isspace(*(p->buffer)))
+  while(isspace(p->buffer.buf[0]))
     {
     advance(p, 1);
-    if(!p->buffer_size)
+    if(!p->buffer.len)
       {
       if(!more_data(p))
         return 0;
@@ -143,8 +137,8 @@ static char * parse_tag_name(parser_t * p)
   pos = find_chars(p, "> /?");
   if(!pos)
     return NULL;
-  ret = gavl_strndup(p->buffer, pos);
-  advance(p, pos - p->buffer);
+  ret = gavl_strndup((char*)p->buffer.buf, pos);
+  advance(p, pos - (char*)p->buffer.buf);
   return ret;
   }
 
@@ -155,8 +149,8 @@ static char * parse_attribute_name(parser_t * p)
   pos = find_chars(p, "= ");
   if(!pos)
     return NULL;
-  ret = gavl_strndup(p->buffer, pos);
-  advance(p, pos - p->buffer);
+  ret = gavl_strndup((char*)p->buffer.buf, pos);
+  advance(p, pos - (char*)p->buffer.buf);
   return ret;
   }
 
@@ -166,21 +160,21 @@ static char * parse_attribute_value(parser_t * p)
   char * end = NULL;
   char close_seq[3];
   
-  if(!p->buffer_size)
+  if(!p->buffer.len)
     {
     if(!more_data(p))
       return NULL;
     }
-  if((p->buffer[0] == '\\') && (p->buffer[1] == '"'))
+  if((p->buffer.buf[0] == '\\') && (p->buffer.buf[1] == '"'))
     {
-    close_seq[0] = p->buffer[0];
-    close_seq[1] = p->buffer[1];
+    close_seq[0] = p->buffer.buf[0];
+    close_seq[1] = p->buffer.buf[1];
     close_seq[2] = '\0';
     advance(p, 2);
     }
   else
     {
-    close_seq[0] = *(p->buffer);
+    close_seq[0] = *(p->buffer.buf);
     close_seq[1] = '\0';
     if((close_seq[0] != '\'') && (close_seq[0] != '"'))
       return NULL;
@@ -189,7 +183,7 @@ static char * parse_attribute_value(parser_t * p)
 
   while(1)
     {
-    end = strstr(p->buffer, close_seq);
+    end = strstr((char*)p->buffer.buf, close_seq);
 
     if(end)
       break;
@@ -200,9 +194,9 @@ static char * parse_attribute_value(parser_t * p)
 
   if(!end)
     return NULL;
-  ret = gavl_strndup(p->buffer, end);
+  ret = gavl_strndup((char*)p->buffer.buf, end);
   
-  advance(p, (int)(end - p->buffer) + strlen(close_seq));
+  advance(p, (int)(end - (char*)p->buffer.buf) + strlen(close_seq));
   return ret;
   }
 
@@ -212,8 +206,8 @@ static int parse_text_node(parser_t * p, bgav_yml_node_t * ret)
   pos = find_chars(p, "<");
   if(!pos)
     return 0;
-  ret->str = gavl_strndup(p->buffer, pos);
-  advance(p, (int)(pos - p->buffer));
+  ret->str = gavl_strndup((char*)p->buffer.buf, pos);
+  advance(p, (int)(pos - (char*)p->buffer.buf));
   return 1;
   }
 
@@ -229,7 +223,7 @@ static int parse_attributes(parser_t * p, bgav_yml_attr_t ** ret)
   attr_end->name = parse_attribute_name(p);
   if(!skip_space(p))
     return 0;
-  if(p->buffer[0] != '=')
+  if(p->buffer.buf[0] != '=')
     return 0;
   advance(p, 1); /* '=' */
   if(!skip_space(p))
@@ -239,7 +233,7 @@ static int parse_attributes(parser_t * p, bgav_yml_attr_t ** ret)
   while(1)
     {
     skip_space(p);
-    if((*(p->buffer) == '>') || (*(p->buffer) == '/') || (*(p->buffer) == '?'))
+    if((p->buffer.buf[0] == '>') || (p->buffer.buf[0] == '/') || (p->buffer.buf[0] == '?'))
       return 1;
     else
       {
@@ -250,7 +244,7 @@ static int parse_attributes(parser_t * p, bgav_yml_attr_t ** ret)
 
       if(!skip_space(p))
         return 0;
-      if(p->buffer[0] != '=')
+      if(p->buffer.buf[0] != '=')
         return 0;
       advance(p, 1); /* '=' */
       if(!skip_space(p))
@@ -268,12 +262,12 @@ static int parse_children(parser_t * p, bgav_yml_node_t * ret)
   bgav_yml_node_t * new_node;
   while(1)
     {
-    if(p->buffer_size < 2)
+    if(p->buffer.len < 2)
       {
       if(!more_data(p))
         return 0;
       }
-    if((p->buffer[0] == '<') && (p->buffer[1] == '/'))
+    if((p->buffer.buf[0] == '<') && (p->buffer.buf[1] == '/'))
       break;
     
     new_node = parse_node(p, &is_comment);
@@ -306,19 +300,19 @@ static int parse_tag_node(parser_t * p, bgav_yml_node_t * ret)
 
   if(!skip_space(p))
     return 0;
-  if(*(p->buffer) != '<')
+  if(p->buffer.buf[0] != '<')
     return 0;
 
   advance(p, 1); /* < */
 
-  if(p->buffer_size < 4)
+  if(p->buffer.len < 4)
     {
     if(!more_data(p))
       return 0;
     }
 
   //  if(!strncasecmp(p->buffer, "?xml", 4))
-  if(*p->buffer == '?')
+  if(p->buffer.buf[0] == '?')
     {
     advance(p, 1);
 
@@ -327,18 +321,18 @@ static int parse_tag_node(parser_t * p, bgav_yml_node_t * ret)
     if(!skip_space(p))
       return 0;
     
-    if(strncasecmp(p->buffer, "?>", 2))
+    if(strncasecmp((char*)p->buffer.buf, "?>", 2))
       {
       if(!parse_attributes(p, &ret->attributes))
         return 0;
       }
 
-    if(p->buffer_size < 2)
+    if(p->buffer.len < 2)
       {
       if(!more_data(p))
         return 0;
       }
-    if(strncasecmp(p->buffer, "?>", 2))
+    if(strncasecmp((char*)p->buffer.buf, "?>", 2))
       return 0;
     advance(p, 2);
     return 1;
@@ -346,29 +340,29 @@ static int parse_tag_node(parser_t * p, bgav_yml_node_t * ret)
   
   ret->name = parse_tag_name(p);
 
-  switch(*(p->buffer))
+  switch(p->buffer.buf[0])
     {
     case ' ': /* Attributes might come */
       if(!skip_space(p))
         return 0;
-      if(*(p->buffer) != '>')
+      if(p->buffer.buf[0] != '>')
         {
         if(!parse_attributes(p, &ret->attributes))
           return 0;
         
-        switch(*(p->buffer))
+        switch(p->buffer.buf[0])
           {
           case '>':
             advance(p, 1);
             break;
           case '/':
             advance(p, 1);
-            if(!p->buffer_size)
+            if(!p->buffer.len)
               {
               if(!more_data(p))
                 return 0;
               }
-            if(*(p->buffer) == '>')
+            if(p->buffer.buf[0] == '>')
               {
               advance(p, 1);
               return 1;
@@ -390,11 +384,11 @@ static int parse_tag_node(parser_t * p, bgav_yml_node_t * ret)
       break;
     case '/': /* Node finished here? */
       advance(p, 1);
-      if(!p->buffer_size)
+      if(!p->buffer.len)
         {
         if(!more_data(p))
           return 0;
-        if(*(p->buffer) == '>')
+        if(p->buffer.buf[0] == '>')
           {
           advance(p, 1);
           return 1;
@@ -411,24 +405,24 @@ static int parse_tag_node(parser_t * p, bgav_yml_node_t * ret)
 
   /* Now, we MUST have a closing tag */
 
-  if((*p->buffer) != '<')
+  if(p->buffer.buf[0] != '<')
     return 0;
   advance(p, 1);
   
-  if(!p->buffer_size)
+  if(!p->buffer.len)
     {
     if(!more_data(p))
       return 0;
     }
-  if((*p->buffer) != '/')
+  if(p->buffer.buf[0] != '/')
     return 0;
   advance(p, 1);
   pos = find_chars(p, ">");
   if(!pos)
     return 0;
-  if(strncasecmp(ret->name, p->buffer, (int)(pos - p->buffer)))
+  if(strncasecmp(ret->name, (char*)p->buffer.buf, (int)(pos - (char*)p->buffer.buf)))
     return 0;
-  advance(p, (int)(pos - p->buffer) + 1);
+  advance(p, (int)(pos - (char*)p->buffer.buf) + 1);
   return 1;
   }
 
@@ -441,14 +435,14 @@ static void skip_comment(parser_t * p)
     pos = find_chars(p, "-");
     if(!pos)
       return;
-    advance(p, (int)(pos - p->buffer));
-    if(p->buffer_size < 3)
+    advance(p, (int)(pos - (char*)p->buffer.buf));
+    if(p->buffer.len < 3)
       {
       if(!more_data(p))
         return;
       }
-    if((p->buffer[1] == '-') &&
-       (p->buffer[2] == '>'))
+    if((p->buffer.buf[1] == '-') &&
+       (p->buffer.buf[2] == '>'))
       {
       advance(p, 3);
       return;
@@ -467,24 +461,24 @@ static bgav_yml_node_t * parse_node(parser_t * p, int * is_comment)
   *is_comment = 0;
   ret = calloc(1, sizeof(*ret));
   
-  if(!p->buffer_size)
+  if(!p->buffer.len)
     {
     if(!more_data(p))
       goto fail;
     }
 
-  if(*(p->buffer) == '<')
+  if(p->buffer.buf[0] == '<')
     {
     /* Skip comments */
-    if(p->buffer_size < 4) 
+    if(p->buffer.len < 4) 
       {
       if(!more_data(p))
         goto fail;
       }
 
-    if((p->buffer[1] == '!') &&
-       (p->buffer[2] == '-') &&
-       (p->buffer[3] == '-'))
+    if((p->buffer.buf[1] == '!') &&
+       (p->buffer.buf[2] == '-') &&
+       (p->buffer.buf[3] == '-'))
       {
       skip_comment(p);
       *is_comment = 1;
@@ -549,8 +543,7 @@ bgav_yml_node_t * bgav_yml_parse(bgav_input_context_t * input)
       }
     }
   
-  if(parser.buffer)
-    free(parser.buffer);
+  gavl_buffer_free(&parser.buffer);
   return ret;
   }
 

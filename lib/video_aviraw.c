@@ -34,13 +34,13 @@
 #if 0
 
 static void scanline_1(uint8_t * src, uint8_t * dst,
-                       int num_pixels, bgav_palette_entry_t * pal)
+                       int num_pixels, gavl_palette_entry_t * pal)
   {
   
   }
 
 static void scanline_4(uint8_t * src, uint8_t * dst,
-                       int num_pixels, bgav_palette_entry_t * pal)
+                       int num_pixels, gavl_palette_entry_t * pal)
   {
   
   }
@@ -48,7 +48,7 @@ static void scanline_4(uint8_t * src, uint8_t * dst,
 #endif
 
 static void scanline_8(uint8_t * src, uint8_t * dst,
-                       int num_pixels, bgav_palette_entry_t * pal)
+                       int num_pixels, gavl_palette_entry_t * pal)
   {
   int i;
   for(i = 0; i < num_pixels; i++)
@@ -60,7 +60,7 @@ static void scanline_8(uint8_t * src, uint8_t * dst,
   }
 
 static void scanline_8_gray(uint8_t * src, uint8_t * dst,
-                            int num_pixels, bgav_palette_entry_t * pal)
+                            int num_pixels, gavl_palette_entry_t * pal)
   {
   int i;
   for(i = 0; i < num_pixels; i++)
@@ -74,7 +74,7 @@ static void scanline_8_gray(uint8_t * src, uint8_t * dst,
 /* Non palette */
 
 static void scanline_16(uint8_t * src, uint8_t * dst,
-                        int num_pixels, bgav_palette_entry_t * pal)
+                        int num_pixels, gavl_palette_entry_t * pal)
   {
 #ifndef WORDS_BIGENDIAN
   memcpy(dst, src, num_pixels * 2);
@@ -89,7 +89,7 @@ static void scanline_16(uint8_t * src, uint8_t * dst,
   }
 
 static void scanline_16_swap(uint8_t * src, uint8_t * dst,
-                        int num_pixels, bgav_palette_entry_t * pal)
+                        int num_pixels, gavl_palette_entry_t * pal)
   {
 #ifdef WORDS_BIGENDIAN
   memcpy(dst, src, num_pixels * 2);
@@ -106,13 +106,13 @@ static void scanline_16_swap(uint8_t * src, uint8_t * dst,
 
 
 static void scanline_24(uint8_t * src, uint8_t * dst,
-                        int num_pixels, bgav_palette_entry_t * pal)
+                        int num_pixels, gavl_palette_entry_t * pal)
   {
   memcpy(dst, src, num_pixels * 3);
   }
 
 static void scanline_32(uint8_t * src, uint8_t * dst,
-                        int num_pixels, bgav_palette_entry_t * pal)
+                        int num_pixels, gavl_palette_entry_t * pal)
   {
   memcpy(dst, src, num_pixels * 4);
   }
@@ -120,13 +120,14 @@ static void scanline_32(uint8_t * src, uint8_t * dst,
 typedef struct
   {
   void (*scanline_func)(uint8_t * src, uint8_t * dst,
-                        int num_pixels, bgav_palette_entry_t * pal);
+                        int num_pixels, gavl_palette_entry_t * pal);
   int in_stride;
 
   /* Updated palette */
-  bgav_palette_entry_t * pal;
-  int pal_size;
+  //  gavl_palette_entry_t * pal;
+  //  int pal_size;
   
+  gavl_palette_t palette;
   } aviraw_t;
 
 static void close_aviraw(bgav_stream_t * s)
@@ -134,8 +135,7 @@ static void close_aviraw(bgav_stream_t * s)
   aviraw_t * priv;
   priv = s->decoder_priv;
 
-  if(priv->pal)
-    free(priv->pal);
+  gavl_palette_free(&priv->palette);
   
   free(priv);
   }
@@ -164,18 +164,17 @@ static gavl_source_status_t decode_aviraw(bgav_stream_t * s, gavl_video_frame_t 
 
   /* Fetch palette */
 
-  if(p->palette_size)
+  if(p->pal)
     {
-    if(priv->pal_size && (p->palette_size != priv->pal_size))
+    if(priv->palette.num_entries && (p->pal->num_entries != priv->palette.num_entries))
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
                "Palette size changed %d -> %d",
-               priv->pal_size, p->palette_size);
+               priv->palette.num_entries, p->pal->num_entries);
       return GAVL_SOURCE_EOF;
       }
-    if(!priv->pal)
-      priv->pal = malloc(p->palette_size * sizeof(priv->pal));
-    memcpy(priv->pal, p->palette, p->palette_size * sizeof(priv->pal));
+    gavl_palette_free(&priv->palette);
+    gavl_palette_move(&priv->palette, p->pal);
     }
   
   if(f)
@@ -186,7 +185,7 @@ static gavl_source_status_t decode_aviraw(bgav_stream_t * s, gavl_video_frame_t 
     for(i = 0; i < s->data.video.format->image_height; i++)
       {
       priv->scanline_func(src, dst, s->data.video.format->image_width,
-                          priv->pal);
+                          priv->palette.entries);
       src += priv->in_stride;
       dst -= f->strides[0];
       }
@@ -228,17 +227,17 @@ static int init_aviraw(bgav_stream_t * s)
 #endif
     case 8:
       /* Depth 8 and no palette means grayscale */
-      if(!s->data.video.pal.size)
+      if(!s->data.video.pal || !s->data.video.pal->num_entries)
         {
         priv->scanline_func = scanline_8_gray;
         s->data.video.format->pixelformat = GAVL_GRAY_8;
         }
       else
         {
-        if(s->data.video.pal.size < 256)
+        if(s->data.video.pal->num_entries < 256)
           gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
                    "Palette too small %d < 256",
-                   s->data.video.pal.size);
+                   s->data.video.pal->num_entries);
         priv->scanline_func = scanline_8;
         s->data.video.format->pixelformat = GAVL_RGB_24;
         }

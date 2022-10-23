@@ -275,28 +275,34 @@ int bgav_file_index_read_header(const char * filename,
   {
   int ret = 0;
   uint64_t file_time;
-  char * line = NULL;
-  uint32_t line_alloc = 0;
   uint32_t ntracks;
   struct stat stat_buf;
   int sig_len;
+  gavl_buffer_t line_buf;
+  char * str;
   sig_len = strlen(INDEX_SIGNATURE);
+
+  gavl_buffer_init(&line_buf);
   
-  if(!bgav_input_read_line(input, &line, &line_alloc, 0, NULL))
+  if(!bgav_input_read_line(input, &line_buf))
     goto fail;
+
+  str = (char*)line_buf.buf;
   /* Check signature */
-  if(strncmp(line, INDEX_SIGNATURE, sig_len))
+  if(strncmp(str, INDEX_SIGNATURE, sig_len))
     goto fail;
   /* Check version */
-  if((strlen(line) < sig_len + 2) || !isdigit(*(line + sig_len + 1)))
+  if((strlen(str) < sig_len + 2) || !isdigit(*(str + sig_len + 1)))
     goto fail;
-  if(atoi(line + sig_len + 1) != INDEX_VERSION)
+  if(atoi(str + sig_len + 1) != INDEX_VERSION)
     goto fail;
   
-  if(!bgav_input_read_line(input, &line, &line_alloc, 0, NULL))
+  if(!bgav_input_read_line(input, &line_buf))
     goto fail;
+  str = (char*)line_buf.buf;
+
   /* Check filename */
-  if(strcmp(line, filename))
+  if(strcmp(str, filename))
     goto fail;
   if(!bgav_input_read_64_be(input, &file_time))
     goto fail;
@@ -316,8 +322,9 @@ int bgav_file_index_read_header(const char * filename,
   *num_tracks = ntracks;
   ret = 1;
   fail:
-  if(line)
-    free(line);
+
+  gavl_buffer_free(&line_buf);
+
   return ret;
   }
 

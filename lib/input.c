@@ -38,85 +38,65 @@
 
 #undef HAVE_LINUXDVB
 
-static void add_char_16(char ** buffer, uint32_t * buffer_alloc,
-                        int pos, uint16_t c)
+static void add_char_16(gavl_buffer_t * buf,
+                        uint16_t c)
   {
   uint16_t * ptr;
-  if(pos + 2 > *buffer_alloc)
-    {
-    while(pos+2 > *buffer_alloc)
-      (*buffer_alloc) += ALLOC_SIZE;
-    *buffer = realloc(*buffer, *buffer_alloc);
-    }
-  ptr = (uint16_t*)(*buffer + pos);
+
+  gavl_buffer_alloc(buf, buf->len + 2);
+  
+  ptr = (uint16_t*)(buf->buf + buf->len);
   *ptr = c;
   }
 
 static int
 read_line_utf16(bgav_input_context_t * ctx,
                 int (*read_char)(bgav_input_context_t*,uint16_t*),
-                char ** buffer, uint32_t * buffer_alloc, int buffer_offset,
-                uint32_t * ret_len)
+                gavl_buffer_t * ret)
   {
   uint16_t c;
-  int pos = buffer_offset;
-  int64_t old_pos = ctx->position;
-
-  
-  
   while(1)
     {
     if(!read_char(ctx, &c))
       {
-      add_char_16(buffer, buffer_alloc, pos, 0);
-      return pos - buffer_offset;
+      add_char_16(ret, 0);
+      return ret->len;
       break;
       }
     if(c == 0x000a) /* \n' */
       break;
     else if((c != 0x000d) && (c != 0xfeff)) /* Skip '\r' and endian marker */
       {
-      add_char_16(buffer, buffer_alloc, pos, c);
-      pos+=2;
+      add_char_16(ret, c);
+      ret->len += 2;
       }
     }
 
-  add_char_16(buffer, buffer_alloc, pos, 0);
+  add_char_16(ret, 0);
   
-  if(ret_len)
-    *ret_len = pos - buffer_offset;
-  
-  return ctx->position - old_pos;
+  return ret->len;
   }
 
-static void add_char(char ** buffer, uint32_t * buffer_alloc,
-                     int pos, char c)
+static void add_char(gavl_buffer_t * ret, char c)
   {
-  if(pos + 1 > *buffer_alloc)
-    {
-    while(pos + 1 > *buffer_alloc)
-      (*buffer_alloc) += ALLOC_SIZE;
-    *buffer = realloc(*buffer, *buffer_alloc);
-    }
-  (*buffer)[pos] = c;
+  gavl_buffer_alloc(ret, ret->len + 1);
+  ret->buf[ret->len] = c;
   }
 
 int bgav_input_read_line(bgav_input_context_t* input,
-                         char ** buffer, uint32_t * buffer_alloc,
-                         int buffer_offset, uint32_t * len)
+                         gavl_buffer_t * ret)
   {
   char c;
-  int pos = buffer_offset;
-  int64_t old_pos = input->position;
+  gavl_buffer_reset(ret);
   
   if(input->charset)
     {
     if(!strcmp(input->charset, "UTF-16LE"))
       return read_line_utf16(input, bgav_input_read_16_le,
-                             buffer, buffer_alloc, buffer_offset, len);
+                             ret);
     else if(!strcmp(input->charset, "UTF-16BE"))
       return read_line_utf16(input, bgav_input_read_16_be,
-                             buffer, buffer_alloc, buffer_offset, len);
+                             ret);
     }
   
   while(1)
@@ -124,55 +104,46 @@ int bgav_input_read_line(bgav_input_context_t* input,
     if(!bgav_input_read_data(input, (uint8_t*)(&c), 1))
       {
       //      return 0;
-      add_char(buffer, buffer_alloc, pos, '\0');
-      return pos - buffer_offset;
+      add_char(ret, '\0');
+      return ret->len;
       break;
       }
     else if(c == '\n')
       break;
     else if(c != '\r')
       {
-      add_char(buffer, buffer_alloc, pos, c);
-      pos++;
+      add_char(ret, c);
+      ret->len++;
       }
     }
-  add_char(buffer, buffer_alloc, pos, '\0');
-  if(len)
-    *len = pos - buffer_offset;
-  return input->position - old_pos;
+  add_char(ret, '\0');
+  return ret->len;
   }
 
 int bgav_input_read_convert_line(bgav_input_context_t * input,
-                                 char ** buffer,
-                                 uint32_t * buffer_alloc,
-                                 uint32_t * len)
+                                 gavl_buffer_t * ret)
   {
-  uint32_t line_alloc = 0;
-  char * line = NULL;
-  uint32_t in_len;
-  uint32_t out_len;
-  int64_t old_pos = input->position;
-  
   if(!input->charset || !strcmp(input->charset, BGAV_UTF8))
-    return bgav_input_read_line(input, buffer, buffer_alloc, 0,
-                                len);
+    return bgav_input_read_line(input, ret);
   else
     {
+    gavl_buffer_t line_buf;
+    
     if(!input->cnv)
       input->cnv = bgav_charset_converter_create(input->opt,
                                                  input->charset, BGAV_UTF8);
 
-    if(!bgav_input_read_line(input, &line, &line_alloc, 0, &in_len))
+    gavl_buffer_init(&line_buf);
+    
+    if(!bgav_input_read_line(input, &line_buf))
       return 0;
     
     bgav_convert_string_realloc(input->cnv,
-                                line, in_len,
-                                &out_len,
-                                buffer, buffer_alloc);
-    if(len) *len = out_len;
-    if(line) free(line);
-
-    return input->position - old_pos;
+                                (char*)line_buf.buf,
+                                line_buf.len,
+                                ret);
+    gavl_buffer_free(&line_buf);
+    return ret->len;
     }
   }
 
@@ -708,6 +679,7 @@ void bgav_inputs_dump()
 #define DVD_PATH "/video_ts/video_ts.ifo"
 #define DVD_PATH_LEN strlen(DVD_PATH)
 
+#ifdef HAVE_DVDREAD
 static int is_dvd_iso(const char * path)
   {
 #ifdef HAVE_LIBUDF
@@ -754,6 +726,7 @@ static int is_dvd_iso(const char * path)
   return 0;
 #endif
   }
+#endif // HAVE_DVDREAD
 
 static int input_open(bgav_input_context_t * ctx,
                       const char *url, char ** redir)
@@ -833,6 +806,8 @@ static int input_open(bgav_input_context_t * ctx,
       ctx->input = &bgav_input_dvd;
       }
 #endif
+
+
     if(!ctx->input && !strcmp(url, "-"))
       ctx->input = &bgav_input_stdin;
     

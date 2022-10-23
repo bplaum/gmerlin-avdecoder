@@ -491,7 +491,7 @@ int bgav_video_start(bgav_stream_t * s)
     
     s->psrc =
       gavl_packet_source_create_video(bgav_stream_read_packet_func, // get_packet,
-                                      s, GAVL_SOURCE_SRC_ALLOC, s->ci, s->data.video.format);
+                                      s, GAVL_SOURCE_SRC_ALLOC, s->ci, s->data.video.format, GAVL_STREAM_VIDEO);
     }
 
   if(s->codec_bitrate)

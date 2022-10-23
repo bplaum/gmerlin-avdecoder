@@ -1298,19 +1298,20 @@ static int init_video_stream(bgav_demuxer_context_t * ctx,
           bgav_stream_set_extradata(bg_vs, pos, ch->ckSize - 40);
         
         /* Add palette if depth <= 8 */
-
         
         if((bh.biBitCount <= 8) && (bh.biClrUsed))
           {
-          bg_vs->data.video.pal.size = (ch->ckSize - 40) / 4;
-          bg_vs->data.video.pal.entries =
-            malloc(bg_vs->data.video.pal.size * sizeof(*(bg_vs->data.video.pal.entries)));
-          for(i = 0; i < bg_vs->data.video.pal.size; i++)
+          int num = (ch->ckSize - 40) / 4;
+
+          bg_vs->data.video.pal = gavl_palette_create();
+          gavl_palette_alloc(bg_vs->data.video.pal, num);
+          
+          for(i = 0; i < num; i++)
             {
-            bg_vs->data.video.pal.entries[i].b = BYTE_2_COLOR(pos[4*i]);
-            bg_vs->data.video.pal.entries[i].g = BYTE_2_COLOR(pos[4*i+1]);
-            bg_vs->data.video.pal.entries[i].r = BYTE_2_COLOR(pos[4*i+2]);
-            bg_vs->data.video.pal.entries[i].a = 0xffff;
+            bg_vs->data.video.pal->entries[i].b = BYTE_2_COLOR(pos[4*i]);
+            bg_vs->data.video.pal->entries[i].g = BYTE_2_COLOR(pos[4*i+1]);
+            bg_vs->data.video.pal->entries[i].r = BYTE_2_COLOR(pos[4*i+2]);
+            bg_vs->data.video.pal->entries[i].a = 0xffff;
             }
           }
 

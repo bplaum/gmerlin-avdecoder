@@ -65,7 +65,7 @@ static int init_v4l2(bgav_stream_t * s)
   
   priv->psrc =
     gavl_packet_source_create_video(bgav_stream_read_packet_func, // get_packet,
-                                    s, GAVL_SOURCE_SRC_ALLOC, s->ci, s->data.video.format);
+                                    s, GAVL_SOURCE_SRC_ALLOC, s->ci, s->data.video.format, GAVL_STREAM_VIDEO);
   
   //  fprintf(stderr, "Opened device %p\n", priv->dev);
   
