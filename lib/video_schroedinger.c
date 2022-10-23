@@ -176,8 +176,8 @@ get_data(bgav_stream_t * s, SchroBuffer ** ret_p)
           break;
         bgav_stream_done_packet_read(s, priv->p);
         }
-      priv->buffer_size = priv->p->data_size;
-      priv->buffer_ptr = priv->p->data;
+      priv->buffer_size = priv->p->buf.len;
+      priv->buffer_ptr = priv->p->buf.buf;
       }
     }
 
