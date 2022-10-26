@@ -243,14 +243,15 @@ static int init_vorbis(bgav_stream_t * s)
    */
   else if(s->fourcc == BGAV_MK_FOURCC('V', 'O', 'R', 'B'))
     {
-    if(s->ci->global_header_len < 3 * sizeof(uint32_t))
+    if(s->ci->codec_header.len < 3 * sizeof(uint32_t))
       {
-      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Vorbis decoder: Init data too small (%d bytes)", s->ci->global_header_len);
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Vorbis decoder: Init data too small (%d bytes)",
+               s->ci->codec_header.len);
       return 0;
       }
     //    gavl_hexdump(s->ext_data, s->ci.global_header_len, 16);
 
-    ptr = s->ci->global_header;
+    ptr = s->ci->codec_header.buf;
     header_sizes[0] = GAVL_PTR_2_32LE(ptr);ptr+=4;
     header_sizes[1] = GAVL_PTR_2_32LE(ptr);ptr+=4;
     header_sizes[2] = GAVL_PTR_2_32LE(ptr);ptr+=4;
@@ -289,14 +290,14 @@ static int init_vorbis(bgav_stream_t * s)
   else if((s->fourcc == BGAV_WAVID_2_FOURCC(0x6750)) ||
           (s->fourcc == BGAV_WAVID_2_FOURCC(0x6770)))
     {
-    if(s->ci->global_header_len <= 8)
+    if(s->ci->codec_header.len <= 8)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "ext size too small");
       return 0;
       }
-    buffer = ogg_sync_buffer(&priv->dec_oy, s->ci->global_header_len - 8);
-    memcpy(buffer, s->ci->global_header + 8, s->ci->global_header_len - 8);
-    ogg_sync_wrote(&priv->dec_oy, s->ci->global_header_len - 8);
+    buffer = ogg_sync_buffer(&priv->dec_oy, s->ci->codec_header.len - 8);
+    memcpy(buffer, s->ci->codec_header.buf + 8, s->ci->codec_header.len - 8);
+    ogg_sync_wrote(&priv->dec_oy, s->ci->codec_header.len - 8);
 
     if(!next_page(s))
       return 0;
@@ -368,7 +369,7 @@ static int init_vorbis(bgav_stream_t * s)
   
   else if(s->fourcc == BGAV_MK_FOURCC('O','g','g','V'))
     {
-    ptr = s->ci->global_header;
+    ptr = s->ci->codec_header.buf;
     len = GAVL_PTR_2_32BE(ptr);ptr+=4;
     fourcc = BGAV_PTR_2_FOURCC(ptr);ptr+=4;
     if(fourcc != BGAV_MK_FOURCC('O','V','H','S'))
@@ -413,13 +414,13 @@ static int init_vorbis(bgav_stream_t * s)
     int len;
     memset(&op, 0, sizeof(op));
     
-    if(!s->ci->global_header)
+    if(!s->ci->codec_header.buf)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "No extradata found");
       return 0;
       }
     
-    ptr = s->ci->global_header;
+    ptr = s->ci->codec_header.buf;
 
     op.b_o_s = 1;
 
@@ -430,7 +431,7 @@ static int init_vorbis(bgav_stream_t * s)
       if(i)
         op.b_o_s = 0;
       
-      op.packet = gavl_extract_xiph_header(s->ci->global_header, s->ci->global_header_len,
+      op.packet = gavl_extract_xiph_header(&s->ci->codec_header,
                                            i, &len);
       op.bytes = len;
       

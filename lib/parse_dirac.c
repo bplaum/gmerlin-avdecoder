@@ -117,7 +117,7 @@ static int parse_frame_dirac(bgav_video_parser_t * parser,
       case DIRAC_CODE_SEQUENCE:
         if(!priv->have_sh)
           {
-          if(!parser->s->ci->global_header)
+          if(!parser->s->ci->codec_header.len)
             bgav_stream_set_extradata(parser->s, start, len);
           
           if(!bgav_dirac_sequence_header_parse(&priv->sh,
@@ -186,11 +186,11 @@ void bgav_video_parser_init_dirac(bgav_video_parser_t * parser)
   priv = calloc(1, sizeof(*priv));
   parser->priv        = priv;
 
-  if(parser->s->ci->global_header)
+  if(parser->s->ci->codec_header.len)
     {
     if(bgav_dirac_sequence_header_parse(&priv->sh,
-                                        parser->s->ci->global_header,
-                                        parser->s->ci->global_header_len))
+                                        parser->s->ci->codec_header.buf,
+                                        parser->s->ci->codec_header.len))
       {
       priv->have_sh = 1;
       set_format(parser);

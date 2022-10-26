@@ -64,7 +64,7 @@ static int init_theora(bgav_stream_t * s)
   th_comment_init(&priv->tc);
 
   /* Get header packets */
-  if(!s->ci->global_header)
+  if(!s->ci->codec_header.len)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
              "Theora codec requires extradata");
@@ -79,7 +79,7 @@ static int init_theora(bgav_stream_t * s)
     if(i)
       op.b_o_s = 0;
 
-    op.packet = gavl_extract_xiph_header(s->ci->global_header, s->ci->global_header_len,
+    op.packet = gavl_extract_xiph_header(&s->ci->codec_header,
                                          i, &len);
     op.bytes = len;
     

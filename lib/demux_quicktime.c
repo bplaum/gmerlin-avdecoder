@@ -899,7 +899,7 @@ static int init_mp3on4(bgav_stream_t * s)
   int channel_config;
   s->fourcc = BGAV_MK_FOURCC('m', '4', 'a', 29);
   
-  channel_config = (s->ci->global_header[1] >> 3) & 0x0f;
+  channel_config = (s->ci->codec_header.buf[1] >> 3) & 0x0f;
   if(!channel_config || (channel_config > 8))
     return 0;
   s->data.audio.format->num_channels = mp3on4_channels[channel_config].num_channels;
@@ -1321,7 +1321,7 @@ static void init_audio(bgav_demuxer_context_t * ctx,
                             header_len))
         {
         for(i = 0; i < 3; i++)
-          gavl_append_xiph_header(&bg_as->ci->global_header, &bg_as->ci->global_header_len,
+          gavl_append_xiph_header(&bg_as->ci->codec_header,
                                   header_start[i], header_len[i]);
         bg_as->fourcc = BGAV_VORBIS;
         }
@@ -1364,7 +1364,7 @@ static void init_audio(bgav_demuxer_context_t * ctx,
                                               &user_len)))
       bgav_stream_set_extradata(bg_as, user_atom, user_len);
         
-    if(!bg_as->ci->global_header_len)
+    if(!bg_as->ci->codec_header.len)
       {
       /* Raw wave atom needed by win32 decoders (QDM2) */
       bgav_stream_set_extradata(bg_as, desc->format.audio.wave.raw,
@@ -1713,9 +1713,10 @@ static void quicktime_init(bgav_demuxer_context_t * ctx)
         priv->has_edl = 1;
 
       /* Set palette */
-      bg_ss->ci->global_header_len = 64;
-      bg_ss->ci->global_header = malloc(bg_ss->ci->global_header_len);
-      pal = (uint32_t*)bg_ss->ci->global_header;
+      gavl_buffer_alloc(&bg_ss->ci->codec_header, 64);
+      bg_ss->ci->codec_header.len = 64;
+      pal = (uint32_t*)bg_ss->ci->codec_header.buf;
+      
       pos = stsd->entries[0].desc.esds.decoderConfig;
       for(j = 0; j < 16; j++)
         {

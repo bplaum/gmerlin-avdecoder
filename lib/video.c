@@ -972,11 +972,11 @@ int bgav_set_video_compression_info(bgav_stream_t * s)
   //  if((s->flags & STREAM_FILTER_PACKETS) && !s->bsf)
   //    bsf = bgav_bsf_create(s);
   
-  if((s->ci->global_header_len) && (bgav_video_is_divx4(s->fourcc)))
+  if((s->ci->codec_header.len) && (bgav_video_is_divx4(s->fourcc)))
     {
-    bgav_mpeg4_remove_packed_flag(s->ci->global_header,
-                                  &s->ci->global_header_len,
-                                  &s->ci->global_header_len);
+    bgav_mpeg4_remove_packed_flag(s->ci->codec_header.buf,
+                                  &s->ci->codec_header.len,
+                                  &s->ci->codec_header.len);
     }
   
   /* Restore everything */

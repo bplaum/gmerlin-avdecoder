@@ -460,7 +460,7 @@ static int get_page(bgav_demuxer_context_t * ctx)
 
 static void append_extradata(bgav_stream_t * s, ogg_packet * op)
   {
-  gavl_append_xiph_header(&s->ci->global_header, &s->ci->global_header_len,
+  gavl_append_xiph_header(&s->ci->codec_header,
                           op->packet, op->bytes);
   }
 
@@ -527,10 +527,10 @@ static void setup_flac(bgav_stream_t * s)
   {
   bgav_flac_streaminfo_t h;
 
-  if(s->ci->global_header_len - 8 < BGAV_FLAC_STREAMINFO_SIZE)
+  if(s->ci->codec_header.len - 8 < BGAV_FLAC_STREAMINFO_SIZE)
     return;
   
-  bgav_flac_streaminfo_read(s->ci->global_header + 8, &h);
+  bgav_flac_streaminfo_read(s->ci->codec_header.buf + 8, &h);
   bgav_flac_streaminfo_init_stream(&h, s);
 
   s->flags |= STREAM_PARSE_FRAME;
@@ -752,7 +752,7 @@ static int setup_track(bgav_demuxer_context_t * ctx, bgav_track_t * track,
         bgav_stream_set_extradata(s, priv->op.packet + 9, priv->op.bytes - 9);
         
         /* We tell the decoder, that this is the last metadata packet */
-        s->ci->global_header[4] |= 0x80;
+        s->ci->codec_header.buf[4] |= 0x80;
         
         setup_flac(s);
         
@@ -981,20 +981,20 @@ static int setup_track(bgav_demuxer_context_t * ctx, bgav_track_t * track,
             switch(priv->op.packet[0] & 0x7f)
               {
               case 0: /* STREAMINFO, this is the only info we'll tell to the flac demuxer */
-                if(s->ci->global_header)
+                if(s->ci->codec_header.buf)
                   {
                   return 0;
                   }
-                s->ci->global_header = malloc(priv->op.bytes + 4);
-                s->ci->global_header[0] = 'f';
-                s->ci->global_header[1] = 'L';
-                s->ci->global_header[2] = 'a';
-                s->ci->global_header[3] = 'C';
-                memcpy(s->ci->global_header + 4, priv->op.packet, priv->op.bytes);
-                s->ci->global_header_len = priv->op.bytes + 4;
-
+                gavl_buffer_alloc(&s->ci->codec_header, priv->op.bytes + 4);
+                s->ci->codec_header.buf[0] = 'f';
+                s->ci->codec_header.buf[1] = 'L';
+                s->ci->codec_header.buf[2] = 'a';
+                s->ci->codec_header.buf[3] = 'C';
+                memcpy(s->ci->codec_header.buf + 4, priv->op.packet, priv->op.bytes);
+                s->ci->codec_header.len = priv->op.bytes + 4;
+                
                 /* We tell the decoder, that this is the last metadata packet */
-                s->ci->global_header[4] |= 0x80;
+                s->ci->codec_header.buf[4] |= 0x80;
                 setup_flac(s);
                 break;
               case 1:

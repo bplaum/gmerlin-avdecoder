@@ -113,9 +113,7 @@ static int open_tta(bgav_demuxer_context_t * ctx)
 
   /* Set up private stuff */
 
-  s->ci->global_header_len = HEADER_SIZE;
-  s->ci->global_header = malloc(HEADER_SIZE);
-  memcpy(s->ci->global_header, header, HEADER_SIZE);
+  gavl_buffer_append_data(&s->ci->codec_header, header, HEADER_SIZE);
   
   priv = calloc(1, sizeof(*priv));
   ctx->priv = priv;
@@ -126,20 +124,22 @@ static int open_tta(bgav_demuxer_context_t * ctx)
   priv->seek_table = malloc(priv->total_frames * sizeof(*priv->seek_table));
 
   /* Seek_Table + CRC */
-  s->ci->global_header_len += priv->total_frames * 4 + 4;
-  s->ci->global_header = realloc(s->ci->global_header, s->ci->global_header_len);
+  gavl_buffer_alloc(&s->ci->codec_header,
+                    s->ci->codec_header.len + priv->total_frames * 4 + 4);
 
-  if(bgav_input_read_data(ctx->input, s->ci->global_header + HEADER_SIZE,
+  if(bgav_input_read_data(ctx->input, s->ci->codec_header.buf + s->ci->codec_header.len,
                           priv->total_frames * 4 + 4) <
      priv->total_frames * 4 + 4)
     return 0;
   
-  ptr = s->ci->global_header + HEADER_SIZE;
+  s->ci->codec_header.len += priv->total_frames * 4 + 4;
+  
+  ptr = s->ci->codec_header.buf + HEADER_SIZE;
   for(i = 0; i < priv->total_frames; i++)
     {
     priv->seek_table[i] = GAVL_PTR_2_32LE(ptr); ptr+=4;
     }
-
+  
   s->stats.pts_end = h.data_length;
 
   if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)

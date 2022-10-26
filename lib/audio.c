@@ -557,7 +557,7 @@ int bgav_set_audio_compression_info(bgav_stream_t * s)
     s->flags |= STREAM_GOT_NO_CI;
     return 0;
     }
-  if(need_header && !s->ci->global_header_len)
+  if(need_header && !s->ci->codec_header.len)
     {
     gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
              "Cannot output compressed audio stream: Global header missing");

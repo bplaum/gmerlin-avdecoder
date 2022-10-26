@@ -71,7 +71,7 @@ static int extract_header(bgav_video_parser_t * parser, bgav_packet_t * p,
   if(priv->have_header)
     return 1;
 
-  if(!parser->s->ci->global_header)
+  if(!parser->s->ci->codec_header.len)
     bgav_stream_set_extradata(parser->s, p->buf.buf, header_end - p->buf.buf);
   
   if(parser->s->fourcc == BGAV_MK_FOURCC('m','p','g','v'))

@@ -290,7 +290,7 @@ static int parse_frame_vc1(bgav_video_parser_t * parser, bgav_packet_t * p,
           PACKET_SET_SKIP(p);
           return 1;
           }
-        else if(sh_start && !parser->s->ci->global_header)
+        else if(sh_start && !parser->s->ci->codec_header.len)
           {
           bgav_stream_set_extradata(parser->s,
                                     sh_start, chunk_end - sh_start);

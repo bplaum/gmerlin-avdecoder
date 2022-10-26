@@ -298,14 +298,14 @@ static int init_ffmpeg_audio(bgav_stream_t * s)
   /* We never know what weird frame sizes we'll get */
   s->src_flags |= GAVL_SOURCE_SRC_FRAMESIZE_MAX;
   
-  if(s->ci->global_header_len)
+  if(s->ci->codec_header.len)
     {
-    priv->ext_data = calloc(1, s->ci->global_header_len +
+    priv->ext_data = calloc(1, s->ci->codec_header.len +
                             AV_INPUT_BUFFER_PADDING_SIZE);
-    memcpy(priv->ext_data, s->ci->global_header, s->ci->global_header_len);
+    memcpy(priv->ext_data, s->ci->codec_header.buf, s->ci->codec_header.len);
     
     priv->ctx->extradata = priv->ext_data;
-    priv->ctx->extradata_size = s->ci->global_header_len;
+    priv->ctx->extradata_size = s->ci->codec_header.len;
     }
   
 #ifdef DUMP_EXTRADATA

@@ -163,10 +163,11 @@ static int open_nuv(bgav_demuxer_context_t * ctx)
         size &= 0xffffff;
         if(vs && (subtype == 'R'))
           {
-          vs->ci->global_header_len = size;
-          vs->ci->global_header = malloc(size);
-          if(bgav_input_read_data(ctx->input, vs->ci->global_header, size) < size)
+          gavl_buffer_alloc(&vs->ci->codec_header, size);
+          if(bgav_input_read_data(ctx->input, vs->ci->codec_header.buf, size) < size)
             return 0;
+          
+          vs->ci->codec_header.len = size;
           size = 0;
           if(!is_mythtv)
             done = 1;

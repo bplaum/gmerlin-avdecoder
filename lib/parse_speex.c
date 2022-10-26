@@ -74,8 +74,8 @@ void bgav_audio_parser_init_speex(bgav_audio_parser_t * parser)
   parser->reset = reset_speex;
   
   /* Get samples per packet */
-  header = speex_packet_to_header((char*)parser->s->ci->global_header,
-                                  parser->s->ci->global_header_len);
+  header = speex_packet_to_header((char*)parser->s->ci->codec_header.buf,
+                                  parser->s->ci->codec_header.len);
 
   if(!header)
     return;

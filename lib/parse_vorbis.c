@@ -93,7 +93,7 @@ void bgav_audio_parser_init_vorbis(bgav_audio_parser_t * parser)
 
   memset(&op, 0, sizeof(op));
 
-  if(!parser->s->ci->global_header)
+  if(!parser->s->ci->codec_header.len)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "No extradata found");
     return;
@@ -105,7 +105,7 @@ void bgav_audio_parser_init_vorbis(bgav_audio_parser_t * parser)
   for(i = 0; i < 3; i++)
     {
     op.packet =
-      gavl_extract_xiph_header(parser->s->ci->global_header, parser->s->ci->global_header_len,
+      gavl_extract_xiph_header(&parser->s->ci->codec_header,
                                i, &len);
     
     if(!op.packet)

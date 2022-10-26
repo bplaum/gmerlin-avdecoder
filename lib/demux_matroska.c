@@ -262,21 +262,23 @@ static void init_aac(bgav_stream_t * s)
   else
     {
     int profile, sri;
-    s->ci->global_header = malloc(5);
+
+    gavl_buffer_alloc(&s->ci->codec_header, 5);
+    
     profile = aac_profile(p->CodecID);
     sri = aac_sri(p->audio.SamplingFrequency);
-    s->ci->global_header[0] = (profile << 3) | ((sri&0x0E) >> 1);
-    s->ci->global_header[1] = ((sri&0x01) << 7) | (p->audio.Channels<<3);
+    s->ci->codec_header.buf[0] = (profile << 3) | ((sri&0x0E) >> 1);
+    s->ci->codec_header.buf[1] = ((sri&0x01) << 7) | (p->audio.Channels<<3);
     if(strstr(p->CodecID, "SBR"))
       {
       sri = aac_sri(p->audio.OutputSamplingFrequency);
-      s->ci->global_header[2] = 0x56;
-      s->ci->global_header[3] = 0xE5;
-      s->ci->global_header[4] = 0x80 | (sri<<3);
-      s->ci->global_header_len = 5;
+      s->ci->codec_header.buf[2] = 0x56;
+      s->ci->codec_header.buf[3] = 0xE5;
+      s->ci->codec_header.buf[4] = 0x80 | (sri<<3);
+      s->ci->codec_header.len = 5;
       }
     else
-      s->ci->global_header_len = 2;
+      s->ci->codec_header.len = 2;
     }
   s->fourcc = BGAV_MK_FOURCC('m','p','4','a');
   }
@@ -524,7 +526,7 @@ static int init_subtitle(bgav_demuxer_context_t * ctx,
       // fprintf(stderr, "Got line: %s\n", line);
       if(!strncmp(str, "palette:", 8))
         pal = bgav_get_vobsub_palette(str + 8);
-
+      
       if(!strncmp(str, "size:", 5))
         sscanf(str + 5, "%dx%d", &width, &height);
       
@@ -542,13 +544,16 @@ static int init_subtitle(bgav_demuxer_context_t * ctx,
 
       gavl_dictionary_set_string(s->m, GAVL_META_FORMAT, "DVD subtitles");
       s->fourcc = BGAV_MK_FOURCC('D', 'V', 'D', 'S');
-      s->ci->global_header = (uint8_t*)pal;
-      s->ci->global_header_len = 16 * 4; // 64
+
+      gavl_buffer_append_data(&s->ci->codec_header,
+                              (uint8_t*)pal, 16 * 4);
+      
       s->data.subtitle.video.format->image_width  = width;
       s->data.subtitle.video.format->image_height = height;
       
       s->data.subtitle.video.format->frame_width  = width;
       s->data.subtitle.video.format->frame_height = height;
+      free(pal);
       }
     
     }

@@ -214,16 +214,20 @@ static int open_smacker(bgav_demuxer_context_t * ctx)
     s->data.video.format->frame_duration = 100 * priv->h.FrameRate;
 
   /* Setup video extradata */
-  s->ci->global_header_len = 16 + priv->h.TreesSize;
-  s->ci->global_header = malloc(s->ci->global_header_len);
-  INT32_2_PTR_LE(priv->h.MMap_Size, s->ci->global_header, 0);
-  INT32_2_PTR_LE(priv->h.MClr_Size, s->ci->global_header, 4);
-  INT32_2_PTR_LE(priv->h.Full_Size, s->ci->global_header, 8);
-  INT32_2_PTR_LE(priv->h.Type_Size, s->ci->global_header, 12);
-  if(bgav_input_read_data(ctx->input, s->ci->global_header + 16,
-                          s->ci->global_header_len - 16) < s->ci->global_header_len - 16)
-    return 0;
 
+  gavl_buffer_alloc(&s->ci->codec_header, 16 + priv->h.TreesSize);
+
+  GAVL_32LE_2_PTR(priv->h.MMap_Size, s->ci->codec_header.buf);
+  GAVL_32LE_2_PTR(priv->h.MClr_Size, s->ci->codec_header.buf + 4);
+  GAVL_32LE_2_PTR(priv->h.Full_Size, s->ci->codec_header.buf + 8);
+  GAVL_32LE_2_PTR(priv->h.Type_Size, s->ci->codec_header.buf + 12);
+  
+  if(bgav_input_read_data(ctx->input, s->ci->codec_header.buf + 16,
+                          priv->h.TreesSize) < priv->h.TreesSize)
+    return 0;
+  
+  s->ci->codec_header.len = 16 + priv->h.TreesSize;
+  
   /* Setup audio streams */
 
   for(i = 0; i < 7; i++)

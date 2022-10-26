@@ -1374,7 +1374,7 @@ static int init_video_stream(bgav_demuxer_context_t * ctx,
     {
     bg_vs->flags |= (STREAM_DTS_ONLY);
 
-    if(!bg_vs->ci->global_header_len)
+    if(!bg_vs->ci->codec_header.len)
       bg_vs->flags |= STREAM_PARSE_FRAME;
     
     bg_vs->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;

@@ -36,7 +36,7 @@ struct bgav_subtitle_converter_s
 
 /* Remove \r */
 
-static void remove_cr(char * str, uint32_t * len_p)
+static void remove_cr(char * str, int * len_p)
   {
   char * dst;
   char * src;

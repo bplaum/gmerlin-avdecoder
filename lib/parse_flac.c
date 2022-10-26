@@ -62,7 +62,7 @@ void bgav_audio_parser_init_flac(bgav_audio_parser_t * parser)
   flac_priv_t * priv;
   
   /* Get stream info */
-  if(parser->s->ci->global_header_len != 42)
+  if(parser->s->ci->codec_header.len != 42)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
              "Corrupted flac header");
@@ -73,7 +73,7 @@ void bgav_audio_parser_init_flac(bgav_audio_parser_t * parser)
   parser->priv = priv;
 
   
-  bgav_flac_streaminfo_read(parser->s->ci->global_header + 8, &priv->si);
+  bgav_flac_streaminfo_read(parser->s->ci->codec_header.buf + 8, &priv->si);
   
   parser->parse_frame = parse_frame_flac;
   parser->cleanup = cleanup_flac;

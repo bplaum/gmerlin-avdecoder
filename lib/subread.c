@@ -495,9 +495,12 @@ static int setup_stream_vobsub(bgav_stream_t * s)
       }
     else if(!strncmp(str, "palette:", 8)) // palette: 000000, 828282...
       {
-      if((s->ci->global_header = (uint8_t*)bgav_get_vobsub_palette(str + 8)))
+      uint8_t * pal;
+      
+      if((pal = (uint8_t*)bgav_get_vobsub_palette(str + 8)))
         {
-        s->ci->global_header_len = 16 * 4;
+        gavl_buffer_append_data(&s->ci->codec_header, pal, 16 * 4);
+        free(pal);
         s->fourcc = BGAV_MK_FOURCC('D', 'V', 'D', 'S');
         }
       }

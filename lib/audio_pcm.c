@@ -1096,14 +1096,14 @@ static int init_pcm(bgav_stream_t * s)
       break;
     case BGAV_MK_FOURCC('l', 'p', 'c', 'm'):
       /* Quicktime 7 lpcm: extradata contains formatSpecificFlags in native byte order */
-      if(s->ci->global_header_len < sizeof(formatSpecificFlags))
+      if(s->ci->codec_header.len < sizeof(formatSpecificFlags))
         {
         gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-                 "extradata too small (%d < %zd)", s->ci->global_header_len,
+                 "extradata too small (%d < %zd)", s->ci->codec_header.len,
                  sizeof(formatSpecificFlags));
         return 0;
         }
-      formatSpecificFlags = *((uint32_t*)(s->ci->global_header));
+      formatSpecificFlags = *((uint32_t*)(s->ci->codec_header.buf));
       /* SampleDescription V2 definitions */
 #define kAudioFormatFlagIsFloat          (1L<<0) 
 #define kAudioFormatFlagIsBigEndian      (1L<<1) 

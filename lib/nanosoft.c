@@ -244,9 +244,8 @@ void bgav_WAVEFORMAT_get_format(bgav_WAVEFORMAT_t * wf,
 
       if(wf->f.WAVEFORMATEX.ext_size)
         {
-        s->ci->global_header = malloc(wf->f.WAVEFORMATEX.ext_size);
-        s->ci->global_header_len = wf->f.WAVEFORMATEX.ext_size;
-        memcpy(s->ci->global_header, wf->f.WAVEFORMATEX.ext_data, s->ci->global_header_len);
+        gavl_buffer_append_data(&s->ci->codec_header, wf->f.WAVEFORMATEX.ext_data,
+                                wf->f.WAVEFORMATEX.ext_size);
         }
       
       gavl_set_channel_setup(s->data.audio.format);
@@ -259,9 +258,8 @@ void bgav_WAVEFORMAT_get_format(bgav_WAVEFORMAT_t * wf,
 
       if(wf->f.WAVEFORMATEX.ext_size)
         {
-        s->ci->global_header = malloc(wf->f.WAVEFORMATEX.ext_size);
-        s->ci->global_header_len = wf->f.WAVEFORMATEX.ext_size;
-        memcpy(s->ci->global_header, wf->f.WAVEFORMATEX.ext_data, s->ci->global_header_len);
+        gavl_buffer_append_data(&s->ci->codec_header, wf->f.WAVEFORMATEX.ext_data,
+                                wf->f.WAVEFORMATEX.ext_size);
         }
 
 

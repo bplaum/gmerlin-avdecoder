@@ -59,13 +59,13 @@ static int init_speex(bgav_stream_t * s)
 
   speex_bits_init(&priv->bits);
   
-  if(!s->ci->global_header)
+  if(!s->ci->codec_header.len)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Speex needs extradata");
     return 0;
     }
 
-  priv->header = speex_packet_to_header((char*)s->ci->global_header, s->ci->global_header_len);
+  priv->header = speex_packet_to_header((char*)s->ci->codec_header.buf, s->ci->codec_header.len);
 
   if(!priv->header)
     return 0;

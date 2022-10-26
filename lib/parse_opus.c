@@ -40,8 +40,8 @@ static int get_format(bgav_audio_parser_t * parser)
   bgav_input_context_t * input_mem;
   opus_priv_t * p = parser->priv;
   
-  input_mem = bgav_input_open_memory(parser->s->ci->global_header,
-                                     parser->s->ci->global_header_len,
+  input_mem = bgav_input_open_memory(parser->s->ci->codec_header.buf,
+                                     parser->s->ci->codec_header.len,
                                      parser->s->opt);
   
   if(!bgav_opus_header_read(input_mem, &h))

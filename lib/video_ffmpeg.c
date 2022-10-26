@@ -726,11 +726,11 @@ static int init_ffmpeg(bgav_stream_t * s)
   
   priv->ctx->opaque = s;
   
-  if(s->ci->global_header)
+  if(s->ci->codec_header.len)
     {
-    priv->extradata = calloc(s->ci->global_header_len + AV_INPUT_BUFFER_PADDING_SIZE, 1);
-    memcpy(priv->extradata, s->ci->global_header, s->ci->global_header_len);
-    priv->extradata_size = s->ci->global_header_len;
+    priv->extradata = calloc(s->ci->codec_header.len + AV_INPUT_BUFFER_PADDING_SIZE, 1);
+    memcpy(priv->extradata, s->ci->codec_header.buf, s->ci->codec_header.len);
+    priv->extradata_size = s->ci->codec_header.len;
 
     if(bgav_video_is_divx4(s->fourcc))
       bgav_mpeg4_remove_packed_flag(priv->extradata, &priv->extradata_size, &priv->extradata_size);

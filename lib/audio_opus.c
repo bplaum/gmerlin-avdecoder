@@ -113,8 +113,8 @@ static int init_opus(bgav_stream_t * s)
   s->decoder_priv = priv;
 
   /* Parse extradata */
-  input_mem = bgav_input_open_memory(s->ci->global_header,
-                                     s->ci->global_header_len,
+  input_mem = bgav_input_open_memory(s->ci->codec_header.buf,
+                                     s->ci->codec_header.len,
                                      s->opt);
   
   if(!bgav_opus_header_read(input_mem, &priv->h))

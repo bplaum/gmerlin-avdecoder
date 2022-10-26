@@ -71,10 +71,10 @@ read_callback(const FLAC__StreamDecoder *decoder,
   while(bytes_read < *bytes)
     {
     /* Read header */
-    if(priv->header_ptr - s->ci->global_header < s->ci->global_header_len)
+    if(priv->header_ptr - s->ci->codec_header.buf < s->ci->codec_header.len)
       {
       bytes_to_copy =
-        (s->ci->global_header_len - (priv->header_ptr - s->ci->global_header));
+        (s->ci->codec_header.len - (priv->header_ptr - s->ci->codec_header.buf));
       if(bytes_to_copy > *bytes - bytes_read)
         bytes_to_copy = *bytes - bytes_read;
       memcpy(&buffer[bytes_read], priv->header_ptr, bytes_to_copy);
@@ -217,7 +217,7 @@ static int init_flac(bgav_stream_t * s)
   {
   flac_priv_t * priv;
   gavl_audio_format_t frame_format;
-  if(s->ci->global_header_len < 42)
+  if(s->ci->codec_header.len < 42)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
              "FLAC decoder needs 42 bytes extradata");
@@ -228,7 +228,7 @@ static int init_flac(bgav_stream_t * s)
   
   priv = calloc(1, sizeof(*priv));
   s->decoder_priv = priv;
-  priv->header_ptr = s->ci->global_header;
+  priv->header_ptr = s->ci->codec_header.buf;
   priv->dec = FLAC__stream_decoder_new();
  
   FLAC__stream_decoder_init_stream(

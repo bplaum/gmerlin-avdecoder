@@ -289,7 +289,7 @@ void bgav_stream_dump(bgav_stream_t * s)
     bgav_dprintf("Unknown\n");
   
   // bgav_dprintf("  Private data:      %p\n", s->priv);
-  bgav_dprintf("  Codec header:      %d bytes\n", s->ci->global_header_len);
+  bgav_dprintf("  Codec header:      %d bytes\n", s->ci->codec_header.len);
   }
 
 
@@ -477,12 +477,9 @@ void bgav_stream_set_extradata(bgav_stream_t * s,
   {
   if(len <= 0)
     return;
-
-  s->ci->global_header_len = len;
-  s->ci->global_header = malloc(s->ci->global_header_len+16);
   
-  memcpy(s->ci->global_header, data, len);
-  memset(s->ci->global_header + len, 0, 16);
+  gavl_buffer_reset(&s->ci->codec_header);
+  gavl_buffer_append_data_pad(&s->ci->codec_header, data, len, GAVL_PACKET_PADDING);
   }
 
 void bgav_stream_set_from_gavl(bgav_stream_t * s,

@@ -114,26 +114,30 @@ static int open_flac(bgav_demuxer_context_t * ctx)
       case 0: // STREAMINFO
         /* Add audio stream */
         s = bgav_track_add_audio_stream(ctx->tt->cur, ctx->opt);
-        s->ci->global_header_len = BGAV_FLAC_STREAMINFO_SIZE + 8; // Make a complete file header
-        s->ci->global_header = malloc(s->ci->global_header_len);
 
-        s->ci->global_header[0] = 'f';
-        s->ci->global_header[1] = 'L';
-        s->ci->global_header[2] = 'a';
-        s->ci->global_header[3] = 'C';
+        gavl_buffer_alloc(&s->ci->codec_header, BGAV_FLAC_STREAMINFO_SIZE + 8);
         
-        memcpy(s->ci->global_header+4, header, 4);
+        s->ci->codec_header.buf[0] = 'f';
+        s->ci->codec_header.buf[1] = 'L';
+        s->ci->codec_header.buf[2] = 'a';
+        s->ci->codec_header.buf[3] = 'C';
+        
+        memcpy(s->ci->codec_header.buf + 4, header, 4);
         
         /* We tell the decoder, that this is the last metadata packet */
-        s->ci->global_header[4] |= 0x80;
+        s->ci->codec_header.buf[4] |= 0x80;
         
-        if(bgav_input_read_data(ctx->input, s->ci->global_header + 8,
+        if(bgav_input_read_data(ctx->input, s->ci->codec_header.buf + 8,
                                 BGAV_FLAC_STREAMINFO_SIZE) < 
            BGAV_FLAC_STREAMINFO_SIZE)
           goto fail;
         
-        if(!bgav_flac_streaminfo_read(s->ci->global_header + 8, &priv->streaminfo))
+        if(!bgav_flac_streaminfo_read(s->ci->codec_header.buf + 8, &priv->streaminfo))
           goto fail;
+
+        s->ci->codec_header.len = BGAV_FLAC_STREAMINFO_SIZE + 8;
+        
+        
         if(ctx->opt->dump_headers)
           bgav_flac_streaminfo_dump(&priv->streaminfo);
         bgav_flac_streaminfo_init_stream(&priv->streaminfo, s);

@@ -328,12 +328,12 @@ static int open_ape(bgav_demuxer_context_t * ctx)
   s->stats.pts_end = priv->h.blocksperframe * (priv->h.totalframes -1) +
     priv->h.finalframeblocks;
 
-  s->ci->global_header_len = APE_EXTRADATA_SIZE;
-  s->ci->global_header = malloc(s->ci->global_header_len);
-  GAVL_16LE_2_PTR(priv->h.fileversion,     s->ci->global_header);
-  GAVL_16LE_2_PTR(priv->h.compressiontype, s->ci->global_header+2);
-  GAVL_16LE_2_PTR(priv->h.formatflags,     s->ci->global_header+4);
-
+  gavl_buffer_alloc(&s->ci->codec_header, APE_EXTRADATA_SIZE);
+  GAVL_16LE_2_PTR(priv->h.fileversion,     s->ci->codec_header.buf);
+  GAVL_16LE_2_PTR(priv->h.compressiontype, s->ci->codec_header.buf + 2);
+  GAVL_16LE_2_PTR(priv->h.formatflags,     s->ci->codec_header.buf + 4);
+  s->ci->codec_header.len = APE_EXTRADATA_SIZE;
+  
   bgav_track_set_format(ctx->tt->cur, "APE", "audio/x-ape");
   
   ctx->index_mode = INDEX_MODE_SIMPLE;

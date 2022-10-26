@@ -556,12 +556,12 @@ static void init_video_stream(bgav_demuxer_context_t * ctx,
     {
     case BGAV_MK_FOURCC('R','V','1','0'):
       rm_vs->parse_frame_info = parse_frame_info_rv10;
-      rm_vs->sub_id = GAVL_PTR_2_32BE(bg_vs->ci->global_header+4);
+      rm_vs->sub_id = GAVL_PTR_2_32BE(bg_vs->ci->codec_header.buf+4);
       
       break;
     case BGAV_MK_FOURCC('R','V','2','0'):
       rm_vs->parse_frame_info = parse_frame_info_rv20;
-      rm_vs->sub_id = GAVL_PTR_2_32BE(bg_vs->ci->global_header+4);
+      rm_vs->sub_id = GAVL_PTR_2_32BE(bg_vs->ci->codec_header.buf+4);
 
       if(rm_vs->sub_id == 0x30202002
          || rm_vs->sub_id == 0x30203002

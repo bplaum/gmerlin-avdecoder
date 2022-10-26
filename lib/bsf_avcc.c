@@ -126,13 +126,12 @@ bgav_bsf_init_avcC(bgav_bsf_t * bsf)
   bsf->cleanup = cleanup_avcc;
   priv = calloc(1, sizeof(*priv));
   bsf->priv = priv;
-
+  
   memcpy(&bsf->ci, bsf->s->ci, sizeof(bsf->ci));
-  bsf->ci.global_header = NULL;
-  bsf->ci.global_header_len = 0;
+  gavl_buffer_init(&bsf->ci.codec_header);
   
   /* Parse extradata */
-  ptr = bsf->s->ci->global_header;
+  ptr = bsf->s->ci->codec_header.buf;
   
   ptr += 4; // Version, profile, profile compat, level
   priv->nal_size_length = (*ptr & 0x3) + 1;

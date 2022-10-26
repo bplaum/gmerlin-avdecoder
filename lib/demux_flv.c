@@ -262,18 +262,18 @@ static int init_video_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
       if(bgav_input_get_data(ctx->input, header, 1) < 1)
         return 0;
       /* ffmpeg needs that as extrdata */
-      s->ci->global_header = malloc(1);
-      *s->ci->global_header = header[0];
-      s->ci->global_header_len = 1;
+      gavl_buffer_alloc(&s->ci->codec_header, 1);
+      s->ci->codec_header.buf[0] = header[0];
+      s->ci->codec_header.len = 1;
       break;
     case 5: /* VP6A */
       s->fourcc = BGAV_MK_FOURCC('V', 'P', '6', 'A');
       if(bgav_input_get_data(ctx->input, header, 1) < 1)
         return 0;
       /* ffmpeg needs that as extrdata */
-      s->ci->global_header = malloc(1);
-      *s->ci->global_header = header[0];
-      s->ci->global_header_len = 1;
+      gavl_buffer_alloc(&s->ci->codec_header, 1);
+      s->ci->codec_header.buf[0] = header[0];
+      s->ci->codec_header.len = 1;
       break;
     case 7:
       s->fourcc = FOURCC_H264;
@@ -697,12 +697,15 @@ static gavl_source_status_t next_packet_flv(bgav_demuxer_context_t * ctx)
     
     if(type == 0)
       {
-      if(!s->ci->global_header_len)
+      if(!s->ci->codec_header.len)
         {
-        s->ci->global_header_len = packet_size;
-        s->ci->global_header = malloc(packet_size);
-        if(bgav_input_read_data(ctx->input, s->ci->global_header, packet_size) < packet_size)
+        gavl_buffer_alloc(&s->ci->codec_header, packet_size);
+
+        if(bgav_input_read_data(ctx->input, s->ci->codec_header.buf, packet_size) < packet_size)
           return GAVL_SOURCE_EOF;
+        
+        s->ci->codec_header.len = packet_size;
+        
         if(s->type == GAVL_STREAM_AUDIO)
           priv->need_audio_extradata = 0;
         else

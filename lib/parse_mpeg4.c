@@ -159,12 +159,12 @@ static int extract_user_data(bgav_video_parser_t * parser,
 static int parse_header_mpeg4(bgav_video_parser_t * parser)
   {
   mpeg4_priv_t * priv = parser->priv;
-  const uint8_t * pos = parser->s->ci->global_header;
+  const uint8_t * pos = parser->s->ci->codec_header.buf;
   int len;
   while(1)
     {
-    pos = bgav_mpv_find_startcode(pos, parser->s->ci->global_header +
-                                  parser->s->ci->global_header_len);
+    pos = bgav_mpv_find_startcode(pos, parser->s->ci->codec_header.buf +
+                                  parser->s->ci->codec_header.len);
     if(!pos)
       return priv->have_vol;
     
@@ -173,8 +173,8 @@ static int parse_header_mpeg4(bgav_video_parser_t * parser)
       case MPEG4_CODE_VOL_START:
         len = bgav_mpeg4_vol_header_read(parser->s->opt,
                                          &priv->vol, pos,
-                                         parser->s->ci->global_header_len -
-                                         (pos - parser->s->ci->global_header));
+                                         parser->s->ci->codec_header.len -
+                                         (pos - parser->s->ci->codec_header.buf));
         if(!len)
           return 0;
         priv->have_vol = 1;
@@ -185,8 +185,9 @@ static int parse_header_mpeg4(bgav_video_parser_t * parser)
         pos += len;
         break;
       case MPEG4_CODE_USER_DATA:
-        pos += extract_user_data(parser, pos, parser->s->ci->global_header +
-                                 parser->s->ci->global_header_len);
+        pos += extract_user_data(parser, pos,
+                                 parser->s->ci->codec_header.buf +
+                                 parser->s->ci->codec_header.len);
         break;
       default:
         pos += 4;
@@ -202,11 +203,10 @@ static void set_header_end(bgav_video_parser_t * parser, bgav_packet_t * p,
   if(p->header_size)
     return;
   
-  if(!parser->s->ci->global_header)
+  if(!parser->s->ci->codec_header.len)
     {
-    parser->s->ci->global_header_len = pos;
-    parser->s->ci->global_header = malloc(parser->s->ci->global_header_len);
-    memcpy(parser->s->ci->global_header, p->buf.buf, parser->s->ci->global_header_len);
+    gavl_buffer_append_data(&parser->s->ci->codec_header,
+                            p->buf.buf, pos);
     }
   p->header_size = pos;
   }
@@ -450,7 +450,7 @@ void bgav_video_parser_init_mpeg4(bgav_video_parser_t * parser)
 
   priv->state = STATE_SYNC;
   
-  if(parser->s->ci->global_header)
+  if(parser->s->ci->codec_header.len)
     parse_header_mpeg4(parser);
   
   //  parser->parse = parse_mpeg4;

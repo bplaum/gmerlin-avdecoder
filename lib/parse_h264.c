@@ -653,16 +653,12 @@ static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int
         fprintf(stderr, "Got slice\n");
 #endif
         
-        if(!parser->s->ci->global_header &&
+        if(!parser->s->ci->codec_header.len &&
            sps_start && sps_end &&
            pps_start && pps_end)
           {
-          parser->s->ci->global_header_len = (sps_end - sps_start) + (pps_end - pps_start);
-          parser->s->ci->global_header = malloc(parser->s->ci->global_header_len);
-          memcpy(parser->s->ci->global_header, sps_start, sps_end - sps_start);
-          memcpy(parser->s->ci->global_header + (sps_end - sps_start),
-                 pps_start, pps_end - pps_start);
-          //          fprintf(stderr, "Got extradata %d bytes\n", parser->s->ci->global_header_len);
+          gavl_buffer_append_data(&parser->s->ci->codec_header, sps_start, sps_end - sps_start);
+          gavl_buffer_append_data(&parser->s->ci->codec_header, pps_start, pps_end - pps_start);
           }
         
         /* Decode slice header if necessary */
@@ -787,7 +783,7 @@ static int parse_avc_extradata(bgav_video_parser_t * parser)
   int nal_len;
   h264_priv_t * priv = parser->priv;
   
-  ptr = parser->s->ci->global_header;
+  ptr = parser->s->ci->codec_header.buf;
   //  end = ptr + parser->s->ci->global_header_len;
 
   ptr += 4; // Version, profile, profile compat, level
@@ -846,7 +842,7 @@ void bgav_video_parser_init_h264(bgav_video_parser_t * parser)
   /* Parse avc1 extradata */
   if(parser->s->fourcc == BGAV_MK_FOURCC('a', 'v', 'c', '1'))
     {
-    if(!parser->s->ci->global_header_len)
+    if(!parser->s->ci->codec_header.len)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
                "avc1 stream needs extradata");

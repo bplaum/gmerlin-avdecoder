@@ -203,6 +203,7 @@ static void close(bgav_stream_t * s)
 
 static int init_y4m(bgav_stream_t * s)
   {
+  char * header;
   yuv_priv_t * priv;
   priv = calloc(1, sizeof(*priv));
   s->decoder_priv = priv;
@@ -211,32 +212,34 @@ static int init_y4m(bgav_stream_t * s)
   
   priv = s->decoder_priv;
   
-  if(!s->ci->global_header_len)
+  if(!s->ci->codec_header.len)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Y4M needs extradata");
     return 0;
     }
 
-  if(!strncmp((char*)s->ci->global_header, "420", 3))
+  header = (char*)s->ci->codec_header.buf;
+  
+  if(!strncmp(header, "420", 3))
     {
     s->data.video.format->pixelformat = GAVL_YUV_420_P;
     
-    if(!strncmp((char*)(s->ci->global_header+3), "mpeg2", 5))
+    if(!strncmp(header+3, "mpeg2", 5))
       s->data.video.format->chroma_placement = GAVL_CHROMA_PLACEMENT_MPEG2;
-    else if(!strncmp((char*)(s->ci->global_header+3), "paldv", 5))
+    else if(!strncmp(header+3, "paldv", 5))
       s->data.video.format->chroma_placement = GAVL_CHROMA_PLACEMENT_DVPAL;
     }
-  else if(!strncmp((char*)s->ci->global_header, "422", 3))
+  else if(!strncmp(header, "422", 3))
     {
     s->data.video.format->pixelformat = GAVL_YUV_422_P;
     }
-  else if(!strncmp((char*)s->ci->global_header, "411", 3))
+  else if(!strncmp(header, "411", 3))
     {
     s->data.video.format->pixelformat = GAVL_YUV_411_P;
     }
-  else if(!strncmp((char*)s->ci->global_header, "444", 3))
+  else if(!strncmp(header, "444", 3))
     {
-    if(!strcmp((char*)s->ci->global_header, "444alpha"))
+    if(!strcmp(header, "444alpha"))
       {
       priv->decode_func = decode_yuva;
       s->data.video.format->pixelformat = GAVL_YUVA_32;
@@ -244,7 +247,7 @@ static int init_y4m(bgav_stream_t * s)
     else // Normal planar 444
       s->data.video.format->pixelformat = GAVL_YUV_444_P;
     }
-  else if(!strncmp((char*)s->ci->global_header, "mono", 4))
+  else if(!strncmp(header, "mono", 4))
     {
     priv->decode_func = decode_mono;
     s->data.video.format->pixelformat = GAVL_GRAY_8;

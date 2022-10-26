@@ -1245,12 +1245,14 @@ static int init_mpeg4_generic_audio(bgav_stream_t * s)
   if(var)
     {
     int i;
-    s->ci->global_header_len = strlen(var)/2;
-    s->ci->global_header = malloc(s->ci->global_header_len);
+
+    s->ci->codec_header.len = strlen(var)/2;
+    gavl_buffer_alloc(&s->ci->codec_header, s->ci->codec_header.len);
+    
     i = 0;
-    while(i < s->ci->global_header_len)
+    while(i < s->ci->codec_header.len)
       {
-      s->ci->global_header[i] = hex_to_byte(var);
+      s->ci->codec_header.buf[i] = hex_to_byte(var);
       var += 2;
       i++;
       }
@@ -1390,14 +1392,8 @@ static int init_h264(bgav_stream_t * s)
                                   decoded_packet, sizeof(decoded_packet));
     if(packet_size)
       {
-      s->ci->global_header = realloc(s->ci->global_header,
-                            s->ci->global_header_len + sizeof(start_sequence) + packet_size);
-      memcpy(s->ci->global_header + s->ci->global_header_len, start_sequence, sizeof(start_sequence));
-      s->ci->global_header_len += sizeof(start_sequence);
-      memcpy(s->ci->global_header + s->ci->global_header_len, decoded_packet, packet_size);
-
-      s->ci->global_header_len += packet_size;
-      
+      gavl_buffer_append_data(&s->ci->codec_header, start_sequence, sizeof(start_sequence));
+      gavl_buffer_append_data(&s->ci->codec_header, decoded_packet, packet_size);
       }
     }
   /* TODO: Get packetization-mode */
@@ -1540,13 +1536,14 @@ static int init_mp4v_es(bgav_stream_t * s)
   if(!value)
     return 0;
 
-  s->ci->global_header_len = strlen(value)/2;
-  s->ci->global_header = malloc(s->ci->global_header_len);
+  s->ci->codec_header.len = strlen(value)/2;
+  gavl_buffer_alloc(&s->ci->codec_header, s->ci->codec_header.len);
+
   //  s->not_aligned = 1;
   i = 0;
-  while(i < s->ci->global_header_len)
+  while(i < s->ci->codec_header.len)
     {
-    s->ci->global_header[i] = hex_to_byte(value);
+    s->ci->codec_header.buf[i] = hex_to_byte(value);
     value += 2;
     i++;
     }
@@ -1776,10 +1773,11 @@ static int extract_extradata_ogg(bgav_stream_t * s, uint8_t * data, int siz)
   sizes[2] = (end - data) - (sizes[0] + sizes[1]);
   
   /* Assemble 3 header packets */
+
   
-  s->ci->global_header_len = sizes[0]+sizes[1]+sizes[2] + 3*sizeof(op);
-  s->ci->global_header = malloc(s->ci->global_header_len);
-  pos = s->ci->global_header;
+  s->ci->codec_header.len = sizes[0]+sizes[1]+sizes[2] + 3*sizeof(op);
+  gavl_buffer_alloc(&s->ci->codec_header, s->ci->codec_header.len);
+  pos = s->ci->codec_header.buf;
   
   for(i = 0; i < 3; i++)
     {
