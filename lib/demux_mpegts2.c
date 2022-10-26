@@ -327,7 +327,7 @@ static int open_mpegts(bgav_demuxer_context_t * ctx)
   }
 
 
-static int next_packet_mpegts(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_mpegts(bgav_demuxer_context_t * ctx)
   {
   mpegts_priv_t * priv;
   int done = 0;
@@ -350,7 +350,7 @@ static int next_packet_mpegts(bgav_demuxer_context_t * ctx)
     if(bgav_input_read_data(ctx->input, priv->buf.buf, priv->packet_size) < priv->packet_size)
       {
       /* EOF */
-      return 0;
+      return GAVL_SOURCE_EOF;
       }
     ptr = priv->buf.buf;
     
@@ -398,7 +398,7 @@ static int next_packet_mpegts(bgav_demuxer_context_t * ctx)
       
       if(!bgav_pes_header_read(priv->pes_parser,
                                &pes_header))
-        return 0;
+        return GAVL_SOURCE_EOF;
       
       //      fprintf(stderr, "Got PTS: %"PRId64"\n", pes_header.pts);
       s->packet->pts = pes_header.pts;
@@ -436,7 +436,7 @@ static int next_packet_mpegts(bgav_demuxer_context_t * ctx)
       
       }
     }
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void resync_mpegts(bgav_demuxer_context_t * ctx, bgav_stream_t * s)

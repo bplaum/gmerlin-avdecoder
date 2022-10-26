@@ -1326,8 +1326,8 @@ struct bgav_file_index_s
 bgav_file_index_t * bgav_file_index_create();
 void bgav_file_index_destroy(bgav_file_index_t *);
 
-int bgav_demuxer_next_packet_fileindex(bgav_demuxer_context_t * ctx);
-int bgav_demuxer_next_packet_interleaved(bgav_demuxer_context_t * ctx);
+gavl_source_status_t bgav_demuxer_next_packet_fileindex(bgav_demuxer_context_t * ctx);
+gavl_source_status_t bgav_demuxer_next_packet_interleaved(bgav_demuxer_context_t * ctx);
 
 BGAV_PUBLIC void bgav_file_index_dump(bgav_t * b);
 
@@ -1360,7 +1360,7 @@ struct bgav_demuxer_s
 
   int  (*open)(bgav_demuxer_context_t * ctx);
   
-  int  (*next_packet)(bgav_demuxer_context_t*);
+  gavl_source_status_t (*next_packet)(bgav_demuxer_context_t*);
 
   /*
    *  Seeking sets either the position- or the time

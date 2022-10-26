@@ -512,7 +512,7 @@ static int open_vivo(bgav_demuxer_context_t * ctx)
   return 0;
   }
 
-static int next_packet_vivo(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_vivo(bgav_demuxer_context_t * ctx)
   {
   uint8_t c, h;
   int prefix = 0;
@@ -526,14 +526,14 @@ static int next_packet_vivo(bgav_demuxer_context_t * ctx)
   priv = ctx->priv;
 
   if(!bgav_input_read_data(ctx->input, &c, 1))
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   if(c == 0x82)
     {
     prefix = 1;
     
     if(!bgav_input_read_data(ctx->input, &c, 1))
-      return 0;
+      return GAVL_SOURCE_EOF;
     
     }
 
@@ -544,16 +544,16 @@ static int next_packet_vivo(bgav_demuxer_context_t * ctx)
     case 0x00: /* Thought we already have all headers */
       len = read_length(ctx->input);
       if(len < 0)
-        return 0;
+        return GAVL_SOURCE_EOF;
       bgav_input_skip(ctx->input, len);
-      return 1;
+      return GAVL_SOURCE_OK;
       break;
     case 0x10: /* Video packet */
     case 0x20:
       if(prefix || ((h & 0xf0) == 0x20))
         {
         if(!bgav_input_read_data(ctx->input, &c, 1))
-          return 0;
+          return GAVL_SOURCE_EOF;
         len = c;
         }
       else
@@ -565,7 +565,7 @@ static int next_packet_vivo(bgav_demuxer_context_t * ctx)
       if(prefix)
         {
         if(!bgav_input_read_data(ctx->input, &c, 1))
-          return 0;
+          return GAVL_SOURCE_EOF;
         len = c;
         }
       else if((h & 0xf0) == 0x30)
@@ -578,7 +578,7 @@ static int next_packet_vivo(bgav_demuxer_context_t * ctx)
     default:
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
                "Unknown packet type");
-      return 0;
+      return GAVL_SOURCE_EOF;
     }
     
   if(do_audio)
@@ -589,7 +589,7 @@ static int next_packet_vivo(bgav_demuxer_context_t * ctx)
   if(!stream)
     {
     bgav_input_skip(ctx->input, len);
-    return 1;
+    return GAVL_SOURCE_OK;
     }
   
   seq = (h & 0x0f);
@@ -626,12 +626,12 @@ static int next_packet_vivo(bgav_demuxer_context_t * ctx)
                           stream->packet->buf.buf + stream->packet->buf.len,
                           len) < len)
     {
-    return 0;
+    return GAVL_SOURCE_EOF;
     }
   stream->packet->buf.len += len;
   if((h & 0xf0) == 0x20)
     stream->packet_seq--;
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static int select_track_vivo(bgav_demuxer_context_t * ctx, int t)

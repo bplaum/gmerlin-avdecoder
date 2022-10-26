@@ -52,7 +52,7 @@ extern const bgav_demuxer_t bgav_demuxer_ra;
 extern const bgav_demuxer_t bgav_demuxer_mpegaudio;
 extern const bgav_demuxer_t bgav_demuxer_mpegvideo;
 extern const bgav_demuxer_t bgav_demuxer_mpegps;
-extern const bgav_demuxer_t bgav_demuxer_mpegts;
+//extern const bgav_demuxer_t bgav_demuxer_mpegts;
 extern const bgav_demuxer_t bgav_demuxer_mpegts2;
 extern const bgav_demuxer_t bgav_demuxer_mxf;
 extern const bgav_demuxer_t bgav_demuxer_flac;
@@ -185,7 +185,7 @@ static const demuxer_t demuxers[] =
 static const demuxer_t sync_demuxers[] =
   {
     { &bgav_demuxer_mpegts2,   "MPEG-2 transport stream" },
-    { &bgav_demuxer_mpegts,    "MPEG-2 transport stream" },
+    //    { &bgav_demuxer_mpegts,    "MPEG-2 transport stream" },
     { &bgav_demuxer_mpegaudio, "MPEG Audio" },
     { &bgav_demuxer_adts,      "ADTS" },
     { &bgav_demuxer_mpegps,    "MPEG System" },
@@ -495,21 +495,21 @@ void bgav_demuxer_stop(bgav_demuxer_context_t * ctx)
   
   }
 
-int bgav_demuxer_next_packet_interleaved(bgav_demuxer_context_t * ctx)
+gavl_source_status_t bgav_demuxer_next_packet_interleaved(bgav_demuxer_context_t * ctx)
   {
   bgav_stream_t * stream;
   bgav_packet_t * p;
   
   if(ctx->si->current_position >= ctx->si->num_entries)
     {
-    return 0;
+    return GAVL_SOURCE_EOF;
     }
   
   if(ctx->input->position >=
      ctx->si->entries[ctx->si->num_entries - 1].offset + 
      ctx->si->entries[ctx->si->num_entries - 1].size)
     {
-    return 0;
+    return  GAVL_SOURCE_EOF;
     }
   stream =
     bgav_track_find_stream(ctx,
@@ -526,7 +526,7 @@ int bgav_demuxer_next_packet_interleaved(bgav_demuxer_context_t * ctx)
             ctx->si->entries[ctx->si->current_position].stream_id);
 #endif
     ctx->si->current_position++;
-    return 1;
+    return  GAVL_SOURCE_OK;
     }
 #if 0
   if(stream->type == GAVF_STREAM_TEXT)
@@ -538,7 +538,7 @@ int bgav_demuxer_next_packet_interleaved(bgav_demuxer_context_t * ctx)
      (stream->index_position > ctx->si->current_position))
     {
     ctx->si->current_position++;
-    return 1;
+    return GAVL_SOURCE_OK;
     }
   
   p = bgav_stream_get_packet_write(stream);
@@ -558,7 +558,7 @@ int bgav_demuxer_next_packet_interleaved(bgav_demuxer_context_t * ctx)
     }
   
   if(bgav_input_read_data(ctx->input, p->buf.buf, p->buf.len) < p->buf.len)
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   if(stream->process_packet)
     stream->process_packet(stream, p);
@@ -566,7 +566,7 @@ int bgav_demuxer_next_packet_interleaved(bgav_demuxer_context_t * ctx)
   bgav_stream_done_packet_write(stream, p);
   
   ctx->si->current_position++;
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static int next_packet_noninterleaved(bgav_demuxer_context_t * ctx)

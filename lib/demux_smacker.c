@@ -331,7 +331,7 @@ static int read_palette(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_smacker(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_smacker(bgav_demuxer_context_t * ctx)
   {
   bgav_stream_t * s;
   bgav_packet_t * p;
@@ -354,7 +354,7 @@ static int next_packet_smacker(bgav_demuxer_context_t * ctx)
   if(frame_flags & SMACKER_PAL)
     {
     if(!read_palette(ctx))
-      return 0;
+      return GAVL_SOURCE_EOF;
     else
       palette_change = 1;
     }
@@ -366,7 +366,7 @@ static int next_packet_smacker(bgav_demuxer_context_t * ctx)
     if(frame_flags & 0x01)
       {
       if(!bgav_input_read_32_le(ctx->input, &size))
-        return 0;
+        return GAVL_SOURCE_EOF;
 
       size -= 4; /* Size is including counter */
       /* Audio stream */
@@ -387,7 +387,7 @@ static int next_packet_smacker(bgav_demuxer_context_t * ctx)
         bgav_packet_alloc(p, size);
         p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, size);
         if(!p->buf.len)
-          return 0;
+          return GAVL_SOURCE_EOF;
         bgav_stream_done_packet_write(s, p);
         }
       
@@ -400,7 +400,7 @@ static int next_packet_smacker(bgav_demuxer_context_t * ctx)
     {
     bgav_input_skip(ctx->input, frame_end - ctx->input->position);
     priv->current_frame++;
-    return 1;
+    return GAVL_SOURCE_OK;
     }
   
   p = bgav_stream_get_packet_write(s);
@@ -421,7 +421,7 @@ static int next_packet_smacker(bgav_demuxer_context_t * ctx)
   size = frame_end - ctx->input->position;
   
   if(bgav_input_read_data(ctx->input, p->buf.buf + 769, size) < size)
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   p->buf.len = size + 769;
   
@@ -431,7 +431,7 @@ static int next_packet_smacker(bgav_demuxer_context_t * ctx)
 
   priv->current_frame++;
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static int select_track_smacker(bgav_demuxer_context_t * ctx, int t)

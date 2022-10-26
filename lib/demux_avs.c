@@ -82,7 +82,7 @@ static int probe_avs(bgav_input_context_t * input)
   return 0;
   }
 
-static int next_packet_avs(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_avs(bgav_demuxer_context_t * ctx)
   {
   audio_header_t ah;
   uint8_t  block_header[4];
@@ -104,11 +104,11 @@ static int next_packet_avs(bgav_demuxer_context_t * ctx)
   /* Check if we have data left */
   if(!bgav_input_read_16_le(ctx->input, &frame_size) ||
      !frame_size)
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   /* Actual frame size */
   if(!bgav_input_read_16_le(ctx->input, &frame_size))
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   if(priv->need_audio_format)
     {
@@ -124,7 +124,7 @@ static int next_packet_avs(bgav_demuxer_context_t * ctx)
   while(ctx->input->position - frame_start < frame_size)
     {
     if(bgav_input_read_data(ctx->input, block_header, 4) < 4)
-      return 0;
+      return GAVL_SOURCE_EOF;
     block_type = GAVL_PTR_2_16LE(&block_header[0]);
     block_size = GAVL_PTR_2_16LE(&block_header[2]);
     switch(block_type >> 8)
@@ -151,7 +151,7 @@ static int next_packet_avs(bgav_demuxer_context_t * ctx)
         if(bgav_input_read_data(ctx->input,
                                 vs->packet->buf.buf + vs->packet->buf.len,
                                 block_size - 4) < block_size - 4)
-          return 0;
+          return GAVL_SOURCE_EOF;
         vs->packet->buf.len += (block_size - 4);
         vs->packet->pts = vs->in_position;
         bgav_stream_done_packet_write(vs, vs->packet);
@@ -168,7 +168,7 @@ static int next_packet_avs(bgav_demuxer_context_t * ctx)
           {
           gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
                    "2 Palette blocks without intermediate video block");
-          return 0;
+          return GAVL_SOURCE_EOF;
           }
         vs->packet =
           bgav_stream_get_packet_write(vs);
@@ -182,7 +182,7 @@ static int next_packet_avs(bgav_demuxer_context_t * ctx)
         if(bgav_input_read_data(ctx->input,
                                 vs->packet->buf.buf + vs->packet->buf.len,
                                 block_size - 4) < block_size - 4)
-          return 0;
+          return GAVL_SOURCE_EOF;
         vs->packet->buf.len += block_size - 4;
         break;
       case 0x02: /* Audio data */
@@ -240,7 +240,7 @@ static int next_packet_avs(bgav_demuxer_context_t * ctx)
             if(bgav_input_read_data(ctx->input,
                                     as->packet->buf.buf + as->packet->buf.len,
                                     bytes_to_read) < bytes_to_read)
-              return 0;
+              return GAVL_SOURCE_EOF;
             
             as->packet->buf.len += bytes_to_read;
             }
@@ -266,7 +266,7 @@ static int next_packet_avs(bgav_demuxer_context_t * ctx)
       }
     }
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static int open_avs(bgav_demuxer_context_t * ctx)

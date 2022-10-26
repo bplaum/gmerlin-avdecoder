@@ -117,7 +117,7 @@ static int open_dv(bgav_demuxer_context_t * ctx)
   
   }
 
-static int next_packet_dv(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_dv(bgav_demuxer_context_t * ctx)
   {
   bgav_packet_t *ap = NULL, *vp = NULL;
   bgav_stream_t *as, *vs;
@@ -143,19 +143,19 @@ static int next_packet_dv(bgav_demuxer_context_t * ctx)
     ap->position = ctx->input->position;
     }
   if(bgav_input_read_data(ctx->input, priv->frame_buffer, priv->frame_size) < priv->frame_size)
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   bgav_dv_dec_set_frame(priv->d, priv->frame_buffer);
   
   if(!bgav_dv_dec_get_audio_packet(priv->d, ap))
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   bgav_dv_dec_get_video_packet(priv->d, vp);
   if(ap)
     bgav_stream_done_packet_write(as, ap);
   if(vp)
     bgav_stream_done_packet_write(vs, vp);
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void seek_dv(bgav_demuxer_context_t * ctx, int64_t time,

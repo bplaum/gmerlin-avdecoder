@@ -670,7 +670,7 @@ static bgav_stream_t * next_stream(bgav_stream_t * s, int num)
   return NULL;
   }
 
-static int next_packet_mxf(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_mxf(bgav_demuxer_context_t * ctx)
   {
   bgav_stream_t * s;
   stream_priv_t * sp;
@@ -687,10 +687,10 @@ static int next_packet_mxf(bgav_demuxer_context_t * ctx)
       sp->eof = 1;
 
     if(!(s = next_stream(ctx->tt->cur->streams, ctx->tt->cur->num_streams)))
-      return 0;
+      return GAVL_SOURCE_EOF;
     sp = s->priv;
     }
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void seek_mxf(bgav_demuxer_context_t * ctx, int64_t time,

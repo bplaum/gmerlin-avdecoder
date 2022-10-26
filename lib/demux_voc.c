@@ -242,7 +242,7 @@ static int open_voc(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_voc(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_voc(bgav_demuxer_context_t * ctx)
   {
   int bytes_to_read;
   voc_priv_t * priv;
@@ -258,14 +258,14 @@ static int next_packet_voc(bgav_demuxer_context_t * ctx)
     {
     /* Look if we have something else to read */
     if(!read_chunk_header(ctx->input, &h))
-      return 0; /* EOF */
+      return GAVL_SOURCE_EOF; /* EOF */
     
     switch(h.type)
       {
       case VOC_TYPE_NEW_VOICE_DATA:
       case VOC_TYPE_VOICE_DATA:
         /* New sound data, probably in a different format -> exit here */
-        return 0;
+        return GAVL_SOURCE_EOF;
       case VOC_TYPE_VOICE_DATA_CONT:
         /* Same format as before */
         priv->remaining_bytes = h.len;
@@ -292,9 +292,9 @@ static int next_packet_voc(bgav_demuxer_context_t * ctx)
   bgav_stream_done_packet_write(s, p);
 
   if(!p->buf.len)
-    return 0;
+    return GAVL_SOURCE_EOF;
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 #if 0 // Seeking in VOCs is doomed to failure

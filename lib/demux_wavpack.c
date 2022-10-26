@@ -203,7 +203,7 @@ static int open_wavpack(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_wavpack(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_wavpack(bgav_demuxer_context_t * ctx)
   {
   uint8_t header[HEADER_SIZE];
   wvpk_header_t h;
@@ -216,7 +216,7 @@ static int next_packet_wavpack(bgav_demuxer_context_t * ctx)
   pos = ctx->input->position;
   
   if(bgav_input_read_data(ctx->input, header, HEADER_SIZE) < HEADER_SIZE)
-    return 0; // EOF
+    return GAVL_SOURCE_EOF; // EOF
 
   s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
   p = bgav_stream_get_packet_write(s);
@@ -233,7 +233,7 @@ static int next_packet_wavpack(bgav_demuxer_context_t * ctx)
   if(h.fourcc != BGAV_MK_FOURCC('w', 'v', 'p', 'k'))
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Lost sync");
-    return 0;
+    return GAVL_SOURCE_EOF;
     }
     
   size = h.block_size - 24;
@@ -243,7 +243,7 @@ static int next_packet_wavpack(bgav_demuxer_context_t * ctx)
   memcpy(p->buf.buf, header, HEADER_SIZE);
   
   if(bgav_input_read_data(ctx->input, p->buf.buf + HEADER_SIZE, size) < size)
-    return 0; // EOF
+    return GAVL_SOURCE_EOF; // EOF
   
   p->buf.len = HEADER_SIZE + size;
 
@@ -256,7 +256,7 @@ static int next_packet_wavpack(bgav_demuxer_context_t * ctx)
   while(!(h.flags & WV_MCEND))
     {
     if(bgav_input_read_data(ctx->input, header, HEADER_SIZE) < HEADER_SIZE)
-      return 0; // EOF
+      return GAVL_SOURCE_EOF; // EOF
 
     parse_header(&h, header);
 
@@ -266,13 +266,13 @@ static int next_packet_wavpack(bgav_demuxer_context_t * ctx)
     p->buf.len += HEADER_SIZE;
 
     if(bgav_input_read_data(ctx->input, p->buf.buf + p->buf.len, h.block_size - 24) < h.block_size - 24)
-      return 0; // EOF
+      return GAVL_SOURCE_EOF; // EOF
     
     }
   
   bgav_stream_done_packet_write(s, p);
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void seek_wavpack(bgav_demuxer_context_t * ctx,

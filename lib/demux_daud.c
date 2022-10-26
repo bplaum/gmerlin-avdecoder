@@ -65,14 +65,14 @@ static int open_daud(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_daud(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_daud(bgav_demuxer_context_t * ctx)
   {
   bgav_stream_t * s;
   bgav_packet_t * p;
   uint16_t size;
 
   if(!bgav_input_read_16_be(ctx->input, &size))
-    return 0;
+    return GAVL_SOURCE_EOF;
   bgav_input_skip(ctx->input, 2); // Unknown
   
   s = bgav_track_find_stream(ctx, 0);
@@ -82,13 +82,13 @@ static int next_packet_daud(bgav_demuxer_context_t * ctx)
     bgav_packet_alloc(p, size);
     p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, size);
     if(!p->buf.len)
-      return 0;
+      return GAVL_SOURCE_EOF;
     bgav_stream_done_packet_write(s, p);
     }
   else
     bgav_input_skip(ctx->input, size);
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void close_daud(bgav_demuxer_context_t * ctx)

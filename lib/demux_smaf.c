@@ -197,7 +197,7 @@ static int open_smaf(bgav_demuxer_context_t * ctx)
 
 #define MAX_BYTES 4096
 
-static int next_packet_smaf(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_smaf(bgav_demuxer_context_t * ctx)
   {
   int bytes_to_read;
   smaf_priv_t * priv;
@@ -209,7 +209,7 @@ static int next_packet_smaf(bgav_demuxer_context_t * ctx)
   bytes_to_read = priv->bytes_left;
 
   if(!bytes_to_read)
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   if(bytes_to_read > MAX_BYTES)
     bytes_to_read = MAX_BYTES;
@@ -221,10 +221,10 @@ static int next_packet_smaf(bgav_demuxer_context_t * ctx)
 
   p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
   if(!p->buf.len)
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   bgav_stream_done_packet_write(s, p);
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void close_smaf(bgav_demuxer_context_t * ctx)

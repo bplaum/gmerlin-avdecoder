@@ -400,7 +400,7 @@ static int open_aiff(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_aiff(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_aiff(bgav_demuxer_context_t * ctx)
   {
   bgav_packet_t * p;
   aiff_priv_t * priv;
@@ -426,9 +426,9 @@ static int next_packet_aiff(bgav_demuxer_context_t * ctx)
   bgav_stream_done_packet_write(s, p);
 
   if(!bytes_read)
-    return 0;
+    return GAVL_SOURCE_EOF;
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void seek_aiff(bgav_demuxer_context_t * ctx, int64_t time, int scale)

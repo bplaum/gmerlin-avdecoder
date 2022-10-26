@@ -825,7 +825,7 @@ static void close_ffmpeg(bgav_demuxer_context_t * ctx)
     free(priv);
   }
 
-static int next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
   {
   int i;
   ffmpeg_priv_t * priv;
@@ -848,13 +848,13 @@ static int next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
   priv = ctx->priv;
   
   if(av_read_frame(priv->avfc, &pkt) < 0)
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   s = bgav_track_find_stream(ctx, pkt.stream_index);
   if(!s)
     {
     av_packet_unref(&pkt);
-    return 1;
+    return GAVL_SOURCE_OK;
     }
   
   avs = priv->avfc->streams[pkt.stream_index];
@@ -917,7 +917,7 @@ static int next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
   
   av_packet_unref(&pkt);
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void seek_ffmpeg(bgav_demuxer_context_t * ctx, int64_t time, int scale)

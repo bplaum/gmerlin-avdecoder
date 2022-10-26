@@ -243,7 +243,7 @@ static int open_nuv(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_nuv(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_nuv(bgav_demuxer_context_t * ctx)
   {
   uint8_t hdr[HDRSIZE];
   uint32_t size;
@@ -252,7 +252,7 @@ static int next_packet_nuv(bgav_demuxer_context_t * ctx)
   bgav_packet_t * p;
   
   if(bgav_input_read_data(ctx->input, hdr, HDRSIZE) < HDRSIZE)
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   size = GAVL_PTR_2_32LE(&hdr[8]);
   size &= 0xffffff;
@@ -277,7 +277,7 @@ static int next_packet_nuv(bgav_demuxer_context_t * ctx)
 
       if(bgav_input_read_data(ctx->input, p->buf.buf + HDRSIZE,
                               size) < size)
-        return 0;
+        return GAVL_SOURCE_EOF;
       
       p->buf.len = HDRSIZE + size;
       p->pts = pts;
@@ -297,7 +297,7 @@ static int next_packet_nuv(bgav_demuxer_context_t * ctx)
 
       if(bgav_input_read_data(ctx->input, p->buf.buf,
                               size) < size)
-        return 0;
+        return GAVL_SOURCE_EOF;
       
       p->buf.len = size;
       p->pts = pts;
@@ -311,7 +311,7 @@ static int next_packet_nuv(bgav_demuxer_context_t * ctx)
       bgav_input_skip(ctx->input, size);
       break;
     }
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 

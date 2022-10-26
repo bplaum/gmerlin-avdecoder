@@ -200,7 +200,7 @@ static int fill_buffer(frame_buffer_t * buffer,
   return 1;
   }
 
-static int next_packet_tiertex(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_tiertex(bgav_demuxer_context_t * ctx)
   {
   int i, j;
   int video_size, palette_size;
@@ -215,7 +215,7 @@ static int next_packet_tiertex(bgav_demuxer_context_t * ctx)
   while(1)
     {
     if(bgav_input_read_data(ctx->input, buf, SEQ_FRAME_SIZE) < SEQ_FRAME_SIZE)
-      return 0;
+      return GAVL_SOURCE_EOF;
     parse_frame_header(buf, &fh);
     //    dump_frame_header(&fh);
     if(fh.offset_table[3] > 16)
@@ -232,7 +232,7 @@ static int next_packet_tiertex(bgav_demuxer_context_t * ctx)
                       buf,
                       fh.offset_table[i],
                       fh.offset_table[j] - fh.offset_table[i]))
-        return 0;
+        return GAVL_SOURCE_EOF;
       }
     }
 
@@ -298,7 +298,7 @@ static int next_packet_tiertex(bgav_demuxer_context_t * ctx)
   
   //  
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void close_tiertex(bgav_demuxer_context_t * ctx)

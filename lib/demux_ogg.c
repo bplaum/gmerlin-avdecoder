@@ -1768,7 +1768,7 @@ static int is_data_packet(ogg_t * op, bgav_stream_t * s, ogg_packet * p)
   return 1;
   }
 
-static int next_packet_ogg(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_ogg(bgav_demuxer_context_t * ctx)
   {
   int i;
   int64_t iframes;
@@ -1781,15 +1781,15 @@ static int next_packet_ogg(bgav_demuxer_context_t * ctx)
   ogg_t * priv = ctx->priv;
   int page_continued;
 
-  int ret = 0;
+  gavl_source_status_t ret = GAVL_SOURCE_EOF;
   int done = 0;
 
   while(!done)
     {
     if(!get_page(ctx))
-      return 0;
+      return GAVL_SOURCE_EOF;
 
-    ret = 1;
+    ret = GAVL_SOURCE_OK;
     
     serialno   = ogg_page_serialno(&priv->current_page);
     granulepos = ogg_page_granulepos(&priv->current_page);
@@ -1799,7 +1799,7 @@ static int next_packet_ogg(bgav_demuxer_context_t * ctx)
       if(!(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE) && priv->nonbos_seen)
         {
         if(!new_streaming_track(ctx))
-          return 0;
+          return GAVL_SOURCE_EOF;
         else
           serialno = ogg_page_serialno(&priv->current_page);
         }
@@ -1998,7 +1998,7 @@ static int next_packet_ogg(bgav_demuxer_context_t * ctx)
             {
             break;
             }
-          //        return 0;
+          //        return GAVL_SOURCE_EOF;
           /* Parse subheader (let's hope there aren't any packets with
              more than one video frame) */
           len_bytes =
@@ -2178,7 +2178,6 @@ static int next_packet_ogg(bgav_demuxer_context_t * ctx)
     if(!ctx->next_packet_pos || (ctx->input->position >= ctx->next_packet_pos))
       done = 1;
     }
-
   
   return ret;
   }

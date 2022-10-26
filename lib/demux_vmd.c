@@ -250,7 +250,7 @@ static int open_vmd(bgav_demuxer_context_t * ctx)
   }
 
 
-static int next_packet_vmd(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_vmd(bgav_demuxer_context_t * ctx)
   {
   vmd_priv_t * priv;
   vmd_frame_t *frame;
@@ -260,7 +260,7 @@ static int next_packet_vmd(bgav_demuxer_context_t * ctx)
   priv = ctx->priv;
 
   if(priv->current_frame >= priv->frame_count)
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   frame = &priv->frame_table[priv->current_frame];
 
@@ -274,7 +274,7 @@ static int next_packet_vmd(bgav_demuxer_context_t * ctx)
     memcpy(p->buf.buf, frame->frame_record, BYTES_PER_FRAME_RECORD);
     if(bgav_input_read_data(ctx->input, p->buf.buf + BYTES_PER_FRAME_RECORD,
                             frame->frame_size) < frame->frame_size)
-      return 0;
+      return GAVL_SOURCE_EOF;
     
     p->buf.len = frame->frame_size + BYTES_PER_FRAME_RECORD;
     if(s->type == GAVL_STREAM_VIDEO)
@@ -293,7 +293,7 @@ static int next_packet_vmd(bgav_demuxer_context_t * ctx)
     bgav_stream_done_packet_write(s, p);
     }
   priv->current_frame++;
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static int select_track_vmd(bgav_demuxer_context_t * ctx, int track)

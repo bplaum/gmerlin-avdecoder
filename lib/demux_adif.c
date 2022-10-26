@@ -169,7 +169,7 @@ static int open_adif(bgav_demuxer_context_t * ctx)
   return 0;
   }
 
-static int next_packet_adif(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_adif(bgav_demuxer_context_t * ctx)
   {
   bgav_stream_t * s;
   bgav_packet_t * p;
@@ -184,11 +184,11 @@ static int next_packet_adif(bgav_demuxer_context_t * ctx)
   
   bytes_read = bgav_input_read_data(ctx->input, p->buf.buf, BYTES_TO_READ);
   if(!bytes_read)
-    return 0;
+    return GAVL_SOURCE_EOF;
   p->buf.len = bytes_read;
 
   bgav_stream_done_packet_write(s, p);
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 

@@ -1081,7 +1081,7 @@ static void add_packet(bgav_demuxer_context_t * ctx,
   s->packet->buf.len = len;
   }
 
-static int next_packet_asf(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_asf(bgav_demuxer_context_t * ctx)
   {
   int i, len2, result;
   asf_t * asf;
@@ -1094,11 +1094,11 @@ static int next_packet_asf(bgav_demuxer_context_t * ctx)
   //    return 0;
 
   if(asf->hdr.packets_count && (asf->packets_read >= asf->hdr.packets_count))
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   if(bgav_input_read_data(ctx->input, asf->packet_buffer,
                           ctx->packet_size) < ctx->packet_size)
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   data_ptr = asf->packet_buffer +
     read_packet_header(ctx, asf, &pkt_hdr, asf->packet_buffer);
@@ -1108,7 +1108,7 @@ static int next_packet_asf(bgav_demuxer_context_t * ctx)
     result = read_segment_header(ctx->opt, asf, &pkt_hdr, &seg_hdr, data_ptr);
     if(result < 0)
       {
-      return 0;
+      return GAVL_SOURCE_EOF;
       }
     data_ptr += result;
         
@@ -1149,7 +1149,7 @@ static int next_packet_asf(bgav_demuxer_context_t * ctx)
       }
         
     }
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void seek_asf(bgav_demuxer_context_t * ctx, int64_t time, int scale)

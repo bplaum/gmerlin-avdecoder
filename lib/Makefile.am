@@ -363,7 +363,6 @@ demux_sphere.c \
 demux_matroska.c \
 demux_mpegaudio.c \
 demux_mpegps.c \
-demux_mpegts.c \
 demux_mpegts2.c \
 demux_mpegvideo.c \
 demux_mtv.c \

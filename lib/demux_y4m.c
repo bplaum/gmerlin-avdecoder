@@ -230,7 +230,7 @@ static int open_y4m(bgav_demuxer_context_t * ctx)
   }
 
 
-static int next_packet_y4m(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_y4m(bgav_demuxer_context_t * ctx)
   {
   bgav_packet_t * p;
   bgav_stream_t * s;
@@ -246,15 +246,15 @@ static int next_packet_y4m(bgav_demuxer_context_t * ctx)
 
   if(!bgav_input_read_line(ctx->input,
                            &priv->line_buf))
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   if(strncmp((char*)priv->line_buf.buf, "FRAME", 5))
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   bgav_packet_alloc(p, priv->buf_size);
 
   if(bgav_input_read_data(ctx->input, p->buf.buf, priv->buf_size) < priv->buf_size)
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   p->buf.len = priv->buf_size;
   
@@ -308,7 +308,7 @@ static int next_packet_y4m(bgav_demuxer_context_t * ctx)
     }
   
   bgav_stream_done_packet_write(s, p);
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void resync_y4m(bgav_demuxer_context_t * ctx, bgav_stream_t * s)

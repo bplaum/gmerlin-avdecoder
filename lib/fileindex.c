@@ -1080,14 +1080,14 @@ int bgav_build_file_index(bgav_t * b, gavl_time_t * time_needed)
   return 1;
   }
 
-int bgav_demuxer_next_packet_fileindex(bgav_demuxer_context_t * ctx)
+gavl_source_status_t bgav_demuxer_next_packet_fileindex(bgav_demuxer_context_t * ctx)
   {
   bgav_stream_t * s = ctx->request_stream;
   int new_pos;
 
   /* Check for EOS */
   if(s->index_position >= s->file_index->num_entries)
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   /* Seek to right position */
   if(s->file_index->entries[s->index_position].position !=
@@ -1113,11 +1113,11 @@ int bgav_demuxer_next_packet_fileindex(bgav_demuxer_context_t * ctx)
     ctx->next_packet_pos = s->file_index->entries[new_pos].position;
 
   if(!ctx->demuxer->next_packet(ctx))
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   s->index_position = new_pos;
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 

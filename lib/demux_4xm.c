@@ -386,7 +386,7 @@ static int select_track_4xm(bgav_demuxer_context_t * ctx, int track)
   return 1;
   }
 
-static int next_packet_4xm(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_4xm(bgav_demuxer_context_t * ctx)
   {
   uint8_t header[8];
   uint32_t fourcc;
@@ -406,10 +406,10 @@ static int next_packet_4xm(bgav_demuxer_context_t * ctx)
       bgav_input_skip(ctx->input, 1);
 
     if(ctx->input->position >= priv->movi_end)
-      return 0; // EOF
+      return GAVL_SOURCE_EOF; // EOF
     
     if(bgav_input_read_data(ctx->input, header, 8) < 8)
-      return 0;
+      return GAVL_SOURCE_EOF;
 
     
     fourcc = BGAV_PTR_2_FOURCC(&header[0]);
@@ -440,7 +440,7 @@ static int next_packet_4xm(bgav_demuxer_context_t * ctx)
         p->buf.len = 8 + bgav_input_read_data(ctx->input, p->buf.buf+8, size);
 
         if(p->buf.len < size + 8)
-          return 0;
+          return GAVL_SOURCE_EOF;
                 
         p->pts = priv->video_pts;
         
@@ -453,7 +453,7 @@ static int next_packet_4xm(bgav_demuxer_context_t * ctx)
         size = GAVL_PTR_2_32LE(&header[4]);
        
         if(!bgav_input_read_32_le(ctx->input, &stream_id))
-          return 0;
+          return GAVL_SOURCE_EOF;
         bgav_input_skip(ctx->input, 4); // out_size
         s = bgav_track_find_stream(ctx,
                                    stream_id + AUDIO_STREAM_OFFSET);
@@ -470,7 +470,7 @@ static int next_packet_4xm(bgav_demuxer_context_t * ctx)
         p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, size-8);
 
         if(p->buf.len < size-8)
-          return 0;
+          return GAVL_SOURCE_EOF;
         bgav_stream_done_packet_write(s, p);
         done = 1;
         break;
@@ -482,11 +482,11 @@ static int next_packet_4xm(bgav_demuxer_context_t * ctx)
                  (fourcc & 0x0000FF00) >> 8,
                  (fourcc & 0x000000FF));
         /* Exit here to prevent crashes with some broken files */
-        return 0;
+        return GAVL_SOURCE_EOF;
       }
     }
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void close_4xm(bgav_demuxer_context_t * ctx)

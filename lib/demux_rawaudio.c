@@ -144,7 +144,7 @@ static int open_rawaudio(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_rawaudio(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_rawaudio(bgav_demuxer_context_t * ctx)
   {
   bgav_packet_t * p;
   bgav_stream_t * s;
@@ -156,7 +156,7 @@ static int next_packet_rawaudio(bgav_demuxer_context_t * ctx)
   s = bgav_track_find_stream(ctx, STREAM_ID);
   
   if(!s)
-    return 1;
+    return GAVL_SOURCE_OK;
   
   bytes_to_read = SAMPLES_PER_FRAME * s->data.audio.block_align;
   if(ctx->input->total_bytes &&
@@ -164,7 +164,7 @@ static int next_packet_rawaudio(bgav_demuxer_context_t * ctx)
     bytes_to_read = ctx->input->total_bytes - ctx->input->position;
   
   if(bytes_to_read <= 0)
-    return 0; // EOF
+    return GAVL_SOURCE_EOF; // EOF
   
   p = bgav_stream_get_packet_write(s);
   
@@ -177,10 +177,10 @@ static int next_packet_rawaudio(bgav_demuxer_context_t * ctx)
   PACKET_SET_KEYFRAME(p);
   
   if(!p->buf.len)
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   bgav_stream_done_packet_write(s, p);
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void seek_rawaudio(bgav_demuxer_context_t * ctx, int64_t time, int scale)

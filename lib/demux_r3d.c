@@ -481,11 +481,11 @@ static int open_r3d(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_r3d(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_r3d(bgav_demuxer_context_t * ctx)
   {
   //  bgav_packet_t * p;
   //  bgav_stream_t * s;
-  return 0;
+  return GAVL_SOURCE_EOF;
   }
 
 static void

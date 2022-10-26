@@ -40,7 +40,7 @@
 #define NSV_FILE_HEADER BGAV_MK_FOURCC('N','S','V','f')
 #define NSV_SYNC_HEADER BGAV_MK_FOURCC('N','S','V','s')
 
-static int next_packet_nsv(bgav_demuxer_context_t * ctx);
+static gavl_source_status_t next_packet_nsv(bgav_demuxer_context_t * ctx);
 
 
 typedef struct
@@ -585,7 +585,7 @@ static int get_pcm_format(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
   return 1;
   }
 
-static int next_packet_nsv(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_nsv(bgav_demuxer_context_t * ctx)
   {
   //  uint8_t test_data[32];
   int i;
@@ -615,7 +615,7 @@ static int next_packet_nsv(bgav_demuxer_context_t * ctx)
     /* Read header */
 
     if(!bgav_input_get_16_le(ctx->input, &tmp_16))
-      return 0;
+      return GAVL_SOURCE_EOF;
 
     if(tmp_16 != 0xbeef)
       {
@@ -623,7 +623,7 @@ static int next_packet_nsv(bgav_demuxer_context_t * ctx)
       while(1)
         {
         if(!bgav_input_get_fourcc(ctx->input, &fourcc))
-          return 0;
+          return GAVL_SOURCE_EOF;
         
         if(fourcc == NSV_SYNC_HEADER)
           break;
@@ -631,7 +631,7 @@ static int next_packet_nsv(bgav_demuxer_context_t * ctx)
         skipped_bytes++;
         }
       if(!nsv_sync_header_read(ctx->input, &sh))
-        return 0;
+        return GAVL_SOURCE_EOF;
       if(ctx->opt->dump_headers)
         nsv_sync_header_dump(&sh);
       have_sync_header = 1;
@@ -651,14 +651,14 @@ static int next_packet_nsv(bgav_demuxer_context_t * ctx)
   //  fprintf(stderr, "24 bit: %06x\n", dummy);
   
   if(!bgav_input_read_8(ctx->input, &num_aux))
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   if(!bgav_input_read_16_le(ctx->input, &tmp_16))
-    return 0;
+    return GAVL_SOURCE_EOF;
   aux_plus_video_len = tmp_16;
   
   if(!bgav_input_read_16_le(ctx->input, &audio_len))
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   
   aux_plus_video_len = (aux_plus_video_len << 4) | (num_aux >> 4);
@@ -672,7 +672,7 @@ static int next_packet_nsv(bgav_demuxer_context_t * ctx)
     {
     if(!bgav_input_read_16_le(ctx->input, &aux_chunk_len) ||
        !bgav_input_read_fourcc(ctx->input, &aux_chunk_type))
-      return 0;
+      return GAVL_SOURCE_EOF;
 
     bgav_input_skip(ctx->input, aux_chunk_len);
 
@@ -694,7 +694,7 @@ static int next_packet_nsv(bgav_demuxer_context_t * ctx)
       p = bgav_stream_get_packet_write(s);
       bgav_packet_alloc(p, video_len);
       if(bgav_input_read_data(ctx->input, p->buf.buf, video_len) < video_len)
-        return 0;
+        return GAVL_SOURCE_EOF;
       p->buf.len = video_len;
       p->pts =
         s->in_position * s->data.video.format->frame_duration;
@@ -735,7 +735,7 @@ static int next_packet_nsv(bgav_demuxer_context_t * ctx)
         if(priv->need_pcm_format)
           {
           if(!get_pcm_format(ctx, s))
-            return 0;
+            return GAVL_SOURCE_EOF;
           priv->need_pcm_format = 0;
           }
         else
@@ -747,7 +747,7 @@ static int next_packet_nsv(bgav_demuxer_context_t * ctx)
         p = bgav_stream_get_packet_write(s);
         bgav_packet_alloc(p, audio_len);
         if(bgav_input_read_data(ctx->input, p->buf.buf, audio_len) < audio_len)
-          return 0;
+          return GAVL_SOURCE_EOF;
         p->buf.len = audio_len;
         bgav_stream_done_packet_write(s, p);
         }
@@ -756,7 +756,7 @@ static int next_packet_nsv(bgav_demuxer_context_t * ctx)
       bgav_input_skip(ctx->input, audio_len);
     }
   priv->payload_follows = 0;
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void seek_nsv(bgav_demuxer_context_t * ctx, int64_t time, int scale)

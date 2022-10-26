@@ -1490,20 +1490,20 @@ static void seek_iavs(bgav_demuxer_context_t * ctx, gavl_time_t time,
   bgav_dv_dec_set_sample_counter(priv->dv_dec, STREAM_GET_SYNC(as));
   }
 
-static int next_packet_iavs_si(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_iavs_si(bgav_demuxer_context_t * ctx)
   {
   int result;
   
   if(ctx->si->current_position >= ctx->si->num_entries)
     {
-    return 0;
+    return GAVL_SOURCE_EOF;
     }
   
   if(ctx->input->position >=
      ctx->si->entries[ctx->si->num_entries - 1].offset +
      ctx->si->entries[ctx->si->num_entries - 1].size)
     {
-    return 0;
+    return GAVL_SOURCE_EOF;
     }
 
   if(ctx->si->entries[ctx->si->current_position].offset > ctx->input->position)
@@ -1515,7 +1515,11 @@ static int next_packet_iavs_si(bgav_demuxer_context_t * ctx)
   result = process_packet_iavs(ctx, ctx->si->current_position);
   
   ctx->si->current_position++;
-  return result;
+
+  if(result)
+    return GAVL_SOURCE_OK;
+  else
+    return GAVL_SOURCE_EOF;
   }
 
 static void process_packet_iavs_stream(bgav_stream_t * s, bgav_packet_t * p)
@@ -2143,7 +2147,7 @@ static void close_avi(bgav_demuxer_context_t * ctx)
     }
   }
 
-static int next_packet_avi(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_avi(bgav_demuxer_context_t * ctx)
   {
   chunk_header_t ch;
   bgav_packet_t * p;
@@ -2164,14 +2168,14 @@ static int next_packet_avi(bgav_demuxer_context_t * ctx)
   
   if(ctx->input->position + 8 >= ctx->data_start + priv->movi_size)
     {
-    return 0;
+    return GAVL_SOURCE_EOF;
     }
   while(!s)
     {
     position = ctx->input->position;
     if(!read_chunk_header(ctx->input, &ch))
       {
-      return 0;
+      return GAVL_SOURCE_EOF;
       }
 
 #ifdef DUMP_CHUNK_HEADERS
@@ -2209,7 +2213,7 @@ static int next_packet_avi(bgav_demuxer_context_t * ctx)
       
       if(bgav_input_read_data(ctx->input, p->buf.buf, ch.ckSize) < ch.ckSize)
         {
-        return 0;
+        return GAVL_SOURCE_EOF;
         }
       p->buf.len = ch.ckSize;
       
@@ -2249,8 +2253,10 @@ static int next_packet_avi(bgav_demuxer_context_t * ctx)
       s->stats.pts_end = avi_vs->frame_counter * s->data.video.format->frame_duration;
     }
 
-  
-  return result;
+  if(!result)
+    return GAVL_SOURCE_EOF;
+  else
+    return GAVL_SOURCE_OK;
   }
 
 static void resync_avi(bgav_demuxer_context_t * ctx, bgav_stream_t * s)

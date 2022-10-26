@@ -214,7 +214,7 @@ static int open_vqa(bgav_demuxer_context_t * ctx)
   
   }
 
-static int next_packet_vqa(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_vqa(bgav_demuxer_context_t * ctx)
   {
   bgav_stream_t * s = NULL;
   bgav_packet_t * p;
@@ -223,7 +223,7 @@ static int next_packet_vqa(bgav_demuxer_context_t * ctx)
 
   if(!bgav_input_read_fourcc(ctx->input, &type) ||
      !bgav_input_read_32_be(ctx->input, &size))
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   /* Audio */
   if((type == SND2_TAG) || (type == SND1_TAG))
@@ -237,14 +237,14 @@ static int next_packet_vqa(bgav_demuxer_context_t * ctx)
     if(size & 1)
       bgav_input_skip(ctx->input, 1);
     
-    return 1;
+    return GAVL_SOURCE_OK;
     }
 
   p = bgav_stream_get_packet_write(s);
 
   bgav_packet_alloc(p, size);
   if(bgav_input_read_data(ctx->input, p->buf.buf, size) < size)
-    return 0;
+    return GAVL_SOURCE_EOF;
   p->buf.len = size;
 
   if(size & 1)
@@ -254,7 +254,7 @@ static int next_packet_vqa(bgav_demuxer_context_t * ctx)
     p->pts = s->in_position;
   bgav_stream_done_packet_write(s, p);
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void close_vqa(bgav_demuxer_context_t * ctx)

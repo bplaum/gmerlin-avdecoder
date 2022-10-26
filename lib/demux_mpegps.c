@@ -829,7 +829,7 @@ static int next_packet(bgav_demuxer_context_t * ctx,
   return 1;
   }
 
-static int next_packet_mpegps(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_mpegps(bgav_demuxer_context_t * ctx)
   {
   mpegps_priv_t * priv;
   priv = ctx->priv;
@@ -841,11 +841,11 @@ static int next_packet_mpegps(bgav_demuxer_context_t * ctx)
         {
         if(!priv->read_sector(ctx))
           {
-          return 0;
+          return GAVL_SOURCE_EOF;
           }
         }
       else
-        return 1;
+        return GAVL_SOURCE_OK;
       }
     }
   else if(ctx->next_packet_pos)
@@ -854,18 +854,18 @@ static int next_packet_mpegps(bgav_demuxer_context_t * ctx)
     while(1)
       {
       if(!next_packet(ctx, ctx->input))
-        return ret;
+        return ret ? GAVL_SOURCE_OK : GAVL_SOURCE_EOF;
       else
         ret = 1;
       if(priv->position == ctx->next_packet_pos)
-        return 1;
+        return GAVL_SOURCE_OK;
       }
     }
   else
     {
-    return next_packet(ctx, ctx->input);
+    return next_packet(ctx, ctx->input) ? GAVL_SOURCE_OK : GAVL_SOURCE_EOF;
     }
-  return 0;
+  return GAVL_SOURCE_EOF;
   }
 
 #define NUM_PACKETS 200

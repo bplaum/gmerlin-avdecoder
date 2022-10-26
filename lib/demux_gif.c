@@ -186,7 +186,7 @@ static int open_gif(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_gif(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_gif(bgav_demuxer_context_t * ctx)
   {
   uint8_t buf[10];
   uint8_t gce[GCE_LEN];
@@ -204,15 +204,15 @@ static int next_packet_gif(bgav_demuxer_context_t * ctx)
   while(!done)
     {
     if(!bgav_input_get_data(ctx->input, buf, 1))
-      return 0;
+      return GAVL_SOURCE_EOF;
     switch(buf[0])
       {
       case ';':
-        return 0; // Trailer
+        return GAVL_SOURCE_EOF; // Trailer
         break;
       case '!':
         if(bgav_input_get_data(ctx->input, buf, 2) < 2)
-          return 0;
+          return GAVL_SOURCE_EOF;
         if(buf[1] == 0xF9) /* Graphic Control Extension */
           done = 1;
         else
@@ -223,13 +223,13 @@ static int next_packet_gif(bgav_demuxer_context_t * ctx)
           }
         break;
       default:
-        return 0; /* Unknown/unhandled chunk */
+        return GAVL_SOURCE_EOF; /* Unknown/unhandled chunk */
       }
     }
 
   /* Parse GCE */
   if(!bgav_input_read_data(ctx->input, gce, GCE_LEN))
-    return 0;
+    return GAVL_SOURCE_EOF;
   frame_duration = GAVL_PTR_2_16LE(&gce[4]);
 
   /* Get the next image header */
@@ -237,17 +237,17 @@ static int next_packet_gif(bgav_demuxer_context_t * ctx)
   while(!done)
     {
     if(!bgav_input_get_data(ctx->input, buf, 1))
-      return 0;
+      return GAVL_SOURCE_EOF;
     switch(buf[0])
       {
       case ';':
-        return 0; // Trailer
+        return GAVL_SOURCE_EOF; // Trailer
         break;
       case '!':
         if(!bgav_input_get_data(ctx->input, buf, 2))
-          return 0;
+          return GAVL_SOURCE_EOF;
         if(buf[1] == 0xF9) /* Graphic Control Extension */
-          return 0;
+          return GAVL_SOURCE_EOF;
         else
           {
           /* Skip other extension */
@@ -257,11 +257,11 @@ static int next_packet_gif(bgav_demuxer_context_t * ctx)
       case ',':
         if(bgav_input_read_data(ctx->input, image_descriptor,
                                 IMAGE_DESCRIPTOR_LEN) < IMAGE_DESCRIPTOR_LEN)
-          return 0;
+          return GAVL_SOURCE_EOF;
         done = 1;
         break;
       default:
-        return 0; /* Unknown/unhandled chunk */
+        return GAVL_SOURCE_EOF; /* Unknown/unhandled chunk */
       }
     }
   
@@ -308,7 +308,7 @@ static int next_packet_gif(bgav_demuxer_context_t * ctx)
     
     if(bgav_input_read_data(ctx->input, p->buf.buf + p->buf.len,
                             local_cmap_len) < local_cmap_len)
-      return 0;
+      return GAVL_SOURCE_EOF;
     p->buf.len += local_cmap_len;
     }
   
@@ -318,19 +318,19 @@ static int next_packet_gif(bgav_demuxer_context_t * ctx)
 
   bgav_packet_alloc(p, p->buf.len + 1);
   if(!bgav_input_read_data(ctx->input, p->buf.buf + p->buf.len, 1))
-    return 0;
+    return GAVL_SOURCE_EOF;
   p->buf.len++;
   /* Data blocks */
   while(1)
     {
     if(!bgav_input_get_data(ctx->input, buf, 1))
-      return 0;
+      return GAVL_SOURCE_EOF;
 
     bgav_packet_alloc(p, p->buf.len + buf[0]+1);
 
     if(bgav_input_read_data(ctx->input, p->buf.buf +
                             p->buf.len, buf[0]+1) < buf[0]+1)
-      return 0;
+      return GAVL_SOURCE_EOF;
     p->buf.len += buf[0]+1;
     if(!buf[0])
       break;
@@ -346,7 +346,7 @@ static int next_packet_gif(bgav_demuxer_context_t * ctx)
   priv->video_pts += frame_duration;
   
   bgav_stream_done_packet_write(s, p);
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static int select_track_gif(bgav_demuxer_context_t * ctx, int track)

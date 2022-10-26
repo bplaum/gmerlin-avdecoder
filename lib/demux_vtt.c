@@ -179,7 +179,7 @@ static int read_line(bgav_demuxer_context_t * ctx)
   
   }
 
-static int next_packet_vtt(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_vtt(bgav_demuxer_context_t * ctx)
   {
   int result;
   bgav_stream_t * s;
@@ -190,12 +190,12 @@ static int next_packet_vtt(bgav_demuxer_context_t * ctx)
   s = bgav_track_find_stream(ctx, STREAM_ID);
   
   if(!s)
-    return 1;
+    return GAVL_SOURCE_OK;
   
   while(1)
     {
     if(!read_line(ctx))
-      return 0;
+      return GAVL_SOURCE_EOF;
 
     gavl_strtrim(priv->buf);
     if(priv->buf[0] == '\0')
@@ -244,7 +244,7 @@ static int next_packet_vtt(bgav_demuxer_context_t * ctx)
         {
         int len ;
         if(!read_line(ctx))
-          return 0;
+          return GAVL_SOURCE_EOF;
         
         gavl_strtrim(priv->buf);
         if(priv->buf[0] == '\0')
@@ -269,12 +269,12 @@ static int next_packet_vtt(bgav_demuxer_context_t * ctx)
         }
 
       if(!p->buf.len)
-        return 0;
+        return GAVL_SOURCE_EOF;
       
       PACKET_SET_KEYFRAME(p);
       bgav_stream_done_packet_write(s, p);
       
-      return 1;
+      return GAVL_SOURCE_OK;
       }
     else
       {
@@ -282,7 +282,7 @@ static int next_packet_vtt(bgav_demuxer_context_t * ctx)
       }
     
     }
-  return 0;
+  return GAVL_SOURCE_EOF;
   }
 
 static void close_vtt(bgav_demuxer_context_t * ctx)

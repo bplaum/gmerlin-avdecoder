@@ -221,7 +221,7 @@ static int open_adts(bgav_demuxer_context_t * ctx)
   return 0;
   }
 
-static int next_packet_adts(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_adts(bgav_demuxer_context_t * ctx)
   {
   bgav_packet_t * p;
   bgav_stream_t * s;
@@ -234,10 +234,10 @@ static int next_packet_adts(bgav_demuxer_context_t * ctx)
   s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
 
   if(bgav_input_get_data(ctx->input, buf, ADTS_HEADER_LEN) < ADTS_HEADER_LEN)
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   if(!bgav_adts_header_read(buf, &adts))
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   
   p = bgav_stream_get_packet_write(s);
@@ -253,13 +253,13 @@ static int next_packet_adts(bgav_demuxer_context_t * ctx)
   p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, adts.frame_bytes);
 
   if(p->buf.len < adts.frame_bytes)
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   bgav_stream_done_packet_write(s, p);
 
   priv->sample_count += priv->block_samples * adts.num_blocks;
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void resync_adts(bgav_demuxer_context_t * ctx, bgav_stream_t * s)

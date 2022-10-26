@@ -149,7 +149,7 @@ static int open_image(bgav_demuxer_context_t * ctx)
   }
 
 
-static int next_packet_image(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_image(bgav_demuxer_context_t * ctx)
   {
   bgav_packet_t * p;
   bgav_stream_t * s;
@@ -162,7 +162,7 @@ static int next_packet_image(bgav_demuxer_context_t * ctx)
   bgav_packet_alloc(p, ctx->input->total_bytes);
 
   if(bgav_input_read_data(ctx->input, p->buf.buf, ctx->input->total_bytes) < ctx->input->total_bytes)
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   p->buf.len = ctx->input->total_bytes;
   
@@ -171,7 +171,7 @@ static int next_packet_image(bgav_demuxer_context_t * ctx)
   PACKET_SET_KEYFRAME(p);
   p->duration = s->data.video.format->frame_duration;
   bgav_stream_done_packet_write(s, p);
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void resync_image(bgav_demuxer_context_t * ctx, bgav_stream_t * s)

@@ -233,7 +233,7 @@ static int64_t samples_to_bytes(bgav_stream_t * s, int samples)
   return  s->data.audio.block_align * samples;
   }
 
-static int next_packet_8svx(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_8svx(bgav_demuxer_context_t * ctx)
   {
   bgav_packet_t * p;
   bgav_stream_t * s;
@@ -248,7 +248,7 @@ static int next_packet_8svx(bgav_demuxer_context_t * ctx)
     bytes_to_read = ctx->data_start + s->stats.total_bytes - ctx->input->position;
 
   if(bytes_to_read <= 0)
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   p = bgav_stream_get_packet_write(s);
 
@@ -262,7 +262,7 @@ static int next_packet_8svx(bgav_demuxer_context_t * ctx)
   p->buf.len = bytes_read;
   
   bgav_stream_done_packet_write(s, p);
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void seek_8svx(bgav_demuxer_context_t * ctx, gavl_time_t time,

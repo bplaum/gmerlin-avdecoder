@@ -829,6 +829,9 @@ static int read_hls(bgav_input_context_t* ctx,
     {
     result = gavf_io_read_data(p->io, buffer + bytes_read, len - bytes_read);
 
+    if(result < 0)
+      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Read error");
+    
 #if 0    
     if(result < len - bytes_read)
       {
@@ -838,8 +841,10 @@ static int read_hls(bgav_input_context_t* ctx,
     //    fprintf(stderr, "read_hls 1 %d\n", len - bytes_read);
 
     if((p->next_state != NEXT_STATE_DONE) && !p->end_of_sequence)
-      open_next_async(ctx, 0);
-    
+      {
+      if(open_next_async(ctx, 0) < 0)
+        gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Opening next segment failed");
+      }
     if(result < len - bytes_read)
       {
       if(gavf_io_got_error(p->io))

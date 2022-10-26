@@ -87,6 +87,8 @@ int bgav_input_read_line(bgav_input_context_t* input,
                          gavl_buffer_t * ret)
   {
   char c;
+  int chars_read = 0;
+
   gavl_buffer_reset(ret);
   
   if(input->charset)
@@ -108,7 +110,9 @@ int bgav_input_read_line(bgav_input_context_t* input,
       return ret->len;
       break;
       }
-    else if(c == '\n')
+    chars_read++;
+    
+    if(c == '\n')
       break;
     else if(c != '\r')
       {
@@ -117,7 +121,7 @@ int bgav_input_read_line(bgav_input_context_t* input,
       }
     }
   add_char(ret, '\0');
-  return ret->len;
+  return chars_read;
   }
 
 int bgav_input_read_convert_line(bgav_input_context_t * input,

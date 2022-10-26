@@ -153,7 +153,7 @@ static int open_tta(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_tta(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_tta(bgav_demuxer_context_t * ctx)
   {
   tta_priv_t * priv;
   bgav_packet_t * p;
@@ -161,7 +161,7 @@ static int next_packet_tta(bgav_demuxer_context_t * ctx)
   priv = ctx->priv;
 
   if(priv->current_frame >= priv->total_frames)
-    return 0; // EOF
+    return GAVL_SOURCE_EOF; // EOF
 
   s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
   p = bgav_stream_get_packet_write(s);
@@ -171,12 +171,12 @@ static int next_packet_tta(bgav_demuxer_context_t * ctx)
                           p->buf.buf,
                           priv->seek_table[priv->current_frame]) <
      priv->seek_table[priv->current_frame])
-    return 0; // Truncated file
+    return GAVL_SOURCE_EOF; // Truncated file
 
   p->buf.len = priv->seek_table[priv->current_frame];
   priv->current_frame++;
   bgav_stream_done_packet_write(s, p);
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void seek_tta(bgav_demuxer_context_t * ctx, int64_t time, int scale)

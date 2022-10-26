@@ -222,7 +222,7 @@ static int open_dxa(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_dxa(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_dxa(bgav_demuxer_context_t * ctx)
   {
   dxa_t * priv;
   bgav_stream_t * s = NULL;
@@ -232,7 +232,7 @@ static int next_packet_dxa(bgav_demuxer_context_t * ctx)
   
   if((priv->audio_position >= priv->audio_end) &&
      (priv->current_frame >= priv->frames))
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   /* Try audio stream */
   if(ctx->request_stream->type == GAVL_STREAM_AUDIO)
@@ -254,7 +254,7 @@ static int next_packet_dxa(bgav_demuxer_context_t * ctx)
     }
   
   if(!s)
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   /* Read audio packet */
   if(s->type == GAVL_STREAM_AUDIO)
@@ -270,7 +270,7 @@ static int next_packet_dxa(bgav_demuxer_context_t * ctx)
     bgav_input_seek(ctx->input, priv->audio_position, SEEK_SET);
     p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
     if(p->buf.len < bytes_to_read)
-      return 0;
+      return GAVL_SOURCE_EOF;
     
     bgav_stream_done_packet_write(s, p);
 
@@ -290,7 +290,7 @@ static int next_packet_dxa(bgav_demuxer_context_t * ctx)
     while(1)
       {
       if(!bgav_input_get_fourcc(ctx->input, &fourcc))
-        return 0;
+        return GAVL_SOURCE_EOF;
 
       switch(fourcc)
         {
@@ -310,11 +310,11 @@ static int next_packet_dxa(bgav_demuxer_context_t * ctx)
         case BGAV_MK_FOURCC('C','M','A','P'):
           pal_size = 768+4;
           if(bgav_input_read_data(ctx->input, pal, pal_size) < pal_size)
-            return 0;
+            return GAVL_SOURCE_EOF;
           break;
         case BGAV_MK_FOURCC('F','R','A','M'):
           if(bgav_input_read_data(ctx->input, buf, DXA_EXTRA_SIZE) < DXA_EXTRA_SIZE)
-            return 0;
+            return GAVL_SOURCE_EOF;
           ptr = &buf[5];
           size = GAVL_PTR_2_32BE(ptr);
 
@@ -326,7 +326,7 @@ static int next_packet_dxa(bgav_demuxer_context_t * ctx)
             memcpy(p->buf.buf, pal, pal_size);
           memcpy(p->buf.buf + pal_size, buf, DXA_EXTRA_SIZE);
           if(bgav_input_read_data(ctx->input, p->buf.buf + pal_size + DXA_EXTRA_SIZE, size) < size)
-            return 0;
+            return GAVL_SOURCE_EOF;
           
           p->buf.len = size + DXA_EXTRA_SIZE + pal_size;
           p->pts = s->data.video.format->frame_duration * priv->current_frame;
@@ -343,7 +343,7 @@ static int next_packet_dxa(bgav_demuxer_context_t * ctx)
     priv->video_position = ctx->input->position;
     }
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static int select_track_dxa(bgav_demuxer_context_t * ctx, int track)

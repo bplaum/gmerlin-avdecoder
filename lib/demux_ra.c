@@ -269,7 +269,7 @@ static void swap_bytes_dnet(uint8_t * data, int len)
   
   }
 
-static int next_packet_ra(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_ra(bgav_demuxer_context_t * ctx)
   {
   bgav_packet_t * p;
   bgav_stream_t * s;
@@ -283,7 +283,7 @@ static int next_packet_ra(bgav_demuxer_context_t * ctx)
   len = s->data.audio.block_align * priv->sub_packet_h;
   bgav_packet_alloc(p, len);
   if(bgav_input_read_data(ctx->input, p->buf.buf, len) < len)
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   p->buf.len = len;
 
@@ -292,7 +292,7 @@ static int next_packet_ra(bgav_demuxer_context_t * ctx)
   
   PACKET_SET_KEYFRAME(p);
   bgav_stream_done_packet_write(s, p);
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 #if 0

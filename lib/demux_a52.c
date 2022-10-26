@@ -106,7 +106,7 @@ static int open_a52(bgav_demuxer_context_t * ctx)
   return 0;
   }
 
-static int next_packet_a52(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_a52(bgav_demuxer_context_t * ctx)
   {
   int dummy_brate, dummy_srate, dummy_flags;
   bgav_packet_t * p;
@@ -121,7 +121,7 @@ static int next_packet_a52(bgav_demuxer_context_t * ctx)
   for(i = 0; i < SYNC_BYTES; i++)
     {
     if(bgav_input_get_data(ctx->input, test_data, 7) < 7)
-      return 0;
+      return GAVL_SOURCE_EOF;
     
     packet_size = a52_syncinfo(test_data, &dummy_flags, &dummy_srate, &dummy_brate);
     if(packet_size)
@@ -130,7 +130,7 @@ static int next_packet_a52(bgav_demuxer_context_t * ctx)
     }
 
   if(!packet_size)
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   p->pts = FRAME_SAMPLES * s->in_position;
   p->duration = FRAME_SAMPLES;
@@ -142,11 +142,11 @@ static int next_packet_a52(bgav_demuxer_context_t * ctx)
   p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, packet_size);
   
   if(p->buf.len < packet_size)
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   bgav_stream_done_packet_write(s, p);
 
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void seek_a52(bgav_demuxer_context_t * ctx, int64_t time, int scale)

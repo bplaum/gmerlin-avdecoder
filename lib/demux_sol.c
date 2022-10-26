@@ -135,7 +135,7 @@ static int open_sol(bgav_demuxer_context_t * ctx)
 
 #define MAX_SIZE 4096
 
-static int next_packet_sol(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_sol(bgav_demuxer_context_t * ctx)
   {
   bgav_stream_t * s;
   bgav_packet_t * p;
@@ -148,11 +148,11 @@ static int next_packet_sol(bgav_demuxer_context_t * ctx)
   p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, MAX_SIZE);
 
   if(!p->buf.len)
-    return 0;
+    return GAVL_SOURCE_EOF;
   bgav_stream_done_packet_write(s, p);
 
 
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 

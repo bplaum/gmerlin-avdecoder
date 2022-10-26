@@ -1199,7 +1199,7 @@ static int process_block(bgav_demuxer_context_t * ctx,
 
 /* next packet */
 
-static int next_packet_matroska(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_matroska(bgav_demuxer_context_t * ctx)
   {
   int num_blocks = 0;
   bgav_mkv_element_t e;
@@ -1213,7 +1213,7 @@ static int next_packet_matroska(bgav_demuxer_context_t * ctx)
       {
       //      fprintf(stderr, "bgav_mkv_element_read failed %ld\n",
       //              ctx->input->position);
-      return 0;
+      return GAVL_SOURCE_EOF;
       }
     //    bgav_mkv_element_dump(&e);
     
@@ -1224,7 +1224,7 @@ static int next_packet_matroska(bgav_demuxer_context_t * ctx)
         if(!bgav_mkv_cluster_read(ctx->input, &priv->cluster, &e))
           {
           //          fprintf(stderr, "bgav_mkv_cluster_read failed\n");
-          return 0;
+          return GAVL_SOURCE_EOF;
           }
         //        bgav_mkv_cluster_dump(&priv->cluster);
 
@@ -1236,7 +1236,7 @@ static int next_packet_matroska(bgav_demuxer_context_t * ctx)
         if(!bgav_mkv_block_group_read(ctx->input, &priv->bg, &e))
           {
           //          fprintf(stderr, "bgav_mkv_block_group_read\n");
-          return 0;
+          return GAVL_SOURCE_EOF;
           }
         
         //        fprintf(stderr, "Got Block group\n");
@@ -1245,7 +1245,7 @@ static int next_packet_matroska(bgav_demuxer_context_t * ctx)
         if(!process_block(ctx, &priv->bg.block, &priv->bg))
           {
           //          fprintf(stderr, "process_block failed\n");
-          return 0;
+          return GAVL_SOURCE_EOF;
           }
         num_blocks++;
         break;
@@ -1254,7 +1254,7 @@ static int next_packet_matroska(bgav_demuxer_context_t * ctx)
         if(!bgav_mkv_block_read(ctx->input, &priv->bg.block, &e))
           {
           //          fprintf(stderr, "bgav_mkv_block_read failed\n");
-          return 0;
+          return GAVL_SOURCE_EOF;
           }
         //        fprintf(stderr, "Got Block\n");
         //        bgav_mkv_block_dump(0, &priv->bg.block);
@@ -1262,7 +1262,7 @@ static int next_packet_matroska(bgav_demuxer_context_t * ctx)
         if(!process_block(ctx, &priv->bg.block, NULL))
           {
           //          fprintf(stderr, "process_block failed\n");
-          return 0;
+          return GAVL_SOURCE_EOF;
           }
         num_blocks++;
         break;
@@ -1271,7 +1271,7 @@ static int next_packet_matroska(bgav_demuxer_context_t * ctx)
         //                ctx->input->position);
         //        bgav_mkv_element_dump(&e);
         /* Probably reached end of file */
-        return num_blocks;
+        return num_blocks ? GAVL_SOURCE_OK : GAVL_SOURCE_EOF;
       }
 
     /* Check whether to exit */
@@ -1283,7 +1283,7 @@ static int next_packet_matroska(bgav_demuxer_context_t * ctx)
     else if(num_blocks)
       break;
     }
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 

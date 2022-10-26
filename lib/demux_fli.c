@@ -150,7 +150,7 @@ static int open_fli(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_fli(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_fli(bgav_demuxer_context_t * ctx)
   {
   bgav_packet_t * p;
   bgav_stream_t * s;
@@ -173,7 +173,7 @@ static int next_packet_fli(bgav_demuxer_context_t * ctx)
     {
     if(bgav_input_read_data(ctx->input, preamble, FLIC_PREAMBLE_SIZE) < FLIC_PREAMBLE_SIZE)
       {
-      return 0;
+      return GAVL_SOURCE_EOF;
       }
       
     size  = GAVL_PTR_2_32LE(&preamble[0]);
@@ -190,14 +190,14 @@ static int next_packet_fli(bgav_demuxer_context_t * ctx)
       if(bgav_input_read_data(ctx->input, p->buf.buf + FLIC_PREAMBLE_SIZE,
                               size - FLIC_PREAMBLE_SIZE) < size - FLIC_PREAMBLE_SIZE)
         {
-        return 0;
+        return GAVL_SOURCE_EOF;
         }
       
       p->pts = s->in_position * s->data.video.format->frame_duration;
       p->buf.len = size;
       
       bgav_stream_done_packet_write(s, p);
-      return 1;
+      return GAVL_SOURCE_OK;
       }
     else
       {
@@ -205,7 +205,7 @@ static int next_packet_fli(bgav_demuxer_context_t * ctx)
       }
     }
   
-  return 0;
+  return GAVL_SOURCE_EOF;
   }
 
 static void close_fli(bgav_demuxer_context_t * ctx)

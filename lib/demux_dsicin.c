@@ -162,7 +162,7 @@ static int open_dsicin(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_dsicin(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_dsicin(bgav_demuxer_context_t * ctx)
   {
   bgav_stream_t * s;
   bgav_packet_t * p;
@@ -170,7 +170,7 @@ static int next_packet_dsicin(bgav_demuxer_context_t * ctx)
   int palette_type, pkt_size;
   
   if(!read_frame_header(ctx->input, &frame_header))
-    return 0;
+    return GAVL_SOURCE_EOF;
   //  dump_frame_header(&frame_header);
 
   /*  Get video frame */
@@ -201,7 +201,7 @@ static int next_packet_dsicin(bgav_demuxer_context_t * ctx)
     p->buf.buf[3] = frame_header.video_type;
     
     if(bgav_input_read_data(ctx->input, p->buf.buf+4, pkt_size) < pkt_size)
-      return 0;
+      return GAVL_SOURCE_EOF;
     
     p->buf.len = pkt_size + 4;
     p->pts = s->in_position;
@@ -212,7 +212,7 @@ static int next_packet_dsicin(bgav_demuxer_context_t * ctx)
     bgav_input_skip(ctx->input, pkt_size);
   
   if(!frame_header.audio_size)
-    return 1;
+    return GAVL_SOURCE_OK;
   
   s = bgav_track_find_stream(ctx, AUDIO_ID);
 
@@ -223,14 +223,14 @@ static int next_packet_dsicin(bgav_demuxer_context_t * ctx)
     bgav_packet_alloc(p, pkt_size + frame_header.audio_size);
     
     if(bgav_input_read_data(ctx->input, p->buf.buf, frame_header.audio_size) < frame_header.audio_size)
-      return 0;
+      return GAVL_SOURCE_EOF;
     p->buf.len = frame_header.audio_size;
     bgav_stream_done_packet_write(s, p);
     }
   else
     bgav_input_skip(ctx->input, frame_header.audio_size);
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void close_dsicin(bgav_demuxer_context_t * ctx)

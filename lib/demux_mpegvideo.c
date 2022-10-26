@@ -85,7 +85,7 @@ static int probe_mpegvideo(bgav_input_context_t * input)
   return detect_type(input) ? 1 : 0;
   }
 
-static int next_packet_mpegvideo(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_mpegvideo(bgav_demuxer_context_t * ctx)
   {
   int ret;
   bgav_packet_t * p;
@@ -109,7 +109,8 @@ static int next_packet_mpegvideo(bgav_demuxer_context_t * ctx)
   p->position = ctx->input->position;
   p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf,
                                     bytes_to_read);
-  ret = !!p->buf.len;
+
+  ret = p->buf.len ? GAVL_SOURCE_OK : GAVL_SOURCE_EOF;
   bgav_stream_done_packet_write(s, p);
   return ret;
   }

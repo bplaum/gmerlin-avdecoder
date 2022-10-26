@@ -333,7 +333,7 @@ static int find_next_header(bgav_demuxer_context_t * ctx,
   return -1;
   }
 
-static int next_packet_flac(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_flac(bgav_demuxer_context_t * ctx)
   {
   int pos, size;
   bgav_stream_t * s;
@@ -345,7 +345,7 @@ static int next_packet_flac(bgav_demuxer_context_t * ctx)
   s = bgav_track_find_stream(ctx, 0);
 
   if(!s)
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   if(ctx->next_packet_pos)
     {
@@ -359,7 +359,7 @@ static int next_packet_flac(bgav_demuxer_context_t * ctx)
       {
       pos = find_next_header(ctx, 0, &next_fh);
       if(pos < 0)
-        return 0;
+        return GAVL_SOURCE_EOF;
 
       if(pos > 0)
         gavl_buffer_flush(&priv->buf, pos);
@@ -381,7 +381,7 @@ static int next_packet_flac(bgav_demuxer_context_t * ctx)
       size = pos;
 
     if((pos < 0) && !size)
-      return 0;
+      return GAVL_SOURCE_EOF;
     }
   
   p = bgav_stream_get_packet_write(s);
@@ -390,12 +390,12 @@ static int next_packet_flac(bgav_demuxer_context_t * ctx)
   if(ctx->next_packet_pos)
     {
     if(bgav_input_read_data(ctx->input, p->buf.buf, size) < size)
-      return 0;
+      return GAVL_SOURCE_EOF;
     p->position = ctx->input->position - size;
 
     if(!bgav_flac_frame_header_read(p->buf.buf, size,
                                     &priv->streaminfo, &priv->this_fh))
-      return 0;
+      return GAVL_SOURCE_EOF;
     }
   else
     {
@@ -437,7 +437,7 @@ static int next_packet_flac(bgav_demuxer_context_t * ctx)
     memcpy(&priv->this_fh, &next_fh, sizeof(next_fh));
     }
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void seek_flac(bgav_demuxer_context_t * ctx, int64_t time, int scale)

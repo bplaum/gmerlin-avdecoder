@@ -1408,7 +1408,7 @@ static int process_audio_chunk(bgav_demuxer_context_t * ctx,
   return 1;
   }
 
-static int next_packet_rmff(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_rmff(bgav_demuxer_context_t * ctx)
   {
   //  bgav_packet_t * p;
   bgav_stream_t * stream = NULL;
@@ -1426,11 +1426,11 @@ static int next_packet_rmff(bgav_demuxer_context_t * ctx)
     if(rm->header->data_size && (ctx->input->position + 10 >=
                                  rm->header->data_start + rm->header->data_size))
       {
-      return 0;
+      return GAVL_SOURCE_EOF;
       }
     if(!bgav_rmff_packet_header_read(ctx->input, &h))
       {
-      return 0;
+      return GAVL_SOURCE_EOF;
       }
   
     if(rm->need_first_timestamp)
@@ -1448,7 +1448,7 @@ static int next_packet_rmff(bgav_demuxer_context_t * ctx)
     if(!stream) /* Skip unknown stuff */
       {
       bgav_input_skip(ctx->input, PAYLOAD_LENGTH(&h));
-      return 1;
+      return GAVL_SOURCE_OK;
       }
     }
   else /* multirate */
@@ -1460,7 +1460,7 @@ static int next_packet_rmff(bgav_demuxer_context_t * ctx)
       rs = stream->priv;
 
       if(rs->data_pos >= rs->data_end)
-        return 0;
+        return GAVL_SOURCE_EOF;
       else
         stream_pos = rs->data_pos;
       }
@@ -1508,7 +1508,7 @@ static int next_packet_rmff(bgav_demuxer_context_t * ctx)
     
     /* If we have no more stream, eof is reached */
     if(!stream)
-      return 0;
+      return GAVL_SOURCE_EOF;
 
     /* Seek to the place we've been before */
     bgav_input_seek(ctx->input, stream_pos, SEEK_SET);
@@ -1517,7 +1517,7 @@ static int next_packet_rmff(bgav_demuxer_context_t * ctx)
       {
       if(!bgav_rmff_packet_header_read(ctx->input, &h))
         {
-        return 0;
+        return GAVL_SOURCE_EOF;
         }
       //      bgav_rmff_packet_header_dump(&h);
       if(stream->stream_id == h.stream_number)
@@ -1572,7 +1572,7 @@ static int next_packet_rmff(bgav_demuxer_context_t * ctx)
     rs->data_pos = ctx->input->position;
     }
   rm->next_packet++;
-  return result;
+  return result ? GAVL_SOURCE_OK : GAVL_SOURCE_EOF;
   }
 
 static void seek_rmff(bgav_demuxer_context_t * ctx, int64_t time, int scale)

@@ -543,7 +543,7 @@ static int read_metadata(bgav_demuxer_context_t * ctx, flv_tag * t)
   }
 
                               
-static int next_packet_flv(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_flv(bgav_demuxer_context_t * ctx)
   {
   //  double number;
   uint8_t flags;
@@ -567,7 +567,7 @@ static int next_packet_flv(bgav_demuxer_context_t * ctx)
   bgav_input_skip(ctx->input, 4);
   
   if(!flv_tag_read(ctx->input, &t))
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   if(t.type == 0x12)
     {
@@ -577,12 +577,12 @@ static int next_packet_flv(bgav_demuxer_context_t * ctx)
       //    flv_tag_dump(&t);
 
       if(bgav_input_get_data(ctx->input, header, 13) < 13)
-        return 0;
+        return GAVL_SOURCE_EOF;
 
       if(strncmp((char*)(&header[3]), "onMetaData", 10))
         {
         bgav_input_skip(ctx->input, t.data_size);
-        return 1;
+        return GAVL_SOURCE_OK;
         }
     
       priv->have_metadata = read_metadata(ctx, &t);
@@ -614,7 +614,7 @@ static int next_packet_flv(bgav_demuxer_context_t * ctx)
       }
     else
       bgav_input_skip(ctx->input, t.data_size);
-    return 1;
+    return GAVL_SOURCE_OK;
     }
   
   //  flv_tag_dump(&t);
@@ -627,30 +627,30 @@ static int next_packet_flv(bgav_demuxer_context_t * ctx)
   if(!s)
     {
     bgav_input_skip(ctx->input, t.data_size);
-    return 1;
+    return GAVL_SOURCE_OK;
     }
   
   if(s->stream_id == AUDIO_ID)
     {
     if(!bgav_input_read_data(ctx->input, &flags, 1))
-      return 0;
+      return GAVL_SOURCE_EOF;
     
     if(!s->fourcc) /* Initialize */
       {
       if(!init_audio_stream(ctx, s, flags))
-        return 0;
+        return GAVL_SOURCE_EOF;
       }
     packet_size = t.data_size - 1;
     }
   else if(s->stream_id == VIDEO_ID)
     {
     if(!bgav_input_read_data(ctx->input, &flags, 1))
-      return 0;
+      return GAVL_SOURCE_EOF;
     
     if(!s->fourcc) /* Initialize */
       {
       if(!init_video_stream(ctx, s, flags))
-        return 0;
+        return GAVL_SOURCE_EOF;
       }
 
     if((s->fourcc == BGAV_MK_FOURCC('V', 'P', '6', 'F')) ||
@@ -670,21 +670,21 @@ static int next_packet_flv(bgav_demuxer_context_t * ctx)
     {
     uint8_t type;
     if(!bgav_input_read_8(ctx->input, &type))
-      return 0;
+      return GAVL_SOURCE_EOF;
     packet_size--;
 
     if(packet_size <= 0)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Packet size is %d (somethings wrong?)",
                packet_size);
-      return 0;
+      return GAVL_SOURCE_EOF;
       }
 
     if(s->fourcc == FOURCC_H264)
       {
 #if 1
       if(!bgav_input_read_24_be(ctx->input, (uint32_t*)(&cts)))
-        return 0;
+        return GAVL_SOURCE_EOF;
       //  cts = (cts + 0xff800000)^0xff800000; // sign extension
       //      t.timestamp += cts;
       packet_size -= 3;
@@ -702,7 +702,7 @@ static int next_packet_flv(bgav_demuxer_context_t * ctx)
         s->ci->global_header_len = packet_size;
         s->ci->global_header = malloc(packet_size);
         if(bgav_input_read_data(ctx->input, s->ci->global_header, packet_size) < packet_size)
-          return 0;
+          return GAVL_SOURCE_EOF;
         if(s->type == GAVL_STREAM_AUDIO)
           priv->need_audio_extradata = 0;
         else
@@ -710,7 +710,7 @@ static int next_packet_flv(bgav_demuxer_context_t * ctx)
         }
       else
         bgav_input_skip(ctx->input, packet_size);
-      return 1;
+      return GAVL_SOURCE_OK;
       }
     }
   
@@ -718,7 +718,7 @@ static int next_packet_flv(bgav_demuxer_context_t * ctx)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Packet size is %d (somethings wrong?)",
              packet_size);
-    return 0;
+    return GAVL_SOURCE_EOF;
     }
   
   if(!priv->init)
@@ -728,7 +728,7 @@ static int next_packet_flv(bgav_demuxer_context_t * ctx)
     p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, packet_size);
     p->position = position;
     if(p->buf.len < packet_size) /* Got EOF in the middle of a packet */
-      return 0;
+      return GAVL_SOURCE_EOF;
     if(s->type == GAVL_STREAM_AUDIO)
       {
       if(s->data.audio.block_align)
@@ -771,7 +771,7 @@ static int next_packet_flv(bgav_demuxer_context_t * ctx)
   else
     bgav_input_skip(ctx->input, packet_size);
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void handle_metadata(bgav_demuxer_context_t * ctx)

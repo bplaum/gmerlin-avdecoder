@@ -176,7 +176,7 @@ static int open_psxstr(bgav_demuxer_context_t * ctx)
   return ret;
   }
 
-static int next_packet_psxstr(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_psxstr(bgav_demuxer_context_t * ctx)
   {
   int channel;
   uint8_t sector[RAW_CD_SECTOR_SIZE];
@@ -189,7 +189,7 @@ static int next_packet_psxstr(bgav_demuxer_context_t * ctx)
   
 
   if(bgav_input_read_data(ctx->input, sector, RAW_CD_SECTOR_SIZE) < RAW_CD_SECTOR_SIZE)
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   channel = sector[0x11];
   
@@ -245,7 +245,7 @@ static int next_packet_psxstr(bgav_demuxer_context_t * ctx)
       break;
       
     }
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void close_psxstr(bgav_demuxer_context_t * ctx)

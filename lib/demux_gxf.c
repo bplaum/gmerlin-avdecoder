@@ -529,7 +529,7 @@ static int open_gxf(bgav_demuxer_context_t * ctx)
   }
 
 
-static int next_packet_gxf(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_gxf(bgav_demuxer_context_t * ctx)
   {
   uint32_t length;
   int type;
@@ -544,16 +544,16 @@ static int next_packet_gxf(bgav_demuxer_context_t * ctx)
   position = ctx->input->position;
   
   if(!read_packet_header(ctx->input, &type, &length))
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   if(type == PKT_EOS)
     {
-    return 0;
+    return GAVL_SOURCE_EOF;
     }
   else if(type == PKT_MEDIA)
     {
     if(!read_media_header(ctx->input, &mh))
-      return 0;
+      return GAVL_SOURCE_EOF;
     length -= 16;
 
     s = bgav_track_find_stream(ctx, mh.id);
@@ -571,7 +571,7 @@ static int next_packet_gxf(bgav_demuxer_context_t * ctx)
         if(mh.field_nr - priv->first_field < priv->sync_field)
           {
           bgav_input_skip(ctx->input, length);
-          return 1;
+          return GAVL_SOURCE_OK;
           }
         else if(!STREAM_HAS_SYNC(s))
           {
@@ -589,7 +589,7 @@ static int next_packet_gxf(bgav_demuxer_context_t * ctx)
       p->position = position;
       
       if(bgav_input_read_data(ctx->input, p->buf.buf, length) < length)
-        return 0;
+        return GAVL_SOURCE_EOF;
       p->buf.len = length;
 #if 0
       if(s->type == GAVF_STREAM_VIDEO)
@@ -607,7 +607,7 @@ static int next_packet_gxf(bgav_demuxer_context_t * ctx)
     bgav_input_skip(ctx->input, length);
     }
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void seek_gxf(bgav_demuxer_context_t * ctx, int64_t time,

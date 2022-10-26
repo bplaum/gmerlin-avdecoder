@@ -148,7 +148,7 @@ static int open_smjpeg(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_smjpeg(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_smjpeg(bgav_demuxer_context_t * ctx)
   {
   uint32_t fourcc, length, timestamp;
   bgav_stream_t * s;
@@ -156,18 +156,18 @@ static int next_packet_smjpeg(bgav_demuxer_context_t * ctx)
   
   if(!bgav_input_read_fourcc(ctx->input, &fourcc) ||
      (fourcc == BGAV_MK_FOURCC('D','O','N','E')))
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   if(!bgav_input_read_32_be(ctx->input, &timestamp) ||
      !bgav_input_read_32_be(ctx->input, &length))
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   if(fourcc == BGAV_MK_FOURCC('s','n','d','D'))
     s = bgav_track_find_stream(ctx, AUDIO_ID);
   else if(fourcc == BGAV_MK_FOURCC('v','i','d','D'))
     s = bgav_track_find_stream(ctx, VIDEO_ID);
   else
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   if(!s)
     bgav_input_skip(ctx->input, length);
@@ -177,13 +177,13 @@ static int next_packet_smjpeg(bgav_demuxer_context_t * ctx)
     
     bgav_packet_alloc(p, length);
     if(bgav_input_read_data(ctx->input, p->buf.buf, length) < length)
-      return 0;
+      return GAVL_SOURCE_EOF;
 
     p->buf.len = length;
     p->pts = timestamp;
     bgav_stream_done_packet_write(s, p);
     }
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void close_smjpeg(bgav_demuxer_context_t * ctx)

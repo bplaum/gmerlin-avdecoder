@@ -346,7 +346,7 @@ static int open_ape(bgav_demuxer_context_t * ctx)
 
 #define EXTRA_SIZE 8
 
-static int next_packet_ape(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_ape(bgav_demuxer_context_t * ctx)
   {
   bgav_stream_t * s;
   bgav_packet_t * p;
@@ -354,7 +354,7 @@ static int next_packet_ape(bgav_demuxer_context_t * ctx)
 
   s = bgav_track_find_stream(ctx, 0);
   if(!s)
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   if(s->in_position >= priv->h.totalframes)
     return 0; // EOF
@@ -384,7 +384,7 @@ static int next_packet_ape(bgav_demuxer_context_t * ctx)
   
   bgav_stream_done_packet_write(s, p);
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void seek_ape(bgav_demuxer_context_t * ctx, int64_t time, int scale)

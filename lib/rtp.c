@@ -744,9 +744,9 @@ static int flush_stream(bgav_stream_t * s,
   return 1;
   }
 
-static int next_packet_rtp(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_rtp(bgav_demuxer_context_t * ctx)
   {
-  int ret = 0;
+  gavl_source_status_t ret = GAVL_SOURCE_EOF;
   int i;
   rtp_priv_t * priv;
   int processed = 0;
@@ -756,7 +756,7 @@ static int next_packet_rtp(bgav_demuxer_context_t * ctx)
   for(i = 0; i < priv->num_streams; i++)
     {
     if(flush_stream(priv->streams[i].s, priv->streams[i].buf, &processed))
-      ret = 1;
+      ret = GAVL_SOURCE_OK;
     }
   
   if(!processed)

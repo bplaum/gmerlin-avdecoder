@@ -189,7 +189,7 @@ static int open_roq(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_roq(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_roq(bgav_demuxer_context_t * ctx)
   {
   bgav_stream_t * s;
   
@@ -203,7 +203,7 @@ static int next_packet_roq(bgav_demuxer_context_t * ctx)
   while(!done)
     {
     if(bgav_input_read_data(ctx->input, preamble, PREAMBLE_SIZE) < PREAMBLE_SIZE)
-      return 0;
+      return GAVL_SOURCE_EOF;
     parse_chunk_header(preamble, &h);
     switch(h.id)
       {
@@ -227,7 +227,7 @@ static int next_packet_roq(bgav_demuxer_context_t * ctx)
         if(bgav_input_read_data(ctx->input,
                                 video_packet->buf.buf + video_packet->buf.len,
                                 h.size) < h.size)
-          return 0;
+          return GAVL_SOURCE_EOF;
         
         video_packet->buf.len += h.size;
         break;
@@ -254,7 +254,7 @@ static int next_packet_roq(bgav_demuxer_context_t * ctx)
         if(bgav_input_read_data(ctx->input,
                                 video_packet->buf.buf + video_packet->buf.len,
                                 h.size) < h.size)
-          return 0;
+          return GAVL_SOURCE_EOF;
 
         video_packet->buf.len += h.size;
         video_packet->pts = s->in_position;
@@ -278,7 +278,7 @@ static int next_packet_roq(bgav_demuxer_context_t * ctx)
         if(bgav_input_read_data(ctx->input,
                                 audio_packet->buf.buf+PREAMBLE_SIZE,
                                 h.size) < h.size)
-          return 0;
+          return GAVL_SOURCE_EOF;
         audio_packet->buf.len = h.size + PREAMBLE_SIZE;
 
         bgav_stream_done_packet_write(s, audio_packet);
@@ -287,10 +287,10 @@ static int next_packet_roq(bgav_demuxer_context_t * ctx)
       default:
         gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
                  "Unknown chunk %04x", h.id);
-        return 0;
+        return GAVL_SOURCE_EOF;
       }
     }
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void close_roq(bgav_demuxer_context_t * ctx)

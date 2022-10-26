@@ -567,7 +567,7 @@ static int open_mpegaudio(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_mpegaudio(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_mpegaudio(bgav_demuxer_context_t * ctx)
   {
   bgav_packet_t * p;
   bgav_stream_t * s;
@@ -576,10 +576,10 @@ static int next_packet_mpegaudio(bgav_demuxer_context_t * ctx)
   priv = ctx->priv;
   
   if(priv->data_end && (priv->data_end - ctx->input->position < 4))
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   if(!resync(ctx, 0))
-    return 0;
+    return GAVL_SOURCE_EOF;
   
   if(priv->data_end)
     {
@@ -598,7 +598,7 @@ static int next_packet_mpegaudio(bgav_demuxer_context_t * ctx)
   
   if(bgav_input_read_data(ctx->input, p->buf.buf, bytes_left) < bytes_left)
     {
-    return 0;
+    return GAVL_SOURCE_EOF;
     }
   p->buf.len = bytes_left;
   PACKET_SET_KEYFRAME(p);
@@ -608,7 +608,7 @@ static int next_packet_mpegaudio(bgav_demuxer_context_t * ctx)
   bgav_stream_done_packet_write(s, p);
 
   priv->frames++;
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void resync_mpegaudio(bgav_demuxer_context_t * ctx, bgav_stream_t * s)

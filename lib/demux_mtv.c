@@ -172,7 +172,7 @@ static int open_mtv(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_mtv(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_mtv(bgav_demuxer_context_t * ctx)
   {
   int i;
   mtv_priv_t * priv;
@@ -201,7 +201,7 @@ static int next_packet_mtv(bgav_demuxer_context_t * ctx)
         bgav_input_skip(ctx->input, MTV_AUDIO_PADDING_SIZE);
         if(bgav_input_read_data(ctx->input, p->buf.buf + p->buf.len,
                                 MTV_ASUBCHUNK_DATA_SIZE) < MTV_ASUBCHUNK_DATA_SIZE)
-          return 0;
+          return GAVL_SOURCE_EOF;
         p->buf.len += MTV_ASUBCHUNK_DATA_SIZE;
         }
       bgav_stream_done_packet_write(s, p);
@@ -224,14 +224,14 @@ static int next_packet_mtv(bgav_demuxer_context_t * ctx)
 
       if(bgav_input_read_data(ctx->input, p->buf.buf,
                               priv->h.img_segment_size) < priv->h.img_segment_size)
-        return 0;
+        return GAVL_SOURCE_EOF;
       p->buf.len = priv->h.img_segment_size;
       p->pts = s->in_position;
       bgav_stream_done_packet_write(s, p);
       }
     priv->do_audio = 1;
     }
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void seek_mtv(bgav_demuxer_context_t * ctx, int64_t time, int scale)

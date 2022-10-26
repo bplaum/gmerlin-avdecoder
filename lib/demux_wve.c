@@ -176,7 +176,7 @@ static int open_wve(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_wve(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_wve(bgav_demuxer_context_t * ctx)
   {
   uint8_t preamble[EA_PREAMBLE_SIZE];
   uint32_t chunk_size, chunk_type;
@@ -186,7 +186,7 @@ static int next_packet_wve(bgav_demuxer_context_t * ctx)
   
   if(bgav_input_read_data(ctx->input, preamble, EA_PREAMBLE_SIZE) <
      EA_PREAMBLE_SIZE)
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   chunk_type = BGAV_PTR_2_FOURCC(&preamble[0]);
   chunk_size = GAVL_PTR_2_32LE(&preamble[4]);
@@ -209,21 +209,21 @@ static int next_packet_wve(bgav_demuxer_context_t * ctx)
         bgav_packet_alloc(p, chunk_size);
 
         if(bgav_input_read_data(ctx->input, p->buf.buf, chunk_size) < chunk_size)
-          return 0;
+          return GAVL_SOURCE_EOF;
 
         p->buf.len = chunk_size;
         bgav_stream_done_packet_write(s, p);
         }
       break;
     case SCEl_TAG: // Ending tag
-      return 0;
+      return GAVL_SOURCE_EOF;
       break;
     default: // Video data??
       bgav_input_skip(ctx->input, chunk_size);
       break;
       
     }
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static void close_wve(bgav_demuxer_context_t * ctx)

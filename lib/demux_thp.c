@@ -225,7 +225,7 @@ static int open_thp(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_thp(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_thp(bgav_demuxer_context_t * ctx)
   {
   bgav_stream_t * s;
   thp_t * priv = ctx->priv;
@@ -234,7 +234,7 @@ static int next_packet_thp(bgav_demuxer_context_t * ctx)
   
   /* Check for EOF */
   if(priv->next_frame >= priv->h.numFrames)
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   /* Update positions */
   bgav_input_seek(ctx->input, priv->next_frame_offset, SEEK_SET);
@@ -242,16 +242,16 @@ static int next_packet_thp(bgav_demuxer_context_t * ctx)
 
   /* Read offsets */
   if(!bgav_input_read_32_be(ctx->input, &priv->next_frame_size))
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   bgav_input_skip(ctx->input, 4); // prevTotalSize
 
   if(!bgav_input_read_32_be(ctx->input, &video_size))
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   if(priv->h.maxAudioSamples &&
      !bgav_input_read_32_be(ctx->input, &audio_size))
-    return 0;
+    return GAVL_SOURCE_EOF;
 
   /* Read video frame */
   s = bgav_track_find_stream(ctx, VIDEO_ID);
@@ -262,7 +262,7 @@ static int next_packet_thp(bgav_demuxer_context_t * ctx)
     p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, video_size);
 
     if(p->buf.len < video_size)
-      return 0;
+      return GAVL_SOURCE_EOF;
 
     p->pts = priv->next_frame * s->data.video.format->frame_duration;
     
@@ -274,7 +274,7 @@ static int next_packet_thp(bgav_demuxer_context_t * ctx)
   priv->next_frame++;
   
   if(!audio_size)
-    return 1;
+    return GAVL_SOURCE_OK;
   
   /* Read audio frame */
   s = bgav_track_find_stream(ctx, AUDIO_ID);
@@ -285,14 +285,14 @@ static int next_packet_thp(bgav_demuxer_context_t * ctx)
     p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, audio_size);
 
     if(p->buf.len < audio_size)
-      return 0;
+      return GAVL_SOURCE_EOF;
     
     bgav_stream_done_packet_write(s, p);
     }
   else
     bgav_input_skip(ctx->input, audio_size);
   
-  return 1;
+  return GAVL_SOURCE_OK;
   }
 
 static int select_track_thp(bgav_demuxer_context_t * ctx, int track)

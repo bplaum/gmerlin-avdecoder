@@ -209,7 +209,7 @@ static int open_au(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static int next_packet_au(bgav_demuxer_context_t * ctx)
+static gavl_source_status_t next_packet_au(bgav_demuxer_context_t * ctx)
   {
   bgav_packet_t * p;
   bgav_stream_t * s;
@@ -226,8 +226,8 @@ static int next_packet_au(bgav_demuxer_context_t * ctx)
   p->buf.len = bytes_read;
   bgav_stream_done_packet_write(s, p);
   if(!bytes_read)
-    return 0;
-  return 1;
+    return GAVL_SOURCE_EOF;
+  return GAVL_SOURCE_OK;
   }
 
 static void seek_au(bgav_demuxer_context_t * ctx, gavl_time_t time, int scale)
