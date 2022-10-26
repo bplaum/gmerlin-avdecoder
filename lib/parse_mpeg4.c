@@ -335,8 +335,10 @@ static int parse_frame_mpeg4(bgav_video_parser_t * parser, bgav_packet_t * p,
           data += result;
           
           if(p->header_size && priv->packed_b_frames)
-            bgav_mpeg4_remove_packed_flag(p->buf.buf,
-                                          &p->buf.len, &p->header_size);
+            {
+            if(bgav_mpeg4_remove_packed_flag(&p->buf))
+              p->header_size--;
+            }
           num_pictures++;
           }
         if(!priv->packed_b_frames || (num_pictures == 2))

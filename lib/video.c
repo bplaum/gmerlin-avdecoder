@@ -974,9 +974,7 @@ int bgav_set_video_compression_info(bgav_stream_t * s)
   
   if((s->ci->codec_header.len) && (bgav_video_is_divx4(s->fourcc)))
     {
-    bgav_mpeg4_remove_packed_flag(s->ci->codec_header.buf,
-                                  &s->ci->codec_header.len,
-                                  &s->ci->codec_header.len);
+    bgav_mpeg4_remove_packed_flag(&s->ci->codec_header);
     }
   
   /* Restore everything */

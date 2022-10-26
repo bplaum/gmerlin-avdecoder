@@ -31,7 +31,7 @@
 
 int bgav_mpeg4_get_start_code(const uint8_t * data);
 
-void bgav_mpeg4_remove_packed_flag(uint8_t * data, int * len, int * header_len); 
+int bgav_mpeg4_remove_packed_flag(gavl_buffer_t * buf); 
 
 
 typedef struct

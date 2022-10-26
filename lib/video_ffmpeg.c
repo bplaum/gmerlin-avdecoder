@@ -732,8 +732,8 @@ static int init_ffmpeg(bgav_stream_t * s)
     memcpy(priv->extradata, s->ci->codec_header.buf, s->ci->codec_header.len);
     priv->extradata_size = s->ci->codec_header.len;
 
-    if(bgav_video_is_divx4(s->fourcc))
-      bgav_mpeg4_remove_packed_flag(priv->extradata, &priv->extradata_size, &priv->extradata_size);
+    //    if(bgav_video_is_divx4(s->fourcc))
+    //      bgav_mpeg4_remove_packed_flag(priv->extradata, &priv->extradata_size, &priv->extradata_size);
     
     priv->ctx->extradata      = priv->extradata;
     priv->ctx->extradata_size = priv->extradata_size;

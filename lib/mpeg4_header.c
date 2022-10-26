@@ -361,29 +361,25 @@ void bgav_mpeg4_vop_header_dump(bgav_mpeg4_vop_header_t * h)
   
   }
 
-static void remove_byte(uint8_t * data, int byte, int * len, int * header_end)
+static void remove_byte(gavl_buffer_t * buf, int byte)
   {
   /* Byte if the last one */
-  if(byte < *len - 1)
-    memmove(data + byte, data + byte + 1, *len - 1 - byte);
-  
-  (*len)--;
+  if(byte < buf->len - 1)
+    memmove(buf->buf + byte, buf->buf + byte + 1, buf->len - 1 - byte);
 
-  if(len != header_end)
-    (*header_end)--;
+  buf->len--;
   }
 
-void bgav_mpeg4_remove_packed_flag(uint8_t * data, int * len, int * header_len)
+int bgav_mpeg4_remove_packed_flag(gavl_buffer_t * buf)
   {
   const uint8_t * sc2;
-  uint8_t * hend = data + *header_len;
-  uint8_t * dend = data + *len;
-  const uint8_t * pos = data;
+  uint8_t * end = buf->buf + buf->len;
+  const uint8_t * pos = buf->buf;
   int userdata_size;
   
-  while(pos < hend)
+  while(pos < end)
     {
-    pos = bgav_mpv_find_startcode(pos, dend);
+    pos = bgav_mpv_find_startcode(pos, end);
     if(!pos)
       break;
     
@@ -391,11 +387,11 @@ void bgav_mpeg4_remove_packed_flag(uint8_t * data, int * len, int * header_len)
       {
       case MPEG4_CODE_USER_DATA:
         pos += 4;
-        sc2 = bgav_mpv_find_startcode(pos, dend);
+        sc2 = bgav_mpv_find_startcode(pos, end);
         if(sc2)
           userdata_size = sc2 - pos;
         else
-          userdata_size = dend - pos;
+          userdata_size = end - pos;
 
         if(userdata_size < 4)
           break;
@@ -404,7 +400,10 @@ void bgav_mpeg4_remove_packed_flag(uint8_t * data, int * len, int * header_len)
           break;
 
         if(pos[userdata_size-1] == 'p')
-          remove_byte(data, pos - data + userdata_size - 1, len, header_len);
+          {
+          remove_byte(buf, pos - buf->buf + userdata_size - 1);
+          return 1;
+          }
         pos += userdata_size - 1;
         break;
       default:
@@ -413,5 +412,5 @@ void bgav_mpeg4_remove_packed_flag(uint8_t * data, int * len, int * header_len)
       }
       
     }
-  
+  return 0;
   }
