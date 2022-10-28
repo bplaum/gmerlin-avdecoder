@@ -152,16 +152,6 @@ struct bgav_video_decoder_s
   bgav_video_decoder_t * next;
   };
 
-/* Palette support */
-
-typedef struct
-  {
-  uint16_t r;
-  uint16_t g;
-  uint16_t b;
-  uint16_t a;
-  } bgav_palette_entry_t;
-
 /* These map a palette entry to a gavl format frame */
 
 #define BGAV_PALETTE_2_RGB24(pal, dst) \
@@ -214,14 +204,9 @@ struct bgav_packet_s
      it's the file position */
   int64_t position;
 
-#if 0  
-  uint32_t data_size;
-  uint32_t data_alloc;
-  uint8_t * data;
-#else
   gavl_buffer_t buf;
-#endif
-  
+
+  /* Mostly video specific */
   gavl_timecode_t timecode;
   gavl_interlace_mode_t interlace_mode;
   
@@ -234,20 +219,12 @@ struct bgav_packet_s
   int64_t pts; /* In stream timescale tics */
   int64_t dts; /* In stream timescale tics */
 
-  int64_t end_pts; /* For Ogg demuxer: Store the granulepos here so that
-                      subsequent stages can obtain the true duration */
-  
   int64_t duration;
-  //  bgav_stream_t * stream; /* The stream this packet belongs to */
-
   struct bgav_packet_s * next;
 
   uint32_t flags;
 
   /* Palette data */
-  //  int palette_size;
-  //  bgav_palette_entry_t * palette;
-  
   gavl_palette_t * pal;
   
   /* For overlay streams: Save coordinates out-of-band so we can
@@ -1400,8 +1377,6 @@ struct bgav_demuxer_s
 #define BGAV_DEMUXER_SUBREAD_ONLY         (1<<9) /*
                                                   * True if we have just one active subtitle stream with attached subreader
                                                   */
-
-
 /* Discontionus demuxer: Read_packet *might* return GAVL_SOURCE_AGAIN */
 #define BGAV_DEMUXER_DISCONT              (1<<10) /*
                                                    * True if we have just one active subtitle stream with attached subreader
@@ -1410,10 +1385,6 @@ struct bgav_demuxer_s
 #define INDEX_MODE_NONE   0 /* Default: No sample accuracy */
 /* Packets have precise timestamps and durations and are adjacent in the file */
 #define INDEX_MODE_SIMPLE 1
-/* Packets have precise timestamps (but no durations) and are adjacent in the file */
-// #define INDEX_MODE_PTS    2
-/* MPEG Program/transport stream: Needs complete parsing */
-// #define INDEX_MODE_MPEG   3
 /* For PCM soundfiles: Sample accuracy is already there */
 #define INDEX_MODE_PCM    4
 /* File has a global index and codecs, which allow sample accuracy */

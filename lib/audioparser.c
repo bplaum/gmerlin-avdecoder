@@ -191,14 +191,6 @@ static int parse_frame(bgav_audio_parser_t * parser,
   
   p->pts = parser->timestamp;
 
-  if((p->end_pts != GAVL_TIME_UNDEFINED) &&
-     (p->pts + p->duration > p->end_pts))
-    {
-    p->duration = p->end_pts - p->pts;
-    if(p->duration < 0)
-      p->duration = 0;
-    }
-  
   parser->timestamp += p->duration;
 #ifdef DUMP_OUTPUT  
   bgav_dprintf("Get packet ");

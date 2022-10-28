@@ -25,19 +25,19 @@
 
 #include <avdec_private.h>
 
-const bgav_palette_entry_t bgav_qt_default_palette_2[] = {
+const gavl_palette_entry_t bgav_qt_default_palette_2[] = {
  { 0xFFFF, 0xFFFF, 0xFFFF, 0x0000 },
  { 0x0000, 0x0000, 0x0000, 0x0000 },
 };
 
-const bgav_palette_entry_t bgav_qt_default_palette_4[] = {
+const gavl_palette_entry_t bgav_qt_default_palette_4[] = {
  { 0x9393, 0x6565, 0x5E5E, 0xFFFF },
  { 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF },
  { 0xDFDF, 0xD0D0, 0xABAB, 0xFFFF },
  { 0x0000, 0x0000, 0x0000, 0xFFFF } 
 };
 
-const bgav_palette_entry_t bgav_qt_default_palette_16[] = {
+const gavl_palette_entry_t bgav_qt_default_palette_16[] = {
  { 0xFFFF, 0xFBFB, 0xFFFF, 0xFFFF },
  { 0xEFEF, 0xD9D9, 0xBBBB, 0xFFFF },
  { 0xE8E8, 0xC9C9, 0xB1B1, 0xFFFF },
@@ -56,7 +56,7 @@ const bgav_palette_entry_t bgav_qt_default_palette_16[] = {
  { 0x0000, 0x0000, 0x0000, 0xFFFF } 
 };
 
-const bgav_palette_entry_t bgav_qt_default_palette_256[] = {
+const gavl_palette_entry_t bgav_qt_default_palette_256[] = {
 { 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF },
 { 0xFFFF, 0xFFFF, 0xCCCC, 0xFFFF },
 { 0xFFFF, 0xFFFF, 0x9999, 0xFFFF },
@@ -315,14 +315,14 @@ const bgav_palette_entry_t bgav_qt_default_palette_256[] = {
 { 0x0000, 0x0000, 0x0000, 0xFFFF }
 };
 
-const bgav_palette_entry_t bgav_qt_default_palette_4_gray[] = {
+const gavl_palette_entry_t bgav_qt_default_palette_4_gray[] = {
  { 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF },
  { 0xAAAA, 0xAAAA, 0xAAAA, 0xFFFF },
  { 0x5555, 0x5555, 0x5555, 0xFFFF },
  { 0x0000, 0x0000, 0x0000, 0xFFFF },
 };
 
-const bgav_palette_entry_t bgav_qt_default_palette_16_gray[] = {
+const gavl_palette_entry_t bgav_qt_default_palette_16_gray[] = {
  { 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF },
  { 0xEEEE, 0xEEEE, 0xEEEE, 0xFFFF },
  { 0xDDDD, 0xDDDD, 0xDDDD, 0xFFFF },
@@ -341,7 +341,7 @@ const bgav_palette_entry_t bgav_qt_default_palette_16_gray[] = {
  { 0x0000, 0x0000, 0x0000, 0xFFFF },
 };
 
-const bgav_palette_entry_t bgav_qt_default_palette_256_gray[] = {
+const gavl_palette_entry_t bgav_qt_default_palette_256_gray[] = {
  { 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF },
  { 0xFEFE, 0xFEFE, 0xFEFE, 0xFFFF },
  { 0xFDFD, 0xFDFD, 0xFDFD, 0xFFFF },

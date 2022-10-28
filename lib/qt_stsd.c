@@ -29,19 +29,19 @@
 #include <qt.h>
 #include <utils.h>
 
-extern const bgav_palette_entry_t bgav_qt_default_palette_2[];
-extern const bgav_palette_entry_t bgav_qt_default_palette_4[];
-extern const bgav_palette_entry_t bgav_qt_default_palette_16[];
-extern const bgav_palette_entry_t bgav_qt_default_palette_256[];
+extern const gavl_palette_entry_t bgav_qt_default_palette_2[];
+extern const gavl_palette_entry_t bgav_qt_default_palette_4[];
+extern const gavl_palette_entry_t bgav_qt_default_palette_16[];
+extern const gavl_palette_entry_t bgav_qt_default_palette_256[];
 
-extern const bgav_palette_entry_t bgav_qt_default_palette_4_gray[];
-extern const bgav_palette_entry_t bgav_qt_default_palette_16_gray[];
-extern const bgav_palette_entry_t bgav_qt_default_palette_256_gray[];
+extern const gavl_palette_entry_t bgav_qt_default_palette_4_gray[];
+extern const gavl_palette_entry_t bgav_qt_default_palette_16_gray[];
+extern const gavl_palette_entry_t bgav_qt_default_palette_256_gray[];
 
-static bgav_palette_entry_t *
-copy_palette(const bgav_palette_entry_t * p, int num)
+static gavl_palette_entry_t *
+copy_palette(const gavl_palette_entry_t * p, int num)
   {
-  bgav_palette_entry_t * ret;
+  gavl_palette_entry_t * ret;
   ret = malloc(num * sizeof(*ret));
   memcpy(ret, p, num * sizeof(*ret));
   return ret;

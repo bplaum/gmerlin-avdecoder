@@ -397,6 +397,10 @@ bgav_stream_get_packet_read(bgav_stream_t * s, bgav_packet_t ** ret)
     p->timecode =
       bgav_timecode_table_get_timecode(s->timecode_table,
                                        p->pts);
+  
+  if(p->pts + p->duration > s->stats.pts_end)
+    p->duration = s->stats.pts_end - p->pts;
+  
   if(s->opt->dump_packets)
     {
     bgav_dprintf("Packet out (stream %d): ", s->stream_id);

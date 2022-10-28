@@ -217,7 +217,6 @@ static int init_audio_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
         break;
       case 10:
         s->fourcc = FOURCC_AAC;
-        //        s->index_mode = INDEX_MODE_MPEG;
         s->flags |= STREAM_PARSE_FULL;
         s->stats.pts_start = GAVL_TIME_UNDEFINED;
         s->flags |= STREAM_NEED_START_PTS;

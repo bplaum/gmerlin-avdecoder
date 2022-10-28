@@ -119,12 +119,15 @@ void bgav_audio_parser_init_vorbis(bgav_audio_parser_t * parser)
       op.b_o_s = 0;
     
     op.bytes = len;
-    
+
+    fprintf(stderr, "vorbis_synthesis_headerin\n");
+        
     if(vorbis_synthesis_headerin(&priv->vi, &priv->vc,
                                  &op) < 0)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
                "Packet %d is not a vorbis header", i+1);
+      gavl_hexdump(op.packet, op.bytes, 16);
       return;
       }
     op.packetno++;

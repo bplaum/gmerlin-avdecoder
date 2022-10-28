@@ -591,7 +591,10 @@ int main(int argc, char ** argv)
             fprintf(stderr, "Done, timestamp: %"PRId64" [%"PRId64"], Samples: %d\n",
                     af->timestamp, gavl_time_unscale(audio_format->samplerate, af->timestamp), af->valid_samples);
           else
+            {
             fprintf(stderr, "Failed\n");
+            break;
+            }
           }
         }
       }
@@ -700,7 +703,9 @@ int main(int argc, char ** argv)
                 ovl->timestamp+ovl->duration);
         }
       else
+        {
         fprintf(stderr, "Failed\n");
+        }
       gavl_video_frame_destroy(ovl);
       }
 #ifndef TRACK

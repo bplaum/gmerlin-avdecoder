@@ -108,8 +108,8 @@ void bgav_packet_dump(const bgav_packet_t * p)
   else if(p->interlace_mode == GAVL_INTERLACE_BOTTOM_FIRST)
     bgav_dprintf(", il: b");
 
-  if(p->end_pts != GAVL_TIME_UNDEFINED)
-    bgav_dprintf(" end_pts: %"PRId64", ", p->end_pts);
+  //  if(p->end_pts != GAVL_TIME_UNDEFINED)
+  //    bgav_dprintf(" end_pts: %"PRId64", ", p->end_pts);
   
   bgav_dprintf("\n");
   //  gavl_hexdump(p->data, p->data_size < 16 ? p->data_size : 16, 16);
@@ -136,7 +136,7 @@ void bgav_packet_reset(bgav_packet_t * p)
   {
   p->pts     = GAVL_TIME_UNDEFINED;
   p->dts     = GAVL_TIME_UNDEFINED;
-  p->end_pts = GAVL_TIME_UNDEFINED;
+  //  p->end_pts = GAVL_TIME_UNDEFINED;
 
   gavl_buffer_reset(&p->buf);
   

@@ -2061,11 +2061,6 @@ static gavl_source_status_t next_packet_ogg(bgav_demuxer_context_t * ctx)
           
           // fprintf(stderr, "priv->op.granulepos: %ld\n", priv->op.granulepos);
 
-          if(priv->op.granulepos >= 0)
-            p->end_pts = priv->op.granulepos;
-          else
-            p->end_pts = GAVL_TIME_UNDEFINED;
-          
           /* Check whether to close this packet */
 
           /* Close this packet */
@@ -2112,11 +2107,6 @@ static gavl_source_status_t next_packet_ogg(bgav_demuxer_context_t * ctx)
           if((s->action == BGAV_STREAM_PARSE) && (priv->op.granulepos > 0))
             s->stats.pts_end = priv->op.granulepos;
 
-          if(priv->op.granulepos >= 0)
-            p->end_pts = priv->op.granulepos;
-          else
-            p->end_pts = GAVL_TIME_UNDEFINED;
-          
           set_packet_pos(priv, stream_priv, &page_continued, p);
           bgav_stream_done_packet_write(s, p);
           break;

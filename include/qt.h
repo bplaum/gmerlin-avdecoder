@@ -394,7 +394,7 @@ typedef struct
       uint16_t depth;
       uint16_t ctab_id;
       uint16_t ctab_size;
-      bgav_palette_entry_t * ctab;
+      gavl_palette_entry_t * ctab;
 
       qt_pasp_t pasp;
       int has_pasp;
