@@ -332,7 +332,6 @@ void bgav_audio_dump(bgav_stream_t * s)
   {
   bgav_dprintf("  Bits per sample:   %d\n", s->data.audio.bits_per_sample);
   bgav_dprintf("  Block align:       %d\n", s->data.audio.block_align);
-  bgav_dprintf("  Pre skip:          %d\n", s->ci->pre_skip);
   bgav_dprintf("Format:\n");
   gavl_audio_format_dump(s->data.audio.format);
   }
