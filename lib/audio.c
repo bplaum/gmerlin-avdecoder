@@ -77,6 +77,15 @@ static gavl_source_status_t get_frame(void * sp, gavl_audio_frame_t ** frame)
   s->flags &= ~STREAM_HAVE_FRAME; 
   s->data.audio.frame->timestamp = s->out_time;
   s->out_time += s->data.audio.frame->valid_samples;
+
+  if((s->ci->pre_skip > 0) &&
+     (s->data.audio.frame->timestamp - s->stats.pts_start < s->ci->pre_skip))
+    {
+    gavl_audio_frame_skip(s->data.audio.format,
+                          s->data.audio.frame,
+                          s->ci->pre_skip - (s->data.audio.frame->timestamp - s->stats.pts_start));
+    }
+  
   *frame = s->data.audio.frame;
   return GAVL_SOURCE_OK;
   }
