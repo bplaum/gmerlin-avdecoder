@@ -287,11 +287,13 @@ void bgav_stream_dump(bgav_stream_t * s)
     bgav_dprintf("%d\n", s->ci->max_packet_size);
   else
     bgav_dprintf("Unknown\n");
+
+  bgav_dprintf("  Compression info:\n");
+  gavl_compression_info_dumpi(s->ci, 0);
   
   // bgav_dprintf("  Private data:      %p\n", s->priv);
-  bgav_dprintf("  Codec header:      %d bytes\n", s->ci->codec_header.len);
+  //  bgav_dprintf("  Codec header:      %d bytes\n", s->ci->codec_header.len);
   }
-
 
 int bgav_stream_skipto(bgav_stream_t * s, gavl_time_t * time, int scale)
   {
