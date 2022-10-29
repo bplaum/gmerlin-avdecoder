@@ -703,7 +703,7 @@ static int init_ffmpeg(bgav_stream_t * s)
   priv->ctx->codec_id = codec->id;
 
   /* Threads (disabled for VAAPI) */
-  priv->ctx->thread_count = s->opt->threads;
+  //  priv->ctx->thread_count = s->opt->threads;
   
 #ifdef HAVE_LIBVA
   if(s->opt->vaapi && vaapi_supported(codec) && init_vaapi(s))

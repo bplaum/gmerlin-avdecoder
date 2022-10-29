@@ -180,12 +180,6 @@
 /* Samba support */
 #undef HAVE_SAMBA
 
-/* Do we have schroedinger installed? */
-#undef HAVE_SCHROEDINGER
-
-/* Define to 1 if you have the <schroedinger/schroversion.h> header file. */
-#undef HAVE_SCHROEDINGER_SCHROVERSION_H
-
 /* Do we have speex installed? */
 #undef HAVE_SPEEX
 

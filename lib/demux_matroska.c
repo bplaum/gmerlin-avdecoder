@@ -115,10 +115,60 @@ typedef struct
   int flags;
   } codec_info_t;
 
-static void setup_ogg_extradata(bgav_stream_t * s)
+static int setup_ogg_extradata(bgav_stream_t * s)
   {
+  uint8_t * ptr;
+  int i;
   bgav_mkv_track_t * p = s->priv;
-  bgav_stream_set_extradata(s, p->CodecPrivate, p->CodecPrivateLen);
+  int lengths[2];
+  
+  ptr = p->CodecPrivate;
+
+  ptr++;
+
+  if(p->CodecPrivate[0] > 2)
+    {
+    /* Too many header packets */
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Ogg extradata with more than 3 packets");
+    return 0;
+    }
+  
+  for(i = 0; i < p->CodecPrivate[0]; i++)
+    {
+    lengths[i] = 0;
+    /* Read length */
+    while(*ptr == 255)
+      {
+      lengths[i] += 255;
+      ptr++;
+      }
+    
+    lengths[i] += *ptr;
+    ptr++;
+    }
+
+  for(i = 0; i < p->CodecPrivate[0]; i++)
+    {
+    if(ptr + lengths[i] > p->CodecPrivate + p->CodecPrivateLen)
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Ogg extradata too short");
+      return 0;
+      }
+    
+    gavl_append_xiph_header(&s->ci->codec_header,
+                            ptr, lengths[i]);
+    ptr += lengths[i];
+    }
+
+  if(p->CodecPrivateLen - (int)(ptr - p->CodecPrivate) <= 0)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Ogg extradata too short");
+    return 0;
+    }
+     
+  gavl_append_xiph_header(&s->ci->codec_header,
+                          ptr, p->CodecPrivateLen - (int)(ptr - p->CodecPrivate));
+  return 1;
   }
 
 

@@ -337,7 +337,7 @@ static void parse_vorbis_comment(bgav_stream_t * s, uint8_t * data,
   if(!bgav_vorbis_comment_read(&vc, input_mem))
     return;
 
-  gavl_dictionary_free(&stream_priv->metadata);
+  gavl_dictionary_reset(&stream_priv->metadata);
   
   bgav_vorbis_comment_2_metadata(&vc, &stream_priv->metadata);
 
@@ -1375,7 +1375,7 @@ static void get_metadata(bgav_track_t * track)
        (s->type != GAVL_STREAM_VIDEO))
       continue;
     
-    stream_priv = track->streams[i].priv;
+    stream_priv = s->priv;
     gavl_dictionary_merge2(track->metadata, &stream_priv->metadata);
     }
   
@@ -1401,6 +1401,10 @@ static void get_metadata(bgav_track_t * track)
     bgav_track_set_format(track, "Ogg Video", "video/ogg");
   else
     bgav_track_set_format(track, "Ogg", "application/ogg");
+
+  fprintf(stderr, "Got metadata:\n");
+  gavl_dictionary_dump(track->metadata, 2);
+  
   }
 
 static int open_ogg(bgav_demuxer_context_t * ctx)

@@ -120,8 +120,6 @@ void bgav_audio_parser_init_vorbis(bgav_audio_parser_t * parser)
     
     op.bytes = len;
 
-    fprintf(stderr, "vorbis_synthesis_headerin\n");
-        
     if(vorbis_synthesis_headerin(&priv->vi, &priv->vc,
                                  &op) < 0)
       {
