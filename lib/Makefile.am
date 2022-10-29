@@ -181,16 +181,6 @@ theora_libs    =
 theora_sources =
 endif
 
-if HAVE_SCHROEDINGER
-schroedinger_cflags  = @SCHROEDINGER_CFLAGS@
-schroedinger_libs    = @SCHROEDINGER_LIBS@
-schroedinger_sources = video_schroedinger.c
-else
-schroedinger_cflags  =
-schroedinger_libs    =
-schroedinger_sources =
-endif
-
 
 if HAVE_SPEEX
 speex_cflags  = @SPEEX_CFLAGS@
@@ -253,7 +243,6 @@ $(avcodec_libs) \
 $(cdio_libs) \
 $(samba_libs) \
 $(theora_libs) \
-$(schroedinger_libs) \
 $(speex_libs) \
 $(libpostproc_libs) \
 $(libswscale_libs) \
@@ -285,7 +274,6 @@ $(cdio_cflags) \
 $(mjpegtools_cflags) \
 $(samba_cflags) \
 $(theora_cflags) \
-$(schroedinger_cflags) \
 $(speex_cflags) \
 $(libpostproc_cflags) \
 $(libswscale_cflags) \
@@ -308,7 +296,6 @@ $(avcodec_sources) \
 $(mjpegtools_sources) \
 $(samba_sources) \
 $(theora_sources) \
-$(schroedinger_sources) \
 $(speex_sources) \
 $(dvb_sources) \
 $(vaapi_sources) \

@@ -274,11 +274,6 @@ dnl
 
 GMERLIN_CHECK_THEORADEC
 
-dnl
-dnl Check for schroedinger
-dnl
-
-GMERLIN_CHECK_SCHROEDINGER
 
 dnl
 dnl Check for speex
