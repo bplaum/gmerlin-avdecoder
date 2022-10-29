@@ -378,6 +378,7 @@ static char const * const mimetypes =
   "audio/aac "
   "audio/aacp "
   "audio/ogg "
+  "audio/opus "
   "audio/gavf "
   "audio/3gpp "
   "audio/3gpp2 "
@@ -407,7 +408,7 @@ static const char * get_mimetypes(void * priv)
   return mimetypes;
   }
 
-static char const * const extensions = "avi asf asx wmv rm ra ram mov wav mp4 m4a 3gp qt au aiff aif mp3 mpg mpeg vob m3u pls ogg flac aac mpc spx vob wv tta gsm vp5 vp6 voc";
+static char const * const extensions = "avi asf asx wmv rm ra ram mov wav mp4 m4a 3gp qt au aiff aif mp3 mpg mpeg vob m3u pls ogg flac aac mpc spx vob wv tta gsm vp5 vp6 voc opus";
 
 static const char * get_extensions(void * priv)
   {
