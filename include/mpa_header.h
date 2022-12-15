@@ -35,6 +35,8 @@ typedef enum
 #define CHANNEL_DUAL     2
 #define CHANNEL_MONO     3
 
+#define BGAV_MPA_MAX_FRAME_BYTES 2881
+
 typedef struct
   {
   bgav_mpa_version_t version;

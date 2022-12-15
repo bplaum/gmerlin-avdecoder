@@ -156,6 +156,33 @@ const uint32_t div3_fourccs[] =
     0x00
   };
 
+/* DIVX (maybe with B-frames) requires special attention */
+
+static const uint32_t video_codecs_divx[] =
+  {
+    BGAV_MK_FOURCC('D', 'I', 'V', 'X'),
+    BGAV_MK_FOURCC('d', 'i', 'v', 'x'),
+    BGAV_MK_FOURCC('D', 'X', '5', '0'),
+    BGAV_MK_FOURCC('X', 'V', 'I', 'D'),
+    BGAV_MK_FOURCC('x', 'v', 'i', 'd'),
+    BGAV_MK_FOURCC('F', 'M', 'P', '4'),
+    BGAV_MK_FOURCC('f', 'm', 'p', '4'),    
+    0x00,
+  };
+
+int bgav_video_is_divx4(uint32_t fourcc)
+  {
+  int i = 0;
+  while(video_codecs_divx[i])
+    {
+    if(video_codecs_divx[i] == fourcc)
+      return 1;
+    i++;
+    }
+  return 0;
+  }
+
+
 
 int bgav_num_video_streams(bgav_t *  bgav, int track)
   {
@@ -205,7 +232,7 @@ static int check_still(bgav_stream_t * s)
     return 1;
   if(s->flags & STREAM_HAVE_FRAME)
     return 1;
-  if(bgav_stream_peek_packet_read(s, NULL, 0) == GAVL_SOURCE_OK)
+  if(bgav_stream_peek_packet_read(s, NULL) == GAVL_SOURCE_OK)
     return 1;
   else if(s->flags & STREAM_EOF_D)
     return 1;
@@ -287,113 +314,50 @@ int bgav_video_init(bgav_stream_t * s)
   if(!s->timescale && s->data.video.format->timescale)
     s->timescale = s->data.video.format->timescale;
 
-  //  if(s->fourcc == BGAV_MK_FOURCC('a', 'v', 'c', '1'))
-  //    s->flags |= STREAM_FILTER_PACKETS;
-  
-  /* Some streams need to be parsed generically for extracting
-     format values and/or timecodes */
-  
-  
   if(!(s->flags & STREAM_STANDALONE))
     {
-    if(bgav_check_fourcc(s->fourcc, bgav_dv_fourccs) ||
-       bgav_check_fourcc(s->fourcc, bgav_png_fourccs) ||
-       (s->fourcc == BGAV_MK_FOURCC('a', 'v', 'c', '1')) ||
-       (s->fourcc == BGAV_MK_FOURCC('V', 'P', '8', '0')) ||
-       (s->fourcc == BGAV_MK_FOURCC('V', 'P', '9', '0')))
-      s->flags |= STREAM_PARSE_FRAME;
-
+    /* TODO: Avoid this when not really needed (i.e. when
+       packets are decoded via ffmpeg */
     if(bgav_check_fourcc(s->fourcc, avc1_fourccs))
       s->flags |= STREAM_FILTER_PACKETS;
     }
   
-  if((s->flags & (STREAM_PARSE_FULL|STREAM_PARSE_FRAME)) &&
-     !s->data.video.parser)
-    {
-    s->data.video.parser = bgav_video_parser_create(s);
-    if(!s->data.video.parser)
-      {
-      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-               "No video parser found for fourcc %c%c%c%c (0x%08x)",
-               (s->fourcc & 0xFF000000) >> 24,
-               (s->fourcc & 0x00FF0000) >> 16,
-               (s->fourcc & 0x0000FF00) >> 8,
-               (s->fourcc & 0x000000FF),
-               s->fourcc);
-      return 0;
-      }
-    
-    /* Get the first packet to garantuee that the parser is fully initialized */
-    if(bgav_stream_peek_packet_read(s, NULL, 1) != GAVL_SOURCE_OK)
-      {
-      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-               "EOF while initializing video parser");
-      return 0;
-      }
-    s->index_mode = INDEX_MODE_SIMPLE;
-    }
-  /* Frametype detector */
-  if((s->flags & STREAM_NEED_FRAMETYPES) && !s->fd)
-    {
-    s->fd = bgav_frametype_detector_create(s);
-    if(bgav_stream_peek_packet_read(s, NULL, 1) != GAVL_SOURCE_OK)
-      {
-      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-               "EOF while initializing frametype detector");
-      return 0;
-      }
-    }
-  
-  /* Packet timer */
-  if((s->flags & (STREAM_NO_DURATIONS|STREAM_DTS_ONLY)) &&
-     !s->pt)
-    {
-    s->pt = bgav_packet_timer_create(s);
-
-    if(!bgav_stream_peek_packet_read(s, NULL, 1))
-      {
-      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-               "EOF while initializing packet timer");
-      return 0;
-      }
-    s->index_mode = INDEX_MODE_SIMPLE;
-    }
-
   //  if((s->action == BGAV_STREAM_READRAW) &&
   //     (s->flags & STREAM_FILTER_PACKETS))
   if(s->flags & STREAM_FILTER_PACKETS)
     {
-    s->bsf = bgav_bsf_create(s);
-    if(bgav_stream_peek_packet_read(s, NULL, 1) != GAVL_SOURCE_OK)
-      {
-      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-               "EOF while initializing bitstream filter");
-      return 0;
-      }
+    gavl_stream_set_compression_info(s->info, s->ci);
+    
+    s->pf = bgav_packet_filter_create(s->fourcc);
+    s->psrc = bgav_packet_filter_connect(s->pf, s->psrc);
     }
 
-  /*
-   *  Set max ref frames. Needs to be set before the decoder is started.
-   *  Multiple references should already be set by the H.264 parser
-   */
+  /* Now the whole format should be avaibable */
+
+  gavl_packet_source_peek_packet(s->psrc, NULL);
   
-  if(!s->ci->max_ref_frames)
-    {
-    if(s->ci->flags & GAVL_COMPRESSION_HAS_B_FRAMES)
-      s->ci->max_ref_frames = 2;
-    else if(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES)
-      s->ci->max_ref_frames = 1;
-    }
+  gavl_dictionary_reset(s->info_ext);
+  gavl_dictionary_copy(s->info_ext, gavl_packet_source_get_stream(s->psrc));
+  gavl_stream_get_compression_info(s->info_ext, &s->ci_out);
+  s->ci = &s->ci_out;
+    
+  //  fprintf(stderr, "Got stream info:\n");
+  //  gavl_dictionary_dump(s->info_ext, 2);
+    
+  //  fprintf(stderr, "Got codec header:\n");
+  //  gavl_hexdump(s->ci->codec_header.buf,
+  //               s->ci->codec_header.len, 16);
   
   if(s->stats.pts_start == GAVL_TIME_UNDEFINED)
     {
     bgav_packet_t * p = NULL;
     char tmp_string[128];
     
-    if(bgav_stream_peek_packet_read(s, &p, 1) != GAVL_SOURCE_OK)
+    if(bgav_stream_peek_packet_read(s, &p) != GAVL_SOURCE_OK)
       {
       gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
                "EOF while getting start time");
+      return 0;
       }
     s->stats.pts_start = p->pts;
     s->out_time = s->stats.pts_start;
@@ -413,14 +377,6 @@ int bgav_video_start(bgav_stream_t * s)
   int result;
   int src_flags;
   bgav_video_decoder_t * dec;
-
-  
-  if((s->action == BGAV_STREAM_PARSE) &&
-     ((s->data.video.format->framerate_mode == GAVL_FRAMERATE_VARIABLE) ||
-      (s->data.video.format->interlace_mode == GAVL_INTERLACE_MIXED)))
-    {
-    s->data.video.ft = bgav_video_format_tracker_create(s);
-    }
   
   if(s->action == BGAV_STREAM_DECODE)
     {
@@ -488,10 +444,6 @@ int bgav_video_start(bgav_stream_t * s)
       s->data.video.format->interlace_mode = GAVL_INTERLACE_NONE;
     if(s->data.video.format->framerate_mode == GAVL_FRAMERATE_UNKNOWN)
       s->data.video.format->framerate_mode = GAVL_FRAMERATE_CONSTANT;
-    
-    s->psrc =
-      gavl_packet_source_create_video(bgav_stream_read_packet_func, // get_packet,
-                                      s, GAVL_SOURCE_SRC_ALLOC, s->ci, s->data.video.format, GAVL_STREAM_VIDEO);
     }
 
   if(s->codec_bitrate)
@@ -502,7 +454,7 @@ int bgav_video_start(bgav_stream_t * s)
                           s->container_bitrate);
   
   if(s->data.video.format->framerate_mode == GAVL_FRAMERATE_STILL)
-    s->flags = STREAM_DISCONT;
+    s->flags |= STREAM_DISCONT;
 
   return 1;
   }
@@ -544,33 +496,12 @@ void bgav_video_dump(bgav_stream_t * s)
 
 void bgav_video_stop(bgav_stream_t * s)
   {
-  if(s->bsf)
+  if(s->pf)
     {
-    bgav_bsf_destroy(s->bsf);
-    s->bsf = NULL;
+    bgav_packet_filter_destroy(s->pf);
+    s->pf = NULL;
     }
-
-  if(s->data.video.parser)
-    {
-    bgav_video_parser_destroy(s->data.video.parser);
-    s->data.video.parser = NULL;
-    }
-  if(s->pt)
-    {
-    bgav_packet_timer_destroy(s->pt);
-    s->pt = NULL;
-    }
-  if(s->fd)
-    {
-    bgav_frametype_detector_destroy(s->fd);
-    s->fd = NULL;
-    }
-  if(s->data.video.ft)
-    {
-    bgav_video_format_tracker_destroy(s->data.video.ft);
-    s->data.video.ft = NULL;
-    }
-
+  
   if(s->data.video.vsrc_priv)
     {
     gavl_video_source_destroy(s->data.video.vsrc_priv);
@@ -587,11 +518,6 @@ void bgav_video_stop(bgav_stream_t * s)
   /* Clear still mode flag (it will be set during reinit) */
   s->flags &= ~(STREAM_STILL_SHOWN  | STREAM_HAVE_FRAME);
   
-  if(s->data.video.kft)
-    {
-    bgav_keyframe_table_destroy(s->data.video.kft);
-    s->data.video.kft = NULL;
-    }
   }
 
 void bgav_video_resync(bgav_stream_t * s)
@@ -606,17 +532,6 @@ void bgav_video_resync(bgav_stream_t * s)
 
   s->flags &= ~STREAM_HAVE_FRAME;
   
-  if(s->data.video.parser)
-    {
-    bgav_video_parser_reset(s->data.video.parser,
-                            GAVL_TIME_UNDEFINED, s->out_time);
-    }
-
-  if(s->pt)
-    bgav_packet_timer_reset(s->pt);
-  if(s->fd)
-    bgav_frametype_detector_reset(s->fd);
-  
   if(s->data.video.vsrc)
     gavl_video_source_reset(s->data.video.vsrc);
   
@@ -630,7 +545,7 @@ void bgav_video_resync(bgav_stream_t * s)
       {
       /* Skip pictures until we have the next keyframe */
       p = NULL;
-      if((st = bgav_stream_peek_packet_read(s, &p, 1)) != GAVL_SOURCE_OK)
+      if((st = bgav_stream_peek_packet_read(s, &p)) != GAVL_SOURCE_OK)
         return;
 
       if(PACKET_GET_KEYFRAME(p))
@@ -700,7 +615,7 @@ int bgav_video_skipto(bgav_stream_t * s, int64_t * time, int scale)
     while(1)
       {
       p = NULL;
-      if((st = bgav_stream_peek_packet_read(s, &p, 1)) != GAVL_SOURCE_OK)
+      if((st = bgav_stream_peek_packet_read(s, &p)) != GAVL_SOURCE_OK)
         return 0;
       
       if(p->pts + p->duration > time_scaled)
@@ -726,7 +641,7 @@ int bgav_video_skipto(bgav_stream_t * s, int64_t * time, int scale)
     while(1)
       {
       p = NULL;
-      if(bgav_stream_peek_packet_read(s, &p, 1) != GAVL_SOURCE_OK)
+      if(bgav_stream_peek_packet_read(s, &p) != GAVL_SOURCE_OK)
         {
         s->out_time = GAVL_TIME_UNDEFINED;
         return 0;
@@ -773,68 +688,7 @@ gavl_video_source_t * bgav_get_video_source(bgav_t * bgav, int stream)
   return s->data.video.vsrc;
   }
 
-static void frame_table_append_frame(gavl_frame_table_t * t,
-                                     int64_t time,
-                                     int64_t * last_time)
-  {
-  if(*last_time != GAVL_TIME_UNDEFINED)
-    gavl_frame_table_append_entry(t, time - *last_time);
-  *last_time = time;
-  }
 
-/* Create frame table from file index */
-
-static gavl_frame_table_t * create_frame_table_fi(bgav_stream_t * s)
-  {
-  gavl_frame_table_t * ret;
-  int i;
-  int last_non_b_index = -1;
-  bgav_file_index_t * fi = s->file_index;
-  
-  int64_t last_time = GAVL_TIME_UNDEFINED;
-  
-  ret = gavl_frame_table_create();
-  ret->offset = s->stats.pts_start;
-  
-  for(i = 0; i < fi->num_entries; i++)
-    {
-    if((fi->entries[i].flags & 0xff) == BGAV_CODING_TYPE_B)
-      {
-      frame_table_append_frame(ret,
-                               fi->entries[i].pts,
-                               &last_time);
-      }
-    else
-      {
-      if(last_non_b_index >= 0)
-        frame_table_append_frame(ret,
-                                 fi->entries[last_non_b_index].pts,
-                                 &last_time);
-      last_non_b_index = i;
-      }
-    }
-
-  /* Flush last non B-frame */
-  
-  if(last_non_b_index >= 0)
-    {
-    frame_table_append_frame(ret,
-                             fi->entries[last_non_b_index].pts,
-                             &last_time);
-    }
-
-  /* Flush last frame */
-  gavl_frame_table_append_entry(ret, s->stats.pts_end - last_time);
-
-  for(i = 0; i < fi->tt.num_entries; i++)
-    {
-    gavl_frame_table_append_timecode(ret,
-                                     fi->tt.entries[i].pts,
-                                     fi->tt.entries[i].timecode);
-    }
-  
-  return ret;
-  }
 
 /* Create frame table from superindex */
 
@@ -887,11 +741,7 @@ gavl_frame_table_t * bgav_get_frame_table(bgav_t * bgav, int stream)
   bgav_stream_t * s;
   s = bgav_track_get_video_stream(bgav->tt->cur, stream);
 
-  if(s->file_index)
-    {
-    return create_frame_table_fi(s);
-    }
-  else if(bgav->demuxer->si)
+  if(bgav->demuxer->si)
     {
     return create_frame_table_si(s, bgav->demuxer->si);
     }
@@ -967,10 +817,6 @@ int bgav_set_video_compression_info(bgav_stream_t * s)
     }
   
   s->ci->id = id;
-
-  /* Create the filtered extradata */
-  //  if((s->flags & STREAM_FILTER_PACKETS) && !s->bsf)
-  //    bsf = bgav_bsf_create(s);
   
   if((s->ci->codec_header.len) && (bgav_video_is_divx4(s->fourcc)))
     {
@@ -1006,22 +852,6 @@ int bgav_read_video_packet(bgav_t * bgav, int stream, gavl_packet_t * p)
   {
   bgav_stream_t * s = bgav_track_get_video_stream(bgav->tt->cur, stream);
   return (gavl_packet_source_read_packet(s->psrc, &p) == GAVL_SOURCE_OK);
-#if 0
-  bgav_packet_t * bp;
-  
-  bp = bgav_stream_get_packet_read(s);
-  if(!bp)
-    return 0;
-  
-  gavl_packet_alloc(p, bp->data_size);
-  memcpy(p->data, bp->data, bp->data_size);
-  p->data_len = bp->data_size;
-
-  bgav_packet_2_gavl(bp, p);
-
-  bgav_stream_done_packet_read(s, bp);
-#endif
-  return 1;
   }
 
 /* Set frame metadata from packet */

@@ -85,7 +85,7 @@ static int probe_matroska(bgav_input_context_t * input)
      (header[3] != 0xa3)) // No EBML signature
     return 0; 
 
-  input_mem = bgav_input_open_memory(header, 64, input->opt);
+  input_mem = bgav_input_open_memory(header, 64);
 
   if(!bgav_mkv_ebml_header_read(input_mem, &h))
     return 0;
@@ -190,8 +190,8 @@ static void init_vfw(bgav_stream_t * s)
   
   if(bgav_video_is_divx4(s->fourcc))
     {
-    s->flags |= STREAM_PARSE_FRAME;
     s->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
+    bgav_stream_set_parse_frame(s);
     }
   }
 
@@ -204,12 +204,17 @@ static void init_mpeg(bgav_stream_t * s)
   {
   bgav_mkv_track_t * track = s->priv;
 
-  s->flags |= STREAM_NEED_FRAMETYPES;
+  //  s->flags |= STREAM_NEED_FRAMETYPES;
   s->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
   if(track->CodecPrivateLen)
     bgav_stream_set_extradata(s,
                               track->CodecPrivate,
                               track->CodecPrivateLen);
+  }
+
+static void init_vpx(bgav_stream_t * s)
+  {
+  bgav_stream_set_parse_frame(s);
   }
 
 static const codec_info_t video_codecs[] =
@@ -225,8 +230,8 @@ static const codec_info_t video_codecs[] =
     { "V_REAL/RV20",      BGAV_MK_FOURCC('R','V','2','0'), NULL,     0 },
     { "V_REAL/RV30",      BGAV_MK_FOURCC('R','V','3','0'), NULL,     0 },
     { "V_REAL/RV40",      BGAV_MK_FOURCC('R','V','4','0'), NULL,     0 },
-    { "V_VP8",            BGAV_MK_FOURCC('V','P','8','0'), NULL,     0 },
-    { "V_VP9",            BGAV_MK_FOURCC('V','P','9','0'), NULL,     0 },
+    { "V_VP8",            BGAV_MK_FOURCC('V','P','8','0'), init_vpx, 0 },
+    { "V_VP9",            BGAV_MK_FOURCC('V','P','9','0'), init_vpx, 0 },
     { "V_THEORA",         BGAV_MK_FOURCC('T','H','R','A'), init_theora, 0 },
     { "V_MPEG4/ISO/AVC",  BGAV_MK_FOURCC('a','v','c','1'), init_mpeg, 0 },
     { "V_MPEGH/ISO/HEVC", BGAV_MK_FOURCC('h','e','v','1'), init_mpeg, 0 },
@@ -249,8 +254,8 @@ static void init_vorbis(bgav_stream_t * s)
   {
   setup_ogg_extradata(s);
   s->fourcc = BGAV_MK_FOURCC('V','B','I','S');
-  s->flags |= STREAM_PARSE_FRAME;
   s->index_mode = INDEX_MODE_SIMPLE;
+  bgav_stream_set_parse_frame(s);
   }
 
 static void init_opus(bgav_stream_t * s)
@@ -263,8 +268,8 @@ static void init_opus(bgav_stream_t * s)
   
   setup_ogg_extradata(s);
   s->fourcc = BGAV_MK_FOURCC('O', 'P', 'U', 'S');
-  s->flags |= STREAM_PARSE_FRAME;
   s->index_mode = INDEX_MODE_SIMPLE;
+  bgav_stream_set_parse_frame(s);
   }
 
 /* AAC Initialization inspired by ffmpeg (matroskadec.c) */
@@ -362,22 +367,21 @@ static void init_mpa(bgav_stream_t * s)
     p->frame_samples /= 2;
 
   /* Need bitrate */
-  s->flags |= STREAM_PARSE_FULL;
-  
+  bgav_stream_set_parse_full(s);
   }
 
 static void init_ac3(bgav_stream_t * s)
   {
   bgav_mkv_track_t * p = s->priv;
   p->frame_samples = 1536;
-  s->flags |= STREAM_PARSE_FRAME; // Detect bitrate
+  bgav_stream_set_parse_frame(s);
   }
 
 static void init_dts(bgav_stream_t * s)
   {
   // bgav_mkv_track_t * p = s->priv;
-  s->flags |= STREAM_PARSE_FRAME;
   s->index_mode = INDEX_MODE_SIMPLE;
+  bgav_stream_set_parse_frame(s);
   }
 
 
@@ -405,9 +409,6 @@ static void init_stream_common(mkv_t * m,
   s->priv = track;
   s->stream_id = track->TrackNumber;
   s->timescale = 1000000000 / m->segment_info.TimecodeScale;
-
-  s->stats.pts_start = GAVL_TIME_UNDEFINED;
-  s->flags |= STREAM_NEED_START_PTS;
 
   if(set_lang)
     {
@@ -566,8 +567,7 @@ static int init_subtitle(bgav_demuxer_context_t * ctx,
     gavl_buffer_init(&buf);
     
     input_mem =
-      bgav_input_open_memory(track->CodecPrivate, track->CodecPrivateLen,
-                             ctx->opt);
+      bgav_input_open_memory(track->CodecPrivate, track->CodecPrivateLen);
     
     /* Get the palette from the codec data */
     while(bgav_input_read_line(input_mem, &buf))
@@ -702,7 +702,7 @@ static int open_matroska(bgav_demuxer_context_t * ctx)
   int buf_len;
   int head_len;
   
-  input_mem = bgav_input_open_memory(NULL, 0, ctx->opt);
+  input_mem = bgav_input_open_memory(NULL, 0);
     
   p = calloc(1, sizeof(*p));
   ctx->priv = p;
@@ -791,8 +791,7 @@ static int open_matroska(bgav_demuxer_context_t * ctx)
         break;
       case MKV_ID_Cluster:
         done = 1;
-        ctx->data_start = pos;
-        ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+        ctx->tt->cur->data_start = pos;
         break;
       case MKV_ID_Chapters:
         bgav_input_skip(ctx->input, head_len);
@@ -1035,33 +1034,18 @@ static void setup_packet(mkv_t * m, bgav_stream_t * s,
   
   p->position = m->cluster_pos;
   t = s->priv;
-  if(t->frame_samples)
+
+  p->pes_pts = pts;
+  
+  if(t->frame_samples && !(s->flags & STREAM_PARSE_FRAME))
     {
-    if(m->do_sync && !STREAM_HAS_SYNC(s))
-      {
-      p->pts =
-        gavl_time_rescale(m->segment_info.TimecodeScale/1000,
-                          s->data.audio.format->samplerate,
-                          pts);
-      STREAM_SET_SYNC(s, p->pts);
-      t->pts = p->pts + t->frame_samples;
-      }
-    else
-      {
-      p->pts = t->pts;
-      t->pts += t->frame_samples;
-      }
-    /* Set the duration but only if there is no parser */
-    if(!(s->flags & STREAM_PARSE_FRAME))
-      p->duration = t->frame_samples;
+    p->duration = t->frame_samples;
     }
   else if(!index)
     {
     //    if(s->type == GAVF_STREAM_VIDEO)
     //      fprintf(stderr, "Video PTS: %"PRId64"\n", pts);
     p->pts = pts;
-    if(m->do_sync && !STREAM_HAS_SYNC(s))
-      STREAM_SET_SYNC(s, p->pts);
     if(keyframe)
       PACKET_SET_KEYFRAME(p);
     }
@@ -1401,13 +1385,6 @@ seek_matroska(bgav_demuxer_context_t * ctx, int64_t time, int scale)
   priv->do_sync = 0;
   }
 
-static void resync_matroska(bgav_demuxer_context_t * ctx,
-                            bgav_stream_t * s)
-  {
-  bgav_mkv_track_t * t;
-  t = s->priv;
-  t->pts = STREAM_GET_SYNC(s);
-  }
 
 const bgav_demuxer_t bgav_demuxer_matroska =
   {
@@ -1416,7 +1393,6 @@ const bgav_demuxer_t bgav_demuxer_matroska =
     // .select_track = select_track_matroska,
     .next_packet = next_packet_matroska,
     .seek =        seek_matroska,
-    .resync  =     resync_matroska,
     .close =       close_matroska
   };
 

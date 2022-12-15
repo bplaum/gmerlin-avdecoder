@@ -127,8 +127,7 @@ static int read_sequence_header_advanced(bgav_bitstream_t * b,
   }
 
 
-int bgav_vc1_sequence_header_read(const bgav_options_t * opt,
-                                  bgav_vc1_sequence_header_t * ret,
+int bgav_vc1_sequence_header_read(bgav_vc1_sequence_header_t * ret,
                                   const uint8_t * buffer, int len)
   {
   bgav_bitstream_t b;
@@ -200,8 +199,7 @@ void bgav_vc1_sequence_header_dump(const bgav_vc1_sequence_header_t * h)
     }
   }
 
-int bgav_vc1_picture_header_adv_read(const bgav_options_t * opt,
-                                     bgav_vc1_picture_header_adv_t * ret,
+int bgav_vc1_picture_header_adv_read(bgav_vc1_picture_header_adv_t * ret,
                                      const uint8_t * buffer, int len,
                                      const bgav_vc1_sequence_header_t * seq)
   {

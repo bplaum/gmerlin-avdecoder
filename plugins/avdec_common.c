@@ -79,11 +79,11 @@ static int handle_cmd(void * data, gavl_msg_t * msg)
 //          bg_msg_hub_t * hub;
           int64_t time = gavl_msg_get_arg_long(msg, 0);
           int scale = gavl_msg_get_arg_int(msg, 1);
-
+          
+          fprintf(stderr, "GAVL_CMD_SRC_SEEK\n");
+          
           /* Seek */
           bgav_seek_scaled(avdec->dec, &time, scale);
-
-          
           }
           break;
         }

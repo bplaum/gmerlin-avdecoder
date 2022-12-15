@@ -70,7 +70,7 @@ bgav_id3v1_tag_t * bgav_id3v1_read(bgav_input_context_t * input)
   if(bgav_input_read_data(input, (uint8_t*)buffer, 128) < 128)
     return NULL;
 
-  cnv = bgav_charset_converter_create(input->opt, "ISO-8859-1", BGAV_UTF8);
+  cnv = bgav_charset_converter_create("ISO-8859-1", BGAV_UTF8);
   
   ret = calloc(1, sizeof(*ret));
   

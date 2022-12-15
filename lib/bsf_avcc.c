@@ -26,7 +26,7 @@
 #include <config.h>
 #include <avdec_private.h>
 #include <bsf.h>
-#include <bsf_private.h>
+// #include <bsf_private.h>
 #include <h264_header.h>
 
 static const uint8_t nal_header[4] = { 0x00, 0x00, 0x00, 0x01 };
@@ -34,6 +34,7 @@ static const uint8_t nal_header[4] = { 0x00, 0x00, 0x00, 0x01 };
 typedef struct
   {
   int nal_size_length;
+  int have_header;
   } avcc_t;
 
 static void append_data(bgav_packet_t * p, uint8_t * data, int len,
@@ -42,22 +43,19 @@ static void append_data(bgav_packet_t * p, uint8_t * data, int len,
   switch(header_len)
     {
     case 3:
-      bgav_packet_alloc(p, p->buf.len + 3 + len);
-      memcpy(p->buf.buf + p->buf.len, &nal_header[1], 3);
-      p->buf.len += 3;
+      gavl_buffer_append_data(&p->buf, &nal_header[1], 3);
       break;
     case 4:
-      bgav_packet_alloc(p, p->buf.len + 4 + len);
-      memcpy(p->buf.buf + p->buf.len, nal_header, 4);
-      p->buf.len += 4;
+      gavl_buffer_append_data(&p->buf, nal_header, 4);
       break;
     }
-  memcpy(p->buf.buf + p->buf.len, data, len);
-  p->buf.len += len;
+  
+  gavl_buffer_append_data_pad(&p->buf, data, len, GAVL_PACKET_PADDING);
   }
 
+
 static void
-filter_avcc(bgav_bsf_t* bsf, bgav_packet_t * in, bgav_packet_t * out)
+filter_avcc(bgav_packet_filter_t* bsf, bgav_packet_t * in, bgav_packet_t * out)
   {
   uint8_t * ptr, *end;
   int len = 0;
@@ -101,37 +99,44 @@ filter_avcc(bgav_bsf_t* bsf, bgav_packet_t * in, bgav_packet_t * out)
   }
 
 static void
-cleanup_avcc(bgav_bsf_t * bsf)
+cleanup_avcc(bgav_packet_filter_t * bsf)
   {
   free(bsf->priv);
   }
 
-static void append_extradata(bgav_bsf_t * bsf, uint8_t * data,
-                             int len)
+static void append_extradata(gavl_buffer_t * buf, uint8_t * data, int len)
   {
-  gavl_compression_info_append_global_header(&bsf->ci, nal_header, 4);
-  gavl_compression_info_append_global_header(&bsf->ci, data, len);
+  gavl_buffer_append_data(buf, nal_header, 4);
+  gavl_buffer_append_data_pad(buf, data, len, GAVL_PACKET_PADDING);
   }
 
-int
-bgav_bsf_init_avcC(bgav_bsf_t * bsf)
+static void convert_header(bgav_packet_filter_t * f)
   {
   uint8_t * ptr;
-  avcc_t * priv;
   int num_units;
   int i;
   int len;
+
+  gavl_dictionary_t * s;
+  const gavl_dictionary_t * s_orig;
+
+  gavl_compression_info_t ci_orig;
+  gavl_compression_info_t ci;
+  avcc_t * priv = f->priv;
   
-  bsf->filter = filter_avcc;
-  bsf->cleanup = cleanup_avcc;
-  priv = calloc(1, sizeof(*priv));
-  bsf->priv = priv;
+  gavl_compression_info_init(&ci_orig);
+  gavl_compression_info_init(&ci);
   
-  memcpy(&bsf->ci, bsf->s->ci, sizeof(bsf->ci));
-  gavl_buffer_init(&bsf->ci.codec_header);
-  
+  s      = gavl_packet_source_get_stream_nc(f->src);
+  s_orig = gavl_packet_source_get_stream(f->prev);
+                                   
+  gavl_stream_get_compression_info(s, &ci);
+  gavl_stream_get_compression_info(s_orig, &ci_orig);
+
+  gavl_buffer_reset(&ci.codec_header);
+
   /* Parse extradata */
-  ptr = bsf->s->ci->codec_header.buf;
+  ptr = ci_orig.codec_header.buf;
   
   ptr += 4; // Version, profile, profile compat, level
   priv->nal_size_length = (*ptr & 0x3) + 1;
@@ -142,7 +147,7 @@ bgav_bsf_init_avcC(bgav_bsf_t * bsf)
   for(i = 0; i < num_units; i++)
     {
     len = GAVL_PTR_2_16BE(ptr); ptr += 2;
-    append_extradata(bsf, ptr, len);
+    append_extradata(&ci.codec_header, ptr, len);
     ptr += len;
     }
 
@@ -151,9 +156,60 @@ bgav_bsf_init_avcC(bgav_bsf_t * bsf)
   for(i = 0; i < num_units; i++)
     {
     len = GAVL_PTR_2_16BE(ptr); ptr += 2;
-    append_extradata(bsf, ptr, len);
+    append_extradata(&ci.codec_header, ptr, len);
     ptr += len;
     }
-  bsf->ci.id = GAVL_CODEC_ID_H264;
+
+  ci.id = GAVL_CODEC_ID_H264;
+  
+  gavl_stream_set_compression_info(s, &ci);
+  gavl_compression_info_free(&ci);
+  gavl_compression_info_free(&ci_orig);
+  }
+
+
+static gavl_source_status_t source_func_avcc(void * priv, gavl_packet_t ** p)
+  {
+  avcc_t * avcc;
+  bgav_packet_filter_t * bsf;
+  gavl_packet_t * in_pkt = NULL;
+
+  gavl_source_status_t st;
+
+  bsf = priv;
+
+  avcc = bsf->priv;
+
+  if(!avcc->have_header)
+    {
+    convert_header(bsf);
+    avcc->have_header = 1;
+    }
+  
+  if((st = gavl_packet_source_read_packet(bsf->prev, &in_pkt)) != GAVL_SOURCE_OK)
+    return st;
+
+  filter_avcc(bsf, in_pkt, *p);
+
+  (*p)->flags      = in_pkt->flags;
+  (*p)->pts        = in_pkt->pts;
+  (*p)->duration   = in_pkt->duration;
+  
+  return st;
+  }
+
+
+int
+bgav_packet_filter_init_avcC(bgav_packet_filter_t * bsf)
+  {
+  avcc_t * priv;
+  
+  //  bsf->filter = filter_avcc;
+  
+  bsf->cleanup = cleanup_avcc;
+  bsf->source_func = source_func_avcc;
+  
+  priv = calloc(1, sizeof(*priv));
+  bsf->priv = priv;
   return 1;
   }

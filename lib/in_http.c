@@ -200,7 +200,7 @@ static int open_http(bgav_input_context_t * ctx, const char * url1, char ** r)
   gavl_dictionary_t extra_header;
   gavl_dictionary_init(&extra_header);
 
-  ctx->url = gavl_strdup(url1);
+  ctx->location = gavl_strdup(url1);
   
   //  url = gavl_strdup(url1);
   
@@ -209,7 +209,7 @@ static int open_http(bgav_input_context_t * ctx, const char * url1, char ** r)
 
   //  url = gavl_url_extract_http_vars(url, &extra_header);
 
-  create_header(&extra_header, ctx->opt);
+  create_header(&extra_header, &ctx->opt);
   
   // p->h = bgav_http_open(url, ctx->opt, r, &extra_header);
   p->io = gavl_http_client_create();
@@ -236,8 +236,7 @@ static int open_http(bgav_input_context_t * ctx, const char * url1, char ** r)
     p->icy_metaint = atoi(var);
     /* Then, we'll also need a charset converter */
 
-    p->charset_cnv = bgav_charset_converter_create(ctx->opt,
-                                                   "ISO-8859-1",
+    p->charset_cnv = bgav_charset_converter_create("ISO-8859-1",
                                                    BGAV_UTF8);
     }
 

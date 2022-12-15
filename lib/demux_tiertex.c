@@ -97,7 +97,6 @@ typedef struct
 static int probe_tiertex(bgav_input_context_t * input)
   {
   int i;
-  const char * pos;
   uint8_t test_data[256];
 
   /* These files have no definite signature, so we test them
@@ -111,15 +110,9 @@ static int probe_tiertex(bgav_input_context_t * input)
   if(!input->total_bytes || (input->total_bytes % SEQ_FRAME_SIZE))
     return 0;
 
-  if(!input->filename)
+  if(!input->location || gavl_string_ends_with_i(input->location, ".seq"))
     return 0;
-
-  pos = strrchr(input->filename, '.');
-  if(!pos)
-    return 0;
-  if(strcasecmp(pos, ".seq"))
-    return 0;
-
+  
   if(bgav_input_get_data(input, test_data, 256) < 256)
     return 0;
 
@@ -184,9 +177,7 @@ static int open_tiertex(bgav_demuxer_context_t * ctx)
 
   bgav_track_set_format(ctx->tt->cur, "Tiertex SEQ", NULL);
   
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
-  
+  ctx->tt->cur->data_start = ctx->input->position;
   return 1;
   }
 

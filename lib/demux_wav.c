@@ -143,20 +143,20 @@ static int open_wav(bgav_demuxer_context_t * ctx)
 
   if(s->stats.total_bytes < 0)
     goto fail;
-  ctx->data_start = ctx->input->position;
+  ctx->tt->cur->data_start = ctx->input->position;
 
   /* If we don't have an INFO chunk yet, it could come after the data chunk */
 
   if(!priv->info &&
      (ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE) &&
-     (ctx->input->total_bytes - 12 > ctx->data_start + s->stats.total_bytes))
+     (ctx->input->total_bytes - 12 > ctx->tt->cur->data_start + s->stats.total_bytes))
     {
-    bgav_input_seek(ctx->input, ctx->data_start + s->stats.total_bytes, SEEK_SET);
+    bgav_input_seek(ctx->input, ctx->tt->cur->data_start + s->stats.total_bytes, SEEK_SET);
     if(bgav_RIFFINFO_probe(ctx->input))
       {
       priv->info = bgav_RIFFINFO_read(ctx->input);
       }
-    bgav_input_seek(ctx->input, ctx->data_start, SEEK_SET);
+    bgav_input_seek(ctx->input, ctx->tt->cur->data_start, SEEK_SET);
     }
 
   /* Convert info to metadata */
@@ -192,8 +192,6 @@ static int open_wav(bgav_demuxer_context_t * ctx)
                             ((int64_t)s->stats.total_bytes * (int64_t)GAVL_TIME_SCALE) / 
                             (s->codec_bitrate / 8));
   
-  bgav_demuxer_init_cue(ctx);
-  
   return 1;
   
   fail:
@@ -216,9 +214,9 @@ static gavl_source_status_t next_packet_wav(bgav_demuxer_context_t * ctx)
 
   bytes_to_read = priv->packet_size;
   if(ctx->input->position + bytes_to_read >=
-     ctx->data_start + s->stats.total_bytes)
+     ctx->tt->cur->data_start + s->stats.total_bytes)
     {
-    bytes_to_read = ctx->data_start + s->stats.total_bytes -
+    bytes_to_read = ctx->tt->cur->data_start + s->stats.total_bytes -
       ctx->input->position;
     }
   
@@ -228,7 +226,7 @@ static gavl_source_status_t next_packet_wav(bgav_demuxer_context_t * ctx)
   p = bgav_stream_get_packet_write(s);
   
   p->pts =
-    ((ctx->input->position - ctx->data_start) * s->data.audio.format->samplerate) /
+    ((ctx->input->position - ctx->tt->cur->data_start) * s->data.audio.format->samplerate) /
     (s->codec_bitrate / 8);
   
   bgav_packet_alloc(p, priv->packet_size);
@@ -268,7 +266,7 @@ static void seek_wav(bgav_demuxer_context_t * ctx, int64_t time, int scale)
   STREAM_SET_SYNC(s, ((int64_t)file_position * s->data.audio.format->samplerate) /
     (s->codec_bitrate / 8));
   
-  file_position += ctx->data_start;
+  file_position += ctx->tt->cur->data_start;
   bgav_input_seek(ctx->input, file_position, SEEK_SET);
   }
 

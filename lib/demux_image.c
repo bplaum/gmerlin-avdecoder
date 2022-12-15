@@ -174,10 +174,6 @@ static gavl_source_status_t next_packet_image(bgav_demuxer_context_t * ctx)
   return GAVL_SOURCE_OK;
   }
 
-static void resync_image(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
-  {
-  }
-
 static void close_image(bgav_demuxer_context_t * ctx)
   {
   }
@@ -187,6 +183,5 @@ const bgav_demuxer_t bgav_demuxer_image =
     .probe        = probe_image,
     .open         = open_image,
     .next_packet = next_packet_image,
-    .resync      = resync_image,
     .close =       close_image
   };

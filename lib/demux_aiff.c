@@ -123,7 +123,7 @@ static int64_t pos_2_time(bgav_demuxer_context_t * ctx, int64_t pos)
   s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
   priv = ctx->priv;
   
-  return ((pos - ctx->data_start)/s->data.audio.block_align) *
+  return ((pos - ctx->tt->cur->data_start)/s->data.audio.block_align) *
     priv->samples_per_block;
   }
 
@@ -135,7 +135,7 @@ static int64_t time_2_pos(bgav_demuxer_context_t * ctx, int64_t time)
   priv = ctx->priv;
   s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
   
-  return ctx->data_start + (time/priv->samples_per_block)
+  return ctx->tt->cur->data_start + (time/priv->samples_per_block)
     * s->data.audio.block_align;
   }
 
@@ -375,10 +375,9 @@ static int open_aiff(bgav_demuxer_context_t * ctx)
       case BGAV_MK_FOURCC('S','S','N','D'):
         bgav_input_skip(ctx->input, 4); /* Offset */
         bgav_input_skip(ctx->input, 4); /* Blocksize */
-        ctx->data_start = ctx->input->position;
-        ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+        ctx->tt->cur->data_start = ctx->input->position;
         priv->data_size = ch.size - 8;
-        s->stats.pts_end = pos_2_time(ctx, priv->data_size + ctx->data_start);
+        s->stats.pts_end = pos_2_time(ctx, priv->data_size + ctx->tt->cur->data_start);
         keep_going = 0;
         break;
       default:
@@ -418,10 +417,11 @@ static gavl_source_status_t next_packet_aiff(bgav_demuxer_context_t * ctx)
   
   bgav_packet_alloc(p, bytes_to_read);
   
-  p->pts = pos_2_time(ctx, ctx->input->position);
-  
   bytes_read = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
+  
   p->buf.len = bytes_read;
+  p->duration = p->buf.len / s->data.audio.block_align;
+  
   PACKET_SET_KEYFRAME(p);
   bgav_stream_done_packet_write(s, p);
 

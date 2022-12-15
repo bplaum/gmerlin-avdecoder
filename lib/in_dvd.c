@@ -303,6 +303,9 @@ static int setup_track(bgav_input_context_t * ctx,
   int cell_offset;
   gavl_dictionary_t * cl;
   gavl_time_t duration = 0;
+
+  gavl_video_format_t vfmt_save;
+  memset(&vfmt_save, 0, sizeof(vfmt_save));
   
   ttsrpt = dvd->vmg_ifo->tt_srpt;
   
@@ -311,7 +314,7 @@ static int setup_track(bgav_input_context_t * ctx,
 
   //  fprintf(stderr, "TITLE SET NR: %d\n", ttsrpt->title[title].title_set_nr); 
  
-  if(!open_vts(ctx->opt, dvd, ttsrpt->title[title].title_set_nr, 0))
+  if(!open_vts(&ctx->opt, dvd, ttsrpt->title[title].title_set_nr, 0))
     return 0;
  
   new_track = bgav_track_table_append_track(ctx->tt);
@@ -422,11 +425,10 @@ static int setup_track(bgav_input_context_t * ctx,
   pgc_id = vts_ptt_srpt->title[ttn - 1].ptt[0].pgcn;
   pgc = dvd->vts_ifo->vts_pgcit->pgci_srp[pgc_id - 1].pgc;
   
-  s = bgav_track_add_video_stream(new_track, ctx->opt);
+  s = bgav_track_add_video_stream(new_track, &ctx->opt);
   s->fourcc = BGAV_MK_FOURCC('m', 'p', 'g', 'v');
   s->stream_id = 0xE0;
   s->timescale = 90000;
-  s->flags  |= STREAM_PARSE_FULL;
   video_attr = &dvd->vts_ifo->vtsi_mat->vts_video_attr;
 
   video_height = 480;
@@ -454,6 +456,9 @@ static int setup_track(bgav_input_context_t * ctx,
                      video_attr->display_aspect_ratio,
                      &s->data.video.format->pixel_width,
                      &s->data.video.format->pixel_height);
+
+  gavl_video_format_copy(&vfmt_save, s->data.video.format);
+
 #if 0
   /* Check if we have a still image. This is a bit lousy for now,
      we just check for a nonzero still time at the start cell of
@@ -464,6 +469,8 @@ static int setup_track(bgav_input_context_t * ctx,
     gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Detected still cell");
     }
 #endif
+
+  bgav_stream_set_parse_full(s);
   
   /* Audio streams */
   for(i = 0; i < dvd->vts_ifo->vtsi_mat->nr_of_vts_audio_streams; i++)
@@ -473,7 +480,7 @@ static int setup_track(bgav_input_context_t * ctx,
 
     stream_position = (pgc->audio_control[i] & 0x7F00 ) >> 8;
     
-    s = bgav_track_add_audio_stream(new_track, ctx->opt);
+    s = bgav_track_add_audio_stream(new_track, &ctx->opt);
     s->timescale = 90000;
     
     audio_attr = &dvd->vts_ifo->vtsi_mat->vts_audio_attr[i];
@@ -485,13 +492,13 @@ static int setup_track(bgav_input_context_t * ctx,
         s->fourcc = BGAV_MK_FOURCC('.', 'a', 'c', '3');
         audio_codec = "AC3";
         s->stream_id = 0xbd80 + stream_position;
-        s->flags |= STREAM_PARSE_FULL;
+        bgav_stream_set_parse_full(s);
         break;
       case 2:
         //        printf("mpeg1 ");
         s->fourcc = BGAV_MK_FOURCC('.', 'm', 'p', '2');
         s->stream_id = 0xc0 + stream_position;
-        s->flags |= STREAM_PARSE_FULL;
+        bgav_stream_set_parse_full(s);
         audio_codec = "MPA";
         break;
       case 3:
@@ -499,19 +506,19 @@ static int setup_track(bgav_input_context_t * ctx,
         /* Unsupported */
         s->fourcc = BGAV_MK_FOURCC('m', 'p', 'a', 'e');
         audio_codec = "MPAext";
+        bgav_stream_set_parse_full(s);
         break;
       case 4:
         //        printf("lpcm ");
         s->fourcc = BGAV_MK_FOURCC('L', 'P', 'C', 'M');
         s->stream_id = 0xbda0 + stream_position;
         audio_codec = "LPCM";
-        
         break;
       case 6:
         //        printf("dts ");
         s->fourcc = BGAV_MK_FOURCC('d', 't', 's', ' ');
         s->stream_id = 0xbd88 + stream_position;
-        s->flags |= STREAM_PARSE_FULL;
+        bgav_stream_set_parse_full(s);
         audio_codec = "DTS";
         break;
       default:
@@ -567,7 +574,7 @@ static int setup_track(bgav_input_context_t * ctx,
     if(!(pgc->subp_control[i] & 0x80000000))
       continue;
 
-    s = bgav_track_add_overlay_stream(new_track, ctx->opt);
+    s = bgav_track_add_overlay_stream(new_track, &ctx->opt);
     
     s->fourcc = BGAV_MK_FOURCC('D', 'V', 'D', 'S');
 
@@ -678,6 +685,11 @@ static int setup_track(bgav_input_context_t * ctx,
         break;
       }
 
+    gavl_video_format_copy(s->data.subtitle.video.format, &vfmt_save);
+    s->data.subtitle.video.format->frame_duration = 0;
+    s->data.subtitle.video.format->timescale = 0;
+    s->data.subtitle.video.format->pixelformat = GAVL_PIXELFORMAT_NONE;
+    
     //    s->data.subtitle.video_stream = bgav_track_get_video_stream(new_track, 0);
     }
   return 1;
@@ -869,7 +881,7 @@ read_nav(bgav_input_context_t * ctx, int sector, int *next)
   navRead_DSI(&dsi_pack, buf + DSI_START_BYTE);
   navRead_PCI(&pci_pack, buf + PCI_START_BYTE);
 
-
+#if 0
   if(d->last_vobu_end_pts != GAVL_TIME_UNDEFINED)
     {
     if(d->last_vobu_end_pts != pci_pack.pci_gi.vobu_s_ptm)
@@ -885,6 +897,7 @@ read_nav(bgav_input_context_t * ctx, int sector, int *next)
     ctx->demuxer->timestamp_offset = -((int64_t)pci_pack.pci_gi.vobu_s_ptm);
     }
   ctx->demuxer->flags |= BGAV_DEMUXER_HAS_TIMESTAMP_OFFSET;
+#endif
   
   d->last_vobu_end_pts = pci_pack.pci_gi.vobu_e_ptm;
     
@@ -1019,7 +1032,6 @@ static int select_track_dvd(bgav_input_context_t * ctx, int track)
   
   dvd = ctx->priv;
   dvd->last_vobu_end_pts = GAVL_TIME_UNDEFINED;
-  ctx->demuxer->flags &= ~BGAV_DEMUXER_HAS_TIMESTAMP_OFFSET;
   
   ttsrpt = dvd->vmg_ifo->tt_srpt;
   track_priv = ctx->tt->cur->priv;
@@ -1029,7 +1041,7 @@ static int select_track_dvd(bgav_input_context_t * ctx, int track)
   ttn = ttsrpt->title[track_priv->title].vts_ttn;
 
   /* Open VTS */
-  if(!open_vts(ctx->opt, dvd, ttsrpt->title[track_priv->title].title_set_nr, 1))
+  if(!open_vts(&ctx->opt, dvd, ttsrpt->title[track_priv->title].title_set_nr, 1))
     {
     return 0;
     }
@@ -1068,7 +1080,7 @@ static void seek_time_dvd(bgav_input_context_t * ctx, int64_t t1, int scale)
   uint32_t next_vobu_offset;
   gavl_time_t time, diff_time, cell_start_time;
   dvd_t * dvd;
-  int64_t time_scaled;
+  //  int64_t time_scaled;
   gavl_time_t t;
   t = gavl_time_unscale(scale, t1);
   
@@ -1186,9 +1198,9 @@ static void seek_time_dvd(bgav_input_context_t * ctx, int64_t t1, int scale)
     }
   dvd->state = CELL_LOOP;
   
-  time_scaled = gavl_time_scale(90000, time);
+  //  time_scaled = gavl_time_scale(90000, time);
   
-  ctx->demuxer->timestamp_offset = time_scaled - (int64_t)pci_pack.pci_gi.vobu_s_ptm;
+  //  ctx->demuxer->timestamp_offset = time_scaled - (int64_t)pci_pack.pci_gi.vobu_s_ptm;
   dvd->last_vobu_end_pts = pci_pack.pci_gi.vobu_s_ptm;
   }
 

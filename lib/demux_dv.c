@@ -41,19 +41,13 @@ typedef struct
 
 static int probe_dv(bgav_input_context_t * input)
   {
-  char * pos;
   /* There seems to be no way to do proper probing of the stream.
      Therefore, we accept only local files with .dv as extension */
 
-  if(input->filename)
-    {
-    pos = strrchr(input->filename, '.');
-    if(!pos)
-      return 0;
-    if(!strcasecmp(pos, ".dv"))
-      return 1;
-    }
-  return 0;
+  if(input->location && gavl_string_ends_with(input->location, ".dv"))
+    return 1;
+  else
+    return 0;
   }
 
 static int open_dv(bgav_demuxer_context_t * ctx)
@@ -94,7 +88,6 @@ static int open_dv(bgav_demuxer_context_t * ctx)
   bgav_dv_dec_init_video(priv->d, vs);
   vs->stream_id = VIDEO_ID;
   vs->ci->flags &= ~GAVL_COMPRESSION_HAS_B_FRAMES;
-  vs->ci->max_packet_size = priv->frame_size;
   
   /* Set duration */
 
@@ -109,8 +102,7 @@ static int open_dv(bgav_demuxer_context_t * ctx)
   
   bgav_track_set_format(ctx->tt->cur, "DV", NULL);
   
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+  ctx->tt->cur->data_start = ctx->input->position;
   ctx->index_mode = INDEX_MODE_SIMPLE;
   
   return 1;
@@ -185,20 +177,9 @@ static void seek_dv(bgav_demuxer_context_t * ctx, int64_t time,
                                     as->data.audio.format->samplerate,
                                     t));
   
-  bgav_dv_dec_set_frame_counter(priv->d, frame_pos);
-  bgav_dv_dec_set_sample_counter(priv->d, STREAM_GET_SYNC(as));
   bgav_input_seek(ctx->input, file_position, SEEK_SET);
-  
   }
 
-static int select_track_dv(bgav_demuxer_context_t * ctx, int track)
-  {
-  dv_priv_t * priv;
-  priv = ctx->priv;
-  bgav_dv_dec_set_frame_counter(priv->d, 0);
-  bgav_dv_dec_set_sample_counter(priv->d, 0);
-  return 1;
-  }
 
 static void close_dv(bgav_demuxer_context_t * ctx)
   {
@@ -212,39 +193,12 @@ static void close_dv(bgav_demuxer_context_t * ctx)
   free(priv);
   }
 
-static void resync_dv(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
-  {
-  dv_priv_t * priv;
-  priv = ctx->priv;
-
-  switch(s->type)
-    {
-    case GAVL_STREAM_AUDIO:
-      bgav_dv_dec_set_sample_counter(priv->d, STREAM_GET_SYNC(s));
-      break;
-    case GAVL_STREAM_VIDEO:
-      bgav_dv_dec_set_frame_counter(priv->d,
-                                    STREAM_GET_SYNC(s) /
-                                    s->data.video.format->frame_duration);
-      break;
-    case GAVL_STREAM_OVERLAY:
-    case GAVL_STREAM_TEXT:
-    case GAVL_STREAM_NONE:
-    case GAVL_STREAM_MSG:
-      break;
-    }
-
-  
-  }
-
 
 const bgav_demuxer_t bgav_demuxer_dv =
   {
     .probe        = probe_dv,
     .open         = open_dv,
-    .select_track = select_track_dv,
-    .next_packet  =  next_packet_dv,
-    .resync       = resync_dv,
+    .next_packet  = next_packet_dv,
     .seek         = seek_dv,
     .close        = close_dv
   };

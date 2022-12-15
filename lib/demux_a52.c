@@ -81,11 +81,10 @@ static int open_a52(bgav_demuxer_context_t * ctx)
 
   s->fourcc = BGAV_MK_FOURCC('.', 'a', 'c', '3');
   
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+  ctx->tt->cur->data_start = ctx->input->position;
   
   if(ctx->input->total_bytes)
-    priv->data_size = ctx->input->total_bytes - ctx->data_start;
+    priv->data_size = ctx->input->total_bytes - ctx->tt->cur->data_start;
   
   /* Packet size will be at least 1024 bytes */
   
@@ -132,7 +131,6 @@ static gavl_source_status_t next_packet_a52(bgav_demuxer_context_t * ctx)
   if(!packet_size)
     return GAVL_SOURCE_EOF;
 
-  p->pts = FRAME_SAMPLES * s->in_position;
   p->duration = FRAME_SAMPLES;
   PACKET_SET_KEYFRAME(p);
   p->position = ctx->input->position;
@@ -168,13 +166,10 @@ static void seek_a52(bgav_demuxer_context_t * ctx, int64_t time, int scale)
     (s->container_bitrate / 8);
 
   STREAM_SET_SYNC(s, gavl_time_rescale(scale, priv->samplerate, t));
-
-  s->in_position = STREAM_GET_SYNC(s) / FRAME_SAMPLES;
   
-  file_position += ctx->data_start;
+  file_position += ctx->tt->cur->data_start;
   bgav_input_seek(ctx->input, file_position, SEEK_SET);
   }
-
 
 static void close_a52(bgav_demuxer_context_t * ctx)
   {

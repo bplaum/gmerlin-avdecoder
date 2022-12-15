@@ -26,7 +26,7 @@
 #include <config.h>
 #include <avdec_private.h>
 #include <bsf.h>
-#include <bsf_private.h>
+// #include <bsf_private.h>
 #include <adts_header.h>
 
 #include <libavcodec/avcodec.h>
@@ -36,6 +36,21 @@
 
 #define LOG_DOMAIN "bsf_adts"
 
+typedef struct
+  {
+  AVBSFContext * ctx;
+  AVPacket * in_pkt;
+  AVPacket * out_pkt;
+  
+  gavl_packet_t * in_pkt_g;
+  gavl_packet_t out_pkt_g;
+  int got_header;
+
+  int64_t pts;
+  
+  } adts_t;
+
+#if 0
 static void
 filter_adts(bgav_bsf_t* bsf, bgav_packet_t * in, bgav_packet_t * out)
   {
@@ -55,24 +70,121 @@ filter_adts(bgav_bsf_t* bsf, bgav_packet_t * in, bgav_packet_t * out)
   memcpy(out->buf.buf, in->buf.buf + header_len, in->buf.len - header_len);
   out->buf.len = in->buf.len - header_len;
   }
+#endif
 
 static void
-cleanup_adts(bgav_bsf_t * bsf)
+cleanup_adts(bgav_packet_filter_t * f)
   {
+  adts_t * adts = f->priv;
 
+  av_packet_free(&adts->in_pkt);
+  av_packet_free(&adts->out_pkt);
+  av_bsf_free(&adts->ctx);
+  free(adts);
+  }
+
+static void reset_adts(bgav_packet_filter_t * f)
+  {
+  adts_t * adts = f->priv;
+  av_bsf_flush(adts->ctx);	
+  }
+
+static gavl_source_status_t source_func_adts(void * priv, gavl_packet_t ** p)
+  {
+  gavl_source_status_t st;
+  int err;
+  adts_t * adts;
+  
+  bgav_packet_filter_t * f = priv;
+  
+  adts = f->priv;
+
+  while(1)
+    {
+    if(adts->out_pkt->size)
+      av_packet_unref(adts->out_pkt);
+    
+    err = av_bsf_receive_packet(adts->ctx, adts->out_pkt);
+    
+    if(!err)
+      break;
+    else if(err == AVERROR(EAGAIN))
+      {
+      /* Send packet */
+      adts->in_pkt_g = NULL;
+      
+      st = gavl_packet_source_read_packet(f->prev, &adts->in_pkt_g);
+
+      if(st != GAVL_SOURCE_OK)
+        return st;
+      
+      adts->in_pkt->data = adts->in_pkt_g->buf.buf;
+      adts->in_pkt->size = adts->in_pkt_g->buf.len;
+      av_bsf_send_packet(adts->ctx, adts->in_pkt);
+      
+      if(adts->pts == GAVL_TIME_UNDEFINED)
+        adts->pts = adts->in_pkt_g->pts;
+      }
+    else
+      {
+      return GAVL_SOURCE_EOF;
+      }
+    }
+
+  /* Extract extradata */
+  if(!adts->got_header)
+    {
+    gavl_dictionary_t * s;
+    const uint8_t * extradata;
+    int extradata_size = 0;
+    
+    s = gavl_packet_source_get_stream_nc(f->src);
+    
+    //    gavl_stream_set_compression_tag
+
+    if((extradata = av_packet_get_side_data(adts->out_pkt,
+                                            AV_PKT_DATA_NEW_EXTRADATA,
+                                            &extradata_size)))
+      {
+      gavl_compression_info_t ci;
+      gavl_compression_info_init(&ci);
+      
+      gavl_dprintf("Got extradata %d bytes\n", extradata_size);
+      gavl_hexdump(extradata, extradata_size, 16);
+      
+      gavl_stream_get_compression_info(s, &ci);
+      gavl_buffer_append_data_pad(&ci.codec_header, extradata, extradata_size, GAVL_PACKET_PADDING);
+      ci.id = GAVL_CODEC_ID_AAC;
+      gavl_stream_set_compression_info(s, &ci);
+      gavl_compression_info_free(&ci);
+      }
+    else
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Got no codec header");
+      return GAVL_SOURCE_EOF;
+      }
+    adts->got_header = 1;
+    }
+  
+  /* ffmpeg -> gavl */
+  adts->out_pkt_g.buf.buf = adts->out_pkt->data;
+  adts->out_pkt_g.buf.len = adts->out_pkt->size;
+
+  adts->out_pkt_g.pts      = adts->pts;
+  adts->out_pkt_g.duration = 1024;
+  adts->pts += adts->out_pkt_g.duration;
+  
+  *p = &adts->out_pkt_g;
+  return GAVL_SOURCE_OK;
   }
 
 int
-bgav_bsf_init_adts(bgav_bsf_t * bsf)
+bgav_packet_filter_init_adts(bgav_packet_filter_t * bsf)
   {
   int ret = 0;
-  bgav_packet_t * p = NULL;
-  AVBSFContext * ctx;
-  const uint8_t * extradata;
-  int extradata_size = 0;
-  AVPacket pkt;
-  
   const AVBitStreamFilter *filter;
+
+  adts_t * priv;
   
   if(!(filter = av_bsf_get_by_name("aac_adtstoasc")))
     {
@@ -80,70 +192,40 @@ bgav_bsf_init_adts(bgav_bsf_t * bsf)
              "Bitstream filter aac_adtstoasc not found");
     goto fail;
     }
-    
-  av_bsf_alloc(filter, &ctx);
+
+  priv = calloc(1, sizeof(*priv));
+
+  bsf->priv = priv;
+  av_bsf_alloc(filter, &priv->ctx);
   
+  priv->in_pkt = av_packet_alloc();
+  priv->out_pkt = av_packet_alloc();
+  priv->pts = GAVL_TIME_UNDEFINED;
   /* Set codec parameters */
   //  ctx.
   
   /* Fire up a bitstream filter for getting the extradata.
      We'll do the rest by ourselfes */
   
-  ctx->par_in->codec_id = AV_CODEC_ID_AAC;
+  priv->ctx->par_in->codec_id = AV_CODEC_ID_AAC;
   //  ctx->par_in->
   
-  if(av_bsf_init(ctx))
+  if(av_bsf_init(priv->ctx))
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
              "av_bsf_init failed");
     goto fail;
     }
-  /* Get a first packet to obtain the extradata */
-
-  if(bsf->src.peek_func(bsf->src.data, &p, 1) != GAVL_SOURCE_OK)
-    goto fail;
-
-  /* Send packet to the filter. Afterward we should have the
-     extradata set */
-
-  av_init_packet(&pkt);
-
-  av_new_packet(&pkt, p->buf.len);
-  memcpy(pkt.data, p->buf.buf, p->buf.len);
   
-  av_bsf_send_packet(ctx, &pkt);
-
-  /* Receive packets */
-  while(1)
-    {
-    if(av_bsf_receive_packet(ctx, &pkt))
-      break;
-
-    if((extradata = av_packet_get_side_data(&pkt, AV_PKT_DATA_NEW_EXTRADATA,
-                                            &extradata_size)))
-      {
-      fprintf(stderr, "Got extradata %d bytes\n", extradata_size);
-      gavl_hexdump(extradata, extradata_size, 16);
-      break;
-      }
-    
-    }
-  
-  gavl_compression_info_set_global_header(&bsf->ci, extradata, extradata_size);
-  
-  //  fprintf(stderr, "
-  
-  //  bgav_packet_dump(p);
-  
-  
-  bsf->filter = filter_adts;
+  bsf->reset = reset_adts;
+  bsf->source_func = source_func_adts;
   bsf->cleanup = cleanup_adts;
+  bsf->src_flags = GAVL_SOURCE_SRC_ALLOC;
   
   ret = 1;
-  fail:
   
-  if(ctx)
-    av_bsf_free(&ctx);
+
+  fail:
   
   return ret;
   }

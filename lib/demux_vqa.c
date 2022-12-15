@@ -153,8 +153,7 @@ static int open_vqa(bgav_demuxer_context_t * ctx)
     return 0;
 
   input_mem =
-    bgav_input_open_memory(priv->header, VQA_HEADER_SIZE,
-                           ctx->opt);
+    bgav_input_open_memory(priv->header, VQA_HEADER_SIZE);
   read_file_header(input_mem, &h);
   bgav_input_close(input_mem);
   bgav_input_destroy(input_mem);
@@ -205,9 +204,7 @@ static int open_vqa(bgav_demuxer_context_t * ctx)
     s->data.audio.bits_per_sample = h.Bits;
     }
   
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
-  
+  ctx->tt->cur->data_start = ctx->input->position;
   bgav_track_set_format(ctx->tt->cur, "Westwood VQA", NULL);
   
   return 1;

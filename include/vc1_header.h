@@ -70,8 +70,7 @@ typedef struct
   
   } bgav_vc1_sequence_header_t;
 
-int bgav_vc1_sequence_header_read(const bgav_options_t * opt,
-                                  bgav_vc1_sequence_header_t * ret,
+int bgav_vc1_sequence_header_read(bgav_vc1_sequence_header_t * ret,
                                   const uint8_t * buffer, int len);
 
 void bgav_vc1_sequence_header_dump(const bgav_vc1_sequence_header_t * h);
@@ -82,8 +81,7 @@ typedef struct
   int coding_type;
   } bgav_vc1_picture_header_adv_t;
 
-int bgav_vc1_picture_header_adv_read(const bgav_options_t * opt,
-                                     bgav_vc1_picture_header_adv_t * ret,
+int bgav_vc1_picture_header_adv_read(bgav_vc1_picture_header_adv_t * ret,
                                      const uint8_t * buffer, int len,
                                      const bgav_vc1_sequence_header_t * seq);
 

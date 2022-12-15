@@ -25,7 +25,6 @@
 
 #include <avdec_private.h>
 #include <parser.h>
-#include <videoparser_priv.h>
 
 #include <mpeg4_header.h>
 #include <mpv_header.h>
@@ -54,51 +53,52 @@ typedef struct
 
   /* Save frames for packed B-frames */
 
-  bgav_packet_t * saved_packet;
+  gavl_packet_t saved_packet;
 
   int packed_b_frames;
 
   int set_pts;
   } mpeg4_priv_t;
 
-static void set_format(bgav_video_parser_t * parser)
+static void set_format(bgav_packet_parser_t * parser)
   {
   mpeg4_priv_t * priv = parser->priv;
   
-  if(parser->s->flags & STREAM_PARSE_FULL)
+  if(parser->stream_flags & STREAM_PARSE_FULL)
     {
-    parser->format->timescale = priv->vol.vop_time_increment_resolution;
-    parser->format->frame_duration = priv->vol.fixed_vop_time_increment;
+    parser->vfmt->timescale = priv->vol.vop_time_increment_resolution;
+    parser->vfmt->frame_duration = priv->vol.fixed_vop_time_increment;
     priv->set_pts = 1;
     }
 
-  if(!parser->format->image_width)
+  if(!parser->vfmt->image_width)
     {
-    parser->format->image_width  = priv->vol.video_object_layer_width;
-    parser->format->image_height = priv->vol.video_object_layer_height;
-    parser->format->frame_width  =
-      (parser->format->image_width + 15) & ~15;
-    parser->format->frame_height  =
-      (parser->format->image_height + 15) & ~15;
+    parser->vfmt->image_width  = priv->vol.video_object_layer_width;
+    parser->vfmt->image_height = priv->vol.video_object_layer_height;
+    parser->vfmt->frame_width  =
+      (parser->vfmt->image_width + 15) & ~15;
+    parser->vfmt->frame_height  =
+      (parser->vfmt->image_height + 15) & ~15;
   
     bgav_mpeg4_get_pixel_aspect(&priv->vol,
-                                &parser->format->pixel_width,
-                                &parser->format->pixel_height);
+                                &parser->vfmt->pixel_width,
+                                &parser->vfmt->pixel_height);
     }
   
   if(!priv->vol.low_delay)
-    parser->s->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
+    parser->ci.flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
   }
 
-static void reset_mpeg4(bgav_video_parser_t * parser)
+static void reset_mpeg4(bgav_packet_parser_t * parser)
   {
   mpeg4_priv_t * priv = parser->priv;
   priv->state = STATE_SYNC;
   priv->has_picture_start = 0;
-  priv->saved_packet->buf.len = 0;
+
+  gavl_packet_reset(&priv->saved_packet);
   }
 
-static int extract_user_data(bgav_video_parser_t * parser,
+static int extract_user_data(bgav_packet_parser_t * parser,
                              const uint8_t * data, const uint8_t * data_end)
   {
   int i;
@@ -145,36 +145,35 @@ static int extract_user_data(bgav_video_parser_t * parser,
     }
   if(is_vendor)
     {
-    int vendor_len = priv->user_data_size - priv->packed_b_frames;
-    char * vendor = malloc(vendor_len + 1);
-    memcpy(vendor, priv->user_data, vendor_len);
-    vendor[vendor_len] = '\0';
-    gavl_dictionary_set_string_nocopy(parser->s->m, GAVL_META_SOFTWARE,
-                            vendor);
+    char * vendor_end = priv->user_data + priv->user_data_size;
+    
+    if(priv->packed_b_frames)
+      vendor_end--;
+    gavl_dictionary_set_string_nocopy(parser->m, GAVL_META_SOFTWARE,
+                                      gavl_strndup((char*)priv->user_data, vendor_end));
     }
   
   return priv->user_data_size+4;
   }
 
-static int parse_header_mpeg4(bgav_video_parser_t * parser)
+static int parse_header_mpeg4(bgav_packet_parser_t * parser)
   {
   mpeg4_priv_t * priv = parser->priv;
-  const uint8_t * pos = parser->s->ci->codec_header.buf;
+  const uint8_t * pos = parser->ci.codec_header.buf;
   int len;
   while(1)
     {
-    pos = bgav_mpv_find_startcode(pos, parser->s->ci->codec_header.buf +
-                                  parser->s->ci->codec_header.len);
+    pos = bgav_mpv_find_startcode(pos, parser->ci.codec_header.buf +
+                                  parser->ci.codec_header.len);
     if(!pos)
       return priv->have_vol;
     
     switch(bgav_mpeg4_get_start_code(pos))
       {
       case MPEG4_CODE_VOL_START:
-        len = bgav_mpeg4_vol_header_read(parser->s->opt,
-                                         &priv->vol, pos,
-                                         parser->s->ci->codec_header.len -
-                                         (pos - parser->s->ci->codec_header.buf));
+        len = bgav_mpeg4_vol_header_read(&priv->vol, pos,
+                                         parser->ci.codec_header.len -
+                                         (pos - parser->ci.codec_header.buf));
         if(!len)
           return 0;
         priv->have_vol = 1;
@@ -186,8 +185,8 @@ static int parse_header_mpeg4(bgav_video_parser_t * parser)
         break;
       case MPEG4_CODE_USER_DATA:
         pos += extract_user_data(parser, pos,
-                                 parser->s->ci->codec_header.buf +
-                                 parser->s->ci->codec_header.len);
+                                 parser->ci.codec_header.buf +
+                                 parser->ci.codec_header.len);
         break;
       default:
         pos += 4;
@@ -197,25 +196,35 @@ static int parse_header_mpeg4(bgav_video_parser_t * parser)
   return 0;
   }
 
-static void set_header_end(bgav_video_parser_t * parser, bgav_packet_t * p,
+static void set_header_end(bgav_packet_parser_t * parser,
+                           bgav_packet_t * p,
                            int pos)
   {
   if(p->header_size)
     return;
   
-  if(!parser->s->ci->codec_header.len)
+  if(!parser->ci.codec_header.len)
     {
-    gavl_buffer_append_data(&parser->s->ci->codec_header,
+    gavl_buffer_append_data(&parser->ci.codec_header,
                             p->buf.buf, pos);
     }
   p->header_size = pos;
   }
 
+static void packet_swap_data(bgav_packet_t * p1, bgav_packet_t * p2)
+  {
+  gavl_buffer_t swp;
+
+  memcpy(&swp, &p1->buf, sizeof(swp));
+  memcpy(&p1->buf, &p2->buf, sizeof(swp));
+  memcpy(&p2->buf, &swp, sizeof(swp));
+  }
+
+
 #define SWAP(n1, n2) \
   swp = n1; n1 = n2; n2 = swp;
 
-static int parse_frame_mpeg4(bgav_video_parser_t * parser, bgav_packet_t * p,
-                            int64_t pts_orig)
+static int parse_frame_mpeg4(bgav_packet_parser_t * parser, bgav_packet_t * p)
   {
   mpeg4_priv_t * priv = parser->priv;
   const uint8_t * data;
@@ -228,7 +237,8 @@ static int parse_frame_mpeg4(bgav_video_parser_t * parser, bgav_packet_t * p,
   /* Skip weird packets with just one 0x7f byte */
   if((p->buf.len == 1) && (p->buf.buf[0] == 0x7f))
     {
-    p->flags |= GAVL_PACKET_NOOUTPUT; 
+    p->flags |= GAVL_PACKET_NOOUTPUT;
+    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got skip packet");
     return 1;
     }
   
@@ -252,8 +262,7 @@ static int parse_frame_mpeg4(bgav_video_parser_t * parser, bgav_packet_t * p,
       case MPEG4_CODE_VOL_START:
         if(!priv->have_vol)
           {
-          result = bgav_mpeg4_vol_header_read(parser->s->opt,
-                                              &priv->vol, data,
+          result = bgav_mpeg4_vol_header_read(&priv->vol, data,
                                               data_end - data);
           if(!result)
             return 0;
@@ -277,10 +286,9 @@ static int parse_frame_mpeg4(bgav_video_parser_t * parser, bgav_packet_t * p,
           }
 
         if(priv->set_pts)
-          p->duration = parser->format->frame_duration;
+          p->duration = parser->vfmt->frame_duration;
                 
-        result = bgav_mpeg4_vop_header_read(parser->s->opt,
-                                            &vh, data, data_end-data,
+        result = bgav_mpeg4_vop_header_read(&vh, data, data_end-data,
                                             &priv->vol);
         if(!result)
           return 0;
@@ -289,42 +297,43 @@ static int parse_frame_mpeg4(bgav_video_parser_t * parser, bgav_packet_t * p,
 #endif
 
         /* Check whether to copy a saved frame back */
-        if(priv->saved_packet->buf.len)
+        if(priv->saved_packet.buf.len)
           {
           if(!vh.vop_coded)
             {
             /* Copy stuff back, overwriting the packet */
-            bgav_packet_alloc(p, priv->saved_packet->buf.len);
-            memcpy(p->buf.buf, priv->saved_packet->buf.buf,
-                   priv->saved_packet->buf.len);
-            p->buf.len = priv->saved_packet->buf.len;
-            priv->saved_packet->buf.len = 0;
-            p->flags = priv->saved_packet->flags;
-            p->position = priv->saved_packet->position;
+            packet_swap_data(&priv->saved_packet, p);
+            p->flags = priv->saved_packet.flags;
+            p->position = priv->saved_packet.position;
+            gavl_packet_reset(&priv->saved_packet);
             }
           else
             {
             int64_t swp;
             /* Output saved frame but save this one */
-            bgav_packet_swap_data(priv->saved_packet, p);
-            p->flags = priv->saved_packet->flags;
-            SWAP(priv->saved_packet->position, p->position);
-            PACKET_SET_CODING_TYPE(priv->saved_packet, vh.coding_type);
+            packet_swap_data(&priv->saved_packet, p);
+            p->flags = priv->saved_packet.flags;
+            SWAP(priv->saved_packet.position, p->position);
+            PACKET_SET_CODING_TYPE(&priv->saved_packet, vh.coding_type);
+            
+            if(!vh.vop_coded)
+              priv->saved_packet.flags |= GAVL_PACKET_NOOUTPUT;
             }
           return 1;
           }
         /* save this frame for later use */
         else if(priv->packed_b_frames && (num_pictures == 1))
           {
-          bgav_packet_reset(priv->saved_packet);
-          priv->saved_packet->buf.len = data_end - data;
-          bgav_packet_alloc(priv->saved_packet,
-                            priv->saved_packet->buf.len);
-          memcpy(priv->saved_packet->buf.buf, data,
-                 priv->saved_packet->buf.len);
-          PACKET_SET_CODING_TYPE(priv->saved_packet, vh.coding_type);
-          priv->saved_packet->position = p->position;
-          p->buf.len -= priv->saved_packet->buf.len;
+          bgav_packet_reset(&priv->saved_packet);
+          gavl_buffer_append_data_pad(&priv->saved_packet.buf, data,
+                                      data_end - data, GAVL_PACKET_PADDING);
+          
+          PACKET_SET_CODING_TYPE(&priv->saved_packet, vh.coding_type);
+          if(!vh.vop_coded)
+            priv->saved_packet.flags |= GAVL_PACKET_NOOUTPUT;
+
+          priv->saved_packet.position = p->position;
+          p->buf.len -= priv->saved_packet.buf.len;
           num_pictures++;
           }
         else
@@ -360,7 +369,7 @@ static int parse_frame_mpeg4(bgav_video_parser_t * parser, bgav_packet_t * p,
   return 0;
   }
 
-static int find_frame_boundary_mpeg4(bgav_video_parser_t * parser, int * skip)
+static int find_frame_boundary_mpeg4(bgav_packet_parser_t * parser, int * skip)
   {
   mpeg4_priv_t * priv = parser->priv;
   int new_state;
@@ -372,13 +381,13 @@ static int find_frame_boundary_mpeg4(bgav_video_parser_t * parser, int * skip)
     // fprintf(stderr, "find startcode %d %d\n",
     // parser->pos, parser->buf.size - parser->pos - 4);
     
-    sc = bgav_mpv_find_startcode(parser->buf.buf + parser->pos,
+    sc = bgav_mpv_find_startcode(parser->buf.buf + parser->buf.pos,
                                  parser->buf.buf + parser->buf.len - 4);
     if(!sc)
       {
-      parser->pos = parser->buf.len - 4;
-      if(parser->pos < 0)
-        parser->pos = 0;
+      parser->buf.pos = parser->buf.len - 4;
+      if(parser->buf.pos < 0)
+        parser->buf.pos = 0;
       return 0;
       }
 
@@ -409,10 +418,10 @@ static int find_frame_boundary_mpeg4(bgav_video_parser_t * parser, int * skip)
       default:
         break;
       }
-    parser->pos = sc - parser->buf.buf;
+    parser->buf.pos = sc - parser->buf.buf;
 
     if(new_state < 0)
-      parser->pos += 4;
+      parser->buf.pos += 4;
     else if((new_state < priv->state) ||
             ((new_state == STATE_VOP) &&
              (priv->state == STATE_VOP)))
@@ -425,35 +434,33 @@ static int find_frame_boundary_mpeg4(bgav_video_parser_t * parser, int * skip)
     else
       {
       priv->state = new_state;
-      parser->pos += 4;
+      parser->buf.pos += 4;
       }
     }
   return 0;
   }
 
-static void cleanup_mpeg4(bgav_video_parser_t * parser)
+static void cleanup_mpeg4(bgav_packet_parser_t * parser)
   {
   mpeg4_priv_t * priv = parser->priv;
   if(priv->user_data)
     free(priv->user_data);
-  if(priv->saved_packet)
-    bgav_packet_destroy(priv->saved_packet);
+  gavl_packet_free(&priv->saved_packet);
   free(parser->priv);
   }
 
-
-void bgav_video_parser_init_mpeg4(bgav_video_parser_t * parser)
+void bgav_packet_parser_init_mpeg4(bgav_packet_parser_t * parser)
   {
   mpeg4_priv_t * priv;
   priv = calloc(1, sizeof(*priv));
   
   parser->priv = priv;
-  priv->saved_packet = bgav_packet_create();
-
   priv->state = STATE_SYNC;
   
-  if(parser->s->ci->codec_header.len)
+  if(parser->ci.codec_header.len)
     parse_header_mpeg4(parser);
+
+  gavl_packet_init(&priv->saved_packet);
   
   //  parser->parse = parse_mpeg4;
   parser->parse_frame = parse_frame_mpeg4;

@@ -139,14 +139,14 @@ static int open_p2xml(bgav_demuxer_context_t * ctx)
   int have_audio = 1;
   bgav_yml_node_t * yml;
   
-  if(!ctx->input || !ctx->input->filename)
+  if(!ctx->input || !ctx->input->location)
     goto fail;
 
   yml = bgav_input_get_yml(ctx->input);
   if(!yml)
     goto fail;
   
-  directory_parent = gavl_strdup(ctx->input->filename);
+  directory_parent = gavl_strdup(ctx->input->location);
   
   yml = bgav_yml_find_by_name(yml, "P2Main");
   

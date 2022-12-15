@@ -49,8 +49,6 @@ int main(int argc, char ** argv)
   fprintf(stderr, "\n");
   if(b->demuxer->si)
     bgav_superindex_dump(b->demuxer->si);
-  bgav_file_index_dump(b);
-
   bgav_close(b);
   return 0;
   }

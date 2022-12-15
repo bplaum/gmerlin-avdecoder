@@ -61,19 +61,18 @@ void bgav_flac_streaminfo_dump(bgav_flac_streaminfo_t * s)
   bgav_dprintf("  Total samples:   %" PRId64 "\n", s->total_samples);
   }
 
-void bgav_flac_streaminfo_init_stream(bgav_flac_streaminfo_t * si, bgav_stream_t * s)
+void bgav_flac_streaminfo_init_stream(bgav_flac_streaminfo_t * si, gavl_dictionary_t * s)
   {
-  gavl_audio_format_t * fmt = s->data.audio.format;
+  gavl_audio_format_t * fmt = gavl_stream_get_audio_format_nc(s);
   
   fmt->num_channels = si->num_channels;
   fmt->samplerate   = si->samplerate;
-  s->data.audio.bits_per_sample     = si->bits_per_sample;
-  
-  if(si->min_blocksize ==
-     si->max_blocksize)
-    fmt->samples_per_frame = si->min_blocksize;
-  s->fourcc = BGAV_MK_FOURCC('F', 'L', 'A', 'C');
 
+  gavl_stream_set_audio_bits(s, si->bits_per_sample);
+  
+  if(si->min_blocksize == si->max_blocksize)
+    fmt->samples_per_frame = si->max_blocksize;
+  
   switch(fmt->num_channels)
     {
     case 1:
@@ -110,8 +109,6 @@ void bgav_flac_streaminfo_init_stream(bgav_flac_streaminfo_t * si, bgav_stream_t
       fmt->channel_locations[5] = GAVL_CHID_REAR_RIGHT;
       break;
     }
-  if(si->total_samples)
-    s->stats.pts_end = si->total_samples;
   }
 
 #define ADVANCE(num) \

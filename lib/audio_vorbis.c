@@ -154,7 +154,7 @@ static gavl_source_status_t next_packet(bgav_stream_t * s)
       }
 
     
-    st = bgav_stream_peek_packet_read(s, NULL, 1);
+    st = bgav_stream_peek_packet_read(s, NULL);
 
     switch(st)
       {
@@ -588,7 +588,7 @@ static void resync_vorbis(bgav_stream_t * s)
     
     /* Synchronize output time to the next packet */
     p = NULL;
-    if((st = bgav_stream_peek_packet_read(s, &p, 1)) == GAVL_SOURCE_OK)
+    if((st = bgav_stream_peek_packet_read(s, &p)) == GAVL_SOURCE_OK)
       {
       s->out_time = p->pts;
       //      fprintf(stderr, "Vorbis resync PTS: %"PRId64"\n", p->pts);

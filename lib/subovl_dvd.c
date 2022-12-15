@@ -170,7 +170,7 @@ static gavl_source_status_t decode_dvdsub(bgav_stream_t * s, gavl_overlay_t * ov
 
   ifo_palette = (uint32_t*)(s->ci->codec_header.buf);
   
-  if((st = bgav_stream_peek_packet_read(s, &p, 0)) != GAVL_SOURCE_OK)
+  if((st = bgav_stream_peek_packet_read(s, &p)) != GAVL_SOURCE_OK)
     return st;
 
   bgav_stream_get_packet_read(s, &p);

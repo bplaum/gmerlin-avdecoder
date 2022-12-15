@@ -196,7 +196,7 @@ static int open_nuv(bgav_demuxer_context_t * ctx)
             return 0;
 
           if(as->fourcc == BGAV_MK_FOURCC('L','A','M','E'))
-            as->flags |= STREAM_PARSE_FULL;
+            bgav_stream_set_parse_full(as);
           
           if(!bgav_input_read_32_le(ctx->input, &tmp_32))
             return 0;
@@ -238,9 +238,7 @@ static int open_nuv(bgav_demuxer_context_t * ctx)
   else
     bgav_track_set_format(ctx->tt->cur, "NuppelVideo", NULL);
   
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
-  
+  ctx->tt->cur->data_start = ctx->input->position;
   return 1;
   }
 

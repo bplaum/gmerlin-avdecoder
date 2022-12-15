@@ -76,8 +76,7 @@ static int open_adif(bgav_demuxer_context_t * ctx)
 
   /* Create track */
 
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+  ctx->tt->cur->data_start = ctx->input->position;
   
   ctx->tt = bgav_track_table_create(1);
 
@@ -90,7 +89,7 @@ static int open_adif(bgav_demuxer_context_t * ctx)
       {
       id3v1 = bgav_id3v1_read(ctx->input);
       }
-    bgav_input_seek(ctx->input, ctx->data_start, SEEK_SET);
+    bgav_input_seek(ctx->input, ctx->tt->cur->data_start, SEEK_SET);
     }
 
   //  if(ctx->input->id3v2)
@@ -117,7 +116,7 @@ static int open_adif(bgav_demuxer_context_t * ctx)
                           ctx->tt->cur->metadata);
 
   if(ctx->input->total_bytes)
-    priv->data_size = ctx->input->total_bytes - ctx->data_start;
+    priv->data_size = ctx->input->total_bytes - ctx->tt->cur->data_start;
 
   if(id3v1)
     {

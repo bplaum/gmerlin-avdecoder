@@ -29,9 +29,9 @@ static int probe_daud(bgav_input_context_t * input)
   /* There seems to be no way to do proper probing of the stream.
      Therefore, we accept only local files with .dv as extension */
 
-  if(input->filename)
+  if(input->location)
     {
-    pos = strrchr(input->filename, '.');
+    pos = strrchr(input->location, '.');
     if(!pos)
       return 0;
     if(!strcasecmp(pos, ".302"))
@@ -57,8 +57,7 @@ static int open_daud(bgav_demuxer_context_t * ctx)
 
   bgav_track_set_format(ctx->tt->cur, "D-Cinema audio", NULL);
   
-  ctx->data_start = 0;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+  ctx->tt->cur->data_start = 0;
   if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
     ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
   

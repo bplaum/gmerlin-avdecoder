@@ -326,7 +326,7 @@ int bgav_rmff_mdpr_read(bgav_rmff_chunk_t * c,
     {
     input_mem =
       bgav_input_open_memory(ret->type_specific_data,
-                             ret->type_specific_len, input->opt);
+                             ret->type_specific_len);
 
     bgav_input_skip(input_mem, 6); /* Skip size and object_version */
 

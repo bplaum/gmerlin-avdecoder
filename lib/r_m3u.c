@@ -38,7 +38,6 @@
 static int probe_m3u(bgav_input_context_t * input)
   {
   char probe_buffer[PROBE_BYTES];
-  char * pos;
   const char * mimetype = NULL;
   int result = 0;
 
@@ -50,30 +49,30 @@ static int probe_m3u(bgav_input_context_t * input)
     return 1;
   
   /* Most likely, we get this via http, so we can check the mimetype */
-  if(input->url && gavl_dictionary_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, NULL) && mimetype)
+  if(input->location)
     {
-    if(strcasecmp(mimetype, "audio/x-pn-realaudio-plugin") &&
-       strcasecmp(mimetype, "video/x-pn-realvideo-plugin") &&
-       strcasecmp(mimetype, "audio/x-pn-realaudio") &&
-       strcasecmp(mimetype, "video/x-pn-realvideo") &&
-       strcasecmp(mimetype, "audio/x-mpegurl") &&
-       strcasecmp(mimetype, "audio/mpegurl") &&
-       strcasecmp(mimetype, "audio/m3u") &&
-       strncasecmp(mimetype, "application/x-mpegurl", 21) && // HLS
-       strncasecmp(mimetype, "application/vnd.apple.mpegurl", 29) && // HLS
-       (!gavl_string_ends_with(input->url, ".m3u") &&
-        !gavl_string_ends_with(input->url, ".m3u8")))
-      return 0;
-    }
-  else if(input->filename)
-    {
-    pos = strrchr(input->filename, '.');
-    if(!pos)
-      return 0;
-    if(strcasecmp(pos, ".m3u") &&
-       strcasecmp(pos, ".m3u8") &&
-       strcasecmp(pos, ".ram"))
-      return 0;
+    if(gavl_dictionary_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, NULL) && mimetype)
+      {
+      if(strcasecmp(mimetype, "audio/x-pn-realaudio-plugin") &&
+         strcasecmp(mimetype, "video/x-pn-realvideo-plugin") &&
+         strcasecmp(mimetype, "audio/x-pn-realaudio") &&
+         strcasecmp(mimetype, "video/x-pn-realvideo") &&
+         strcasecmp(mimetype, "audio/x-mpegurl") &&
+         strcasecmp(mimetype, "audio/mpegurl") &&
+         strcasecmp(mimetype, "audio/m3u") &&
+         strncasecmp(mimetype, "application/x-mpegurl", 21) && // HLS
+         strncasecmp(mimetype, "application/vnd.apple.mpegurl", 29) && // HLS
+         (!gavl_string_ends_with_i(input->location, ".m3u") &&
+          !gavl_string_ends_with_i(input->location, ".m3u8")))
+        return 0;
+      }
+    else // No mimetype
+      {
+      if(!gavl_string_ends_with(input->location, ".m3u")  &&
+         !gavl_string_ends_with(input->location, ".m3u8") &&
+         !gavl_string_ends_with(input->location, ".ram"))
+        return 0;
+      }
     }
   
   if(bgav_input_get_data(input, (uint8_t*)probe_buffer,
@@ -242,9 +241,9 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
   gavl_dictionary_init(&http_vars_global);
   gavl_array_init(&lines);
 
-  if(input->url)
+  if(input->location)
     {
-    char * tmp_string = gavl_strdup(input->url);
+    char * tmp_string = gavl_strdup(input->location);
     tmp_string = gavl_url_extract_http_vars(tmp_string, &http_vars_global);
     free(tmp_string);
     }
@@ -296,19 +295,19 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
         {
         gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Detected HLS segment list");
         
-        if(input->url)
+        if(input->location)
           {
           char * hls_uri;
 
           if(!t)
             t = append_track(tt);
 
-          if(gavl_string_starts_with(input->url, "https://"))
-            hls_uri = gavl_sprintf("hlss://%s", input->url + 8);
-          else if(gavl_string_starts_with(input->url, "http://"))
-            hls_uri = gavl_sprintf("hls://%s", input->url + 7);
+          if(gavl_string_starts_with(input->location, "https://"))
+            hls_uri = gavl_sprintf("hlss://%s", input->location + 8);
+          else if(gavl_string_starts_with(input->location, "http://"))
+            hls_uri = gavl_sprintf("hls://%s", input->location + 7);
           else
-            hls_uri = gavl_strdup(input->url);
+            hls_uri = gavl_strdup(input->location);
 
           gavl_dictionary_merge2(&http_vars, &http_vars_global);
           hls_uri = gavl_url_append_http_vars(hls_uri, &http_vars);

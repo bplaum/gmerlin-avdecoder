@@ -22,6 +22,8 @@
 #ifndef BGAV_BSF_H_INCLUDED
 #define BGAV_BSF_H_INCLUDED
 
+#if 0
+
 bgav_bsf_t * bgav_bsf_create(bgav_stream_t * s);
 
 
@@ -32,6 +34,36 @@ bgav_bsf_get_packet(void * bsf, bgav_packet_t **);
 
 gavl_source_status_t
 bgav_bsf_peek_packet(void * bsf, bgav_packet_t **, int force);
+#endif
+
+typedef struct bgav_packet_filter_s
+  {
+  int src_flags;
+  
+  gavl_packet_source_t * prev;
+  gavl_packet_source_t * src;
+  void * priv;
+
+  void (*reset)(struct bgav_packet_filter_s*);
+  void (*cleanup)(struct bgav_packet_filter_s*);
+  gavl_packet_source_func_t source_func;
+  
+  } bgav_packet_filter_t;
+
+bgav_packet_filter_t * bgav_packet_filter_create(uint32_t fourcc);
+void bgav_packet_filter_reset(bgav_packet_filter_t *);
+
+gavl_packet_source_t *
+bgav_packet_filter_connect(bgav_packet_filter_t *, gavl_packet_source_t * src);
+
+int bgav_packet_filter_init_avcC(bgav_packet_filter_t *);
+
+#ifdef HAVE_AVCODEC
+int bgav_packet_filter_init_adts(bgav_packet_filter_t *);
+#endif
+
+void bgav_packet_filter_destroy(bgav_packet_filter_t * f);
+
 
 #endif // BGAV_BSF_H_INCLUDED
 

@@ -137,7 +137,6 @@ static bgav_stream_t * append_stream(bgav_track_t * t)
   return ret;
   }
 
-
 bgav_stream_t *
 bgav_track_add_audio_stream(bgav_track_t * t, const bgav_options_t * opt)
   {
@@ -145,16 +144,19 @@ bgav_track_add_audio_stream(bgav_track_t * t, const bgav_options_t * opt)
   t->num_audio_streams++;
   
   bgav_stream_init(ret, opt);
-  bgav_stream_create_packet_pool(ret);
-  bgav_stream_create_packet_buffer(ret);
 
   // ret->data.audio.bits_per_sample = 16;
   ret->type = GAVL_STREAM_AUDIO;
   ret->track = t;
   
-  ret->info = gavl_track_append_audio_stream(t->info);
+  ret->info_ext = gavl_track_append_audio_stream(t->info);
+  ret->info = &ret->in_info;
+  gavl_dictionary_copy(ret->info, ret->info_ext);
+  
   ret->data.audio.format = gavl_stream_get_audio_format_nc(ret->info);
   ret->m = gavl_stream_get_metadata_nc(ret->info);
+
+  bgav_stream_create_packet_buffer(ret);
   
   return ret;
   }
@@ -164,16 +166,21 @@ bgav_track_add_msg_stream(bgav_track_t * t, const bgav_options_t * opt, int id)
   {
   bgav_stream_t * ret = append_stream(t);
   bgav_stream_init(ret, opt);
-  bgav_stream_create_packet_pool(ret);
-  bgav_stream_create_packet_buffer(ret);
 
   ret->type = GAVL_STREAM_MSG;
   ret->track = t;
   ret->stream_id = id;
   ret->action = BGAV_STREAM_DECODE;
   ret->flags |= STREAM_EXTERN;
-  ret->info = gavl_track_append_msg_stream(t->info, id);
+
+  ret->info_ext = gavl_track_append_msg_stream(t->info, id);
+  ret->info = &ret->in_info;
+  gavl_dictionary_copy(ret->info, ret->info_ext);
+
   ret->m = gavl_stream_get_metadata_nc(ret->info);
+
+  bgav_stream_create_packet_buffer(ret);
+  
   return ret;
   }
 
@@ -183,12 +190,13 @@ bgav_track_add_video_stream(bgav_track_t * t, const bgav_options_t * opt)
   bgav_stream_t * ret = append_stream(t);
   t->num_video_streams++;
   bgav_stream_init(ret, opt);
-  bgav_stream_create_packet_pool(ret);
-  bgav_stream_create_packet_buffer(ret);
   ret->type = GAVL_STREAM_VIDEO;
   ret->opt = opt;
   ret->track = t;
-  ret->info = gavl_track_append_video_stream(t->info);
+
+  ret->info_ext = gavl_track_append_video_stream(t->info);
+  ret->info = &ret->in_info;
+  gavl_dictionary_copy(ret->info, ret->info_ext);
   
   ret->data.video.format = gavl_stream_get_video_format_nc(ret->info);
   ret->m = gavl_stream_get_metadata_nc(ret->info);
@@ -197,70 +205,63 @@ bgav_track_add_video_stream(bgav_track_t * t, const bgav_options_t * opt)
   ret->data.video.format->framerate_mode = GAVL_FRAMERATE_UNKNOWN;
   
   ret->ci->flags = GAVL_COMPRESSION_HAS_P_FRAMES;
+
+  bgav_stream_create_packet_buffer(ret);
+  
   return ret;
   }
 
 static bgav_stream_t * add_text_stream(bgav_track_t * t,
                                        const bgav_options_t * opt,
-                                       const char * charset,
-                                       bgav_subtitle_reader_context_t * r)
+                                       const char * charset)
   {
   bgav_stream_t * ret = append_stream(t);
   t->num_text_streams++;
   bgav_stream_init(ret, opt);
-  bgav_stream_create_packet_pool(ret);
 
   ret->flags |= STREAM_DISCONT;
-  if(!r)
-    bgav_stream_create_packet_buffer(ret);
-  else
-    {
-    ret->data.subtitle.subreader = r;
-    ret->flags |= (STREAM_HAS_SUBREADER | STREAM_EXTERN);
-    }
+
   ret->type = GAVL_STREAM_TEXT;
   if(charset)
     ret->data.subtitle.charset =
       gavl_strdup(charset);
-  else if(r && r->charset) // Reader knows about charset and will do the
-    // conversion.
-
-    ret->data.subtitle.charset = gavl_strdup(BGAV_UTF8);
   else
     ret->data.subtitle.charset =
       gavl_strdup(ret->opt->default_subtitle_encoding);
 
-  ret->info = gavl_track_append_text_stream(t->info);
+  ret->info_ext = gavl_track_append_text_stream(t->info);
+  ret->info = &ret->in_info;
+  gavl_dictionary_copy(ret->info, ret->info_ext);
+
   ret->data.subtitle.video.format = gavl_stream_get_video_format_nc(ret->info);
   ret->m = gavl_stream_get_metadata_nc(ret->info);
-  
   ret->track = t;
+  
+  bgav_stream_create_packet_buffer(ret);
+  
   return ret;
   }
 
 static bgav_stream_t * add_overlay_stream(bgav_track_t * t,
-                                          const bgav_options_t * opt,
-                                          bgav_subtitle_reader_context_t * r)
+                                          const bgav_options_t * opt)
   {
   bgav_stream_t * ret = append_stream(t);
   
   t->num_overlay_streams++;
   bgav_stream_init(ret, opt);
-  bgav_stream_create_packet_pool(ret);
-
+ 
   ret->flags |= STREAM_DISCONT;
   ret->src_flags |= GAVL_SOURCE_SRC_DISCONTINUOUS;
-  if(!r)
-    bgav_stream_create_packet_buffer(ret);
-  else
-    {
-    ret->data.subtitle.subreader = r;
-    ret->flags |= STREAM_HAS_SUBREADER | STREAM_EXTERN;
-    }
+  bgav_stream_create_packet_buffer(ret);
+
   ret->type = GAVL_STREAM_OVERLAY;
   ret->track = t;
 
-  ret->info = gavl_track_append_overlay_stream(t->info);
+  ret->info_ext = gavl_track_append_overlay_stream(t->info);
+  ret->info = &ret->in_info;
+  gavl_dictionary_copy(ret->info, ret->info_ext);
+
+
   ret->data.subtitle.video.format = gavl_stream_get_video_format_nc(ret->info);
   ret->m = gavl_stream_get_metadata_nc(ret->info);
 
@@ -271,15 +272,16 @@ bgav_stream_t *
 bgav_track_add_text_stream(bgav_track_t * t, const bgav_options_t * opt,
                            const char * charset)
   {
-  return add_text_stream(t, opt, charset, NULL);
+  return add_text_stream(t, opt, charset);
   }
 
 bgav_stream_t *
 bgav_track_add_overlay_stream(bgav_track_t * t, const bgav_options_t * opt)
   {
-  return add_overlay_stream(t, opt, NULL);
+  return add_overlay_stream(t, opt);
   }
 
+#if 0
 bgav_stream_t *
 bgav_track_attach_subtitle_reader(bgav_track_t * t,
                                   const bgav_options_t * opt,
@@ -306,6 +308,7 @@ bgav_track_attach_subtitle_reader(bgav_track_t * t,
   
   return ret;
   }
+#endif
 
 bgav_stream_t *
 bgav_track_find_stream_all(bgav_track_t * t, int stream_id)
@@ -339,13 +342,6 @@ bgav_stream_t * bgav_track_find_stream(bgav_demuxer_context_t * ctx,
   bgav_track_t * t;
   bgav_stream_t * ret = NULL;
   
-  if(ctx->demux_mode == DEMUX_MODE_FI)
-    {
-    if(ctx->request_stream && (stream_id == ctx->request_stream->stream_id))
-      return ctx->request_stream;
-    else
-      return NULL;
-    }
   t = ctx->tt->cur;
   
   ret = find_stream_by_id(t->streams, t->num_streams, stream_id);
@@ -379,7 +375,7 @@ void bgav_track_init(bgav_track_t * t)
 typedef struct
   {
   int num_active_subtitle_streams;
-  int num_active_subtitle_readers;
+
   bgav_track_t * t;
   bgav_demuxer_context_t * demuxer;
   } start_subtitle_t;
@@ -397,9 +393,6 @@ static int start_subtitle(void * data, bgav_stream_t * s)
   if(s->action == BGAV_STREAM_MUTE)
     return 1;
   ss->num_active_subtitle_streams++;
-  
-  if(s->flags & STREAM_HAS_SUBREADER)
-    ss->num_active_subtitle_readers++;
   
   if((video_stream = bgav_track_get_video_stream(s->track, 0)))
     {
@@ -494,22 +487,19 @@ int bgav_track_start(bgav_track_t * t, bgav_demuxer_context_t * demuxer)
   ss.demuxer = demuxer;
   ss.t = t;
   ss.num_active_subtitle_streams = 0;
-  ss.num_active_subtitle_readers = 0;
   
   if(!bgav_streams_foreach(t->streams, t->num_streams, start_subtitle, &ss))
     return 0;
   
   if((!num_active_audio_streams && !num_active_video_streams &&
-      ss.num_active_subtitle_streams) ||
-     (demuxer->demux_mode == DEMUX_MODE_FI))
+      ss.num_active_subtitle_streams))
     demuxer->flags |= BGAV_DEMUXER_PEEK_FORCES_READ;
   else
     demuxer->flags &= ~BGAV_DEMUXER_PEEK_FORCES_READ;
 
   if(!num_active_audio_streams &&
      !num_active_video_streams &&
-     (ss.num_active_subtitle_streams == 1) &&
-     (ss.num_active_subtitle_readers == 1))
+     (ss.num_active_subtitle_streams == 1))
     {
     gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Detected subreader only mode");
     demuxer->flags |= BGAV_DEMUXER_SUBREAD_ONLY;
@@ -532,6 +522,9 @@ void bgav_track_dump(bgav_track_t * t)
   gavl_dictionary_dump(t->metadata, 4);
   bgav_dprintf("\n");
 
+  bgav_diprintf(2, "Start position: %"PRId64"\n", t->data_start);
+  bgav_diprintf(2, "End position:   %"PRId64"\n", t->data_end);
+  
   for(i = 0; i < t->num_streams; i++)
     {
     bgav_stream_dump(&t->streams[i]);
@@ -666,25 +659,6 @@ void bgav_track_remove_unsupported(bgav_track_t * track)
                  s->fourcc);
       bgav_track_remove_audio_stream(track, i);
       }
-    else if((s->flags & (STREAM_PARSE_FULL|STREAM_PARSE_FRAME)) &&
-       !bgav_audio_parser_supported(s->fourcc))
-      {
-      if(!(s->fourcc & 0xffff0000))
-        gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-                 "No audio parser found for WAVId 0x%04x",
-                 s->fourcc);
-      else
-        gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-                 "No audio parser found for fourcc %c%c%c%c (0x%08x)",
-                 (s->fourcc & 0xFF000000) >> 24,
-                 (s->fourcc & 0x00FF0000) >> 16,
-                 (s->fourcc & 0x0000FF00) >> 8,
-                 (s->fourcc & 0x000000FF),
-                 s->fourcc);
-
-
-      bgav_track_remove_audio_stream(track, i);
-      }
     else
       i++;
     }
@@ -697,18 +671,6 @@ void bgav_track_remove_unsupported(bgav_track_t * track)
       {
       gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
                "No video decoder found for fourcc %c%c%c%c (0x%08x)",
-               (s->fourcc & 0xFF000000) >> 24,
-               (s->fourcc & 0x00FF0000) >> 16,
-               (s->fourcc & 0x0000FF00) >> 8,
-               (s->fourcc & 0x000000FF),
-               s->fourcc);
-      bgav_track_remove_video_stream(track, i);
-      }
-    else if((s->flags & (STREAM_PARSE_FULL|STREAM_PARSE_FRAME)) &&
-       !bgav_video_parser_supported(s->fourcc))
-      {
-      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-               "No video parser found for fourcc %c%c%c%c (0x%08x)",
                (s->fourcc & 0xFF000000) >> 24,
                (s->fourcc & 0x00FF0000) >> 16,
                (s->fourcc & 0x0000FF00) >> 8,
@@ -762,6 +724,7 @@ static int init_stream_read(void * priv, bgav_stream_t * s)
   return 1;
   }
 
+
 void bgav_track_init_read(bgav_track_t * track)
   {
   int i;
@@ -812,6 +775,7 @@ void bgav_track_resync(bgav_track_t * track)
     
     if(s->action == BGAV_STREAM_MUTE)
       continue;
+    
     bgav_audio_resync(s);
     }
   for(i = 0; i < track->num_video_streams; i++)
@@ -865,14 +829,14 @@ int bgav_track_has_sync(bgav_track_t * t)
     {
     s = bgav_track_get_audio_stream(t, i);
     if((s->action != BGAV_STREAM_MUTE) &&
-       (!STREAM_HAS_SYNC(s)))
+       !STREAM_HAS_SYNC(s))
       return 0;
     }
   for(i = 0; i < t->num_video_streams; i++)
     {
     s = bgav_track_get_video_stream(t, i);
     if(!STREAM_IS_STILL(s) && (s->action != BGAV_STREAM_MUTE) &&
-       (!STREAM_HAS_SYNC(s)))
+       !STREAM_HAS_SYNC(s))
       return 0;
     }
   return 1;
@@ -895,16 +859,19 @@ void bgav_track_mute(bgav_track_t * t)
 static int check_sync_time(bgav_stream_t * s, int64_t * t, int scale)
   {
   int64_t tt;
-  if((s->action == BGAV_STREAM_MUTE) ||
-     STREAM_IS_STILL(s))
-    return 1;
+  gavl_packet_t * p = NULL;
   
-  if(!STREAM_HAS_SYNC(s))
-    return 0;
+  if((s->action == BGAV_STREAM_MUTE) ||
+     (s->flags & STREAM_DISCONT))
+    return 1;
 
-  tt = gavl_time_rescale(s->timescale, scale, STREAM_GET_SYNC(s));
+  if(bgav_stream_peek_packet_read(s, &p) != GAVL_SOURCE_OK)
+    return 0;
+      
+  tt = gavl_time_rescale(s->timescale, scale, p->pts);
   if(tt > *t)
     *t = tt;
+  
   return 1;
   }
 
@@ -972,6 +939,7 @@ int64_t bgav_track_out_time(bgav_track_t * t, int scale)
 static int set_eof_d(void * priv, bgav_stream_t * s)
   {
   s->flags |= STREAM_EOF_D;
+  bgav_stream_flush(s);
   return 1;
   }
 

@@ -126,8 +126,6 @@ void bgav_file_index_dump(bgav_t * b)
       bgav_dprintf("   Audio stream %d [ID: %08x, Timescale: %d, PTS offset: %"PRId64"]\n", j+1,
                    s->stream_id, s->data.audio.format->samplerate,
                    s->stats.pts_start);
-      bgav_dprintf("   Maximum packet size: %d\n",
-                   s->ci->max_packet_size);
       bgav_dprintf("   Duration: %"PRId64", entries: %d\n",
                    bgav_stream_get_duration(s),
                    s->file_index->num_entries);
@@ -142,8 +140,6 @@ void bgav_file_index_dump(bgav_t * b)
       bgav_dprintf("   Video stream %d [ID: %08x, Timescale: %d, PTS offset: %"PRId64"]\n", j+1,
                    s->stream_id, s->data.video.format->timescale,
                    s->stats.pts_start);
-      bgav_dprintf("   Maximum packet size: %d\n",
-                   s->ci->max_packet_size);
       bgav_dprintf("   Interlace mode: %s\n",
                    gavl_interlace_mode_to_string(s->data.video.format->interlace_mode));
       bgav_dprintf("   Framerate mode: %s\n",
@@ -164,8 +160,6 @@ void bgav_file_index_dump(bgav_t * b)
       bgav_dprintf("   Text stream %d [ID: %08x, Timescale: %d, PTS offset: %"PRId64"]\n", j+1,
                    s->stream_id, s->timescale,
                    s->stats.pts_start);
-      bgav_dprintf("   Maximum packet size: %d\n",
-                   s->ci->max_packet_size);
       bgav_dprintf("   Duration: %"PRId64"\n", bgav_stream_get_duration(s));
       dump_index(s);
       }
@@ -177,8 +171,6 @@ void bgav_file_index_dump(bgav_t * b)
       bgav_dprintf("   Overlay stream %d [ID: %08x, Timescale: %d, PTS offset: %"PRId64"]\n", j+1,
                    s->stream_id, s->timescale,
                    s->stats.pts_start);
-      bgav_dprintf("   Maximum packet size: %d\n",
-                   s->ci->max_packet_size);
       bgav_dprintf("   Duration: %"PRId64"\n", bgav_stream_get_duration(s));
       dump_index(s);
       }
@@ -491,7 +483,6 @@ file_index_write_stream(FILE * output,
   write_32(output, s->stream_id);
   write_32(output, s->type);
   write_32(output, s->fourcc);
-  write_32(output, s->ci->max_packet_size);
   
   switch(s->type)
     {
@@ -592,7 +583,6 @@ int bgav_read_file_index(bgav_t * b)
   uint32_t stream_type;
   char * filename;
   bgav_stream_t * s;
-  uint32_t u_tmp;
   
   /* Check if we already have a file index */
 
@@ -655,19 +645,13 @@ int bgav_read_file_index(bgav_t * b)
           }
         
         /* Fourcc */
-        if(!bgav_input_read_32_be(input, &s->fourcc) ||
-           !bgav_input_read_32_be(input, &u_tmp))
+        if(!bgav_input_read_32_be(input, &s->fourcc))
           goto fail;
-        s->ci->max_packet_size = u_tmp;
         s->stream_id = stream_id;
         }
       else
         {
         bgav_input_skip(input, 8); /* Stream type + fourcc */
-        
-        if(!bgav_input_read_32_be(input, &u_tmp))
-          goto fail;
-        s->ci->max_packet_size = u_tmp;
         }
       s->file_index = file_index_read_stream(input, s);
       if(!s->file_index)
@@ -852,7 +836,7 @@ static void flush_stream_simple(bgav_stream_t * s, int force)
   bgav_packet_t * p;
   int64_t t;
   
-  while(bgav_stream_peek_packet_read(s, NULL, force) == GAVL_SOURCE_OK)
+  while(bgav_stream_peek_packet_read(s, NULL) == GAVL_SOURCE_OK)
     {
     p = NULL;
     bgav_stream_get_packet_read(s, &p);
@@ -873,11 +857,6 @@ static void flush_stream_simple(bgav_stream_t * s, int force)
     bgav_stream_done_packet_read(s, p);
     }
 
-  if(force) // EOF
-    {
-    if(!s->ci->max_packet_size)
-      s->ci->max_packet_size = s->max_packet_size_tmp;
-    }
   }
 
 static int build_file_index_simple(bgav_t * b)

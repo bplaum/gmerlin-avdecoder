@@ -41,7 +41,6 @@
 #define TYPE_TERMINATOR   9
 
 #define FOURCC_AAC  BGAV_MK_FOURCC('m', 'p', '4', 'a')
-// #define FOURCC_H264 BGAV_MK_FOURCC('h', '2', '6', '4')
 
 /* H.264 data are the same as in mp4 files */
 #define FOURCC_H264 BGAV_MK_FOURCC('a', 'v', 'c', '1')
@@ -85,7 +84,6 @@ typedef struct
   int init;
   int have_metadata;
   meta_object_t metadata;
-  int64_t audio_sample_counter;
 
   int need_audio_extradata;
   int need_video_extradata;
@@ -162,9 +160,6 @@ static int init_audio_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
   flv_priv_t * priv;
 
   priv = ctx->priv;
-
-  s->stats.pts_start = GAVL_TIME_UNDEFINED;
-  s->flags |= STREAM_NEED_START_PTS;
   
   if(!s->fourcc) /* Initialize */
     {
@@ -194,7 +189,8 @@ static int init_audio_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
       case 2: /* MP3 */
         s->fourcc = BGAV_MK_FOURCC('.', 'm', 'p', '3');
         s->index_mode = INDEX_MODE_SIMPLE;
-        s->flags |= STREAM_PARSE_FULL;
+
+        bgav_stream_set_parse_full(s);
         s->stats.pts_end = 0;
         break;
       case 3: /* Uncompressed, Little endian */
@@ -217,14 +213,12 @@ static int init_audio_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
         break;
       case 10:
         s->fourcc = FOURCC_AAC;
-        s->flags |= STREAM_PARSE_FULL;
-        s->stats.pts_start = GAVL_TIME_UNDEFINED;
-        s->flags |= STREAM_NEED_START_PTS;
-
+        
         s->index_mode = INDEX_MODE_SIMPLE;
         // ctx->index_mode = 0;
         s->stats.pts_end = 0;
         priv->need_audio_extradata = 1;
+        bgav_stream_set_parse_full(s);
         break;
       default: /* Set some nonsense so we can finish initializing */
         s->fourcc = BGAV_MK_FOURCC('?', '?', '?', '?');
@@ -243,9 +237,6 @@ static int init_video_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
   flv_priv_t * priv;
   uint8_t header[1];
   priv = ctx->priv;
-
-  s->stats.pts_start = GAVL_TIME_UNDEFINED;
-  s->flags |= STREAM_NEED_START_PTS;
   
   switch(flags & 0xF)
     {
@@ -279,7 +270,7 @@ static int init_video_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
       priv->need_video_extradata = 1;
       s->flags |= STREAM_HAS_DTS;
       s->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
-      s->flags |= (STREAM_PARSE_FRAME | STREAM_NEED_FRAMETYPES);
+      bgav_stream_set_parse_frame(s);
       //          s->data.video.wrong_b_timestamps = 1;
       break;
     default: /* Set some nonsense so we can finish initializing */
@@ -734,23 +725,8 @@ static gavl_source_status_t next_packet_flv(bgav_demuxer_context_t * ctx)
     if(s->type == GAVL_STREAM_AUDIO)
       {
       if(s->data.audio.block_align)
-        {
-        if(priv->resync && !STREAM_HAS_SYNC(s))
-          {
-          priv->audio_sample_counter =
-            gavl_time_rescale(1000, s->data.audio.format->samplerate,
-                              p->pts);
-          STREAM_SET_SYNC(s, priv->audio_sample_counter);
-          }
-        
-        p->pts = priv->audio_sample_counter;
         p->duration = p->buf.len / s->data.audio.block_align;
-        priv->audio_sample_counter += p->duration;
-        }
-      else
-        {
-        p->pts = t.timestamp;
-        }
+      p->pes_pts = t.timestamp;
       }
     else
       {
@@ -762,9 +738,7 @@ static gavl_source_status_t next_packet_flv(bgav_demuxer_context_t * ctx)
         p->pts = t.timestamp + cts;
         }
       }
-    if(!STREAM_HAS_SYNC(s))
-      STREAM_SET_SYNC(s, p->pts);
-
+    
     if(keyframe)
       PACKET_SET_KEYFRAME(p);
     
@@ -929,8 +903,7 @@ static int open_flv(bgav_demuxer_context_t * ctx)
     bgav_input_skip(ctx->input, data_offset - ctx->input->position);
     }
 
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+  ctx->tt->cur->data_start = ctx->input->position;
 
   ctx->index_mode = INDEX_MODE_MIXED;
   
@@ -968,7 +941,7 @@ static int open_flv(bgav_demuxer_context_t * ctx)
     }
   else
     {
-    bgav_input_seek(ctx->input, ctx->data_start, SEEK_SET);
+    bgav_input_seek(ctx->input, ctx->tt->cur->data_start, SEEK_SET);
     }
   
   handle_metadata(ctx);
@@ -1014,6 +987,7 @@ static int open_flv(bgav_demuxer_context_t * ctx)
   return 0;
   }
 
+#if 0
 static void resync_flv(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
   {
   flv_priv_t * priv;
@@ -1024,7 +998,7 @@ static void resync_flv(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
     priv->audio_sample_counter = s->in_position;
     }
   }  
-
+#endif
 
 static void close_flv(bgav_demuxer_context_t * ctx)
   {
@@ -1042,7 +1016,6 @@ const bgav_demuxer_t bgav_demuxer_flv =
     .open        = open_flv,
     .next_packet = next_packet_flv,
     .seek        = seek_flv,
-    .resync      = resync_flv,
     .close       = close_flv
   };
 

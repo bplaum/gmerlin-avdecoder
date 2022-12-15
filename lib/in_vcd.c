@@ -197,12 +197,12 @@ static void toc_2_tt(bgav_input_context_t * ctx, char * disk_name)
 
     m = track->metadata;
     
-    stream =  bgav_track_add_audio_stream(track, ctx->opt);
+    stream =  bgav_track_add_audio_stream(track, &ctx->opt);
     stream->fourcc = BGAV_MK_FOURCC('.', 'm', 'p', '2');
     stream->stream_id = 0xc0;
     stream->timescale = 90000;
         
-    stream =  bgav_track_add_video_stream(track, ctx->opt);
+    stream =  bgav_track_add_video_stream(track, &ctx->opt);
     stream->fourcc = BGAV_MK_FOURCC('m', 'p', 'g', 'v');
     stream->stream_id = 0xe0;
     stream->timescale = 90000;

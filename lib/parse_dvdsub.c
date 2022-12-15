@@ -23,7 +23,6 @@
 
 #include <avdec_private.h>
 #include <parser.h>
-#include <videoparser_priv.h>
 
 #define LOG_DOMAIN "parse_dvdsub"
 
@@ -34,21 +33,20 @@ typedef struct
   int got_first;
   } dvdsub_t;
 
-static void cleanup_dvdsub(bgav_video_parser_t * parser)
+static void cleanup_dvdsub(bgav_packet_parser_t * parser)
   {
   dvdsub_t * priv = parser->priv;
   free(priv);
   }
 
-static void reset_dvdsub(bgav_video_parser_t *  parser)
+static void reset_dvdsub(bgav_packet_parser_t *  parser)
   {
   dvdsub_t * priv = parser->priv;
   priv->packet_size = 0;
   priv->got_first = 0;
   }
 
-static int parse_frame_dvdsub(bgav_video_parser_t * parser, bgav_packet_t * p,
-                              int64_t pts_orig)
+static int parse_frame_dvdsub(bgav_packet_parser_t * parser, bgav_packet_t * p)
   {
   
   /* We need the start- and end date */
@@ -138,8 +136,8 @@ static int parse_frame_dvdsub(bgav_video_parser_t * parser, bgav_packet_t * p,
   
   priv->packet_size = 0;
   //  p->pts = pts_orig + start_date * priv->pts_mult;
-  parser->timestamp = pts_orig + start_date * priv->pts_mult;
-
+  p->pts = p->pes_pts + start_date * priv->pts_mult;
+  
   //  fprintf(stderr, "Parse frame done, start: %d, end: %d, mult: %d\n",
   //          start_date, end_date, priv->pts_mult);
   
@@ -167,7 +165,7 @@ static int parse_frame_dvdsub(bgav_video_parser_t * parser, bgav_packet_t * p,
  *  - Return 0.
  */
 
-static int find_frame_boundary_dvdsub(bgav_video_parser_t * parser, int * skip)
+static int find_frame_boundary_dvdsub(bgav_packet_parser_t * parser, int * skip)
   {
   dvdsub_t * priv = parser->priv;
 
@@ -175,10 +173,10 @@ static int find_frame_boundary_dvdsub(bgav_video_parser_t * parser, int * skip)
   
   if(!priv->packet_size)
     {
-    if(parser->buf.len - parser->pos < 2)
+    if(parser->buf.len - parser->buf.pos < 2)
       return 0;
     
-    priv->packet_size = GAVL_PTR_2_16BE(parser->buf.buf + parser->pos);
+    priv->packet_size = GAVL_PTR_2_16BE(parser->buf.buf + parser->buf.pos);
     
     //    fprintf(stderr, "Packet size: %d\n", priv->packet_size);
 
@@ -189,51 +187,27 @@ static int find_frame_boundary_dvdsub(bgav_video_parser_t * parser, int * skip)
       }
     }
 
-  if(parser->buf.len - parser->pos >= priv->packet_size)
+  if(parser->buf.len - parser->buf.pos >= priv->packet_size)
     {
-    parser->pos += priv->packet_size;
+    parser->buf.pos += priv->packet_size;
     return 1;
     }
   else
     return 0;
   }
 
-void bgav_video_parser_init_dvdsub(bgav_video_parser_t * parser)
+void bgav_packet_parser_init_dvdsub(bgav_packet_parser_t * parser)
   {
-  bgav_stream_t * s;
   dvdsub_t * priv;
   priv = calloc(1, sizeof(*priv));
   parser->priv = priv;
 
-  priv->pts_mult = parser->s->timescale / 100;
+  priv->pts_mult = parser->packet_timescale / 100;
 
-  /* Initialize format */
-  if((s = bgav_track_get_video_stream(parser->s->track, 0)))
-    {
-    gavl_video_format_t * video_stream_format;
-    
-    /* This breaks for (non existing) multiplie video streams */
-    video_stream_format = s->data.video.format;
-
-    /* Copy missing fields from the video stream */
-    if(!parser->s->data.subtitle.video.format->image_width)
-      {
-      parser->s->data.subtitle.video.format->image_width = video_stream_format->image_width;
-      parser->s->data.subtitle.video.format->image_height = video_stream_format->image_height;
-      parser->s->data.subtitle.video.format->frame_width = video_stream_format->frame_width;
-      parser->s->data.subtitle.video.format->frame_height = video_stream_format->frame_height;
-      }
-    if(!parser->s->data.subtitle.video.format->pixel_width)
-      {
-      parser->s->data.subtitle.video.format->pixel_width = video_stream_format->pixel_width;
-      parser->s->data.subtitle.video.format->pixel_height = video_stream_format->pixel_height;
-      }
-    }
-  
-  parser->s->data.subtitle.video.format->pixelformat = GAVL_YUVA_32;
-  parser->s->data.subtitle.video.format->timescale = parser->s->timescale;
-  parser->s->data.subtitle.video.format->frame_duration = 0;
-  parser->s->data.subtitle.video.format->framerate_mode = GAVL_FRAMERATE_VARIABLE;
+  parser->vfmt->pixelformat = GAVL_YUVA_32;
+  parser->vfmt->timescale = parser->packet_timescale;
+  parser->vfmt->frame_duration = 0;
+  parser->vfmt->framerate_mode = GAVL_FRAMERATE_VARIABLE;
   
   parser->parse_frame = parse_frame_dvdsub;
   parser->cleanup = cleanup_dvdsub;

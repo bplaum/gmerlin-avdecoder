@@ -25,7 +25,6 @@
 
 #include <avdec_private.h>
 #include <parser.h>
-#include <videoparser_priv.h>
 
 typedef struct
   {
@@ -136,8 +135,7 @@ static gavl_pixelformat_t get_pixelformat(bgav_packet_t * p)
   return GAVL_PIXELFORMAT_NONE;
   }
 
-static int parse_frame_jpeg(bgav_video_parser_t * parser, bgav_packet_t * p,
-                            int64_t prs_orig)
+static int parse_frame_jpeg(bgav_packet_parser_t * parser, bgav_packet_t * p)
   {
   jpeg_priv_t * priv = parser->priv;
   
@@ -146,21 +144,20 @@ static int parse_frame_jpeg(bgav_video_parser_t * parser, bgav_packet_t * p,
   /* Extract format */
   if(!priv->have_format)
     {
-    parser->s->data.video.format->pixelformat =
-      get_pixelformat(p);
+    parser->vfmt->pixelformat = get_pixelformat(p);
     priv->have_format = 1;
     }
-  return PARSER_CONTINUE;
+  return 1;
   }
 
 
-static void cleanup_jpeg(bgav_video_parser_t * parser)
+static void cleanup_jpeg(bgav_packet_parser_t * parser)
   {
   jpeg_priv_t * priv = parser->priv;
   free(priv);
   }
 
-void bgav_video_parser_init_jpeg(bgav_video_parser_t * parser)
+void bgav_packet_parser_init_jpeg(bgav_packet_parser_t * parser)
   {
   jpeg_priv_t * priv;
   priv = calloc(1, sizeof(*priv));

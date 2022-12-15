@@ -1066,8 +1066,8 @@ static int init_raw(bgav_demuxer_context_t * ctx, int input_can_seek)
       s->stream_id = priv->packet.pid;
       s->timescale = 90000;
       s->stats.pts_start = GAVL_TIME_UNDEFINED;
-      s->flags |= STREAM_PARSE_FULL;
       s->flags |= STREAM_NEED_START_PTS;
+      bgav_stream_set_parse_full(s);
       }
     if(!next_packet_scan(ctx))
         break;
@@ -1625,6 +1625,8 @@ static int process_packet(bgav_demuxer_context_t * ctx)
       position += priv->packet_size;
       continue;
       }
+
+    fprintf(stderr, "Got stream %d\n", s->id);
     
     if(priv->packet.payload_start) /* New packet starts here */
       {

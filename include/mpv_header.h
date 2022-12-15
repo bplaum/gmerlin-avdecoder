@@ -102,16 +102,13 @@ typedef struct
   bgav_mpv_sequence_display_extension_t dpy_ext;
   } bgav_mpv_sequence_header_t;
 
-int bgav_mpv_sequence_header_parse(const bgav_options_t * opt,
-                                   bgav_mpv_sequence_header_t *,
+int bgav_mpv_sequence_header_parse(bgav_mpv_sequence_header_t *,
                                    const uint8_t * buffer, int len);
 
-int bgav_mpv_sequence_display_extension_parse(const bgav_options_t * opt,
-                                              bgav_mpv_sequence_display_extension_t *,
+int bgav_mpv_sequence_display_extension_parse(bgav_mpv_sequence_display_extension_t *,
                                               const uint8_t * buffer, int len);
 
-int bgav_mpv_sequence_extension_parse(const bgav_options_t * opt,
-                                      bgav_mpv_sequence_extension_t *,
+int bgav_mpv_sequence_extension_parse(bgav_mpv_sequence_extension_t *,
                                       const uint8_t * buffer, int len);
 
 typedef struct
@@ -128,14 +125,12 @@ typedef struct
   bgav_mpv_picture_extension_t ext;
   } bgav_mpv_picture_header_t;
 
-int bgav_mpv_picture_header_parse(const bgav_options_t * opt,
-                                  bgav_mpv_picture_header_t *,
+int bgav_mpv_picture_header_parse(bgav_mpv_picture_header_t *,
                                   const uint8_t * buffer, int len);
 
 
 
-int bgav_mpv_picture_extension_parse(const bgav_options_t * opt,
-                                     bgav_mpv_picture_extension_t *,
+int bgav_mpv_picture_extension_parse(bgav_mpv_picture_extension_t *,
                                      const uint8_t * buffer, int len);
 
 typedef struct
@@ -147,8 +142,7 @@ typedef struct
   int frames;
   } bgav_mpv_gop_header_t;
 
-int bgav_mpv_gop_header_parse(const bgav_options_t * opt,
-                              bgav_mpv_gop_header_t *,
+int bgav_mpv_gop_header_parse(bgav_mpv_gop_header_t *,
                               const uint8_t * buffer, int len);
 
 /* Getting the pixel aspect ratio is a bit messy... */

@@ -61,6 +61,7 @@ bgav_stream_decoder_get_options(bgav_stream_decoder_t * dec)
   return &dec->opt;
   }
 
+#if 0
 static void packet_from_gavl(gavl_packet_t * src,
                              bgav_packet_t * dst)
   {
@@ -120,16 +121,13 @@ static gavl_source_status_t peek_func(void * priv, bgav_packet_t ** ret, int for
     *ret = dec->out_packet;
   return GAVL_SOURCE_OK;
   }
+#endif
 
 static int init_common(bgav_stream_decoder_t * dec,
                        gavl_packet_source_t * src)
   {
   dec->s.action = BGAV_STREAM_DECODE;
   dec->src = src;
-
-  dec->s.src.data = dec;
-  dec->s.src.get_func = get_func;
-  dec->s.src.peek_func = peek_func;
   
   return bgav_stream_start(&dec->s);
   }
@@ -234,7 +232,7 @@ bgav_stream_decoder_reset(bgav_stream_decoder_t * dec)
   dec->out_packet = NULL;
   
 #if 1
-  if(bgav_stream_peek_packet_read(&dec->s, &p, 1) != GAVL_SOURCE_OK)
+  if(bgav_stream_peek_packet_read(&dec->s, &p) != GAVL_SOURCE_OK)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Cannot get packet after reset");
     return;

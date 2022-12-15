@@ -21,13 +21,11 @@
 
 #include <avdec_private.h>
 #include <parser.h>
-#include <videoparser_priv.h>
 
 
 
-static int parse_frame_mjpa(bgav_video_parser_t * parser,
-                            bgav_packet_t * p,
-                            int64_t prs_orig)
+static int parse_frame_mjpa(bgav_packet_parser_t * parser,
+                            bgav_packet_t * p)
   {
   uint8_t * ptr;
   int i;
@@ -58,7 +56,7 @@ static int parse_frame_mjpa(bgav_video_parser_t * parser,
   return 1;
   }
 
-void bgav_video_parser_init_mjpa(bgav_video_parser_t * parser)
+void bgav_packet_parser_init_mjpa(bgav_packet_parser_t * parser)
   {
   parser->parse_frame = parse_frame_mjpa;
   }

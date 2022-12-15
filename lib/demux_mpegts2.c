@@ -299,6 +299,7 @@ static int init_psi(bgav_demuxer_context_t * ctx)
 
 static int open_mpegts(bgav_demuxer_context_t * ctx)
   {
+  int64_t start;
   mpegts_priv_t * priv;
 
   priv = calloc(1, sizeof(*priv));
@@ -306,6 +307,8 @@ static int open_mpegts(bgav_demuxer_context_t * ctx)
   
   /* Obtain packet size */
   priv->packet_size = guess_packet_size(ctx->input);
+
+  start = ctx->input->position;
   
   /* Scan for PAT/PMT and Initialize streams */
   if(!init_psi(ctx))
@@ -313,19 +316,22 @@ static int open_mpegts(bgav_demuxer_context_t * ctx)
     if(priv->have_pat)
       return 0;
     
-    /* TODO: initalize "raw" stream */
+    /* TODO: initialize "raw" stream */
     
     }
 
+  if(ctx->tt)
+    ctx->tt->cur->data_start = start;
+  
   gavl_buffer_alloc(&priv->buf, priv->packet_size);
-  priv->pes_parser = bgav_input_open_memory(NULL, 0, ctx->opt);
+  priv->pes_parser = bgav_input_open_memory(NULL, 0);
   
   if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_TIME)
     ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
   
+  ctx->flags |= BGAV_DEMUXER_GET_DURATION;
   return 1;
   }
-
 
 static gavl_source_status_t next_packet_mpegts(bgav_demuxer_context_t * ctx)
   {
@@ -338,21 +344,23 @@ static gavl_source_status_t next_packet_mpegts(bgav_demuxer_context_t * ctx)
   bgav_pes_header_t pes_header; 
   int64_t pos;
   program_t * p;
-  /* To avoid overhead we scan transport packets until we finished at least one demuxer packet */
+  /* To avoid overhead we scan transport packets until we finished at least one PES packet */
   
   priv = ctx->priv;
   p = ctx->tt->cur->priv;
-  
+
   while(!done)
     {
+
     pos = ctx->input->position;
-    
+
     if(bgav_input_read_data(ctx->input, priv->buf.buf, priv->packet_size) < priv->packet_size)
       {
       /* EOF */
       return GAVL_SOURCE_EOF;
       }
     ptr = priv->buf.buf;
+
     
     bgav_transport_packet_parse(&ptr, &pkt);
 
@@ -365,26 +373,33 @@ static gavl_source_status_t next_packet_mpegts(bgav_demuxer_context_t * ctx)
       //      fprintf(stderr, "Got PCR: %d %"PRId64"\n", p->pcr_pid, pkt.adaption_field.pcr);
       }
 
+
     //    if(pkt.pid == 0x01e2)
     //      fprintf(stderr, "Got PID %04x\n", pkt.pid);      
     
     /* Check if this belongs to a stream */
     s = bgav_track_find_stream(ctx, pkt.pid);
-    
+
     if(!s)
       {
-      // fprintf(stderr, "No stream for PID %04x\n", priv->packet.pid);      
-      //      gavl_hexdump(priv->packet_start, 188, 16);
+      //      fprintf(stderr, "No stream for PID %04x\n", pkt.pid);
+      //      gavl_hexdump(ptr, 188, 16);
       continue;
       }
 
+    //    fprintf(stderr, "Got stream %d\n", s->stream_id);
+    
     if(pkt.payload_start) // First transport packet of one PES packet
       {
       if(s->packet)
         {
-        //        fprintf(stderr, "Got packet for stream %d\n", s->stream_id);
-        //        bgav_packet_dump(s->packet);
-
+#if 0
+        if(s->type == GAVL_STREAM_VIDEO)
+          {
+          fprintf(stderr, "Got packet for stream %d\n", s->stream_id);
+          bgav_packet_dump(s->packet);
+          }
+#endif
         bgav_stream_done_packet_write(s, s->packet);
         s->packet = NULL;
         done = 1;
@@ -401,7 +416,7 @@ static gavl_source_status_t next_packet_mpegts(bgav_demuxer_context_t * ctx)
         return GAVL_SOURCE_EOF;
       
       //      fprintf(stderr, "Got PTS: %"PRId64"\n", pes_header.pts);
-      s->packet->pts = pes_header.pts;
+      s->packet->pes_pts = pes_header.pts;
       
       ptr += priv->pes_parser->position;
       
@@ -410,6 +425,7 @@ static gavl_source_status_t next_packet_mpegts(bgav_demuxer_context_t * ctx)
       bgav_packet_alloc(s->packet, len);
       memcpy(s->packet->buf.buf, ptr, len);
       s->packet->buf.len = len;
+
       }
     else
       {
@@ -417,7 +433,7 @@ static gavl_source_status_t next_packet_mpegts(bgav_demuxer_context_t * ctx)
       if(!s->packet)
         {
 #if 0
-        fprintf(stderr, "Discarding packet\n");
+        fprintf(stderr, "Discarding packet (%d bytes)\n", 188 - (ptr - priv->buf.buf));
         gavl_hexdump(ptr, 16, 16);
 #endif
         continue;
@@ -433,16 +449,11 @@ static gavl_source_status_t next_packet_mpegts(bgav_demuxer_context_t * ctx)
                pkt.payload_size);
         s->packet->buf.len += pkt.payload_size;
         }
-      
       }
     }
   return GAVL_SOURCE_OK;
   }
 
-static void resync_mpegts(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
-  {
-  fprintf(stderr, "resync_mpegts\n");
-  }
 
 static void seek_mpegts(bgav_demuxer_context_t * ctx, int64_t time, int scale)
   {
@@ -465,6 +476,22 @@ static void close_mpegts(bgav_demuxer_context_t * ctx)
   free(priv);
   }
 
+static int post_seek_resync_mpegts(bgav_demuxer_context_t * ctx)
+  {
+  int rest;
+  mpegts_priv_t * priv;
+
+  priv = ctx->priv;
+
+  /* Skip everything until the next packet */
+  if((rest = (ctx->input->position - ctx->tt->cur->data_start) % priv->packet_size))
+    bgav_input_skip(ctx->input, priv->packet_size - rest);
+
+  /* Everything else is handled by next_packet_mpegts */
+  
+  return 1;
+  }
+
 #if 0
 static int select_track_mpegts(bgav_demuxer_context_t * ctx,
                                int track)
@@ -476,12 +503,12 @@ static int select_track_mpegts(bgav_demuxer_context_t * ctx,
 
 const bgav_demuxer_t bgav_demuxer_mpegts2 =
   {
-    .probe =        probe_mpegts,
-    .open =         open_mpegts,
-    .next_packet =  next_packet_mpegts,
-    .seek =         seek_mpegts,
-    .resync =       resync_mpegts,
-    .close =        close_mpegts,
+    .probe =            probe_mpegts,
+    .open =             open_mpegts,
+    .next_packet =      next_packet_mpegts,
+    .post_seek_resync = post_seek_resync_mpegts,
+    .seek =             seek_mpegts,
+    .close =            close_mpegts,
     //    .select_track = select_track_mpegts
   };
 

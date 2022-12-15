@@ -42,11 +42,6 @@ typedef struct
   uint32_t crc;
   } wvpk_header_t;
 
-typedef struct
-  {
-  int64_t pts;
-  } wvpk_priv_t;
-
 #define HEADER_SIZE 32
 
 static const int wv_rates[16] = {
@@ -91,15 +86,15 @@ static void dump_header(wvpk_header_t * h)
   bgav_dump_fourcc(h->fourcc);
   bgav_dprintf("\n");
 
-  bgav_dprintf("  block_size:        %d\n", h->block_size);
-  bgav_dprintf("  version:           %d\n", h->version);
-  bgav_dprintf("  h->block_index_u8: %d\n", h->block_index_u8);
-  bgav_dprintf("  total_samples_u8:  %d\n", h->total_samples_u8);
-  bgav_dprintf("  total_samples:     %d\n", h->total_samples);
-  bgav_dprintf("  block_index:       %d\n", h->block_index);
-  bgav_dprintf("  block_samples:     %d\n", h->block_samples);
-  bgav_dprintf("  flags:             %08x\n", h->flags);
-  bgav_dprintf("  crc:               %08x\n", h->crc);
+  bgav_dprintf("  block_size:       %d\n", h->block_size);
+  bgav_dprintf("  version:          %d\n", h->version);
+  bgav_dprintf("  block_index_u8:   %d\n", h->block_index_u8);
+  bgav_dprintf("  total_samples_u8: %d\n", h->total_samples_u8);
+  bgav_dprintf("  total_samples:    %d\n", h->total_samples);
+  bgav_dprintf("  block_index:      %d\n", h->block_index);
+  bgav_dprintf("  block_samples:    %d\n", h->block_samples);
+  bgav_dprintf("  flags:            %08x\n", h->flags);
+  bgav_dprintf("  crc:              %08x\n", h->crc);
   }
 
 static int probe_wavpack(bgav_input_context_t * input)
@@ -116,12 +111,12 @@ static int open_wavpack(bgav_demuxer_context_t * ctx)
   bgav_stream_t * s;
   uint8_t header[HEADER_SIZE];
   wvpk_header_t h;
-  wvpk_priv_t * priv;
+  //  wvpk_priv_t * priv;
   int len;
   gavl_buffer_t buf;
-  priv = calloc(1, sizeof(*priv));
+  //  priv = calloc(1, sizeof(*priv));
 
-  ctx->priv = priv;
+  //  ctx->priv = priv;
   
   if(bgav_input_get_data(ctx->input, header, HEADER_SIZE) < HEADER_SIZE)
     return 0;
@@ -169,7 +164,7 @@ static int open_wavpack(bgav_demuxer_context_t * ctx)
   
   if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
     ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
-
+  
   ctx->index_mode = INDEX_MODE_SIMPLE;
 
   /* Read remaining blocks for the case of multichannel files */
@@ -197,8 +192,6 @@ static int open_wavpack(bgav_demuxer_context_t * ctx)
     }
 
   gavl_buffer_free(&buf);
-    
-  bgav_demuxer_init_cue(ctx);
   
   return 1;
   }
@@ -211,7 +204,7 @@ static gavl_source_status_t next_packet_wavpack(bgav_demuxer_context_t * ctx)
   bgav_stream_t * s;
   int size;
   int64_t pos;
-  wvpk_priv_t * priv = ctx->priv;
+  //  wvpk_priv_t * priv = ctx->priv;
 
   pos = ctx->input->position;
   
@@ -246,11 +239,8 @@ static gavl_source_status_t next_packet_wavpack(bgav_demuxer_context_t * ctx)
     return GAVL_SOURCE_EOF; // EOF
   
   p->buf.len = HEADER_SIZE + size;
-
-  p->pts = priv->pts;
   p->duration = h.block_samples;
-  priv->pts += h.block_samples;
-
+  
   /* Read remaining blocks for multichannel files */
 
   while(!(h.flags & WV_MCEND))
@@ -279,73 +269,55 @@ static void seek_wavpack(bgav_demuxer_context_t * ctx,
                          int64_t time, int scale)
   {
   int64_t time_scaled;
+  int64_t pts;
   bgav_stream_t * s;
   
   uint8_t header[HEADER_SIZE];
   wvpk_header_t h;
-  wvpk_priv_t * priv = ctx->priv;
   
   s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
   
-  priv->pts = 0;
+  pts = 0;
   time_scaled = gavl_time_rescale(scale, s->timescale, time);
   
   bgav_input_seek(ctx->input, 0, SEEK_SET);
-
+  
   while(1)
     {
-    if(bgav_input_get_data(ctx->input, header, HEADER_SIZE) < HEADER_SIZE)
-      return;
-    parse_header(&h, header);
-    if(priv->pts + h.block_samples > time_scaled)
-      break;
+    //    fprintf(stderr, "Seek %"PRId64"\n", pts);
 
+    if(bgav_input_get_data(ctx->input, header, HEADER_SIZE) < HEADER_SIZE)
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "EOF during seeking");
+      return;
+      }
+    parse_header(&h, header);
+    if(pts + h.block_samples > time_scaled)
+      break;
+    
     bgav_input_skip(ctx->input, HEADER_SIZE + h.block_size - 24);
-    priv->pts += h.block_samples;
+    pts += h.block_samples;
 
     while(!(h.flags & WV_MCEND))
       {
       if(bgav_input_get_data(ctx->input, header, HEADER_SIZE) < HEADER_SIZE)
+        {
+        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "EOF during seeking");
         return; // EOF
-
+        }
       parse_header(&h, header);
 
       bgav_input_skip(ctx->input, HEADER_SIZE + h.block_size - 24);
       }
     
     }
-  STREAM_SET_SYNC(s, priv->pts);
+  STREAM_SET_SYNC(s, pts);
   }
-
-static void close_wavpack(bgav_demuxer_context_t * ctx)
-  {
-  wvpk_priv_t * priv = ctx->priv;
-  free(priv);
-  }
-
-static void resync_wavpack(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
-  {
-  wvpk_priv_t * priv;
-  priv = ctx->priv;
-  priv->pts = STREAM_GET_SYNC(s);
-  }
-
-static int select_track_wavpack(bgav_demuxer_context_t * ctx, int track)
-  {
-  wvpk_priv_t * priv;
-  priv = ctx->priv;
-  priv->pts = 0;
-  return 1;
-  }
-
 
 const bgav_demuxer_t bgav_demuxer_wavpack =
   {
     .probe =       probe_wavpack,
     .open =        open_wavpack,
-    .select_track = select_track_wavpack,
     .next_packet = next_packet_wavpack,
     .seek =        seek_wavpack,
-    .resync =      resync_wavpack,
-    .close =       close_wavpack
   };

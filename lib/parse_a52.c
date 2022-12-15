@@ -25,67 +25,56 @@
 #include <config.h>
 #include <avdec_private.h>
 #include <parser.h>
-#include <audioparser_priv.h>
 #include <a52_header.h>
 
 #define FRAME_SAMPLES 1536
 
-static int parse_a52(bgav_audio_parser_t * parser)
+static int find_frame_boundary_a52(bgav_packet_parser_t * parser, int * skip)
   {
   int i;
   bgav_a52_header_t h;
   
-  for(i = 0; i < parser->buf.len - BGAV_A52_HEADER_BYTES; i++)
+  for(i = parser->buf.pos; i < parser->buf.len - BGAV_A52_HEADER_BYTES; i++)
     {
     if(bgav_a52_header_read(&h, parser->buf.buf + i))
       {
-      if(!parser->have_format)
-        {
-        bgav_a52_header_get_format(&h, parser->s->data.audio.format);
-        parser->s->codec_bitrate = h.bitrate;
-        parser->have_format = 1;
-        return PARSER_HAVE_FORMAT;
-        }
-      bgav_audio_parser_set_frame(parser,
-                                  i, h.total_bytes, FRAME_SAMPLES);
-      return PARSER_HAVE_FRAME;
+      parser->buf.pos = i;
+      *skip = h.total_bytes;
+      return 1;
       }
     }
-  return PARSER_NEED_DATA;
-
+  return 0;
   }
 
-static int parse_frame_a52(bgav_audio_parser_t * parser,
+static int parse_frame_a52(bgav_packet_parser_t * parser,
                            bgav_packet_t * p)
   {
-  bgav_a52_header_t h;
-
-  if(!parser->have_format)
+  if(!(parser->parser_flags & PARSER_HAS_HEADER))
     {
+    bgav_a52_header_t h;
     if(!bgav_a52_header_read(&h, p->buf.buf))
       return 0;
-    bgav_a52_header_get_format(&h, parser->s->data.audio.format);
-    parser->s->codec_bitrate = h.bitrate;
-    parser->have_format = 1;
+    bgav_a52_header_get_format(&h, parser->afmt);
+    parser->ci.bitrate = h.bitrate;
     }
   p->duration = FRAME_SAMPLES;
   return 1;
   }
 
 #if 0 
-void cleanup_a52(bgav_audio_parser_t * parser)
+void cleanup_a52(bgav_packet_parser_t * parser)
   {
   
   }
 
-void reset_a52(bgav_audio_parser_t * parser)
+void reset_a52(bgav_packet_parser_t * parser)
   {
   
   }
 #endif
 
-void bgav_audio_parser_init_a52(bgav_audio_parser_t * parser)
+void bgav_packet_parser_init_a52(bgav_packet_parser_t * parser)
   {
-  parser->parse = parse_a52;
+  parser->find_frame_boundary = find_frame_boundary_a52;
   parser->parse_frame = parse_frame_a52;
   }

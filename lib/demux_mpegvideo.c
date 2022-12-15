@@ -36,13 +36,12 @@
 
 typedef struct
   {
-  bgav_video_parser_t * parser;
+  bgav_packet_parser_t * parser;
   int eof;
   } mpegvideo_priv_t;
 
 static int detect_type(bgav_input_context_t * input)
   {
-  char * pos;
   uint32_t header_32;
   uint64_t header_64;
   if(!bgav_input_get_32_be(input, &header_32))
@@ -57,13 +56,9 @@ static int detect_type(bgav_input_context_t * input)
     return BGAV_MK_FOURCC('V', 'C', '-', '1');
   
   /* H.264 */
-  if(input->filename)
-    {
-    pos = strrchr(input->filename, '.');
-    if(pos && !strcasecmp(pos, ".h264"))
-      return BGAV_MK_FOURCC('H', '2', '6', '4');
-    }
-
+  if(input->location && gavl_string_ends_with(input->location, ".h264"))
+    return BGAV_MK_FOURCC('H', '2', '6', '4');
+  
   /* MPEG-4 */
   if(!bgav_input_get_64_be(input, &header_64))
     return 0;
@@ -135,16 +130,18 @@ static int open_mpegvideo(bgav_demuxer_context_t * ctx)
    */
 
   s->fourcc = detect_type(ctx->input);
-  s->flags |= (STREAM_PARSE_FULL|STREAM_RAW_PACKETS);
+
+  s->flags |= (STREAM_RAW_PACKETS);
   s->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
   
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
-
+  ctx->tt->cur->data_start = ctx->input->position;
+  /* TODO: Fix this for non MPEG-1/2 streams */
   bgav_track_set_format(ctx->tt->cur, "Elementary video stream",
                         "video/mpeg");
   
   ctx->index_mode = INDEX_MODE_MIXED;
+  bgav_stream_set_parse_full(s);
+  
   
   return 1;
 
@@ -157,16 +154,6 @@ static void close_mpegvideo(bgav_demuxer_context_t * ctx)
   free(priv);
   }
 
-static void resync_mpegvideo(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
-  {
-#if 0
-  mpegvideo_priv_t * priv;
-  priv = ctx->priv;
-  bgav_video_parser_reset(priv->parser, GAVL_TIME_UNDEFINED, STREAM_GET_SYNC(s));
-  //  fprintf(stderr, "resync: %ld\n", s->in_time);
-  priv->eof = 0;
-#endif
-  }
 
 static int select_track_mpegvideo(bgav_demuxer_context_t * ctx, int track)
   {
@@ -187,7 +174,6 @@ const bgav_demuxer_t bgav_demuxer_mpegvideo =
     .next_packet = next_packet_mpegvideo,
     //    .seek =        seek_mpegvideo,
     .close =       close_mpegvideo,
-    .resync =      resync_mpegvideo,
     .select_track =      select_track_mpegvideo
   };
 

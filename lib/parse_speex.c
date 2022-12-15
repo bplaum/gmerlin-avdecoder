@@ -24,58 +24,39 @@
 
 #include <avdec_private.h>
 #include <parser.h>
-#include <audioparser_priv.h>
 
 #include <speex/speex.h>
 #include <speex/speex_header.h>
 
-typedef struct
-  {
-  int packet_samples;
-  int64_t pts_offset;
-  } speex_priv_t;
 
-static int parse_frame_speex(bgav_audio_parser_t * parser, bgav_packet_t * p)
+static int parse_frame_speex(bgav_packet_parser_t * parser, bgav_packet_t * p)
   {
-  speex_priv_t * priv = parser->priv;
-  p->duration = priv->packet_samples;
-
-  if(p->pts == 0)
-    parser->timestamp += priv->pts_offset;
-  //  priv->pts_offset = 0;
+  if(p->duration < 0)
+    p->duration = parser->afmt->samples_per_frame;
   
   return 1;
   }
 
-static void cleanup_speex(bgav_audio_parser_t * parser)
-  {
-  free(parser->priv);
-  }
 
-static void reset_speex(bgav_audio_parser_t * parser)
+static void reset_speex(bgav_packet_parser_t * parser)
   {
 
   }
 
-void bgav_audio_parser_init_speex(bgav_audio_parser_t * parser)
+void bgav_packet_parser_init_speex(bgav_packet_parser_t * parser)
   {
   void *dec_state;
   SpeexHeader *header;
-  speex_priv_t * priv;
   int frame_size;
   
-  priv = calloc(1, sizeof(*priv));
-  parser->priv = priv;
-
   /* Set functions */
   
   parser->parse_frame = parse_frame_speex;
-  parser->cleanup = cleanup_speex;
   parser->reset = reset_speex;
   
   /* Get samples per packet */
-  header = speex_packet_to_header((char*)parser->s->ci->codec_header.buf,
-                                  parser->s->ci->codec_header.len);
+  header = speex_packet_to_header((char*)parser->ci.codec_header.buf,
+                                  parser->ci.codec_header.len);
 
   if(!header)
     return;
@@ -90,18 +71,14 @@ void bgav_audio_parser_init_speex(bgav_audio_parser_t * parser)
   
   speex_decoder_ctl(dec_state, SPEEX_GET_FRAME_SIZE, &frame_size);
   speex_decoder_ctl(dec_state, SPEEX_GET_LOOKAHEAD,
-                    &parser->s->ci->pre_skip);
+                    &parser->ci.pre_skip);
   
-  priv->packet_samples = header->frames_per_packet * frame_size;
-
-  parser->s->data.audio.format->samplerate = header->rate;
-  parser->s->timescale = header->rate;
-
-  parser->s->data.audio.format->num_channels = header->nb_channels;
-  gavl_set_channel_setup(parser->s->data.audio.format);
-
-  priv->pts_offset = -parser->s->ci->pre_skip;
+  parser->afmt->samplerate = header->rate;
+  parser->afmt->samples_per_frame = header->frames_per_packet * frame_size;
   
+  parser->afmt->num_channels = header->nb_channels;
+
+  gavl_set_channel_setup(parser->afmt);
   speex_decoder_destroy(dec_state);
   free(header);
   

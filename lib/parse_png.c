@@ -24,7 +24,6 @@
 
 #include <avdec_private.h>
 #include <parser.h>
-#include <videoparser_priv.h>
 #include <pngreader.h>
 
 #define LOG_DOMAIN "parse_png"
@@ -35,13 +34,13 @@ typedef struct
   int have_format;
   } png_priv_t;
 
-static int get_format(bgav_stream_t * s, bgav_packet_t * p,
+static int get_format(bgav_packet_t * p,
                       gavl_video_format_t * fmt)
   {
   int ret = 1;
-  bgav_png_reader_t * png = bgav_png_reader_create(s->data.video.depth);
+  bgav_png_reader_t * png = bgav_png_reader_create();
   
-  if(!bgav_png_reader_read_header(s->opt, png,
+  if(!bgav_png_reader_read_header(png,
                                   p->buf.buf, p->buf.len,
                                   fmt))
     {
@@ -51,8 +50,7 @@ static int get_format(bgav_stream_t * s, bgav_packet_t * p,
   return ret;
   }
 
-static int parse_frame_png(bgav_video_parser_t * parser, bgav_packet_t * p,
-                            int64_t prs_orig)
+static int parse_frame_png(bgav_packet_parser_t * parser, bgav_packet_t * p)
   {
   png_priv_t * priv = parser->priv;
   
@@ -62,22 +60,22 @@ static int parse_frame_png(bgav_video_parser_t * parser, bgav_packet_t * p,
   if(!priv->have_format)
     {
     priv->have_format = 1;
-    parser->s->ci->flags &= ~GAVL_COMPRESSION_HAS_P_FRAMES;
+    parser->ci.flags &= ~GAVL_COMPRESSION_HAS_P_FRAMES;
 
-    if(!get_format(parser->s, p, parser->s->data.video.format))
-      return PARSER_ERROR;
+    if(!get_format(p, parser->vfmt))
+      return 0;
     }
-  return PARSER_CONTINUE;
+  return 1;
   }
 
 
-static void cleanup_png(bgav_video_parser_t * parser)
+static void cleanup_png(bgav_packet_parser_t * parser)
   {
   png_priv_t * priv = parser->priv;
   free(priv);
   }
 
-void bgav_video_parser_init_png(bgav_video_parser_t * parser)
+void bgav_packet_parser_init_png(bgav_packet_parser_t * parser)
   {
   png_priv_t * priv;
   priv = calloc(1, sizeof(*priv));

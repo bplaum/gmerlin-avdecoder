@@ -35,31 +35,6 @@
 
 #define LOG_DOMAIN "videoparser"
 
-/* DIVX (maybe with B-frames) requires special attention */
-
-static const uint32_t video_codecs_divx[] =
-  {
-    BGAV_MK_FOURCC('D', 'I', 'V', 'X'),
-    BGAV_MK_FOURCC('d', 'i', 'v', 'x'),
-    BGAV_MK_FOURCC('D', 'X', '5', '0'),
-    BGAV_MK_FOURCC('X', 'V', 'I', 'D'),
-    BGAV_MK_FOURCC('x', 'v', 'i', 'd'),
-    BGAV_MK_FOURCC('F', 'M', 'P', '4'),
-    BGAV_MK_FOURCC('f', 'm', 'p', '4'),    
-    0x00,
-  };
-
-int bgav_video_is_divx4(uint32_t fourcc)
-  {
-  int i = 0;
-  while(video_codecs_divx[i])
-    {
-    if(video_codecs_divx[i] == fourcc)
-      return 1;
-    i++;
-    }
-  return 0;
-  }
 
 static const struct
   {
@@ -68,38 +43,66 @@ static const struct
   }
 parsers[] =
   {
-    { BGAV_MK_FOURCC('H', '2', '6', '4'), bgav_video_parser_init_h264 },
-    { BGAV_MK_FOURCC('a', 'v', 'c', '1'), bgav_video_parser_init_h264 },
-    { BGAV_MK_FOURCC('m', 'p', 'g', 'v'), bgav_video_parser_init_mpeg12 },
-    { BGAV_MK_FOURCC('m', 'p', 'v', '1'), bgav_video_parser_init_mpeg12 },
-    { BGAV_MK_FOURCC('m', 'p', 'v', '2'), bgav_video_parser_init_mpeg12 },
-    { BGAV_MK_FOURCC('m', 'x', '3', 'p'), bgav_video_parser_init_mpeg12 },
-    { BGAV_MK_FOURCC('m', 'x', '4', 'p'), bgav_video_parser_init_mpeg12 },
-    { BGAV_MK_FOURCC('m', 'x', '5', 'p'), bgav_video_parser_init_mpeg12 },
-    { BGAV_MK_FOURCC('m', 'x', '3', 'n'), bgav_video_parser_init_mpeg12 },
-    { BGAV_MK_FOURCC('m', 'x', '4', 'n'), bgav_video_parser_init_mpeg12 },
-    { BGAV_MK_FOURCC('m', 'x', '5', 'n'), bgav_video_parser_init_mpeg12 },
-    { BGAV_MK_FOURCC('m', 'p', '4', 'v'), bgav_video_parser_init_mpeg4 },
-    /* DivX Variants */
-    { BGAV_MK_FOURCC('D', 'I', 'V', 'X'), bgav_video_parser_init_mpeg4 },
-    { BGAV_MK_FOURCC('d', 'i', 'v', 'x'), bgav_video_parser_init_mpeg4 },
-    { BGAV_MK_FOURCC('D', 'X', '5', '0'), bgav_video_parser_init_mpeg4 },
-    { BGAV_MK_FOURCC('X', 'V', 'I', 'D'), bgav_video_parser_init_mpeg4 },
-    { BGAV_MK_FOURCC('x', 'v', 'i', 'd'), bgav_video_parser_init_mpeg4 },
-    { BGAV_MK_FOURCC('F', 'M', 'P', '4'), bgav_video_parser_init_mpeg4 },
-    { BGAV_MK_FOURCC('f', 'm', 'p', '4'), bgav_video_parser_init_mpeg4 },
-    /* */
-    { BGAV_MK_FOURCC('C', 'A', 'V', 'S'), bgav_video_parser_init_cavs },
-    { BGAV_MK_FOURCC('V', 'C', '-', '1'), bgav_video_parser_init_vc1 },
-    { BGAV_MK_FOURCC('d', 'r', 'a', 'c'), bgav_video_parser_init_dirac },
-    { BGAV_MK_FOURCC('m', 'j', 'p', 'a'), bgav_video_parser_init_mjpa },
-    { BGAV_MK_FOURCC('j', 'p', 'e', 'g'), bgav_video_parser_init_jpeg },
-    { BGAV_MK_FOURCC('B', 'B', 'C', 'D'), bgav_video_parser_init_dirac },
-    { BGAV_MK_FOURCC('V', 'P', '8', '0'), bgav_video_parser_init_vp8 },
-    { BGAV_MK_FOURCC('V', 'P', '9', '0'), bgav_video_parser_init_vp9 },
+    /* Audio parsers */
+    //    { BGAV_WAVID_2_FOURCC(0x0050), bgav_audio_parser_init_mpeg },
+    //    { BGAV_WAVID_2_FOURCC(0x0055), bgav_audio_parser_init_mpeg },
+    //    { BGAV_MK_FOURCC('.','m','p','1'), bgav_audio_parser_init_mpeg },
+    //    { BGAV_MK_FOURCC('.','m','p','2'), bgav_audio_parser_init_mpeg },
+    //    { BGAV_MK_FOURCC('.','m','p','3'), bgav_audio_parser_init_mpeg },
+    //    { BGAV_MK_FOURCC('m','p','g','a'), bgav_audio_parser_init_mpeg },
+    //    { BGAV_MK_FOURCC('L','A','M','E'), bgav_audio_parser_init_mpeg },
+    //    { BGAV_WAVID_2_FOURCC(0x2000), bgav_audio_parser_init_a52 },
+    //    { BGAV_MK_FOURCC('.','a','c','3'), bgav_audio_parser_init_a52 },
+    //    { BGAV_MK_FOURCC('a','c','-','3'), bgav_audio_parser_init_a52 },
+#ifdef HAVE_DCA
+    //    { BGAV_MK_FOURCC('d','t','s',' '), bgav_audio_parser_init_dca },
+#endif
+#ifdef HAVE_VORBIS
+    //    { BGAV_MK_FOURCC('V','B','I','S'), bgav_audio_parser_init_vorbis },
+#endif
+    //    { BGAV_MK_FOURCC('F','L','A','C'), bgav_audio_parser_init_flac },
+#ifdef HAVE_OPUS
+    //    { BGAV_MK_FOURCC('O','P','U','S'), bgav_audio_parser_init_opus },
+#endif
+#ifdef HAVE_SPEEX
+    //    { BGAV_MK_FOURCC('S','P','E','X'), bgav_audio_parser_init_speex },
+#endif
+    //    { BGAV_MK_FOURCC('A','D','T','S'), bgav_audio_parser_init_adts },
+    //    { BGAV_MK_FOURCC('A','A','C','P'), bgav_audio_parser_init_adts },
     
-    { BGAV_MK_FOURCC('D', 'V', 'D', 'S'), bgav_video_parser_init_dvdsub },
-    { BGAV_MK_FOURCC('m', 'p', '4', 's'), bgav_video_parser_init_dvdsub },
+    /* Video parsers */
+    //    { BGAV_MK_FOURCC('H', '2', '6', '4'), bgav_video_parser_init_h264 },
+    //    { BGAV_MK_FOURCC('a', 'v', 'c', '1'), bgav_video_parser_init_h264 },
+    //    { BGAV_MK_FOURCC('m', 'p', 'g', 'v'), bgav_video_parser_init_mpeg12 },
+    //    { BGAV_MK_FOURCC('m', 'p', 'v', '1'), bgav_video_parser_init_mpeg12 },
+    //    { BGAV_MK_FOURCC('m', 'p', 'v', '2'), bgav_video_parser_init_mpeg12 },
+    //    { BGAV_MK_FOURCC('m', 'x', '3', 'p'), bgav_video_parser_init_mpeg12 },
+    //    { BGAV_MK_FOURCC('m', 'x', '4', 'p'), bgav_video_parser_init_mpeg12 },
+    //    { BGAV_MK_FOURCC('m', 'x', '5', 'p'), bgav_video_parser_init_mpeg12 },
+    //    { BGAV_MK_FOURCC('m', 'x', '3', 'n'), bgav_video_parser_init_mpeg12 },
+    //    { BGAV_MK_FOURCC('m', 'x', '4', 'n'), bgav_video_parser_init_mpeg12 },
+    //    { BGAV_MK_FOURCC('m', 'x', '5', 'n'), bgav_video_parser_init_mpeg12 },
+    //    { BGAV_MK_FOURCC('m', 'p', '4', 'v'), bgav_video_parser_init_mpeg4 },
+    /* DivX Variants */
+    //    { BGAV_MK_FOURCC('D', 'I', 'V', 'X'), bgav_video_parser_init_mpeg4 },
+    //    { BGAV_MK_FOURCC('d', 'i', 'v', 'x'), bgav_video_parser_init_mpeg4 },
+    //    { BGAV_MK_FOURCC('D', 'X', '5', '0'), bgav_video_parser_init_mpeg4 },
+    //    { BGAV_MK_FOURCC('X', 'V', 'I', 'D'), bgav_video_parser_init_mpeg4 },
+    //    { BGAV_MK_FOURCC('x', 'v', 'i', 'd'), bgav_video_parser_init_mpeg4 },
+    //    { BGAV_MK_FOURCC('F', 'M', 'P', '4'), bgav_video_parser_init_mpeg4 },
+    //    { BGAV_MK_FOURCC('f', 'm', 'p', '4'), bgav_video_parser_init_mpeg4 },
+    /* */
+    //    { BGAV_MK_FOURCC('C', 'A', 'V', 'S'), bgav_video_parser_init_cavs },
+    //    { BGAV_MK_FOURCC('V', 'C', '-', '1'), bgav_video_parser_init_vc1 },
+    //    { BGAV_MK_FOURCC('d', 'r', 'a', 'c'), bgav_video_parser_init_dirac },
+    //    { BGAV_MK_FOURCC('m', 'j', 'p', 'a'), bgav_video_parser_init_mjpa },
+    //    { BGAV_MK_FOURCC('j', 'p', 'e', 'g'), bgav_video_parser_init_jpeg },
+    //    { BGAV_MK_FOURCC('B', 'B', 'C', 'D'), bgav_video_parser_init_dirac },
+    //    { BGAV_MK_FOURCC('V', 'P', '8', '0'), bgav_video_parser_init_vp8 },
+    //    { BGAV_MK_FOURCC('V', 'P', '9', '0'), bgav_video_parser_init_vp9 },
+    
+    //    { BGAV_MK_FOURCC('D', 'V', 'D', 'S'), bgav_video_parser_init_dvdsub },
+    //    { BGAV_MK_FOURCC('m', 'p', '4', 's'), bgav_video_parser_init_dvdsub },
 
   };
 
@@ -153,7 +156,7 @@ void bgav_video_parser_reset(bgav_video_parser_t * parser,
   else
     parser->timestamp = GAVL_TIME_UNDEFINED;
   
-  parser->pos = 0;
+  parser->buf.pos = 0;
   parser->non_b_count = 0;
   parser->keyframe_count = 0;
   
@@ -172,7 +175,6 @@ void bgav_video_parser_add_packet(bgav_video_parser_t * parser,
   bgav_packet_dump(p);
   gavl_hexdump(p->data, 16, 16);
 #endif
-  /* Update cache */
 
   if(parser->s->flags & STREAM_RAW_PACKETS)
     {
@@ -201,15 +203,13 @@ void bgav_video_parser_add_packet(bgav_video_parser_t * parser,
   gavl_buffer_append(&parser->buf, &p->buf);
   }
 
-void bgav_video_parser_flush(bgav_video_parser_t * parser, int bytes)
+void bgav_video_parser_flush_data(bgav_video_parser_t * parser, int bytes)
   {
   if(!bytes)
     return;
   
   gavl_buffer_flush(&parser->buf, bytes);
-  parser->pos -= bytes;
-  if(parser->pos < 0)
-    parser->pos = 0;
+
   if(parser->raw)
     parser->raw_position += bytes;
   else
@@ -279,11 +279,12 @@ parse_next_packet(bgav_video_parser_t * parser, int force, int64_t *pts_ret,
     {
     if(parser->find_frame_boundary(parser, &skip))
       {
-      bgav_video_parser_flush(parser, parser->pos);
+      bgav_video_parser_flush_data(parser, parser->buf.pos);
       parser->have_sync = 1;
-      parser->pos += skip;
+      parser->buf.pos += skip;
       break;
       }
+    
     if((st = get_input_packet(parser, force)) != GAVL_SOURCE_OK)
       {
       // EOF while initializing the video parser
@@ -306,6 +307,7 @@ parse_next_packet(bgav_video_parser_t * parser, int force, int64_t *pts_ret,
     {
     if(parser->find_frame_boundary(parser, &skip))
       break;
+    
     if((st = get_input_packet(parser, force)) != GAVL_SOURCE_OK)
       {
       // EOF: Take this packet as the last one if there is data left
@@ -313,28 +315,20 @@ parse_next_packet(bgav_video_parser_t * parser, int force, int64_t *pts_ret,
         {
         if(!parser->buf.len)
           return GAVL_SOURCE_EOF;
-        parser->pos = parser->buf.len;
+        parser->buf.pos = parser->buf.len;
         }
       else if(st == GAVL_SOURCE_AGAIN)
         return st;
       break;
-      }
-
-    if(parser->buf.len > MAX_SCAN_SIZE)
-      {
-      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-               "Didn't find a frame in the first %d bytes (misdetected codec?)",
-               parser->buf.len);
-      return GAVL_SOURCE_EOF;
       }
     }
   
   /* Set up packet */
 
   *ret = bgav_packet_pool_get(parser->s->pp);
-  bgav_packet_alloc(*ret, parser->pos);
-  memcpy((*ret)->buf.buf, parser->buf.buf, parser->pos);
-  (*ret)->buf.len = parser->pos;
+  bgav_packet_alloc(*ret, parser->buf.pos);
+  memcpy((*ret)->buf.buf, parser->buf.buf, parser->buf.pos);
+  (*ret)->buf.len = parser->buf.pos;
 
   if(parser->raw)
     {
@@ -348,10 +342,10 @@ parse_next_packet(bgav_video_parser_t * parser, int force, int64_t *pts_ret,
   
   // fprintf(stderr, "FLUSH %d\n", parser->pos);
   
-  bgav_video_parser_flush(parser, parser->pos);
+  bgav_video_parser_flush_data(parser, parser->buf.pos);
   
   /* set up position for next packet */
-  parser->pos = skip;
+  parser->buf.pos = skip;
   
   /* Parse frame */
 
@@ -431,12 +425,13 @@ static void process_packet(bgav_video_parser_t * parser, bgav_packet_t * p, int6
   /* Initialize stuff */
   if(!(parser->flags & PARSER_INITIALIZED))
     {
-    /* MPEG-type video parsers only get the *duration* of each frame.
-       Timestamps, which implies that the timestamps are DTS. They will be
+    /* MPEG-type video parsers only get the *duration* of each frame,
+       which implies that the timestamps are DTS. They will be
        converted to PTS by the packettimer
     */
     
-    if((parser->s->ci->flags & GAVL_COMPRESSION_HAS_B_FRAMES) && (parser->flags & PARSER_GEN_PTS))
+    if((parser->s->ci->flags & GAVL_COMPRESSION_HAS_B_FRAMES) &&
+       (parser->flags & PARSER_GEN_PTS))
       parser->s->flags |= STREAM_DTS_ONLY;
     parser->flags |= PARSER_INITIALIZED;
     }
@@ -486,7 +481,7 @@ parse_full(void * parser1, int force, bgav_packet_t ** ret)
   
   /* Merge field pictures */
   
-  if((*ret)->flags & PACKET_FLAG_FIELD_PIC)
+  if((*ret)->flags & GAVL_PACKET_FIELD_PIC)
     {
     bgav_packet_t * field2;
 
@@ -602,7 +597,6 @@ static int parse_frame(bgav_video_parser_t * parser,
   return ret;
   }
 
-
 static
 gavl_source_status_t
 get_packet_parse_frame(void * parser1, bgav_packet_t ** ret_p)
@@ -694,6 +688,7 @@ bgav_video_parser_create(bgav_stream_t * s)
       }
     }
 
+#if 0  
   if(!func)
     {
     if(bgav_check_fourcc(s->fourcc, bgav_dv_fourccs))
@@ -701,7 +696,7 @@ bgav_video_parser_create(bgav_stream_t * s)
     else if(bgav_check_fourcc(s->fourcc, bgav_png_fourccs))
       func = bgav_video_parser_init_png;
     }
-  
+#endif
   if(!func)
     return NULL;
   
@@ -739,3 +734,121 @@ bgav_video_parser_create(bgav_stream_t * s)
   func(ret);
   return ret;
   }
+
+/* Push based version */
+
+static int flush_packet(bgav_video_parser_t * parser)
+  {
+  int64_t pts = 0;
+  gavl_packet_t * p = gavl_packet_sink_get_packet(parser->sink);
+
+  gavl_packet_alloc(p, parser->buf.pos);
+  gavl_buffer_append_data_pad(&p->buf, parser->buf.buf, parser->buf.pos, GAVL_PACKET_PADDING);
+
+  if(parser->raw)
+    {
+    p->position = parser->raw_position;
+    }
+  else
+    {
+    p->position = parser->packets[0].packet_position;
+    pts = parser->packets[0].pts;
+    }
+  
+  bgav_video_parser_flush_data(parser, parser->buf.pos);
+  
+  if(!parser->parse_frame(parser, p, pts))
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Parsing frame failed");
+    return 0;
+    }
+  
+  return 1;
+  }
+
+static void flush(bgav_video_parser_t * parser)
+  {
+  int skip = 0;
+
+  /* Find frame start */
+  if(!parser->have_sync)
+    {
+    if(parser->find_frame_boundary(parser, &skip))
+      {
+      bgav_video_parser_flush_data(parser, parser->buf.pos);
+      parser->have_sync = 1;
+      parser->buf.pos += skip;
+      }
+    else
+      {
+      if(parser->buf.len > MAX_SCAN_SIZE)
+        {
+        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
+                 "Didn't find a frame in the first %d bytes (misdetected codec?)",
+                 parser->buf.len);
+        }
+      return;
+      }
+    }
+
+  while(1) /// Find frame end
+    {
+    if(!parser->find_frame_boundary(parser, &skip))
+      break;
+    
+    flush_packet(parser);
+    
+    parser->buf.pos += skip;
+    }
+  
+  }
+
+#if 1
+
+static gavl_packet_t * get_packet_func(void * priv)
+  {
+  bgav_video_parser_t * parser = priv;
+
+  if(parser->s->flags & STREAM_PARSE_FULL)
+    {
+    return NULL;
+    }
+  else
+    {
+    return gavl_packet_sink_get_packet(parser->next);
+    }
+  
+  }
+
+
+static gavl_sink_status_t put_packet_func(void * priv, gavl_packet_t * p)
+  {
+  bgav_video_parser_t * parser = priv;
+
+  if(parser->s->flags & STREAM_PARSE_FULL)
+    {
+    //    bgav_video_parser_add_packet(parser, p);
+    flush(parser);
+    }
+  else // Parse frame only
+    {
+    
+    }
+  
+  return GAVL_SINK_OK;
+  }
+
+gavl_packet_sink_t * bgav_video_parser_connect(bgav_video_parser_t * parser,
+                                               gavl_packet_sink_t * next)
+  {
+  parser->next = next;
+
+  parser->sink = gavl_packet_sink_create(get_packet_func,
+                                         put_packet_func,
+                                         parser);
+  return parser->sink;
+  }
+
+
+
+#endif

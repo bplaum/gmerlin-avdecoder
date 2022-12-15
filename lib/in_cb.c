@@ -95,16 +95,16 @@ bgav_input_open_callbacks(int (*read_callback)(void * priv, uint8_t * data, int 
     ret->input = &bgav_input_callbacks_noseek;
     }
   ret->priv = c;
-  ret->filename = gavl_strdup(filename);
+  ret->location = gavl_strdup(filename);
   if(mimetype)
     gavl_dictionary_set_string(gavl_dictionary_get_src_nc(&ret->m, GAVL_META_SRC, 0),
                                GAVL_META_MIMETYPE, mimetype);
   ret->total_bytes = total_bytes;
   
-  if(ret->filename)
+  if(ret->location)
     {
     uint8_t md5sum[16];
-    bgav_md5_buffer(ret->filename, strlen(ret->filename),
+    bgav_md5_buffer(ret->location, strlen(ret->location),
                     md5sum);
     ret->index_file =
       bgav_sprintf("%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",

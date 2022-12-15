@@ -27,15 +27,16 @@ typedef struct bgav_cue_s bgav_cue_t;
 bgav_cue_t *
 bgav_cue_read(bgav_input_context_t * audio_file);
 
-gavl_dictionary_t * bgav_cue_get_edl(bgav_cue_t *, int64_t total_samples,
-                                     gavl_dictionary_t * parent);
+gavl_dictionary_t * bgav_cue_get_edl(bgav_cue_t *,
+                                     gavl_dictionary_t * parent,
+                                     const char * filename);
 
 void bgav_cue_destroy(bgav_cue_t *);
 
 // Not implemented
 // void bgav_cue_dump(bgav_cue_t *);
 
-void bgav_demuxer_init_cue(bgav_demuxer_context_t * ctx);
+// void bgav_demuxer_init_cue(bgav_demuxer_context_t * ctx);
 
 #endif // BGAV_CUE_H_INCLUDED
 

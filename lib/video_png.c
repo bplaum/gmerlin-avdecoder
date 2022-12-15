@@ -53,10 +53,7 @@ decode_png(bgav_stream_t * s, gavl_video_frame_t * frame)
   if((st = bgav_stream_get_packet_read(s, &p)) != GAVL_SOURCE_OK)
     return st;
   
-  //  bgav_packet_save(p, "frame.png");
-  
-  if(!bgav_png_reader_read_header(s->opt,
-                                  priv->png_reader,
+  if(!bgav_png_reader_read_header(priv->png_reader,
                                   p->buf.buf, p->buf.len,
                                   s->data.video.format))
     {
@@ -67,8 +64,7 @@ decode_png(bgav_stream_t * s, gavl_video_frame_t * frame)
   if(frame)
     {
     if(!priv->have_header &&
-       !bgav_png_reader_read_header(s->opt,
-                                    priv->png_reader,
+       !bgav_png_reader_read_header(priv->png_reader,
                                     p->buf.buf, p->buf.len,
                                     &priv->format))
       return GAVL_SOURCE_EOF;
@@ -91,7 +87,7 @@ static int init_png(bgav_stream_t * s)
 
   s->decoder_priv = priv;
   
-  priv->png_reader = bgav_png_reader_create(s->data.video.depth);
+  priv->png_reader = bgav_png_reader_create();
   gavl_dictionary_set_string(s->m, GAVL_META_FORMAT, "PNG");
   return 1;
   }

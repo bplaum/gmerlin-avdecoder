@@ -128,7 +128,7 @@ static int open_smjpeg(bgav_demuxer_context_t * ctx)
         s->data.video.format->timescale = 1000;
         s->data.video.format->framerate_mode = GAVL_FRAMERATE_VARIABLE;
         s->flags |= STREAM_NO_DURATIONS;
-
+        
         if(!bgav_input_read_fourcc(ctx->input, &fourcc))
           return 0;
 
@@ -143,8 +143,7 @@ static int open_smjpeg(bgav_demuxer_context_t * ctx)
         break;
       }
     }
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+  ctx->tt->cur->data_start = ctx->input->position;
   return 1;
   }
 

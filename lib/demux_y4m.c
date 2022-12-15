@@ -258,8 +258,6 @@ static gavl_source_status_t next_packet_y4m(bgav_demuxer_context_t * ctx)
 
   p->buf.len = priv->buf_size;
   
-  p->pts = s->in_position * s->data.video.format->frame_duration;
-  
   PACKET_SET_KEYFRAME(p);
   p->duration = s->data.video.format->frame_duration;
   
@@ -311,10 +309,6 @@ static gavl_source_status_t next_packet_y4m(bgav_demuxer_context_t * ctx)
   return GAVL_SOURCE_OK;
   }
 
-static void resync_y4m(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
-  {
-  s->in_position = STREAM_GET_SYNC(s) / s->data.video.format->frame_duration;
-  }
 
 static void close_y4m(bgav_demuxer_context_t * ctx)
   {
@@ -331,6 +325,5 @@ const bgav_demuxer_t bgav_demuxer_y4m =
     .probe        = probe_y4m,
     .open         = open_y4m,
     .next_packet = next_packet_y4m,
-    .resync      = resync_y4m,
     .close =       close_y4m
   };

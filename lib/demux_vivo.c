@@ -368,7 +368,7 @@ static int vivo_header_read(vivo_header_t * ret, bgav_input_context_t * input)
     }
 
   result = 1;
-  if(input->opt->dump_headers)
+  if(input->opt.dump_headers)
     vivo_header_dump(ret);
   fail:
   gavl_buffer_free(&buf);
@@ -503,9 +503,7 @@ static int open_vivo(bgav_demuxer_context_t * ctx)
   
   gavl_track_set_duration(ctx->tt->cur->info, (GAVL_TIME_SCALE * (int64_t)(priv->header.duration)) / 1000);
 
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
-  
+  ctx->tt->cur->data_start = ctx->input->position;
   return 1;
   
   fail:

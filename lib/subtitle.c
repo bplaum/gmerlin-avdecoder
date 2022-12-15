@@ -149,22 +149,11 @@ int bgav_read_subtitle_text(bgav_t * b, char ** ret, int *ret_alloc,
 int bgav_has_subtitle(bgav_t * b, int stream)
   {
   bgav_stream_t * s = bgav_track_get_subtitle_stream(b->tt->cur, stream);
-  int force;
   
-  if(s->flags & STREAM_HAS_SUBREADER)
-    return 1;
+  if(bgav_stream_peek_packet_read(s, NULL) == GAVL_SOURCE_AGAIN)
+    return 0;
   else
-    {
-    if(b->tt->cur->flags & TRACK_SAMPLE_ACCURATE)
-      force = 1;
-    else
-      force = 0;
-    
-    if(bgav_stream_peek_packet_read(s, NULL, force) == GAVL_SOURCE_AGAIN)
-      return 0;
-    else
-      return 1; 
-    }
+    return 1; 
   }
 
 void bgav_subtitle_dump(bgav_stream_t * s)
@@ -188,7 +177,7 @@ static gavl_source_status_t read_video_copy(void * sp,
   gavl_source_status_t st;
   bgav_stream_t * s = sp;
 
-  if((st = bgav_stream_peek_packet_read(s, NULL, 0)) != GAVL_SOURCE_OK)
+  if((st = bgav_stream_peek_packet_read(s, NULL)) != GAVL_SOURCE_OK)
     return st;
   
   if(frame)
@@ -216,7 +205,7 @@ read_video_nocopy(void * sp,
   gavl_source_status_t st;
   bgav_stream_t * s = sp;
   //  fprintf(stderr, "Read video nocopy\n");
-  if((st = bgav_stream_peek_packet_read(s, NULL, 0)) != GAVL_SOURCE_OK)
+  if((st = bgav_stream_peek_packet_read(s, NULL)) != GAVL_SOURCE_OK)
     return st;
   
   if((st = s->data.subtitle.video.decoder->decode(sp, NULL)) != GAVL_SOURCE_OK)
@@ -239,17 +228,11 @@ int bgav_text_init(bgav_stream_t * s)
 int bgav_text_start(bgav_stream_t * s)
   {
   s->flags &= ~(STREAM_EOF_C|STREAM_EOF_D);
-
-  if(s->data.subtitle.subreader)
-    if(!bgav_subtitle_reader_start(s))
-      return 0;
   
   s->data.subtitle.cnv =
-    bgav_subtitle_converter_create(s);
+    bgav_subtitle_converter_create(s->data.subtitle.charset);
+  s->psrc = bgav_subtitle_converter_connect(s->data.subtitle.cnv, s->psrc);
   
-  s->psrc =
-    gavl_packet_source_create_text(bgav_stream_read_packet_func, // get_packet,
-                                   s, GAVL_SOURCE_SRC_ALLOC, s->timescale);
   return 1;
   }
 
@@ -262,34 +245,10 @@ const uint32_t bgav_dvdsub_fourccs[] =
 
 int bgav_overlay_init(bgav_stream_t * s)
   {
-  if(s->data.subtitle.subreader)
-    {
-    if(!bgav_subtitle_reader_start(s))
-      return 0;
-    //    else
-    //      return 1;
-    }
 
   if(bgav_check_fourcc(s->fourcc, bgav_dvdsub_fourccs))
     s->flags |= STREAM_PARSE_FULL;
-    
-  if((s->flags & (STREAM_PARSE_FULL|STREAM_PARSE_FRAME)) &&
-     !s->data.subtitle.video.parser)
-    {
-    s->data.subtitle.video.parser = bgav_video_parser_create(s);
-    if(!s->data.subtitle.video.parser)
-      {
-      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-               "No subtitle parser found for fourcc %c%c%c%c (0x%08x)",
-               (s->fourcc & 0xFF000000) >> 24,
-               (s->fourcc & 0x00FF0000) >> 16,
-               (s->fourcc & 0x0000FF00) >> 8,
-               (s->fourcc & 0x000000FF),
-               s->fourcc);
-      return 0;
-      }
-    s->index_mode = INDEX_MODE_SIMPLE;
-    }
+  
   return 1;
   }
 
@@ -343,15 +302,6 @@ int bgav_overlay_start(bgav_stream_t * s)
       }
     
     }
-  else if(s->action == BGAV_STREAM_READRAW)
-    {
-    s->psrc =
-      gavl_packet_source_create_video(bgav_stream_read_packet_func, // get_packet,
-                                      s,
-                                      GAVL_SOURCE_SRC_ALLOC,
-                                      s->ci,
-                                      s->data.subtitle.video.format, GAVL_STREAM_OVERLAY);
-    }
   
   return 1;
   }
@@ -363,19 +313,10 @@ void bgav_subtitle_stop(bgav_stream_t * s)
     bgav_subtitle_converter_destroy(s->data.subtitle.cnv);
     s->data.subtitle.cnv = NULL;
     }
-  if(s->data.subtitle.subreader)
-    {
-    bgav_subtitle_reader_stop(s);
-    }
   if(s->data.subtitle.video.decoder)
     {
     s->data.subtitle.video.decoder->close(s);
     s->data.subtitle.video.decoder = NULL;
-    }
-  if(s->data.subtitle.video.parser)
-    {
-    bgav_video_parser_destroy(s->data.subtitle.video.parser);
-    s->data.subtitle.video.parser = NULL;
     }
   if(s->data.subtitle.video.vsrc_priv)
     {
@@ -394,9 +335,6 @@ void bgav_subtitle_resync(bgav_stream_t * s)
   if(s->data.subtitle.video.decoder &&
      s->data.subtitle.video.decoder->resync)
     s->data.subtitle.video.decoder->resync(s);
-
-  if(s->data.subtitle.cnv)
-    bgav_subtitle_converter_reset(s->data.subtitle.cnv);
   
   if(s->data.subtitle.video.vsrc)
     gavl_video_source_reset(s->data.subtitle.video.vsrc);

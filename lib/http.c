@@ -274,34 +274,14 @@ static bgav_http_t * http_open(bgav_http_t * ret,
   
   /* Check for proxy */
 
-  if(opt->http_use_proxy)
-    {
-    real_host = opt->http_proxy_host;
-    real_port = opt->http_proxy_port;
-    }
-  else
-    {
-    real_host = host;
-    real_port = port;
-    }
+  real_host = host;
+  real_port = port;
+  
   
   /* Build request */
   
-  if(opt->http_use_proxy)
-    gavl_http_request_init(&request_header, "GET", url, "HTTP/1.1");
-  else
-    gavl_http_request_init(&request_header, "GET", ((path) ? path : "/"), "HTTP/1.1");
+  gavl_http_request_init(&request_header, "GET", ((path) ? path : "/"), "HTTP/1.1");
   
-  /* Proxy authentication */
-  
-  if(opt->http_use_proxy && opt->http_proxy_auth)
-    {
-    userpass_enc = encode_user_pass(opt->http_proxy_user, opt->http_proxy_pass);
-    gavl_dictionary_set_string_nocopy(&request_header, "Proxy-Authorization",
-                                      gavl_sprintf("Basic %s", userpass_enc));
-    
-    free(userpass_enc);
-    }
   
   if(default_port)
     gavl_dictionary_set_string(&request_header, "Host", host);

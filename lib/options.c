@@ -51,19 +51,14 @@ void bgav_options_set_network_bandwidth(bgav_options_t *b, int bandwidth)
 
 void bgav_options_set_http_use_proxy(bgav_options_t*b, int use_proxy)
   {
-  b->http_use_proxy = use_proxy;
   }
 
 void bgav_options_set_http_proxy_host(bgav_options_t*b, const char * h)
   {
-  if(b->http_proxy_host)
-    free(b->http_proxy_host);
-  b->http_proxy_host = gavl_strdup(h);
   }
 
 void bgav_options_set_http_proxy_port(bgav_options_t*b, int p)
   {
-  b->http_proxy_port = p;
   }
 
 void bgav_options_set_rtp_port_base(bgav_options_t*b, int p)
@@ -93,21 +88,14 @@ void bgav_options_set_cache_size(bgav_options_t*opt, int s)
 
 void bgav_options_set_http_proxy_auth(bgav_options_t*b, int i)
   {
-  b->http_proxy_auth = i;
   }
 
 void bgav_options_set_http_proxy_user(bgav_options_t*b, const char * h)
   {
-  if(b->http_proxy_user)
-    free(b->http_proxy_user);
-  b->http_proxy_user = gavl_strdup(h);
   }
 
 void bgav_options_set_http_proxy_pass(bgav_options_t*b, const char * h)
   {
-  if(b->http_proxy_pass)
-    free(b->http_proxy_pass);
-  b->http_proxy_pass = gavl_strdup(h);
   }
 
 
@@ -147,7 +135,6 @@ void bgav_options_set_default_subtitle_encoding(bgav_options_t* b,
 void bgav_options_set_seek_subtitles(bgav_options_t* opt,
                                      int seek_subtitles)
   {
-  opt->seek_subtitles = seek_subtitles;
   }
 
 void bgav_options_set_pp_level(bgav_options_t* opt,
@@ -238,9 +225,6 @@ void bgav_options_set_dump_packets(bgav_options_t* opt,
 void bgav_options_free(bgav_options_t*opt)
   {
   FREE(opt->ftp_anonymous_password);
-  FREE(opt->http_proxy_host);
-  FREE(opt->http_proxy_user);
-  FREE(opt->http_proxy_pass);
   FREE(opt->default_subtitle_encoding);
   FREE(opt->dvb_channels_file);
   }
@@ -304,16 +288,6 @@ void bgav_options_copy(bgav_options_t * dst, const bgav_options_t * src)
   CP_INT(rtp_port_base);
   
   /* http options */
-
-  CP_INT(http_use_proxy);
-  CP_STR(http_proxy_host);
-  CP_INT(http_proxy_port);
-
-  CP_INT(http_proxy_auth);
-  
-  CP_STR(http_proxy_user);
-  CP_STR(http_proxy_pass);
-  
   CP_INT(http_shoutcast_metadata);
 
   /* ftp options */
@@ -324,8 +298,6 @@ void bgav_options_copy(bgav_options_t * dst, const bgav_options_t * src)
   /* Subtitle */
   
   CP_STR(default_subtitle_encoding);
-  CP_INT(seek_subtitles);
-
   /* Postprocessing */
   
   CP_FLOAT(pp_level);

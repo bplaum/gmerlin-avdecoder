@@ -20,6 +20,7 @@
  * *****************************************************************/
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <avdec_private.h>
 
@@ -28,7 +29,10 @@
 
 struct bgav_packet_pool_s
   {
-  bgav_packet_t * packets;
+  int num_packets;
+  int packets_alloc;
+  
+  bgav_packet_t ** packets;
   };
 
 bgav_packet_pool_t * bgav_packet_pool_create()
@@ -40,47 +44,42 @@ bgav_packet_pool_t * bgav_packet_pool_create()
 
 bgav_packet_t * bgav_packet_pool_get(bgav_packet_pool_t * pp)
   {
-  bgav_packet_t * ret;
-  if(pp->packets)
-    {
-    ret = pp->packets;
-    pp->packets = pp->packets->next;
-    }
+  if(!pp->num_packets)
+    return gavl_packet_create();
   else
-    ret = bgav_packet_create();
-
-  ret->next = NULL;
-  bgav_packet_reset(ret);
-  return ret;
+    {
+    bgav_packet_t * ret = pp->packets[pp->num_packets-1];
+    pp->packets[pp->num_packets-1] = NULL;
+    gavl_packet_reset(ret);
+    pp->num_packets--;
+    return ret;
+    }
   }
 
 void bgav_packet_pool_put(bgav_packet_pool_t * pp,
                           bgav_packet_t * p)
   {
-#ifdef DEBUG_PP
-  bgav_packet_t * tmp = pp->packets;
-  while(tmp)
+  if(pp->num_packets == pp->packets_alloc)
     {
-    if(tmp == p)
-      {
-      fprintf(stderr, "Error: Duplicate packet %p\n", p);
-      }
-    tmp = tmp->next;
-    }
-#endif
+    pp->packets_alloc += 16;
 
-  p->next = pp->packets;
-  pp->packets = p;
+    pp->packets = realloc(pp->packets, pp->packets_alloc * sizeof(*pp->packets));
+    memset(pp->packets + pp->num_packets, 0,
+           (pp->packets_alloc - pp->num_packets) * sizeof(*pp->packets));
+    }
+
+  pp->packets[pp->num_packets] = p;
+  pp->num_packets++;
   }
 
 void bgav_packet_pool_destroy(bgav_packet_pool_t * pp)
   {
-  bgav_packet_t * tmp;
-  while(pp->packets)
-    {
-    tmp = pp->packets->next;
-    bgav_packet_destroy(pp->packets);
-    pp->packets = tmp;
-    }
+  int i;
+  for(i = 0; i < pp->num_packets; i++)
+    gavl_packet_destroy(pp->packets[i]);
+  
+  if(pp->packets)
+    free(pp->packets);
+  
   free(pp);
   }

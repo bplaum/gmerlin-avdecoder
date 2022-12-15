@@ -180,7 +180,7 @@ static void list_all()
   bgav_redirectors_dump();
   bgav_formats_dump();
   bgav_codecs_dump();
-  bgav_subreaders_dump();
+  //  bgav_subreaders_dump();
   }
 
 int main(int argc, char ** argv)

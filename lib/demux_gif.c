@@ -73,7 +73,6 @@ typedef struct
   uint8_t header[GLOBAL_HEADER_LEN];
   uint8_t global_cmap[768];
   int global_cmap_bytes;
-  int video_pts;
   } gif_priv_t;
 
 static int probe_gif(bgav_input_context_t * input)
@@ -178,8 +177,7 @@ static int open_gif(bgav_demuxer_context_t * ctx)
   s->data.video.depth = 32; // RGBA
   s->data.video.format->pixelformat = GAVL_RGBA_32;
 
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+  ctx->tt->cur->data_start = ctx->input->position;
 
   ctx->index_mode = INDEX_MODE_SIMPLE;
   
@@ -341,27 +339,10 @@ static gavl_source_status_t next_packet_gif(bgav_demuxer_context_t * ctx)
   p->buf.buf[p->buf.len] = ';';
   p->buf.len++;
   
-  p->pts = priv->video_pts;
   p->duration = frame_duration;
-  priv->video_pts += frame_duration;
   
   bgav_stream_done_packet_write(s, p);
   return GAVL_SOURCE_OK;
-  }
-
-static int select_track_gif(bgav_demuxer_context_t * ctx, int track)
-  {
-  gif_priv_t * priv;
-  priv = ctx->priv;
-  priv->video_pts = 0;
-  return 1;
-  }
-
-static void resync_gif(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
-  {
-  gif_priv_t * priv;
-  priv = ctx->priv;
-  priv->video_pts = STREAM_GET_SYNC(s);
   }
 
 
@@ -377,8 +358,6 @@ const bgav_demuxer_t bgav_demuxer_gif =
   {
     .probe =        probe_gif,
     .open =         open_gif,
-    .select_track = select_track_gif,
     .next_packet =  next_packet_gif,
-    .resync =       resync_gif,
     .close =        close_gif
   };

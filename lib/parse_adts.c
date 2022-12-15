@@ -25,11 +25,47 @@
 #include <config.h>
 #include <avdec_private.h>
 #include <parser.h>
-#include <audioparser_priv.h>
 #include <adts_header.h>
 
 #define HEADER_BYTES 4
 
+static int find_frame_boundary_adts(bgav_packet_parser_t * parser, int * skip)
+  {
+  bgav_adts_header_t h;
+  int i;
+  
+  for(i = parser->buf.pos; i < parser->buf.len - HEADER_BYTES; i++)
+    {
+    if(bgav_adts_header_read(parser->buf.buf + i, &h))
+      {
+      parser->buf.pos = i;
+      *skip = h.frame_bytes;
+      return 1;
+      }
+
+    }
+  
+  parser->buf.pos = parser->buf.len - HEADER_BYTES;
+  return 0;
+  }
+
+static int parse_frame_adts(bgav_packet_parser_t * parser, gavl_packet_t * p)
+  {
+  bgav_adts_header_t h;
+
+  if(!bgav_adts_header_read(p->buf.buf, &h))
+    return 0;
+
+  if(!(parser->parser_flags & PARSER_HAS_HEADER))
+    {
+    bgav_adts_header_get_format(&h, parser->afmt);
+    fprintf(stderr, "ADTS blocks per frame: %d\n", h.num_blocks);
+    }
+  p->duration = parser->afmt->samples_per_frame * h.num_blocks;
+  return 1;
+  }
+
+#if 0
 static int parse_adts(bgav_audio_parser_t * parser)
   {
   int i;
@@ -53,10 +89,11 @@ static int parse_adts(bgav_audio_parser_t * parser)
     }
   return PARSER_NEED_DATA;
   }
+#endif
 
-
-void bgav_audio_parser_init_adts(bgav_audio_parser_t * parser)
+void bgav_packet_parser_init_adts(bgav_packet_parser_t * parser)
   {
-  parser->parse = parse_adts;
+  parser->parse_frame         = parse_frame_adts;
+  parser->find_frame_boundary = find_frame_boundary_adts;
   
   }

@@ -221,7 +221,7 @@ typedef struct
   {
   ape_header_t h;
   int64_t file_start_pos;
-
+  
   ape_index_entry * index;
   int index_size;
   } ape_t;
@@ -262,11 +262,10 @@ static int open_ape(bgav_demuxer_context_t * ctx)
     }
   if(priv->h.seektablelength / 4 < priv->h.totalframes)
     {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-             "Seek table too small");
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Seek table too small");
     return 0;
     }
-
+  
   /* Read seek table */
   seektable = malloc(priv->h.seektablelength);
   for(i = 0; i < priv->h.seektablelength / 4; i++)
@@ -339,8 +338,6 @@ static int open_ape(bgav_demuxer_context_t * ctx)
   ctx->index_mode = INDEX_MODE_SIMPLE;
   ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
 
-  bgav_demuxer_init_cue(ctx);
-  
   return 1;
   }
 
@@ -380,8 +377,6 @@ static gavl_source_status_t next_packet_ape(bgav_demuxer_context_t * ctx)
                                        p->buf.buf + EXTRA_SIZE,
                                        priv->index[s->in_position].size);
   
-  p->pts = s->in_position * priv->h.blocksperframe;
-  
   bgav_stream_done_packet_write(s, p);
   
   return GAVL_SOURCE_OK;
@@ -413,18 +408,11 @@ static void close_ape(bgav_demuxer_context_t * ctx)
     }
   }
 
-static void resync_ape(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
-  {
-  ape_t * priv = ctx->priv;
-  s->in_position =  STREAM_GET_SYNC(s) / priv->h.blocksperframe;
-  }
-
 const bgav_demuxer_t bgav_demuxer_ape =
   {
     .probe =       probe_ape,
     .open =        open_ape,
     .next_packet = next_packet_ape,
     .seek =        seek_ape,
-    .resync        = resync_ape,
     .close =       close_ape
   };

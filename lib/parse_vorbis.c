@@ -25,7 +25,7 @@
 #include <config.h>
 #include <avdec_private.h>
 #include <parser.h>
-#include <audioparser_priv.h>
+#include <vorbis_comment.h>
 
 #include <vorbis/codec.h>
 
@@ -38,7 +38,7 @@ typedef struct
   long last_blocksize;
   } vorbis_priv_t;
 
-static int parse_frame_vorbis(bgav_audio_parser_t * parser, bgav_packet_t * p)
+static int parse_frame_vorbis(bgav_packet_parser_t * parser, bgav_packet_t * p)
   {
   ogg_packet op;
 
@@ -60,11 +60,13 @@ static int parse_frame_vorbis(bgav_audio_parser_t * parser, bgav_packet_t * p)
   //  fprintf(stderr, "Parse vorbis: %"PRId64"\n", p->duration);
   
   priv->last_blocksize = blocksize;
+
+  //  gavl_packet_dump(p);
   
   return 1;
   }
 
-static void cleanup_vorbis(bgav_audio_parser_t * parser)
+static void cleanup_vorbis(bgav_packet_parser_t * parser)
   {
   vorbis_priv_t * priv = parser->priv;
   vorbis_comment_clear(&priv->vc);
@@ -72,13 +74,13 @@ static void cleanup_vorbis(bgav_audio_parser_t * parser)
   free(priv);
   }
 
-static void reset_vorbis(bgav_audio_parser_t * parser)
+static void reset_vorbis(bgav_packet_parser_t * parser)
   {
   vorbis_priv_t * priv = parser->priv;
   priv->last_blocksize = 0;
   }
 
-void bgav_audio_parser_init_vorbis(bgav_audio_parser_t * parser)
+void bgav_packet_parser_init_vorbis(bgav_packet_parser_t * parser)
   {
   vorbis_priv_t * priv;
   ogg_packet op;
@@ -93,7 +95,7 @@ void bgav_audio_parser_init_vorbis(bgav_audio_parser_t * parser)
 
   memset(&op, 0, sizeof(op));
 
-  if(!parser->s->ci->codec_header.len)
+  if(!parser->ci.codec_header.len)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "No extradata found");
     return;
@@ -105,7 +107,7 @@ void bgav_audio_parser_init_vorbis(bgav_audio_parser_t * parser)
   for(i = 0; i < 3; i++)
     {
     op.packet =
-      gavl_extract_xiph_header(&parser->s->ci->codec_header,
+      gavl_extract_xiph_header(&parser->ci.codec_header,
                                i, &len);
     
     if(!op.packet)
@@ -130,6 +132,10 @@ void bgav_audio_parser_init_vorbis(bgav_audio_parser_t * parser)
       }
     op.packetno++;
     }
+
+  parser->afmt->samplerate = priv->vi.rate;
+  parser->afmt->num_channels = priv->vi.channels;
+  bgav_vorbis_set_channel_setup(parser->afmt);
   
   parser->parse_frame = parse_frame_vorbis;
   parser->cleanup = cleanup_vorbis;

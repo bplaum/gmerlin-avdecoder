@@ -295,7 +295,7 @@ static gavl_source_status_t decode_frame_flac(bgav_stream_t * s)
 
   priv->frame->valid_samples = 0;
   
-  if((st = bgav_stream_peek_packet_read(s, NULL, 1)) != GAVL_SOURCE_OK)
+  if((st = bgav_stream_peek_packet_read(s, NULL)) != GAVL_SOURCE_OK)
     return st; 
 
   /* Decode another frame */
@@ -349,8 +349,10 @@ static void resync_flac(bgav_stream_t * s)
 
 static bgav_audio_decoder_t decoder =
   {
-    .fourccs = (uint32_t[]){ BGAV_MK_FOURCC('F', 'L', 'A', 'C'),
-                           0x00 },
+    .fourccs = (uint32_t[]){
+      BGAV_MK_FOURCC('F', 'L', 'A', 'C'),
+      BGAV_MK_FOURCC('F', 'L', 'C', 'N'),
+      0x00 },
     .name = "FLAC audio decoder",
     .init = init_flac,
     .close = close_flac,

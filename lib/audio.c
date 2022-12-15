@@ -92,51 +92,26 @@ static gavl_source_status_t get_frame(void * sp, gavl_audio_frame_t ** frame)
 
 int bgav_audio_init(bgav_stream_t * s)
   {
-  if((s->flags & (STREAM_PARSE_FULL|STREAM_PARSE_FRAME)) &&
-     !s->data.audio.parser)
+  
+  if((s->flags & STREAM_FILTER_PACKETS) && !s->pf)
     {
-    s->data.audio.parser = bgav_audio_parser_create(s);
-    if(!s->data.audio.parser)
-      {
-      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-               "No audio parser found for fourcc %c%c%c%c (0x%08x)",
-               (s->fourcc & 0xFF000000) >> 24,
-               (s->fourcc & 0x00FF0000) >> 16,
-               (s->fourcc & 0x0000FF00) >> 8,
-               (s->fourcc & 0x000000FF),
-               s->fourcc);
-      return 0;
-      }
-    
-    /* Start the parser */
-    
-    if(bgav_stream_peek_packet_read(s, NULL, 1) != GAVL_SOURCE_OK)
-      {
-      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-               "EOF while initializing audio parser");
-      return 0;
-      }
-    
-    s->index_mode = INDEX_MODE_SIMPLE;
+    s->pf = bgav_packet_filter_create(s->fourcc);
+    s->psrc = bgav_packet_filter_connect(s->pf, s->psrc);
+
+    gavl_packet_source_peek_packet(s->psrc, NULL);
     }
 
-  if((s->flags & STREAM_FILTER_PACKETS) && !s->bsf)
-    {
-    s->bsf = bgav_bsf_create(s);
-    if(bgav_stream_peek_packet_read(s, NULL, 1) != GAVL_SOURCE_OK)
-      {
-      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-               "EOF while initializing bitstream filter");
-      return 0;
-      }
-    }
+  gavl_dictionary_reset(s->info_ext);
+  gavl_dictionary_copy(s->info_ext, gavl_packet_source_get_stream(s->psrc));
+  gavl_stream_get_compression_info(s->info_ext, &s->ci_out);
+  s->ci = &s->ci_out;
   
   if(s->stats.pts_start == GAVL_TIME_UNDEFINED)
     {
     bgav_packet_t * p = NULL;
     char tmp_string[128];
     
-    if(bgav_stream_peek_packet_read(s, &p, 1) != GAVL_SOURCE_OK)
+    if(bgav_stream_peek_packet_read(s, &p) != GAVL_SOURCE_OK)
       {
       gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
                "EOF while getting start time");
@@ -218,13 +193,6 @@ int bgav_audio_start(bgav_stream_t * s)
       gavl_audio_source_create(get_frame, s,
                                GAVL_SOURCE_SRC_ALLOC | s->src_flags,
                                s->data.audio.format);
-#if 1
-  if(s->action == BGAV_STREAM_READRAW)
-    s->psrc =
-      gavl_packet_source_create_audio(bgav_stream_read_packet_func, // get_packet,
-                                      s, GAVL_SOURCE_SRC_ALLOC,
-                                      s->ci, s->data.audio.format);
-#endif
   
   //  if(s->data.audio.pre_skip && s->data.audio.source)
   //    gavl_audio_source_skip_src(s->data.audio.source, s->data.audio.pre_skip);
@@ -238,11 +206,6 @@ void bgav_audio_stop(bgav_stream_t * s)
     {
     s->data.audio.decoder->close(s);
     s->data.audio.decoder = NULL;
-    }
-  if(s->data.audio.parser)
-    {
-    bgav_audio_parser_destroy(s->data.audio.parser);
-    s->data.audio.parser = NULL;
     }
   if(s->data.audio.frame)
     {
@@ -358,22 +321,7 @@ void bgav_audio_resync(bgav_stream_t * s)
                         s->data.audio.format->samplerate,
                         STREAM_GET_SYNC(s));
     }
-  
-  if(s->data.audio.parser)
-    {
-    bgav_packet_t * p = NULL;
-    bgav_audio_parser_reset(s->data.audio.parser,
-                            GAVL_TIME_UNDEFINED, s->out_time);
-
-    if(bgav_stream_peek_packet_read(s, &p, 1) != GAVL_SOURCE_OK)
-      {
-      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-               "EOF while resyncing");
-      }
-    else
-      s->out_time = p->pts;
-    }
-  
+    
   if(s->data.audio.decoder &&
      s->data.audio.decoder->resync)
     s->data.audio.decoder->resync(s);
@@ -554,7 +502,7 @@ int bgav_set_audio_compression_info(bgav_stream_t * s)
           (s->flags & STREAM_FILTER_PACKETS))
     {
     id = GAVL_CODEC_ID_AAC;
-    need_header = 1;
+    //    need_header = 1;
     need_bitrate = 0;
     }
   

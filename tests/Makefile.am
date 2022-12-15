@@ -13,6 +13,7 @@ indextest \
 mmstest \
 vcdtest \
 ymltest \
+count_frames \
 count_samples \
 seektest
 
@@ -37,6 +38,9 @@ indexdump_LDADD = $(top_builddir)/lib/libgmerlin_avdec.la
 
 count_samples_SOURCES = count_samples.c
 count_samples_LDADD = $(top_builddir)/lib/libgmerlin_avdec.la
+
+count_frames_SOURCES = count_frames.c
+count_frames_LDADD = $(top_builddir)/lib/libgmerlin_avdec.la
 
 vcdtest_SOURCES = vcdtest.c
 vcdtest_LDADD = $(top_builddir)/lib/libgmerlin_avdec.la

@@ -179,169 +179,6 @@ static gavl_source_status_t read_srt(bgav_stream_t * s, bgav_packet_t * p)
 
 #undef LOG_DOMAIN
 
-/* MPSub */
-
-typedef struct
-  {
-  int frame_based;
-  int64_t frame_duration;
-
-  gavl_time_t last_end_time;
-  } mpsub_priv_t;
-
-static int probe_mpsub(char * line, bgav_input_context_t * ctx)
-  {
-  float f;
-  while(isspace(*line) && (*line != '\0'))
-    line++;
-  
-  if(!strncmp(line, "FORMAT=TIME", 11) ||
-     (sscanf(line, "FORMAT=%f", &f) == 1))
-    return 1;
-  return 0;
-  }
-
-static int init_mpsub(bgav_stream_t * s)
-  {
-  double framerate;
-  char * ptr;
-  bgav_subtitle_reader_context_t * ctx;
-  char * str;
-  mpsub_priv_t * priv = calloc(1, sizeof(*priv));
-  ctx = s->data.subtitle.subreader;
-  ctx->priv = priv;
-  s->timescale = GAVL_TIME_SCALE;
-  while(1)
-    {
-    if(!bgav_input_read_line(ctx->input, &ctx->line_buf))
-      return 0;
-    str = (char*)ctx->line_buf.buf;
-    ptr = str;
-    
-    while(isspace(*ptr) && (*ptr != '\0'))
-      ptr++;
-
-    if(!strncmp(ptr, "FORMAT=TIME", 11))
-      return 1;
-    else if(sscanf(ptr, "FORMAT=%lf", &framerate))
-      {
-      priv->frame_duration = gavl_seconds_to_time(1.0 / framerate);
-      priv->frame_based = 1;
-      return 1;
-      }
-    }
-  return 0;
-  }
-
-static gavl_source_status_t read_mpsub(bgav_stream_t * s, bgav_packet_t * p)
-  {
-  int i1, i2;
-  double d1, d2;
-  gavl_time_t t1 = 0, t2 = 0;
-  
-  int lines_read;
-  bgav_subtitle_reader_context_t * ctx;
-  mpsub_priv_t * priv;
-  char * ptr;
-  char * str;
-  
-  ctx = s->data.subtitle.subreader;
-  priv = ctx->priv;
-    
-  while(1)
-    {
-    if(!bgav_input_read_line(ctx->input, &ctx->line_buf))
-      return GAVL_SOURCE_EOF;
-    str = (char*)ctx->line_buf.buf;
-    ptr = str;
-    
-    while(isspace(*ptr) && (*ptr != '\0'))
-      ptr++;
-    
-    /*
-     * The following will reset last_end_time whenever we
-     * cross a "FORMAT=" line
-     */
-    
-    if(!strncmp(ptr, "FORMAT=", 7))
-      {
-      priv->last_end_time = 0;
-      continue;
-      }
-    
-    if(priv->frame_based)
-      {
-      if(sscanf(ptr, "%d %d\n", &i1, &i2) == 2)
-        {
-        t1 = i1 * priv->frame_duration;
-        t2 = i2 * priv->frame_duration;
-        break;
-        }
-      }
-    else if(sscanf(ptr, "%lf %lf\n", &d1, &d2) == 2)
-      {
-      t1 = gavl_seconds_to_time(d1);
-      t2 = gavl_seconds_to_time(d2);
-      break;
-      }
-    }
-
-  /* Set times */
-
-  p->pts = priv->last_end_time + t1;
-  p->duration  = t2;
-  
-  priv->last_end_time = p->pts + p->duration;
-  
-  /* Read the actual stuff */
-  p->buf.len = 0;
-  
-  /* Read lines until we are done */
-
-  lines_read = 0;
-
-  while(1)
-    {
-    if(!bgav_input_read_convert_line(ctx->input, &ctx->line_buf))
-      {
-      ctx->line_buf.len = 0;
-      if(!lines_read)
-        return GAVL_SOURCE_EOF;
-      }
-    
-    if(!ctx->line_buf.len)
-      {
-      /* Zero terminate */
-      if(lines_read)
-        {
-        // Terminator doesn't count to data size
-        p->buf.buf[p->buf.len] = '\0';
-        //        p->data_size++;
-        }
-      return GAVL_SOURCE_OK;
-      }
-    if(lines_read)
-      {
-      p->buf.buf[p->buf.len] = '\n';
-      p->buf.len++;
-      }
-    
-    lines_read++;
-    bgav_packet_alloc(p, p->buf.len + ctx->line_buf.len + 2);
-    gavl_buffer_append(&p->buf, &ctx->line_buf);
-    }
-  return GAVL_SOURCE_EOF;
-  }
-
-static void close_mpsub(bgav_stream_t * s)
-  {
-  bgav_subtitle_reader_context_t * ctx;
-  mpsub_priv_t * priv;
-  
-  ctx = s->data.subtitle.subreader;
-  priv = ctx->priv;
-  free(priv);
-  }
 
 /* vobsub */
 
@@ -433,7 +270,7 @@ static int probe_vobsub(char * line, bgav_input_context_t * ctx)
   int ret = 0;
   char * str = NULL;
   if(!strncasecmp(line, "# VobSub index file, v7", 23) &&
-     (str = find_vobsub_file(ctx->filename)))
+     (str = find_vobsub_file(ctx->location)))
     {
     gavl_buffer_t line_buf;
     gavl_buffer_init(&line_buf);
@@ -551,7 +388,7 @@ static int init_vobsub(bgav_stream_t * s)
   int ret = 0;
 
   s->timescale = 1000;
-  s->flags |= STREAM_PARSE_FRAME;
+  
   priv = calloc(1, sizeof(*priv));
   
   ctx = s->data.subtitle.subreader;
@@ -567,6 +404,8 @@ static int init_vobsub(bgav_stream_t * s)
   bgav_input_seek(ctx->input, ctx->data_start, SEEK_SET);
   
   ret = 1;
+
+  bgav_stream_set_parse_frame(s);
   
   fail:
 
@@ -883,8 +722,9 @@ static int init_spumux(bgav_stream_t * s)
   ctx = s->data.subtitle.subreader;
   s->timescale = GAVL_TIME_SCALE;
   s->fourcc    = BGAV_MK_FOURCC('p', 'n', 'g', ' ');
-  s->flags |= STREAM_PARSE_FRAME;
-  
+
+  bgav_stream_set_parse_frame(s);
+
   priv = calloc(1, sizeof(*priv));
   ctx->priv = priv;
     
@@ -1001,14 +841,6 @@ static const bgav_subtitle_reader_t subtitle_readers[] =
       .init =               init_srt,
       .probe =              probe_srt,
       .read_packet =        read_srt,
-    },
-    {
-      .type = GAVL_STREAM_TEXT,
-      .name = "Mplayer mpsub",
-      .init =               init_mpsub,
-      .probe =              probe_mpsub,
-      .read_packet =        read_mpsub,
-      .close =              close_mpsub,
     },
     {
       .type = GAVL_STREAM_OVERLAY,
@@ -1129,7 +961,7 @@ find_subtitle_reader(const char * filename,
 
 extern bgav_input_t bgav_input_file;
 
-
+#if 0
 bgav_subtitle_reader_context_t *
 bgav_subtitle_reader_open(bgav_input_context_t * input_ctx)
   {
@@ -1145,10 +977,10 @@ bgav_subtitle_reader_open(bgav_input_context_t * input_ctx)
   int result;
   
   /* Check if input is a regular file */
-  if((input_ctx->input != &bgav_input_file) || !input_ctx->filename)
+  if((input_ctx->input != &bgav_input_file) || !input_ctx->location)
     return NULL;
   
-  pattern = gavl_strdup(input_ctx->filename);
+  pattern = gavl_strdup(input_ctx->location);
   pos = strrchr(pattern, '.');
   if(!pos)
     {
@@ -1182,12 +1014,12 @@ bgav_subtitle_reader_open(bgav_input_context_t * input_ctx)
   
   for(i = 0; i < glob_buf.gl_pathc; i++)
     {
-    if(!strcmp(glob_buf.gl_pathv[i], input_ctx->filename))
+    if(!strcmp(glob_buf.gl_pathv[i], input_ctx->location))
       continue;
     //    fprintf(stderr, "Found %s\n", glob_buf.gl_pathv[i]);
 
     r = find_subtitle_reader(glob_buf.gl_pathv[i],
-                             input_ctx->opt, &charset, &num_streams);
+                             &input_ctx->opt, &charset, &num_streams);
     if(!r)
       continue;
     
@@ -1195,7 +1027,7 @@ bgav_subtitle_reader_open(bgav_input_context_t * input_ctx)
       {
       new = calloc(1, sizeof(*new));
       new->filename = gavl_strdup(glob_buf.gl_pathv[i]);
-      new->input    = bgav_input_create(NULL, input_ctx->opt);
+      new->input    = bgav_input_create(NULL, &input_ctx->opt);
       new->reader   = r;
       new->charset  = gavl_strdup(charset);
       new->stream   = j;
@@ -1233,6 +1065,7 @@ bgav_subtitle_reader_open(bgav_input_context_t * input_ctx)
   globfree(&glob_buf);
   return ret;
   }
+#endif
 
 void bgav_subtitle_reader_stop(bgav_stream_t * s)
   {
@@ -1259,7 +1092,40 @@ void bgav_subtitle_reader_destroy(bgav_stream_t * s)
   gavl_buffer_free(&ctx->line_buf);
   if(ctx->input)
     bgav_input_destroy(ctx->input);
+
+  if(ctx->psrc)
+    gavl_packet_source_destroy(ctx->psrc);
   free(ctx);
+  }
+
+/* Generic functions */
+static gavl_source_status_t
+source_func(void * subreader, bgav_packet_t ** p)
+  {
+  bgav_subtitle_reader_context_t * ctx = subreader;
+
+  if(ctx->seek_time != GAVL_TIME_UNDEFINED)
+    {
+    while(1)
+      {
+      if(!ctx->reader->read_packet(ctx->s, *p))
+        return  GAVL_SOURCE_EOF;
+      
+      if((*p)->pts + (*p)->duration < ctx->seek_time)
+        continue;
+      else
+        {
+        ctx->seek_time = GAVL_TIME_UNDEFINED;
+        return GAVL_SOURCE_OK;
+        }
+      }
+    }
+  else
+    {
+    if(ctx->reader->read_packet(ctx->s, *p))
+      return GAVL_SOURCE_OK;
+    }
+  return GAVL_SOURCE_EOF;
   }
 
 int bgav_subtitle_reader_start(bgav_stream_t * s)
@@ -1267,6 +1133,8 @@ int bgav_subtitle_reader_start(bgav_stream_t * s)
   bgav_subtitle_reader_context_t * ctx;
   ctx = s->data.subtitle.subreader;
   ctx->s = s;
+  ctx->seek_time = GAVL_TIME_UNDEFINED;
+
   if(!bgav_input_open(ctx->input, ctx->filename))
     return 0;
 
@@ -1278,6 +1146,8 @@ int bgav_subtitle_reader_start(bgav_stream_t * s)
   /* Timescale is valid just now */
   gavl_dictionary_set_int(s->m, GAVL_META_STREAM_PACKET_TIMESCALE, s->timescale);
   gavl_dictionary_set_int(s->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, s->timescale);
+
+  s->psrc = gavl_packet_source_create(source_func, ctx, 0, s->info);
   
   return 1;
   }
@@ -1296,72 +1166,7 @@ void bgav_subtitle_reader_seek(bgav_stream_t * s,
   else if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
     {
     bgav_input_seek(ctx->input, ctx->data_start, SEEK_SET);
-    
     ctx->time_offset = 0;
-
-    if(!ctx->out_packet)
-      ctx->out_packet = bgav_packet_pool_get(s->pp);
-      
-    while(ctx->reader->read_packet(s, ctx->out_packet))
-      {
-      if(ctx->out_packet->pts + ctx->out_packet->duration < time)
-        continue;
-      else
-        break;
-      }
+    ctx->seek_time = time;
     }
-  }
-
-/* Generic functions */
-
-gavl_source_status_t
-bgav_subtitle_reader_read_packet(void * subreader,
-                                 bgav_packet_t ** p)
-  {
-  bgav_subtitle_reader_context_t * ctx = subreader;
-
-  bgav_packet_t * ret;
-  if(ctx->out_packet)
-    {
-    *p = ctx->out_packet;
-    ctx->out_packet = NULL;
-    return GAVL_SOURCE_OK;
-    }
-  ret = bgav_packet_pool_get(ctx->s->pp);
-  
-  if(ctx->reader->read_packet(ctx->s, ret))
-    {
-    *p = ret;
-    return GAVL_SOURCE_OK;
-    }
-  else
-    {
-    bgav_packet_pool_put(ctx->s->pp, ret);
-    return  GAVL_SOURCE_EOF;
-    }
-  
-  }
-
-gavl_source_status_t
-bgav_subtitle_reader_peek_packet(void * subreader,
-                                 bgav_packet_t ** p, int force)
-  {
-  bgav_subtitle_reader_context_t * ctx = subreader;
-
-  if(!ctx->out_packet)
-    {
-    ctx->out_packet = bgav_packet_pool_get(ctx->s->pp);
-    
-    if(!ctx->reader->read_packet(ctx->s, ctx->out_packet))
-      {
-      bgav_packet_pool_put(ctx->s->pp, ctx->out_packet);
-      ctx->out_packet = NULL;
-      return GAVL_SOURCE_EOF;
-      }
-    }
-
-  if(p)
-    *p = ctx->out_packet;
-  
-  return GAVL_SOURCE_OK;
   }

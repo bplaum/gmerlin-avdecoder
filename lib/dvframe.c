@@ -365,8 +365,6 @@ struct bgav_dv_dec_s
   gavl_audio_format_t audio_format;
   gavl_video_format_t video_format;
   
-  int64_t frame_counter;
-  int64_t sample_counter;
   int ach;
 
   gavl_audio_frame_t * audio_frame;
@@ -472,14 +470,12 @@ void bgav_dv_dec_get_pixel_aspect(bgav_dv_dec_t * d, uint32_t * pixel_width, uin
   }
 
 void bgav_dv_dec_get_timecode_format(bgav_dv_dec_t * d,
-                                     gavl_timecode_format_t * tf,
-                                     const bgav_options_t * opt)
+                                     gavl_timecode_format_t * tf)
   {
   gavl_timecode_t dummy;
   if(d->profile)
     {
-    if(!opt->dv_datetime &&
-       !bgav_dv_dec_get_timecode(d, &dummy))
+    if(!bgav_dv_dec_get_timecode(d, &dummy))
       return;
     
     tf->int_framerate = d->profile->ltc_divisor;
@@ -518,15 +514,6 @@ void bgav_dv_dec_init_video(bgav_dv_dec_t * d, bgav_stream_t * s)
   gavl_video_format_copy(&d->video_format, s->data.video.format);
   }
 
-void bgav_dv_dec_set_frame_counter(bgav_dv_dec_t * d, int64_t frames)
-  {
-  d->frame_counter = frames;
-  }
-
-void bgav_dv_dec_set_sample_counter(bgav_dv_dec_t * d, int64_t samples)
-  {
-  d->sample_counter = samples;
-  }
 
 /* Extract audio and video packets suitable for the decoders */
 
@@ -667,9 +654,7 @@ int bgav_dv_dec_get_audio_packet(bgav_dv_dec_t * d, bgav_packet_t * p)
     samples = dv_extract_audio(d->buffer,
                                pcm, d->profile);
     PACKET_SET_KEYFRAME(p);
-    p->pts = d->sample_counter;
     p->duration                   = samples;
-    d->sample_counter             += samples;
     }
   return 1;
   }
@@ -679,17 +664,13 @@ void bgav_dv_dec_get_video_packet(bgav_dv_dec_t * d, bgav_packet_t * p)
   if(p)
     {
     PACKET_SET_KEYFRAME(p);
-    
-    if(p->pts == GAVL_TIME_UNDEFINED)
-      {
-      p->pts = d->video_format.frame_duration * d->frame_counter;
+
+    if(p->duration <= 0)
       p->duration = d->video_format.frame_duration;
-      }
     
     bgav_packet_alloc(p, d->profile->frame_size);
     memcpy(p->buf.buf, d->buffer, d->profile->frame_size);
     p->buf.len = d->profile->frame_size;
-    d->frame_counter++;
     }
   }
 

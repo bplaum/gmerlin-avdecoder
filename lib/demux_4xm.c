@@ -369,8 +369,7 @@ static int open_4xm(bgav_demuxer_context_t * ctx)
         break;
       }
     }
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+  ctx->tt->cur->data_start = ctx->input->position;
   
   
   bgav_track_set_format(ctx->tt->cur, "4XM", NULL);

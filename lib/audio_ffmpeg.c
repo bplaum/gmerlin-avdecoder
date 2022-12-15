@@ -117,7 +117,7 @@ typedef struct
      so we save them locally here */
   uint8_t * ext_data;
 
-  AVPacket pkt;
+  AVPacket * pkt;
   int sample_size;
 
   AVFrame * f;
@@ -203,13 +203,13 @@ static gavl_source_status_t decode_frame_ffmpeg(bgav_stream_t * s)
       if((st = bgav_stream_get_packet_read(s, &p)) != GAVL_SOURCE_OK)
         {
         /* Flush */
-        priv->pkt.data = NULL;
-        priv->pkt.size = 0;
+        priv->pkt->data = NULL;
+        priv->pkt->size = 0;
         }
       else
         {
-        priv->pkt.data = p->buf.buf;
-        priv->pkt.size = p->buf.len;
+        priv->pkt->data = p->buf.buf;
+        priv->pkt->size = p->buf.len;
         }
 #ifdef DUMP_PACKET
       if(p)
@@ -219,7 +219,7 @@ static gavl_source_status_t decode_frame_ffmpeg(bgav_stream_t * s)
         gavl_hexdump(p->buf.buf, 16, 16);
         }
 #endif
-      avcodec_send_packet(priv->ctx, &priv->pkt);
+      avcodec_send_packet(priv->ctx, priv->pkt);
 
       if(p)
         bgav_stream_done_packet_read(s, p);
@@ -288,6 +288,8 @@ static int init_ffmpeg_audio(bgav_stream_t * s)
   priv->info = lookup_codec(s);
   codec = avcodec_find_decoder(priv->info->ffmpeg_id);
   priv->f = av_frame_alloc();
+
+  priv->pkt = av_packet_alloc();
   
 #if LIBAVCODEC_VERSION_INT < ((53<<16)|(8<<8)|0)
   priv->ctx = avcodec_alloc_context();
@@ -410,6 +412,7 @@ static void close_ffmpeg(bgav_stream_t * s)
     }
   av_frame_unref(priv->f);
   av_frame_free(&priv->f);
+  av_packet_free(&priv->pkt);
   free(priv);
   }
 

@@ -223,7 +223,7 @@ static int parse_m3u8(bgav_input_context_t * ctx)
           char * tmp_string = gavl_strndup(start, end);
           gavl_dictionary_set_string_nocopy(&cipher_params,
                                             SEGMENT_CIPHER_KEY_URI,
-                                            gavl_get_absolute_uri(tmp_string, ctx->url));
+                                            gavl_get_absolute_uri(tmp_string, ctx->location));
           free(tmp_string);
           }
         }
@@ -370,7 +370,7 @@ static int handle_id3(bgav_input_context_t * ctx)
     return 0;
 
   buf.len = len;
-  mem = bgav_input_open_memory(buf.buf, buf.len, ctx->opt);
+  mem = bgav_input_open_memory(buf.buf, buf.len);
 
   if((id3 = bgav_id3v2_read(mem)))
     {
@@ -532,7 +532,7 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
     {
     gavl_buffer_reset(&p->m3u_buf);
     
-    if(!gavl_http_client_run_async(p->m3u_io, "GET", ctx->url))
+    if(!gavl_http_client_run_async(p->m3u_io, "GET", ctx->location))
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Opening m3u8 failed");
       return -1;
@@ -748,7 +748,7 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   priv->m3u_timer = gavl_timer_create();
   gavl_timer_start(priv->m3u_timer);
   
-  ctx->url = gavl_strdup(url1);
+  ctx->location = gavl_strdup(url1);
   
   priv->m3u_io = gavl_http_client_create();
   

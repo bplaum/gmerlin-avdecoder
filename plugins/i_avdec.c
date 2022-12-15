@@ -382,6 +382,7 @@ static char const * const mimetypes =
   "audio/gavf "
   "audio/3gpp "
   "audio/3gpp2 "
+  "audio/x-wavpack "
   "video/MP2P "
   "video/MP2T "
   "video/mp4 "

@@ -569,7 +569,6 @@ static int load_channel_cache(bgav_input_context_t * ctx)
                 bgav_track_add_audio_stream(ctx->tt->tracks[channel_index],
                                             ctx->opt);
               s->timescale = 90000;
-              s->flags |= STREAM_PARSE_FULL;
               s->stats.pts_start = GAVL_TIME_UNDEFINED;
               stream_child = stream_node->children;
 
@@ -594,6 +593,8 @@ static int load_channel_cache(bgav_input_context_t * ctx)
                   }
                 stream_child = stream_child->next;
                 }
+
+              bgav_stream_set_parse_full(s);
               }
             
             stream_node = stream_node->next;
@@ -618,7 +619,6 @@ static int load_channel_cache(bgav_input_context_t * ctx)
                 bgav_track_add_video_stream(ctx->tt->tracks[channel_index], ctx->opt);
 
               s->timescale = 90000;
-              s->flags |= STREAM_PARSE_FULL;
               s->stats.pts_start = GAVL_TIME_UNDEFINED;
               stream_child = stream_node->children;
 
@@ -637,6 +637,7 @@ static int load_channel_cache(bgav_input_context_t * ctx)
                 
                 stream_child = stream_child->next;
                 }
+              bgav_stream_set_parse_full(s);
               }
             
             stream_node = stream_node->next;
@@ -1404,7 +1405,7 @@ static int select_track_dvb(bgav_input_context_t * ctx, int track)
   select(priv->dvr_fd+1, &rset, NULL, NULL, &timeout);
 
   /* Clear metadata so they are reread */
-  gavl_dictionary_free(ctx->tt->cur->metadata);
+  gavl_dictionary_reset(ctx->tt->cur->metadata);
   return 1;
   }
 

@@ -166,9 +166,7 @@ static int open_mtv(bgav_demuxer_context_t * ctx)
 
   bgav_track_set_format(ctx->tt->cur, "MTV", NULL);
   
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
-  
+  ctx->tt->cur->data_start = ctx->input->position;
   return 1;
   }
 

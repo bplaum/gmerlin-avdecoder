@@ -396,6 +396,7 @@ static void seek_iterative(bgav_t * b, int64_t * time, int scale)
 #endif  
   }
 
+#if 0
 typedef struct
   {
   int64_t time;
@@ -415,11 +416,11 @@ static int seek_subreader(void * data, bgav_stream_t * s)
     }
   return 1;
   }
+#endif
 
 void
 bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
   {
-  seek_subreader_t ss;
   bgav_track_t * track = b->tt->cur;
 
   if(b->flags & BGAV_FLAG_PAUSED)
@@ -427,15 +428,14 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "bgav_seek_scaled failed: Decoder paused");
     return;
     }
-  //  fprintf(stderr, "bgav_seek_scaled: %f\n",
-  //          gavl_time_to_seconds(gavl_time_unscale(scale, *time)));
+  
+  fprintf(stderr, "bgav_seek_scaled: %f\n",
+          gavl_time_to_seconds(gavl_time_unscale(scale, *time)));
   
   /* Clear EOF */
 
   bgav_track_clear_eof_d(track);
   b->flags &= ~BGAV_FLAG_EOF;
-
-  
   
   /*
    * Seek with superindex
@@ -443,7 +443,7 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
    * This must be checked *before* we check for seek_sa because
    * AVIs with mp3 audio will also have b->tt->cur->sample_accurate = 1
    */
-
+  
   if(!(b->demuxer->flags & BGAV_DEMUXER_SUBREAD_ONLY))
     {
     if(b->demuxer->si && !(b->demuxer->flags & BGAV_DEMUXER_SI_PRIVATE_FUNCS))
@@ -467,10 +467,6 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
       }
     }
   
-  ss.time = *time;
-  ss.scale = scale;
-  
-  bgav_streams_foreach(track->streams, track->num_streams, seek_subreader, &ss);
   }
 
 void

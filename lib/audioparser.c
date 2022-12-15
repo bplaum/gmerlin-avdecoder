@@ -37,31 +37,31 @@ static const struct
   }
 parsers[] =
   {
-    { BGAV_WAVID_2_FOURCC(0x0050), bgav_audio_parser_init_mpeg },
-    { BGAV_WAVID_2_FOURCC(0x0055), bgav_audio_parser_init_mpeg },
-    { BGAV_MK_FOURCC('.','m','p','1'), bgav_audio_parser_init_mpeg },
-    { BGAV_MK_FOURCC('.','m','p','2'), bgav_audio_parser_init_mpeg },
-    { BGAV_MK_FOURCC('.','m','p','3'), bgav_audio_parser_init_mpeg },
-    { BGAV_MK_FOURCC('m','p','g','a'), bgav_audio_parser_init_mpeg },
-    { BGAV_MK_FOURCC('L','A','M','E'), bgav_audio_parser_init_mpeg },
-    { BGAV_WAVID_2_FOURCC(0x2000), bgav_audio_parser_init_a52 },
-    { BGAV_MK_FOURCC('.','a','c','3'), bgav_audio_parser_init_a52 },
-    { BGAV_MK_FOURCC('a','c','-','3'), bgav_audio_parser_init_a52 },
+    //    { BGAV_WAVID_2_FOURCC(0x0050), bgav_audio_parser_init_mpeg },
+    //    { BGAV_WAVID_2_FOURCC(0x0055), bgav_audio_parser_init_mpeg },
+    //    { BGAV_MK_FOURCC('.','m','p','1'), bgav_audio_parser_init_mpeg },
+    //    { BGAV_MK_FOURCC('.','m','p','2'), bgav_audio_parser_init_mpeg },
+    //    { BGAV_MK_FOURCC('.','m','p','3'), bgav_audio_parser_init_mpeg },
+    //    { BGAV_MK_FOURCC('m','p','g','a'), bgav_audio_parser_init_mpeg },
+    //    { BGAV_MK_FOURCC('L','A','M','E'), bgav_audio_parser_init_mpeg },
+    //    { BGAV_WAVID_2_FOURCC(0x2000), bgav_audio_parser_init_a52 },
+    //    { BGAV_MK_FOURCC('.','a','c','3'), bgav_audio_parser_init_a52 },
+    //    { BGAV_MK_FOURCC('a','c','-','3'), bgav_audio_parser_init_a52 },
 #ifdef HAVE_DCA
-    { BGAV_MK_FOURCC('d','t','s',' '), bgav_audio_parser_init_dca },
+    //    { BGAV_MK_FOURCC('d','t','s',' '), bgav_audio_parser_init_dca },
 #endif
 #ifdef HAVE_VORBIS
-    { BGAV_MK_FOURCC('V','B','I','S'), bgav_audio_parser_init_vorbis },
+    //    { BGAV_MK_FOURCC('V','B','I','S'), bgav_audio_parser_init_vorbis },
 #endif
-    { BGAV_MK_FOURCC('F','L','A','C'), bgav_audio_parser_init_flac },
+    //    { BGAV_MK_FOURCC('F','L','A','C'), bgav_audio_parser_init_flac },
 #ifdef HAVE_OPUS
-    { BGAV_MK_FOURCC('O','P','U','S'), bgav_audio_parser_init_opus },
+    //    { BGAV_MK_FOURCC('O','P','U','S'), bgav_audio_parser_init_opus },
 #endif
 #ifdef HAVE_SPEEX
-    { BGAV_MK_FOURCC('S','P','E','X'), bgav_audio_parser_init_speex },
+    //    { BGAV_MK_FOURCC('S','P','E','X'), bgav_audio_parser_init_speex },
 #endif
-    { BGAV_MK_FOURCC('A','D','T','S'), bgav_audio_parser_init_adts },
-    { BGAV_MK_FOURCC('A','A','C','P'), bgav_audio_parser_init_adts },
+    //    { BGAV_MK_FOURCC('A','D','T','S'), bgav_audio_parser_init_adts },
+    //    { BGAV_MK_FOURCC('A','A','C','P'), bgav_audio_parser_init_adts },
   };
 
 int bgav_audio_parser_supported(uint32_t fourcc)

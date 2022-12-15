@@ -21,13 +21,11 @@
 
 #include <avdec_private.h>
 #include <parser.h>
-#include <videoparser_priv.h>
 
 
 
-static int parse_frame_vp8(bgav_video_parser_t * parser,
-                           bgav_packet_t * p,
-                           int64_t pts_orig)
+static int parse_frame_vp8(bgav_packet_parser_t * parser,
+                           bgav_packet_t * p)
   {
   if(!(p->buf.buf[0] & 0x10))
     p->flags |= GAVL_PACKET_NOOUTPUT; 
@@ -40,7 +38,7 @@ static int parse_frame_vp8(bgav_video_parser_t * parser,
   return 1;
   }
 
-void bgav_video_parser_init_vp8(bgav_video_parser_t * parser)
+void bgav_packet_parser_init_vp8(bgav_packet_parser_t * parser)
   {
   parser->parse_frame = parse_frame_vp8;
   }

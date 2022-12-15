@@ -827,7 +827,7 @@ static void set_metadata(bgav_demuxer_context_t * ctx)
   moov = &priv->moov;
 
   if(!moov->udta.have_ilst)
-    cnv = bgav_charset_converter_create(ctx->opt, "ISO-8859-1", BGAV_UTF8);
+    cnv = bgav_charset_converter_create("ISO-8859-1", BGAV_UTF8);
     
   
   SET_UDTA_STRING(GAVL_META_ARTIST,    ART);
@@ -1144,7 +1144,7 @@ static void setup_chapter_track(bgav_demuxer_context_t * ctx, qt_trak_t * trak)
     charset = "bgav_unicode";
 
   if(charset)
-    cnv = bgav_charset_converter_create(ctx->opt, charset, BGAV_UTF8);
+    cnv = bgav_charset_converter_create(charset, BGAV_UTF8);
   else
     {
     cnv = NULL;
@@ -1392,6 +1392,10 @@ static void init_audio(bgav_demuxer_context_t * ctx,
   else
     bg_as->data.audio.endianess = BGAV_ENDIANESS_BIG;
 
+  /* Signal VBR encoding (FIXME: Stream can still be cbr) */
+  if(!trak->mdia.minf.stbl.stsz.sample_size)
+    bg_as->container_bitrate = GAVL_BITRATE_VBR;
+  
   /* Fix channels and samplerate for AMR */
 
   if(bg_as->fourcc == BGAV_MK_FOURCC('s','a','m','r'))
@@ -1406,12 +1410,9 @@ static void init_audio(bgav_demuxer_context_t * ctx,
     }
   /* AC3 in mp4 can have multiple frames per packet */
   else if(bg_as->fourcc == BGAV_MK_FOURCC('a', 'c', '-', '3'))
-    bg_as->flags |= STREAM_PARSE_FULL;
+    bgav_stream_set_parse_full(bg_as);
 
-  /* Signal VBR encoding (FIXME: Stream can still be cbr) */
-
-  if(!trak->mdia.minf.stbl.stsz.sample_size)
-    bg_as->container_bitrate = GAVL_BITRATE_VBR;
+  
   }
 
 static void init_video(bgav_demuxer_context_t * ctx,
@@ -1464,9 +1465,6 @@ static void init_video(bgav_demuxer_context_t * ctx,
   
   bg_vs->fourcc = desc->fourcc;
 
-  if((bg_vs->fourcc == BGAV_MK_FOURCC('m','j','p','a')) ||
-     (bg_vs->fourcc == BGAV_MK_FOURCC('j','p','e','g')))
-    bg_vs->flags |= STREAM_PARSE_FRAME;
   
   bg_vs->data.video.format->image_width = desc->format.video.width;
   bg_vs->data.video.format->image_height = desc->format.video.height;
@@ -1563,6 +1561,20 @@ static void init_video(bgav_demuxer_context_t * ctx,
     bgav_stream_set_extradata(bg_vs, desc->glbl.data, desc->glbl.size);
   
   bg_vs->stream_id = index;
+  
+  if((bg_vs->fourcc == BGAV_MK_FOURCC('m','j','p','a')) ||
+     (bg_vs->fourcc == BGAV_MK_FOURCC('j','p','e','g')) ||
+     (bg_vs->fourcc == BGAV_MK_FOURCC('m', 'x', '5', 'p')) ||
+     (bg_vs->fourcc == BGAV_MK_FOURCC('m', 'x', '4', 'p')) ||
+     (bg_vs->fourcc == BGAV_MK_FOURCC('m', 'x', '3', 'p')) ||
+     (bg_vs->fourcc == BGAV_MK_FOURCC('m', 'x', '5', 'n')) ||
+     (bg_vs->fourcc == BGAV_MK_FOURCC('m', 'x', '4', 'n')) ||
+     (bg_vs->fourcc == BGAV_MK_FOURCC('m', 'x', '3', 'n')) ||
+     (bg_vs->fourcc == BGAV_MK_FOURCC('a', 'v', 'c', '1')) ||
+     bgav_check_fourcc(bg_vs->fourcc, bgav_dv_fourccs) ||
+     bgav_check_fourcc(bg_vs->fourcc, bgav_png_fourccs))
+    bgav_stream_set_parse_frame(bg_vs);
+  
   }
 
 static void quicktime_init(bgav_demuxer_context_t * ctx)
@@ -1844,12 +1856,12 @@ static void build_edl(bgav_demuxer_context_t * ctx)
  
   int i;
 
-  if(!ctx->input->filename)
+  if(!ctx->input->location)
     return;
   
   edl = gavl_edl_create(&ctx->tt->info);
 
-  gavl_dictionary_set_string(edl, GAVL_META_URI, ctx->input->filename);
+  gavl_dictionary_set_string(edl, GAVL_META_URI, ctx->input->location);
   
   t = gavl_append_track(edl, NULL);
   
@@ -1926,18 +1938,8 @@ static void fix_index(bgav_demuxer_context_t * ctx)
                  "Dirac stream has no ctts");
         ctx->index_mode = INDEX_MODE_SI_PARSE;
         s->index_mode = INDEX_MODE_SIMPLE;
-        s->flags |= STREAM_PARSE_FRAME;
+        bgav_stream_set_parse_frame(s);
         }
-      }
-    else if((s->fourcc == BGAV_MK_FOURCC('m', 'x', '5', 'p')) ||
-            (s->fourcc == BGAV_MK_FOURCC('m', 'x', '4', 'p')) ||
-            (s->fourcc == BGAV_MK_FOURCC('m', 'x', '3', 'p')) ||
-            (s->fourcc == BGAV_MK_FOURCC('m', 'x', '5', 'n')) ||
-            (s->fourcc == BGAV_MK_FOURCC('m', 'x', '4', 'n')) ||
-            (s->fourcc == BGAV_MK_FOURCC('m', 'x', '3', 'n')) ||
-            (s->fourcc == BGAV_MK_FOURCC('a', 'v', 'c', '1')))
-      {
-      s->flags |= STREAM_PARSE_FRAME;
       }
     }
   

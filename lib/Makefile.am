@@ -8,7 +8,7 @@ noinst_HEADERS = pnm.h targa.h
 if HAVE_OGG
 ogg_cflags = @OGG_CFLAGS@
 ogg_libs =   @OGG_LIBS@
-ogg_sources = demux_ogg.c
+ogg_sources = 
 else
 ogg_cflags = 
 ogg_libs =   
@@ -174,7 +174,7 @@ endif
 if HAVE_THEORADEC
 theora_cflags  = @THEORADEC_CFLAGS@
 theora_libs    = @THEORADEC_LIBS@
-theora_sources = video_theora.c
+theora_sources = video_theora.c parse_theora.c
 else
 theora_cflags  =
 theora_libs    =
@@ -308,7 +308,6 @@ apetag.c \
 audio.c \
 audio_gavl.c \
 audio_pcm.c \
-audioparser.c \
 asmrp.c \
 base64.c \
 bgav.c \
@@ -359,6 +358,7 @@ demux_nuv.c \
 demux_p2xml.c \
 demux_psxstr.c \
 demux_quicktime.c \
+demux_ogg2.c \
 demux_r3d.c \
 demux_ra.c \
 demux_rm.c \
@@ -368,6 +368,7 @@ demux_smacker.c \
 demux_smaf.c \
 demux_smjpeg.c \
 demux_sol.c \
+demux_srt.c \
 demux_tiertex.c \
 demux_thp.c \
 demux_tta.c \
@@ -383,10 +384,7 @@ demux_y4m.c \
 device.c \
 dirac_header.c \
 dvframe.c \
-fileindex.c \
 flac_header.c \
-formattracker.c \
-frametype.c \
 h264_header.c \
 http.c \
 id3v1.c \
@@ -402,7 +400,6 @@ in_mms.c \
 in_pnm.c \
 in_vcd.c \
 input.c \
-keyframetable.c \
 languages.c \
 matroska.c \
 md5.c \
@@ -415,12 +412,10 @@ mms.c \
 mxf.c \
 nanosoft.c \
 options.c \
+ogg_header.c \
 opus_header.c \
 os.c \
 os_inet_aton.c \
-packetbuffer.c \
-packetpool.c \
-packettimer.c \
 packet.c \
 parse_a52.c \
 parse_adts.c \
@@ -439,6 +434,7 @@ parse_png.c \
 parse_vc1.c \
 parse_vp8.c \
 parse_vp9.c \
+parser.c \
 pes_header.c \
 pnm.c \
 ptscache.c \
@@ -511,7 +507,6 @@ sdp.c \
 stream.c \
 streamdecoder.c \
 subovl_dvd.c \
-subread.c \
 subtitle.c \
 subtitleconverter.c \
 superindex.c \
@@ -525,7 +520,6 @@ udp.c \
 utils.c \
 vc1_header.c \
 video.c \
-videoparser.c \
 video_qtraw.c \
 video_aviraw.c \
 video_tga.c \

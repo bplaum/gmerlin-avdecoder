@@ -146,7 +146,8 @@ static gavl_source_status_t decode_aviraw(bgav_stream_t * s, gavl_video_frame_t 
   bgav_packet_t * p = NULL;
   aviraw_t * priv;
   gavl_source_status_t st;
-
+  gavl_palette_t * pal = NULL;
+  
   uint8_t * src;
   uint8_t * dst;
 
@@ -164,17 +165,17 @@ static gavl_source_status_t decode_aviraw(bgav_stream_t * s, gavl_video_frame_t 
 
   /* Fetch palette */
 
-  if(p->pal)
+  if((pal = gavl_packet_get_extradata(p, GAVL_PACKET_EXTRADATA_PALETTE)))
     {
-    if(priv->palette.num_entries && (p->pal->num_entries != priv->palette.num_entries))
+    if(priv->palette.num_entries && (pal->num_entries != priv->palette.num_entries))
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
                "Palette size changed %d -> %d",
-               priv->palette.num_entries, p->pal->num_entries);
+               priv->palette.num_entries, pal->num_entries);
       return GAVL_SOURCE_EOF;
       }
     gavl_palette_free(&priv->palette);
-    gavl_palette_move(&priv->palette, p->pal);
+    gavl_palette_move(&priv->palette, pal);
     }
   
   if(f)

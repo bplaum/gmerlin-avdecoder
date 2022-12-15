@@ -87,8 +87,7 @@ typedef struct
   
   } bgav_mpeg4_vol_header_t;
 
-int bgav_mpeg4_vol_header_read(const bgav_options_t * opt,
-                               bgav_mpeg4_vol_header_t * ret,
+int bgav_mpeg4_vol_header_read(bgav_mpeg4_vol_header_t * ret,
                                const uint8_t * buffer, int len);
 
 void bgav_mpeg4_vol_header_dump(bgav_mpeg4_vol_header_t * h);
@@ -104,8 +103,7 @@ typedef struct
   int vop_coded;
   } bgav_mpeg4_vop_header_t;
 
-int bgav_mpeg4_vop_header_read(const bgav_options_t * opt,
-                               bgav_mpeg4_vop_header_t * ret,
+int bgav_mpeg4_vop_header_read(bgav_mpeg4_vop_header_t * ret,
                                const uint8_t * buffer, int len,
                                const bgav_mpeg4_vol_header_t * vol);
 

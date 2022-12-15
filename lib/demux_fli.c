@@ -145,8 +145,7 @@ static int open_fli(bgav_demuxer_context_t * ctx)
   
   priv->skip_header = 1;
   
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+  ctx->tt->cur->data_start = ctx->input->position;
   return 1;
   }
 

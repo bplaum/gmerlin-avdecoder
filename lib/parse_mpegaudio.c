@@ -25,11 +25,16 @@
 #include <config.h>
 #include <avdec_private.h>
 #include <parser.h>
-#include <audioparser_priv.h>
 #include <mpa_header.h>
 
 #define HEADER_BYTES 4
 
+typedef struct
+  {
+  bgav_mpa_header_t first_header;
+  } mpa_priv_t;
+ 
+#if 0
 static int parse_mpa(bgav_audio_parser_t * parser)
   {
   int i;
@@ -83,21 +88,91 @@ static int parse_mpa(bgav_audio_parser_t * parser)
     }
   return PARSER_NEED_DATA;
   }
+#endif
 
-#if 0
-void cleanup_mpa(bgav_audio_parser_t * parser)
+static int scan_header(bgav_packet_parser_t * parser, bgav_mpa_header_t * h)
   {
+  int i;
   
+  for(i = parser->buf.pos; i < parser->buf.len - 4; i++)
+    {
+    if(bgav_mpa_header_decode(h, parser->buf.buf + i))
+      {
+      parser->buf.pos = i;
+      return 1;
+      }
+    }
+  return 0;
   }
 
+static int find_frame_boundary_mpa(bgav_packet_parser_t * parser, int * skip)
+  {
+  bgav_mpa_header_t h;
+  mpa_priv_t * priv = parser->priv;
+
+  if(parser->buf.pos + 4 >= parser->buf.len)
+    return 0; // Too little data
+  
+  /* Not synchronized yet */
+
+  if(!priv->first_header.samples_per_frame)
+    {
+    if(scan_header(parser, &priv->first_header))
+      {
+      *skip = priv->first_header.frame_bytes;
+      return 1;
+      }
+    else
+      return 0;
+    }
+  
+  while(scan_header(parser, &h))
+    {
+    if(bgav_mpa_header_equal(&h, &priv->first_header))
+      {
+      *skip = h.frame_bytes;
+      return 1;
+      }
+    else
+      {
+      /* Misdetected start code, try again */
+      parser->buf.pos += 4;
+      }
+    }
+  return 0;
+  }
+
+static int parse_frame_mpa(bgav_packet_parser_t * parser, bgav_packet_t * pkt)
+  {
+  mpa_priv_t * priv = parser->priv;
+
+  if(!(parser->parser_flags & PARSER_HAS_HEADER))
+    bgav_mpa_header_get_format(&priv->first_header, parser->afmt);
+  pkt->duration = priv->first_header.samples_per_frame;
+  return 1;
+  }
+  
+static void cleanup_mpa(bgav_packet_parser_t * parser)
+  {
+  free(parser->priv);
+  }
+
+#if 0
 void reset_mpa(bgav_audio_parser_t * parser)
   {
   
   }
 #endif
 
-void bgav_audio_parser_init_mpeg(bgav_audio_parser_t * parser)
+void bgav_packet_parser_init_mpeg(bgav_packet_parser_t * parser)
   {
-  parser->parse = parse_mpa;
+  mpa_priv_t * priv;
+
+  priv = calloc(1, sizeof(*priv));
   
+  parser->priv                = priv;
+  parser->cleanup             = cleanup_mpa;
+  parser->find_frame_boundary = find_frame_boundary_mpa;
+  parser->parse_frame         = parse_frame_mpa;
   }
+

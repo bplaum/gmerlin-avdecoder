@@ -25,7 +25,6 @@
 #include <config.h>
 #include <avdec_private.h>
 #include <parser.h>
-#include <audioparser_priv.h>
 #include <aac_frame.h>
 
 typedef struct

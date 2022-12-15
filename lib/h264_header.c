@@ -374,8 +374,7 @@ static void skip_scaling_list(bgav_bitstream_t * b, int num)
     bgav_bitstream_get_golomb_se(b, &dummy);
   }
 
-int bgav_h264_sps_parse(const bgav_options_t * opt,
-                        bgav_h264_sps_t * sps,
+int bgav_h264_sps_parse(bgav_h264_sps_t * sps,
                         const uint8_t * buffer, int len)
   {
   int i;

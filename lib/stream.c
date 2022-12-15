@@ -19,18 +19,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
-#include <avdec_private.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+
+#include <avdec_private.h>
+#include <parser.h>
+
+static void bgav_stream_set_timing(bgav_stream_t * s);
 
 // #define DUMP_IN_PACKETS
 
 int bgav_stream_start(bgav_stream_t * stream)
   {
   int result = 1;
-
+  
   switch(stream->type)
     {
     case GAVL_STREAM_VIDEO:
@@ -49,7 +53,7 @@ int bgav_stream_start(bgav_stream_t * stream)
       break;
     }
 
-  gavl_stream_set_stats(stream->info, &stream->stats);
+  gavl_stream_set_stats(stream->info_ext, &stream->stats);
   
   if(result)
     stream->flags |= STREAM_STARTED;
@@ -59,6 +63,13 @@ int bgav_stream_start(bgav_stream_t * stream)
 int bgav_stream_init_read(bgav_stream_t * stream)
   {
   int result = 1;
+  
+  if(!stream->parser)
+    {
+    gavl_stream_set_compression_info(stream->info, stream->ci);
+    gavl_stream_set_compression_tag(stream->info, stream->fourcc);
+    }
+  
   switch(stream->type)
     {
     case GAVL_STREAM_VIDEO:
@@ -119,35 +130,81 @@ void bgav_stream_stop(bgav_stream_t * s)
   bgav_stream_clear(s);
   s->index_position = s->first_index_position;
   
-  if(s->psrc)
-    {
-    gavl_packet_source_destroy(s->psrc);
-    s->psrc = NULL;
-    }
+  }
+
+static void create_parser(bgav_stream_t * s)
+  {
+  gavl_stream_set_compression_info(s->info, s->ci);
+  gavl_stream_set_compression_tag(s->info, s->fourcc);
+
+  if(s->timescale)
+    gavl_dictionary_set_int(s->m, GAVL_META_STREAM_PACKET_TIMESCALE, s->timescale);
   
-  if(s->demuxer)
+  /* Create parser */
+  s->parser = bgav_packet_parser_create(s->info, s->flags);
+  s->psink = bgav_packet_parser_connect(s->parser, s->psink);
+  }
+
+void bgav_stream_set_parse_full(bgav_stream_t * s)
+  {
+  s->flags |= STREAM_PARSE_FULL;
+  create_parser(s);
+  }
+
+void bgav_stream_set_parse_frame(bgav_stream_t * s)
+  {
+  s->flags |= STREAM_PARSE_FRAME;
+  create_parser(s);
+  }
+
+void bgav_stream_flush(bgav_stream_t * s)
+  {
+  if(s->packet)
     {
-    s->src.data = s;
-    s->src.get_func = bgav_demuxer_get_packet_read;
-    s->src.peek_func = bgav_demuxer_peek_packet_read;
+    bgav_stream_done_packet_write(s, s->packet);
+    s->packet = NULL;
     }
+  if(s->parser)
+    bgav_packet_parser_flush(s->parser);
+
+  if(s->pbuffer)
+    gavl_packet_buffer_flush(s->pbuffer);
+
+#if 0  
+  switch(s->type)
+    {
+    case GAVL_STREAM_VIDEO:
+      result = bgav_video_flush(stream);
+      break;
+    case GAVL_STREAM_AUDIO:
+      result = bgav_audio_flush(stream);
+      break;
+    case GAVL_STREAM_OVERLAY:
+      result = bgav_overlay_start(stream);
+      break;
+    case GAVL_STREAM_TEXT:
+      result = bgav_text_start(stream);
+      break;
+    default:
+      break;
+    }
+#endif
   }
 
 void bgav_stream_clear(bgav_stream_t * s)
   {
   /* Clear possibly stored packets */
-  if(s->packet_buffer)
-    bgav_packet_buffer_clear(s->packet_buffer);
+  if(s->pbuffer)
+    gavl_packet_buffer_clear(s->pbuffer);
+
+  if(s->parser)
+    bgav_packet_parser_reset(s->parser);
+  
   if(s->packet)
-    {
-    bgav_packet_pool_put(s->pp, s->packet);
     s->packet = NULL;
-    }
-  if(s->out_packet_b)
-    {
-    bgav_packet_pool_put(s->pp, s->out_packet_b);
-    s->out_packet_b = NULL;
-    }
+  
+  if(s->psrc_priv)
+    gavl_packet_source_reset(s->psrc_priv);
   
   s->in_position  = 0;
   s->out_time = GAVL_TIME_UNDEFINED;
@@ -155,22 +212,57 @@ void bgav_stream_clear(bgav_stream_t * s)
   s->flags &= ~(STREAM_EOF_C|STREAM_EOF_D);
   s->packet_seq = 0;
 
-  if(s->flags & STREAM_NEED_START_PTS)
-    s->stats.pts_start = GAVL_TIME_UNDEFINED;
+  //  if(s->flags & STREAM_NEED_START_PTS)
+  //    s->stats.pts_start = GAVL_TIME_UNDEFINED;
   
   s->index_position  = -1;
+  }
+
+static gavl_source_status_t
+read_packet_continuous(void * priv, bgav_packet_t ** ret)
+  {
+  gavl_source_status_t st;
+  bgav_stream_t * s = priv;
+
+  while((st = gavl_packet_source_read_packet(gavl_packet_buffer_get_source(s->pbuffer), ret))
+        == GAVL_SOURCE_AGAIN)
+    {
+    bgav_demuxer_context_t * demuxer;
+    
+    if(s->flags & STREAM_DISCONT)
+      return st;
+    
+    demuxer = s->demuxer;
+
+    demuxer->request_stream = s;
+    
+    if(!bgav_demuxer_next_packet(demuxer))
+      {
+      /*
+       * If the demuxer reaches EOF, the buffers will be flushed and some more packets will
+       * be emitted
+       */
+      demuxer->request_stream = NULL;
+      continue;
+      }
+    
+    demuxer->request_stream = NULL;
+    }
+  
+  return st;
   }
 
 
 void bgav_stream_create_packet_buffer(bgav_stream_t * stream)
   {
-  stream->packet_buffer = bgav_packet_buffer_create(stream->pp);
+  stream->pbuffer = gavl_packet_buffer_create(stream->info);
+  stream->psink   = gavl_packet_buffer_get_sink(stream->pbuffer);
+
+  stream->psrc_priv = gavl_packet_source_create(read_packet_continuous,
+                                                stream, GAVL_SOURCE_SRC_ALLOC, stream->info);
+  stream->psrc    = stream->psrc_priv;
   }
 
-void bgav_stream_create_packet_pool(bgav_stream_t * stream)
-  {
-  stream->pp = bgav_packet_pool_create();
-  }
 
 void bgav_stream_init(bgav_stream_t * stream, const bgav_options_t * opt)
   {
@@ -196,18 +288,12 @@ void bgav_stream_free(bgav_stream_t * s)
      members are still functional */
   if(s->cleanup)
     s->cleanup(s);
-  
-  if(s->file_index)
-    bgav_file_index_destroy(s->file_index);
-  
-  if(s->packet_buffer)
-    bgav_packet_buffer_destroy(s->packet_buffer);
 
-  if(((s->type == GAVL_STREAM_TEXT) ||
-      (s->type == GAVL_STREAM_OVERLAY)) &&
-     s->data.subtitle.subreader)
-    bgav_subtitle_reader_destroy(s);
-
+  gavl_seek_index_free(&s->index);
+  
+  if(s->pbuffer)
+    gavl_packet_buffer_destroy(s->pbuffer);
+  
   if((s->type == GAVL_STREAM_TEXT) &&
      s->data.subtitle.charset)
     {
@@ -222,8 +308,6 @@ void bgav_stream_free(bgav_stream_t * s)
   
   if(s->timecode_table)
     bgav_timecode_table_destroy(s->timecode_table);
-  if(s->pp)
-    bgav_packet_pool_destroy(s->pp);
 
   gavl_compression_info_free(&s->ci_orig);
   }
@@ -282,12 +366,7 @@ void bgav_stream_dump(bgav_stream_t * s)
     bgav_dprintf("Unspecified\n");
 
   bgav_dprintf("  Timescale:         %d\n", s->timescale);
-  bgav_dprintf("  MaxPacketSize:     ");
-  if(s->ci->max_packet_size)
-    bgav_dprintf("%d\n", s->ci->max_packet_size);
-  else
-    bgav_dprintf("Unknown\n");
-
+  
   bgav_dprintf("  Compression info:\n");
   gavl_compression_info_dumpi(s->ci, 0);
   
@@ -321,7 +400,7 @@ int bgav_stream_skipto(bgav_stream_t * s, gavl_time_t * time, int scale)
 
 bgav_packet_t * bgav_stream_get_packet_write(bgav_stream_t * s)
   {
-  return bgav_packet_pool_get(s->pp);
+  return gavl_packet_sink_get_packet(s->psink);
   }
 
 void bgav_stream_done_packet_write(bgav_stream_t * s, bgav_packet_t * p)
@@ -332,151 +411,141 @@ void bgav_stream_done_packet_write(bgav_stream_t * s, bgav_packet_t * p)
 #endif
   s->in_position++;
 
+  if(!(s->flags & STREAM_WRITE_STARTED))
+    {
+    bgav_stream_set_timing(s);
+    s->flags |= STREAM_WRITE_STARTED;
+    }
+  
   /* If the stream has a constant framerate, all packets have the same
      duration */
   if(s->type == GAVL_STREAM_VIDEO)
     {
     if((s->data.video.format->frame_duration) &&
        (s->data.video.format->framerate_mode == GAVL_FRAMERATE_CONSTANT) &&
-       !p->duration)
+       (p->duration > 0))
       p->duration = s->data.video.format->frame_duration;
 
     if(s->data.video.pal && !s->data.video.pal_sent)
       {
-      p->pal = gavl_palette_create();
-      gavl_palette_alloc(p->pal, s->data.video.pal->num_entries);
-      memcpy(p->pal->entries, s->data.video.pal->entries,
-             s->data.video.pal->num_entries * sizeof(*p->pal->entries));
+      gavl_palette_t * pal = gavl_packet_add_extradata(p, GAVL_PACKET_EXTRADATA_PALETTE);
+      gavl_palette_alloc(pal, s->data.video.pal->num_entries);
+      memcpy(pal->entries, s->data.video.pal->entries,
+             s->data.video.pal->num_entries * sizeof(*pal->entries));
       s->data.video.pal_sent = 1;
       }
     }
   /* Padding (if fourcc != gavl) */
   if(p->buf.buf)
+    {
+    gavl_buffer_alloc(&p->buf, p->buf.len + GAVL_PACKET_PADDING);
     memset(p->buf.buf + p->buf.len, 0, GAVL_PACKET_PADDING);
-  
-  /* Set timestamps from file index because the
-     demuxer might have them messed up */
-  if((s->action != BGAV_STREAM_PARSE) && s->file_index)
-    {
-    p->position = s->index_position;
-    s->index_position++;
     }
+#if 1
+  if((s->flags & STREAM_DTS_ONLY) && (p->pts != GAVL_TIME_UNDEFINED))
+    {
+    p->dts = p->pts;
+    p->pts = GAVL_TIME_UNDEFINED;
+    }
+#endif
   
-  bgav_packet_buffer_append(s->packet_buffer, p);
+  gavl_packet_sink_put_packet(s->psink, p);
   }
 
-int bgav_stream_get_index(bgav_stream_t * s)
+static void set_sample_timescale(bgav_stream_t * s, int scale)
   {
-  int i;
-  int ret = 0;
+  if(!s->timescale)
+    s->timescale = scale;
+  gavl_dictionary_set_int(s->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, scale);
+  }
 
-  for(i = 0; i < s->track->num_streams; i++)
+static void bgav_stream_set_timing(bgav_stream_t * s)
+  {
+  //  int sample_timescale = 0;
+  switch(s->type)
     {
-    if(s->track->streams[i].type == s->type)
-      {
-      if(&s->track->streams[i]== s)
-        return ret;
-      else
-        ret++;
-      }
+    case GAVL_STREAM_AUDIO:
+      if(s->data.audio.format->samplerate)
+        set_sample_timescale(s, s->data.audio.format->samplerate);
+      break;
+    case GAVL_STREAM_VIDEO:
+      if(s->data.video.format->timescale)
+        set_sample_timescale(s, s->data.video.format->timescale);
+      break;
+    default:
+      break;
     }
   
-  return -1;
+  if(s->timescale)
+    gavl_dictionary_set_int(s->m, GAVL_META_STREAM_PACKET_TIMESCALE, s->timescale);
+  
   }
+
+
 
 gavl_source_status_t
 bgav_stream_get_packet_read(bgav_stream_t * s, bgav_packet_t ** ret)
   {
-  bgav_packet_t * p = NULL;
   gavl_source_status_t st;
   
-  if((st = s->src.get_func(s->src.data, &p)) != GAVL_SOURCE_OK)
+  if((st = gavl_packet_source_read_packet(s->psrc, ret)) != GAVL_SOURCE_OK)
     {
     // fprintf(stderr, "bgav_stream_get_packet_read returned %d\n", st);
     return st;
     }
   if(s->timecode_table)
-    p->timecode =
+    (*ret)->timecode =
       bgav_timecode_table_get_timecode(s->timecode_table,
-                                       p->pts);
+                                       (*ret)->pts);
   
-  if(p->pts + p->duration > s->stats.pts_end)
-    p->duration = s->stats.pts_end - p->pts;
+  //  if((*ret)->pts + (*ret)->duration > s->stats.pts_end)
+  //    (*ret)->duration = s->stats.pts_end - (*ret)->pts;
+  
+  if((s->flags & STREAM_DEMUXER_SETS_PTS_END) &&
+     ((*ret)->pts + (*ret)->duration > s->stats.pts_end))
+    {
+    (*ret)->duration = s->stats.pts_end - (*ret)->pts;
+    bgav_dprintf("Limiting last duration: %"PRId64"\n", (*ret)->duration);
+    }
   
   if(s->opt->dump_packets)
     {
     bgav_dprintf("Packet out (stream %d): ", s->stream_id);
-    bgav_packet_dump(p);
-    gavl_hexdump(p->buf.buf, p->buf.len < 16 ? p->buf.len : 16, 16);
+    bgav_packet_dump(*ret);
+    //    gavl_hexdump((*ret)->buf.buf, (*ret)->buf.len < 16 ? (*ret)->buf.len : 16, 16);
     }
   
-  if(s->max_packet_size_tmp < p->buf.len)
-    s->max_packet_size_tmp = p->buf.len;
-  
-  *ret = p;
-
-  if(s->action == BGAV_STREAM_PARSE)
-    {
-    gavl_stream_stats_update_params(&s->stats,
-                                    p->pts, p->duration, p->buf.len,
-                                    p->flags & 0x0000ffff);
-    }
-    
   return GAVL_SOURCE_OK;
   }
 
 gavl_source_status_t
-bgav_stream_peek_packet_read(bgav_stream_t * s, bgav_packet_t ** p,
-                             int force)
+bgav_stream_peek_packet_read(bgav_stream_t * s, bgav_packet_t ** p)
   {
-  return s->src.peek_func(s->src.data, p, force);
+  gavl_source_status_t st;
+  if((st = gavl_packet_source_peek_packet(s->psrc, p)) != GAVL_SOURCE_OK)
+    {
+    // fprintf(stderr, "bgav_stream_get_packet_read returned %d\n", st);
+    return st;
+    }
+  if(!p)
+    return st;
+  
+  if(s->timecode_table)
+    (*p)->timecode =
+      bgav_timecode_table_get_timecode(s->timecode_table,
+                                       (*p)->pts);
+  
+  //  if((*p)->pts + (*p)->duration > s->stats.pts_end)
+  //    (*p)->duration = s->stats.pts_end - (*p)->pts;
+  
+  return st;
   }
 
 void bgav_stream_done_packet_read(bgav_stream_t * s, bgav_packet_t * p)
   {
-  /* If no packet pool is there, we assume the packet will be
-     freed somewhere else */
-  if(s->pp)
-    bgav_packet_pool_put(s->pp, p);
+  /* Nop */ 
   }
 
-/* Read one packet from an A/V stream */
-
-gavl_source_status_t
-bgav_stream_read_packet_func(void * sp, gavl_packet_t ** p)
-  {
-  gavl_source_status_t st;
-  bgav_stream_t * s = sp;
-  
-  if(s->out_packet_b)
-    {
-    bgav_stream_done_packet_read(s, s->out_packet_b);
-    s->out_packet_b = NULL;
-    }
-  
-  if(s->flags & STREAM_DISCONT)
-    {
-    /* Check if we have a packet at all */
-    if((st = bgav_stream_peek_packet_read(s, NULL, 0)) != GAVL_SOURCE_OK)
-      {
-      if(s->flags & STREAM_EOF_D)
-        st = GAVL_SOURCE_EOF;        
-      return st;
-      }
-    }
-
-  if((st = bgav_stream_get_packet_read(s, &s->out_packet_b)) != GAVL_SOURCE_OK)
-    return st;
-  
-  bgav_packet_2_gavl(s->out_packet_b, &s->out_packet_g);
-
-  //  gavl_packet_dump(&s->out_packet_g);
-  //  bgav_packet_dump(s->out_packet_b);
-  
-
-  *p = &s->out_packet_g;
-  return GAVL_SOURCE_OK;
-  }
 
 void bgav_stream_set_extradata(bgav_stream_t * s,
                                const uint8_t * data, int len)
@@ -522,7 +591,7 @@ void bgav_stream_set_from_gavl(bgav_stream_t * s,
   s->fourcc = bgav_compression_id_2_fourcc(s->ci->id);
   s->container_bitrate = s->ci->bitrate;
   }
-                         
+
 int bgav_streams_foreach(bgav_stream_t * s, int num,
                          int (*action)(void * priv, bgav_stream_t * s), void * priv)
   {
@@ -534,3 +603,24 @@ int bgav_streams_foreach(bgav_stream_t * s, int num,
     }
   return 1;
   } 
+
+gavl_sink_status_t bgav_stream_put_packet_get_duration(void * priv, gavl_packet_t * p)
+  {
+  bgav_stream_t * s = priv;
+
+  if(!(s->flags & STREAM_DEMUXER_SETS_PTS_END))
+    gavl_stream_stats_update_end(&s->stats, p);
+  
+  return GAVL_SINK_OK;
+  }
+
+gavl_sink_status_t bgav_stream_put_packet_parse(void * priv, gavl_packet_t * p)
+  {
+  bgav_stream_t * s = priv;
+  gavl_stream_stats_update(&s->stats, p);
+  gavl_seek_index_append(&s->index, p, s->ci->flags);
+
+  
+  
+  return GAVL_SINK_OK;
+  }

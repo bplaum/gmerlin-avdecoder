@@ -298,7 +298,6 @@ typedef struct
 static int probe_nsv(bgav_input_context_t * input)
   {
   uint32_t fourcc;
-  char * pos;
   const char * mimetype; 
   /* Check for video/nsv */
 
@@ -309,12 +308,8 @@ static int probe_nsv(bgav_input_context_t * input)
   /* Probing a stream without any usable headers at the
      beginning isn't save enough so we check for the extension */
     
-  if(input->filename)
-    {
-    pos = strrchr(input->filename, '.');
-    if(pos && !strcasecmp(pos, ".nsv"))
-      return 1;
-    }
+  if(input->location && gavl_string_ends_with(input->location, ".nsv"))
+    return 1;
   
   if(!bgav_input_get_fourcc(input, &fourcc))
     return 0;
@@ -476,7 +471,7 @@ static int open_nsv(bgav_demuxer_context_t * ctx)
     /* Probably also ('A','A','C',' ')? */
     if(s->fourcc == BGAV_MK_FOURCC('A','A','C','P'))
       {
-      s->flags |= STREAM_PARSE_FULL;
+      bgav_stream_set_parse_full(s);
       }
     
     s->stream_id = AUDIO_ID;
@@ -526,8 +521,7 @@ static int open_nsv(bgav_demuxer_context_t * ctx)
   
   p->payload_follows = 1;
 
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+  ctx->tt->cur->data_start = ctx->input->position;
 
   bgav_track_set_format(ctx->tt->cur, "NSV", "video/nsv");
 
@@ -551,7 +545,7 @@ static int open_nsv(bgav_demuxer_context_t * ctx)
       ctx->input = input_save;
       }
     else
-      bgav_input_seek(ctx->input, ctx->data_start, SEEK_SET);
+      bgav_input_seek(ctx->input, ctx->tt->cur->data_start, SEEK_SET);
     }
   
   return 1;

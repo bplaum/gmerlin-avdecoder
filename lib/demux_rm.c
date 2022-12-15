@@ -876,7 +876,7 @@ int bgav_demux_rm_open_with_header(bgav_demuxer_context_t * ctx,
   
   /* Handle metadata */
 
-  cnv = bgav_charset_converter_create(ctx->opt, "ISO-8859-1", BGAV_UTF8);
+  cnv = bgav_charset_converter_create("ISO-8859-1", BGAV_UTF8);
 
   if(priv->header->cont.title_len)
     gavl_dictionary_set_string_nocopy(track->metadata,
@@ -910,9 +910,7 @@ int bgav_demux_rm_open_with_header(bgav_demuxer_context_t * ctx,
                                                 NULL));
   bgav_charset_converter_destroy(cnv);
 
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
-  
+  ctx->tt->cur->data_start = ctx->input->position;
   return 1;
   }
 
@@ -1417,7 +1415,7 @@ static gavl_source_status_t next_packet_rmff(bgav_demuxer_context_t * ctx)
   rm_stream_t * rs = NULL;
   int result = 0;
   uint32_t stream_pos = 0;
-  int i;
+  //  int i;
   
   rm = ctx->priv;
 
@@ -1464,6 +1462,7 @@ static gavl_source_status_t next_packet_rmff(bgav_demuxer_context_t * ctx)
       else
         stream_pos = rs->data_pos;
       }
+#if 0
     else
       {
       /* Find the first stream with empty packetbuffer */
@@ -1505,6 +1504,7 @@ static gavl_source_status_t next_packet_rmff(bgav_demuxer_context_t * ctx)
           }
         }
       }
+#endif
     
     /* If we have no more stream, eof is reached */
     if(!stream)

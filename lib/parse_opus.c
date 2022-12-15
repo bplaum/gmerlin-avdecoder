@@ -25,85 +25,48 @@
 #include <config.h>
 #include <avdec_private.h>
 #include <parser.h>
-#include <audioparser_priv.h>
 #include <opus_header.h>
 
-typedef struct
-  {
-  int64_t pts_offset;
-  } opus_priv_t;
 
-static int get_format(bgav_audio_parser_t * parser)
+static int get_format(bgav_packet_parser_t * parser)
   {
   int ret = 0;
   bgav_opus_header_t h;
   bgav_input_context_t * input_mem;
-  opus_priv_t * p = parser->priv;
   
-  input_mem = bgav_input_open_memory(parser->s->ci->codec_header.buf,
-                                     parser->s->ci->codec_header.len,
-                                     parser->s->opt);
+  input_mem = bgav_input_open_memory(parser->ci.codec_header.buf,
+                                     parser->ci.codec_header.len);
   
   if(!bgav_opus_header_read(input_mem, &h))
     goto fail;
 
-  bgav_opus_set_channel_setup(&h, parser->s->data.audio.format);
+  parser->afmt->num_channels = h.channel_count;  
+  parser->afmt->samplerate = 48000;
+  
+  bgav_opus_set_channel_setup(&h, parser->afmt);
 
-  if(parser->s->opt->dump_headers)
-    bgav_opus_header_dump(&h);
+  //  if(parser->s->opt->dump_headers)
+  //    bgav_opus_header_dump(&h);
 
-  parser->s->ci->pre_skip = h.pre_skip;
-  p->pts_offset = - ((int)parser->s->ci->pre_skip);
+  parser->ci.pre_skip = h.pre_skip;
   ret = 1;
   fail:
-    
-  bgav_input_close(input_mem);
+  
   bgav_input_destroy(input_mem);
   return ret;
   }
 
-static int parse_frame_opus(bgav_audio_parser_t * parser, bgav_packet_t * p)
+static int parse_frame_opus(bgav_packet_parser_t * parser, bgav_packet_t * p)
   {
-  opus_priv_t * priv = parser->priv;
-  int nb_frames = opus_packet_get_nb_frames(p->buf.buf, p->buf.len);
-
-  if(!parser->have_format)
-    return 0;
-  
-  parser->timestamp += priv->pts_offset;
-  priv->pts_offset = 0;
-  
-  if (nb_frames < 1)
-    p->duration = nb_frames;
-  else
-    p->duration =
-      opus_packet_get_samples_per_frame(p->buf.buf, 48000) * nb_frames;
-  
+  p->duration = opus_packet_get_nb_samples(p->buf.buf, p->buf.len, 48000);
+  //  fprintf(stderr, "parse_frame_opus:\n");
+  //  gavl_packet_dump(p);
   return 1;
   }
 
-static void cleanup_opus(bgav_audio_parser_t * parser)
-  {
-  opus_priv_t * p = parser->priv;
-  free(p);
-  }
 
-static void reset_opus(bgav_audio_parser_t * parser)
+void bgav_packet_parser_init_opus(bgav_packet_parser_t * parser)
   {
-  opus_priv_t * p = parser->priv;
-  p->pts_offset = -((int64_t)parser->s->ci->pre_skip);
-  }
-
-void bgav_audio_parser_init_opus(bgav_audio_parser_t * parser)
-  {
-  opus_priv_t * priv = calloc(1, sizeof(*priv));
-
-  parser->priv = priv;
-  
-  if(get_format(parser))
-    parser->have_format = 1;
-  
+  get_format(parser);
   parser->parse_frame = parse_frame_opus;
-  parser->cleanup = cleanup_opus;
-  parser->reset = reset_opus;
   }

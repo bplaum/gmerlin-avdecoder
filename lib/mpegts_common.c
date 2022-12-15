@@ -510,16 +510,15 @@ int bgav_pmt_section_setup_track(pmt_section_t * pmts,
                            language);
           }
         }
-
-      if(s->fourcc == BGAV_MK_FOURCC('d','r','a','c'))
-        s->flags |= (STREAM_PARSE_FRAME);
-      else
-        s->flags |= (STREAM_PARSE_FULL);
       
-      s->stats.pts_start = GAVL_TIME_UNDEFINED;
       s->timescale = 90000;
       s->stream_id = pmts->streams[i].pid;
-      s->flags |= STREAM_NEED_START_PTS;
+
+      if(s->fourcc == BGAV_MK_FOURCC('d','r','a','c'))
+        bgav_stream_set_parse_frame(s);
+      else
+        bgav_stream_set_parse_full(s);
+      
       ret++;
       }
     }

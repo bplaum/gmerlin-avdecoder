@@ -544,7 +544,7 @@ static char * read_utf16_string(bgav_input_context_t * input, int len)
   {
   bgav_charset_converter_t * cnv;
   char * str, * ret;
-  cnv = bgav_charset_converter_create(input->opt, "UTF-16BE", BGAV_UTF8);
+  cnv = bgav_charset_converter_create("UTF-16BE", BGAV_UTF8);
   if(!cnv)
     {
     bgav_input_skip(input, len);
@@ -2627,7 +2627,7 @@ int bgav_mxf_file_read(bgav_input_context_t * input,
   if(!read_partition(input, &ret->header, &klv, pos))
     return 0;
 
-  if(!bgav_mxf_finalize_header(ret, input->opt))
+  if(!bgav_mxf_finalize_header(ret, &input->opt))
     {
     return 0;
     }
@@ -2689,7 +2689,7 @@ int bgav_mxf_file_read(bgav_input_context_t * input,
       }
     }
 
-  if(!bgav_mxf_finalize_body(ret, input->opt))
+  if(!bgav_mxf_finalize_body(ret, &input->opt))
     {
     return 0;
     }

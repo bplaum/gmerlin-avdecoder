@@ -25,7 +25,6 @@
 #include <config.h>
 #include <avdec_private.h>
 #include <parser.h>
-#include <audioparser_priv.h>
 
 #include <bgav_dca.h>
 
@@ -36,7 +35,7 @@ typedef struct
   dts_state_t * state;
   } dca_t;
 
-static int parse_frame_dca(bgav_audio_parser_t * parser,
+static int parse_frame_dca(bgav_packet_parser_t * parser,
                            bgav_packet_t * p)
   {
   int flags, sample_rate, bit_rate, frame_length, frame_bytes;
@@ -50,16 +49,22 @@ static int parse_frame_dca(bgav_audio_parser_t * parser,
   if(frame_bytes <= 0)
     return 0;
 
+  if(!(parser->parser_flags & PARSER_HAS_HEADER))
+    {
+    parser->ci.bitrate = bit_rate;
+    parser->afmt->samplerate = sample_rate;
+    
+    bgav_dca_flags_2_channel_setup(flags, parser->afmt);
+    }
+  
   p->duration = frame_length;
-  if(parser->s->codec_bitrate <= 0)
-    parser->s->codec_bitrate = bit_rate;
-  if(parser->s->data.audio.format->channel_locations[0] == GAVL_CHID_NONE)
-    bgav_dca_flags_2_channel_setup(flags, parser->s->data.audio.format);
+
+
   //  fprintf(stderr, "Parse frame: %d %d\n", p->data_size, frame_bytes);
   return 1;
   }
 
-static int parse_dca(bgav_audio_parser_t * parser)
+static int find_frame_boundary_dca(bgav_packet_parser_t * parser, int * skip)
   {
   int i;
   int frame_bytes;
@@ -70,11 +75,22 @@ static int parse_dca(bgav_audio_parser_t * parser)
   
   dca_t * priv = parser->priv;
   
-  for(i = 0; i < parser->buf.len - DCA_HEADER_BYTES; i++)
+  for(i = parser->buf.pos; i < parser->buf.len - DCA_HEADER_BYTES; i++)
     {
-    frame_bytes = dts_syncinfo(priv->state, parser->buf.buf + i,
-                               &flags, &sample_rate, &bit_rate, &frame_length);
-    if(frame_bytes)
+    if((frame_bytes = dts_syncinfo(priv->state, parser->buf.buf + i,
+                                   &flags, &sample_rate, &bit_rate, &frame_length)))
+      {
+      parser->buf.pos = i;
+      *skip = frame_bytes;
+      return 1;
+      }
+    }
+  return 0;
+  }
+
+
+#if 0
+    if(frame_bytes
       {
       //      fprintf(stderr, "Got frame bytes: %d, length: %d\n",
       //              frame_bytes, frame_length);
@@ -95,8 +111,9 @@ static int parse_dca(bgav_audio_parser_t * parser)
     }
   return PARSER_NEED_DATA;
   }
+#endif
 
-static void cleanup_dca(bgav_audio_parser_t * parser)
+static void cleanup_dca(bgav_packet_parser_t * parser)
   {
   dca_t * priv = parser->priv;
   if(priv->state)
@@ -104,12 +121,12 @@ static void cleanup_dca(bgav_audio_parser_t * parser)
   free(priv);
   }
 
-void bgav_audio_parser_init_dca(bgav_audio_parser_t * parser)
+void bgav_packet_parser_init_dca(bgav_packet_parser_t * parser)
   {
   dca_t * priv = calloc(1, sizeof(*priv));
   priv->state =   dts_init(0);
   parser->priv = priv;
-  parser->parse = parse_dca;
+  parser->find_frame_boundary = find_frame_boundary_dca;
   parser->cleanup = cleanup_dca;
   parser->parse_frame = parse_frame_dca;
   }

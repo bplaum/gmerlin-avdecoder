@@ -28,19 +28,13 @@
 
 static int probe_gsm(bgav_input_context_t * input)
   {
-    char * pos;
   /* There seems to be no way to do proper probing of the stream.
      Therefore, we accept only local files with .gsm as extension */
 
-  if(input->filename)
-    {
-    pos = strrchr(input->filename, '.');
-    if(!pos)
-      return 0;
-    if(!strcmp(pos, ".gsm"))
-      return 1;
-    }
-  return 0;
+  if(input->location && gavl_string_ends_with(input->location, ".gsm"))
+    return 1;
+  else
+    return 0;
   }
 
 static int64_t bytes_2_samples(int64_t bytes)
@@ -72,8 +66,7 @@ static int open_gsm(bgav_demuxer_context_t * ctx)
 
   bgav_track_set_format(ctx->tt->cur, "GSM", NULL);
 
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+  ctx->tt->cur->data_start = ctx->input->position;
   
   return 1;
   }

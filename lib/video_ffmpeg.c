@@ -65,12 +65,16 @@
 #define GOT_EOS         (1<<6) // Got end of sequence
 #define NEED_FORMAT     (1<<7)
 
+#define FLUSH_EOF       (1<<8)
 
 /* Skip handling */
 
 #define SKIP_MODE_NONE 0 // No Skipping
 #define SKIP_MODE_FAST 1 // Skip all B frames
 #define SKIP_MODE_SLOW 2 // 
+
+#define COUNT_PACKETS  
+#define COUNT_FRAMES  
 
 static gavl_pixelformat_t get_pixelformat(enum AVPixelFormat p,
                                           gavl_pixelformat_t pixelformat);
@@ -133,7 +137,7 @@ typedef struct
   int64_t skip_time;
   int skip_mode;
   
-  AVPacket pkt;
+  AVPacket * pkt;
 
   bgav_packet_t * p;
 
@@ -150,6 +154,15 @@ typedef struct
   EGLImageKHR (*eglCreateImage) (EGLDisplay dpy, EGLContext ctx, EGLenum target, EGLClientBuffer buffer, const EGLint *attrib_list);
   EGLBoolean (*eglDestroyImage) (EGLDisplay dpy, EGLImageKHR image);
 
+#endif
+
+#ifdef COUNT_PACKETS
+  int packet_count_o;
+  int packet_count_n;
+#endif
+
+#ifdef COUNT_FRAMES
+  int frame_count;
 #endif
   
   } ffmpeg_video_priv;
@@ -247,6 +260,13 @@ get_data(bgav_stream_t * s, bgav_packet_t ** ret_p)
   
   ret = *ret_p;
 
+#ifdef COUNT_PACKETS
+  if(ret->flags & GAVL_PACKET_NOOUTPUT)
+    priv->packet_count_n++;
+  else
+    priv->packet_count_o++;
+#endif
+  
 #ifdef DUMP_PACKET
   fprintf(stderr, "video_ffmpeg: Got packet ");
   bgav_packet_dump(ret);
@@ -311,36 +331,37 @@ static void dump_frame(uint8_t * data, int len)
   }
 #endif
 
-static void update_palette(bgav_stream_t * s, bgav_packet_t * p)
+static void update_palette(bgav_stream_t * s, gavl_palette_t * palette)
   {
   uint32_t * pal_i;
   int i, imax;
   ffmpeg_video_priv * priv;
-  priv = s->decoder_priv;
   
+  priv = s->decoder_priv;
+
   imax =
-    (p->pal->num_entries > AVPALETTE_COUNT)
-    ? AVPALETTE_COUNT : p->pal->num_entries;
+    (palette->num_entries > AVPALETTE_COUNT)
+    ? AVPALETTE_COUNT : palette->num_entries;
   
   gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN,
-           "Got palette %d entries", p->pal->num_entries);
+           "Got palette %d entries", palette->num_entries);
       
   pal_i =
-    (uint32_t*)av_packet_new_side_data(&priv->pkt, AV_PKT_DATA_PALETTE,
+    (uint32_t*)av_packet_new_side_data(priv->pkt, AV_PKT_DATA_PALETTE,
                                        AVPALETTE_COUNT * 4);
 
   for(i = 0; i < imax; i++)
     {
     pal_i[i] =
-      ((p->pal->entries[i].a >> 8) << 24) |
-      ((p->pal->entries[i].r >> 8) << 16) |
-      ((p->pal->entries[i].g >> 8) << 8) |
-      ((p->pal->entries[i].b >> 8));
+      ((palette->entries[i].a >> 8) << 24) |
+      ((palette->entries[i].r >> 8) << 16) |
+      ((palette->entries[i].g >> 8) << 8) |
+      ((palette->entries[i].b >> 8));
     }
   for(i = imax; i < AVPALETTE_COUNT; i++)
     pal_i[i] = 0;
-      
-  bgav_packet_free_palette(p);
+  
+  // bgav_packet_free_palette(p);
 
   }
 
@@ -350,13 +371,14 @@ static gavl_source_status_t get_packet(bgav_stream_t * s)
   gavl_source_status_t st;
   ffmpeg_video_priv * priv;
   bgav_pts_cache_entry_t * e;
-
+  gavl_palette_t * palette;
+  
   priv = s->decoder_priv;
 
   while(1)
     {
-    priv->pkt.data = NULL;
-    priv->pkt.size = 0;
+    priv->pkt->data = NULL;
+    priv->pkt->size = 0;
     
     /* Read data */
     p = NULL;
@@ -384,7 +406,9 @@ static gavl_source_status_t get_packet(bgav_stream_t * s)
     /* Early EOF detection */
     if(!p)
       {
+      fprintf(stderr, "Flushing decoder\n");
       avcodec_send_packet(priv->ctx, NULL);
+      priv->flags |= FLUSH_EOF;
       return GAVL_SOURCE_EOF;
       }
     /* Check what to skip */
@@ -430,25 +454,28 @@ static gavl_source_status_t get_packet(bgav_stream_t * s)
   if((priv->ctx->skip_frame == AVDISCARD_DEFAULT) &&
      !(p->flags & GAVL_PACKET_NOOUTPUT))
     bgav_pts_cache_push(&priv->pts_cache, p, NULL, &e);
-    
-  priv->pkt.data = p->buf.buf;
+  
+  priv->pkt->data = p->buf.buf;
   if(p->field2_offset)
-    priv->pkt.size = p->field2_offset;
+    priv->pkt->size = p->field2_offset;
   else
-    priv->pkt.size = p->buf.len;
+    priv->pkt->size = p->buf.len;
       
   /* Palette handling */
-  if(p->pal)
-    update_palette(s, p);
+
+  if((palette = gavl_packet_get_extradata(p, GAVL_PACKET_EXTRADATA_PALETTE)))
+    {
+    update_palette(s, palette);
+    }
   
   /* Check for EOS */
   if(p->sequence_end_pos > 0)
     priv->flags |= GOT_EOS;
 
-  avcodec_send_packet(priv->ctx, &priv->pkt);
+  avcodec_send_packet(priv->ctx, priv->pkt);
 
 #ifdef DUMP_DECODE
-  bgav_dprintf("Used %d bytes", priv->pkt.size);
+  bgav_dprintf("Used %d bytes", priv->pkt->size);
 #endif
 
   done_data(s, p);
@@ -473,6 +500,10 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
   while(1)
     {
     result = avcodec_receive_frame(priv->ctx, priv->frame);
+    if(priv->flags & FLUSH_EOF)
+      {
+      fprintf(stderr, "Receive_frame: %d\n", result);
+      }
 
     if(!result)
       {
@@ -482,12 +513,13 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
       }
     else if(result == AVERROR(EAGAIN))
       {
-      /* Get data */
+      /* Get data, flush the decoder after the last packet */
       st = get_packet(s);
 
       /* Nothing we can do right now */
       if(st == GAVL_SOURCE_AGAIN)
         return st;
+      
       }
     else
       return GAVL_SOURCE_EOF;
@@ -502,14 +534,18 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
                );
 #endif
 
+#ifdef COUNT_FRAMES
+  priv->frame_count++;
+#endif
+  
     /* Ugly hack: Need to free the side data elements manually because
        ffmpeg has no public API for that */
 #if LIBAVCODEC_VERSION_MAJOR >= 54
-  if(priv->pkt.side_data_elems)
+  if(priv->pkt->side_data_elems)
     {
-    av_free(priv->pkt.side_data[0].data);
-    av_freep(&priv->pkt.side_data);
-    priv->pkt.side_data_elems = 0;
+    av_free(priv->pkt->side_data[0].data);
+    av_freep(&priv->pkt->side_data);
+    priv->pkt->side_data_elems = 0;
     }
 #endif
 
@@ -518,8 +554,8 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
   /* Decode 2nd field for field pictures */
   if(p && p->field2_offset && (bytes_used > 0))
     {
-    priv->pkt.data = p->buf.buf + p->field2_offset;
-    priv->pkt.size = p->buf.len - p->field2_offset;
+    priv->pkt->data = p->buf.buf + p->field2_offset;
+    priv->pkt->size = p->buf.len - p->field2_offset;
     
 #ifdef DUMP_DECODE
     bgav_dprintf("Decode (f2): out_time: %" PRId64 " len: %d\n", s->out_time,
@@ -764,6 +800,7 @@ static int init_ffmpeg(bgav_stream_t * s)
   
   priv->frame = av_frame_alloc();
   priv->gavl_frame = gavl_video_frame_create(NULL);
+  priv->pkt = av_packet_alloc();
   
   /* Some codecs need extra stuff */
 
@@ -885,10 +922,25 @@ static void close_ffmpeg(bgav_stream_t * s)
   if(!priv)
     return;
 
+#ifdef COUNT_PACKETS
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got %d normal packets", priv->packet_count_o);
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got %d noout packets", priv->packet_count_n);
+#endif
+
+#ifdef COUNT_FRAMES
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got %d frames", priv->frame_count);
+#endif
+  
   if(priv->frame)
     {
     //    av_frame_unref(priv->frame); // Not necessary? At least valgrind doesn't complain
     av_frame_free(&priv->frame);
+    }
+
+  if(priv->pkt)
+    {
+    //    av_frame_unref(priv->frame); // Not necessary? At least valgrind doesn't complain
+    av_packet_free(&priv->pkt);
     }
   
   if(priv->ctx)

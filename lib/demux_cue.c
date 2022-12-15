@@ -25,16 +25,20 @@
 #include <string.h>
 #include <glob.h>
 
+#include <cue.h>
+
 #define LOG_DOMAIN "cuedemux"
 
 extern bgav_input_t bgav_input_file;
 
+#if 0
 static int glob_errfunc(const char *epath, int eerrno)
   {
   fprintf(stderr, "glob error: Cannot access %s: %s\n",
           epath, strerror(eerrno));
   return 0;
   }
+#endif
 
 static int probe_cue(bgav_input_context_t * input)
   {
@@ -63,6 +67,7 @@ static int probe_cue(bgav_input_context_t * input)
   return 0;
   }
 
+#if 0
 static int load_edl(gavl_dictionary_t * ret, const glob_t * g, const char * ext)
   {
   int result = 0;
@@ -104,41 +109,41 @@ static int load_edl(gavl_dictionary_t * ret, const glob_t * g, const char * ext)
   
   return result;
   }
+#endif
 
 static int open_cue(bgav_demuxer_context_t * ctx)
   {
-  int num, i;
   int ret = 0;
-  char * pattern;
-  char * pos;
   /* Search for audio file */
   const char * loc = NULL;
-  gavl_dictionary_t * edl;
-  glob_t glob_buf;
 
-  memset(&glob_buf, 0, sizeof(glob_buf));
+  bgav_cue_t * cue = NULL;
 
-  
-  gavl_dictionary_get_src(&ctx->input->m, GAVL_META_SRC, 0, NULL, &loc);
-  pattern = gavl_strdup(loc);
-  pos = strrchr(pattern, '.');
-  pos++;
-  *pos = '*';
-  pos++;
-  *pos = '\0';
-
-  pattern = gavl_escape_string(pattern, "[]?");
-
-  if(glob(pattern, 0, glob_errfunc, &glob_buf))
-    {
-    // fprintf(stderr, "glob returned %d\n", result);
+  if(!gavl_dictionary_get_src(&ctx->input->m, GAVL_META_SRC, 0, NULL, &loc))
     goto fail;
-    }
   
+  if(!(cue = bgav_cue_read(ctx->input)))
+    goto fail;
+
+  ctx->tt = bgav_track_table_create(0);
+
+  bgav_cue_get_edl(cue, &ctx->tt->info, loc);
+
+  ret = 1;
+  fail:
+  
+  bgav_cue_destroy(cue);
+  return ret;
+  }
+
+#if 0
+
   /* We simply open the audio file, which will load the cue file in turn.
      Then we copy the EDL and forget the rest */
 
   ctx->tt = bgav_track_table_create(0);
+  
+  
   edl = gavl_edl_create(&ctx->tt->info);
   
   if(!load_edl(edl, &glob_buf, ".wav") &&
@@ -193,6 +198,8 @@ static int open_cue(bgav_demuxer_context_t * ctx)
     
   return ret;
   }
+
+#endif
 
 static void close_cue(bgav_demuxer_context_t * ctx)
   {

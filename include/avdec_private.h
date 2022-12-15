@@ -40,6 +40,9 @@
 #include <gavl/utils.h>
 #include <gavl/trackinfo.h>
 
+#include <bsf.h>
+
+
 #define BGAV_MK_FOURCC(a, b, c, d) ((a<<24)|(b<<16)|(c<<8)|d)
 
 #define BGAV_VORBIS BGAV_MK_FOURCC('V','B','I','S')
@@ -54,19 +57,23 @@ typedef struct bgav_demuxer_context_s bgav_demuxer_context_t;
 
 typedef struct bgav_redirector_s         bgav_redirector_t;
 
-typedef struct bgav_packet_s          bgav_packet_t;
+// typedef struct bgav_packet_s          bgav_packet_t;
+#define bgav_packet_t gavl_packet_t
+
 typedef struct bgav_file_index_s      bgav_file_index_t;
-typedef struct bgav_video_parser_s    bgav_video_parser_t;
-typedef struct bgav_audio_parser_s    bgav_audio_parser_t;
-typedef struct bgav_bsf_s             bgav_bsf_t;
+// typedef struct bgav_video_parser_s    bgav_video_parser_t;
+// typedef struct bgav_audio_parser_s    bgav_audio_parser_t;
+typedef struct bgav_packet_parser_s   bgav_packet_parser_t;
+
+// typedef struct bgav_bsf_s             bgav_bsf_t;
 
 typedef struct bgav_input_s                    bgav_input_t;
 typedef struct bgav_input_context_s            bgav_input_context_t;
 typedef struct bgav_audio_decoder_s            bgav_audio_decoder_t;
 typedef struct bgav_video_decoder_s            bgav_video_decoder_t;
 // typedef struct bgav_subtitle_overlay_decoder_s bgav_subtitle_overlay_decoder_t;
-typedef struct bgav_subtitle_reader_s bgav_subtitle_reader_t;
-typedef struct bgav_subtitle_reader_context_s bgav_subtitle_reader_context_t;
+//typedef struct bgav_subtitle_reader_s bgav_subtitle_reader_t;
+//typedef struct bgav_subtitle_reader_context_s bgav_subtitle_reader_context_t;
 typedef struct bgav_subtitle_converter_s bgav_subtitle_converter_t;
 
 // typedef struct bgav_subtitle_overlay_decoder_context_s
@@ -74,24 +81,25 @@ typedef struct bgav_subtitle_converter_s bgav_subtitle_converter_t;
 
 typedef struct bgav_stream_s   bgav_stream_t;
 
-typedef struct bgav_packet_buffer_s   bgav_packet_buffer_t;
+// typedef struct bgav_packet_buffer_s   bgav_packet_buffer_t;
 
 typedef struct bgav_charset_converter_s bgav_charset_converter_t;
 
 typedef struct bgav_track_s bgav_track_t;
 
 typedef struct bgav_timecode_table_s bgav_timecode_table_t;
-typedef struct bgav_keyframe_table_s bgav_keyframe_table_t;
+// typedef struct bgav_keyframe_table_s bgav_keyframe_table_t;
 
-typedef struct bgav_packet_pool_s bgav_packet_pool_t;
+// typedef struct bgav_packet_pool_s bgav_packet_pool_t;
 
-typedef struct bgav_video_format_tracker_s bgav_video_format_tracker_t;
+// typedef struct bgav_video_format_tracker_s bgav_video_format_tracker_t;
 
 #include <id3.h>
 #include <yml.h>
 #include <packettimer.h>
 #include <frametype.h>
 
+#if 0
 /* subsequent calls of read() or peek() will return the next packet */
 typedef gavl_source_status_t
 (*bgav_get_packet_callback)(void * data, bgav_packet_t ** ret);
@@ -109,6 +117,8 @@ typedef struct
 
 void bgav_packet_source_copy(bgav_packet_source_t * dst,
                              const bgav_packet_source_t * src);
+
+#endif
 
 /* Decoder structures */
 
@@ -177,63 +187,23 @@ dst[0] = pal.b >> 8;
 #define BGAV_CODING_TYPE_B GAVL_PACKET_TYPE_B
 // #define BGAV_CODING_TYPE_D 'D' /* Unsupported */
 
-/* Put private flags into the higher bits */
-#define PACKET_FLAG_SKIP      (GAVL_PACKET_FLAG_PRIV<<0)
-#define PACKET_FLAG_FIELD_PIC (GAVL_PACKET_FLAG_PRIV<<1)
 
 /* If these flags are changed, the flags of the superindex must be
    changed as well */
 
 #define PACKET_SET_CODING_TYPE(p, t) (p)->flags |= t
 #define PACKET_SET_KEYFRAME(p)       (p)->flags |= GAVL_PACKET_KEYFRAME
-#define PACKET_SET_SKIP(p)           (p)->flags |= PACKET_FLAG_SKIP
+#define PACKET_SET_SKIP(p)           (p)->flags |= GAVL_PACKET_SKIP
 #define PACKET_SET_LAST(p)           (p)->flags |= GAVL_PACKET_LAST
 #define PACKET_SET_REF(p)            (p)->flags |= GAVL_PACKET_REF
-#define PACKET_SET_FIELD_PIC(p)      (p)->flags |= PACKET_FLAG_FIELD_PIC
+#define PACKET_SET_FIELD_PIC(p)      (p)->flags |= GAVL_PACKET_FIELD_PIC
 
 #define PACKET_GET_CODING_TYPE(p)    ((p)->flags & GAVL_PACKET_TYPE_MASK)
 #define PACKET_GET_KEYFRAME(p)       ((p)->flags & GAVL_PACKET_KEYFRAME)
-#define PACKET_GET_SKIP(p)           ((p)->flags & PACKET_FLAG_SKIP)
+#define PACKET_GET_SKIP(p)           ((p)->flags & GAVL_PACKET_SKIP)
 #define PACKET_GET_LAST(p)           ((p)->flags & GAVL_PACKET_LAST)
 #define PACKET_GET_REF(p)            ((p)->flags & GAVL_PACKET_REF)
-#define PACKET_GET_FIELD_PIC(p)      ((p)->flags & PACKET_FLAG_FIELD_PIC)
-
-struct bgav_packet_s
-  {
-  /* For superindex files, it's the index position, for all other files,
-     it's the file position */
-  int64_t position;
-
-  gavl_buffer_t buf;
-
-  /* Mostly video specific */
-  gavl_timecode_t timecode;
-  gavl_interlace_mode_t interlace_mode;
-  
-  int field2_offset; /* Offset of 2nd field if 2 field pictures are in the
-                        packet (0 else) */
-
-  uint32_t header_size; /* Size of a repeated global header */
-  uint32_t sequence_end_pos; /* Position of sequence end code (if any) */
-  
-  int64_t pts; /* In stream timescale tics */
-  int64_t dts; /* In stream timescale tics */
-
-  int64_t duration;
-  struct bgav_packet_s * next;
-
-  uint32_t flags;
-
-  /* Palette data */
-  gavl_palette_t * pal;
-  
-  /* For overlay streams: Save coordinates out-of-band so we can
-     use any alpha capable I-frame format */
-  
-  int dst_x;
-  int dst_y;
-  gavl_rectangle_i_t src_rect;
-  };
+// #define PACKET_GET_FIELD_PIC(p)      ((p)->flags & PACKET_FLAG_FIELD_PIC)
 
 /* packet.c */
 
@@ -242,53 +212,33 @@ bgav_packet_t * bgav_packet_create();
 void bgav_packet_destroy(bgav_packet_t*);
 void bgav_packet_free(bgav_packet_t*);
 
-void bgav_packet_alloc(bgav_packet_t*, int size);
-void bgav_packet_dump(const bgav_packet_t*);
+#define bgav_packet_reset(p) gavl_packet_reset(p)
+#define bgav_packet_alloc(p, s) gavl_packet_alloc(p, s)
+
+#define bgav_packet_dump(p) gavl_packet_dump(p)
+
 void bgav_packet_dump_data(bgav_packet_t * p, int bytes);
-void bgav_packet_swap_data(bgav_packet_t * p1, bgav_packet_t * p2);
 
 void bgav_packet_pad(bgav_packet_t * p);
-void bgav_packet_reset(bgav_packet_t * p);
+// void bgav_packet_reset(bgav_packet_t * p);
 
 // void bgav_packet_alloc_palette(bgav_packet_t * p, int size);
-void bgav_packet_free_palette(bgav_packet_t * p);
 void bgav_packet_copy_metadata(bgav_packet_t * dst,
                                const bgav_packet_t * src);
 
 void bgav_packet_copy(bgav_packet_t * dst,
                       const bgav_packet_t * src);
 
-void bgav_packet_merge_field2(bgav_packet_t * p,
-                              const bgav_packet_t * field2);
-
+#if 0
 void bgav_packet_2_gavl(bgav_packet_t * src,
                         gavl_packet_t * dst);
 
 void bgav_packet_from_gavl(gavl_packet_t * src,
                            bgav_packet_t * dst);
-
-void bgav_packet_save(bgav_packet_t * p, const char * filename);
-
-/* packetbuffer.c */
-
-bgav_packet_buffer_t * bgav_packet_buffer_create(bgav_packet_pool_t * pp);
-void bgav_packet_buffer_destroy(bgav_packet_buffer_t*);
-
-bgav_packet_t *
-bgav_packet_buffer_get_packet_read(bgav_packet_buffer_t*);
-
-bgav_packet_t *
-bgav_packet_buffer_peek_packet_read(bgav_packet_buffer_t*);
-
-void bgav_packet_buffer_append(bgav_packet_buffer_t * b,
-                               bgav_packet_t * p);
-
-void bgav_packet_buffer_clear(bgav_packet_buffer_t*);
-
-int bgav_packet_buffer_is_empty(bgav_packet_buffer_t * b);
+#endif
 
 /* packetpool.c */
-
+#if 0
 bgav_packet_pool_t * bgav_packet_pool_create();
 
 bgav_packet_t * bgav_packet_pool_get(bgav_packet_pool_t *);
@@ -296,7 +246,7 @@ void bgav_packet_pool_put(bgav_packet_pool_t * pp,
                           bgav_packet_t * p);
 
 void bgav_packet_pool_destroy(bgav_packet_pool_t*);
-
+#endif
 
 /* Stream structure */ 
 
@@ -310,37 +260,38 @@ void bgav_packet_pool_destroy(bgav_packet_pool_t*);
 #define STREAM_STILL_SHOWN        (1<<3)  /* Still image already shown */
 #define STREAM_EOF_D              (1<<4)  /* End of file at demuxer    */
 #define STREAM_EOF_C              (1<<5)  /* End of file at codec      */
-#define STREAM_NEED_FRAMETYPES    (1<<6) /* Need frame types          */
+// #define STREAM_NEED_FRAMETYPES    (1<<6) /* Need frame types          */
 
 /* Picture is available for immediate output */
 #define STREAM_HAVE_FRAME         (1<<7)
 
 /* Already got the format from the parser */
-#define STREAM_PARSE_HAVE_FORMAT  (1<<8)
 
-#define STREAM_RAW_PACKETS        (1<<9)
-#define STREAM_FILTER_PACKETS     (1<<10)
-#define STREAM_NO_DURATIONS       (1<<11)
-#define STREAM_HAS_DTS            (1<<12)
-#define STREAM_B_PYRAMID          (1<<13)
+#define STREAM_RAW_PACKETS           (1<<9)
+#define STREAM_FILTER_PACKETS        (1<<10)
+#define STREAM_NO_DURATIONS          (1<<11)
+#define STREAM_HAS_DTS               (1<<12)
+#define STREAM_B_PYRAMID             (1<<13)
 
-#define STREAM_GOT_CI             (1<<14) // Compression info present
-#define STREAM_GOT_NO_CI          (1<<15) // Compression info tested but not present
-#define STREAM_DISCONT            (1<<16) // Stream is discontinuous
-#define STREAM_HAS_SUBREADER      (1<<17) // External subtitle file
-#define STREAM_STANDALONE         (1<<18) // Standalone decoder
-#define STREAM_EXTERN             (1<<19) // Exteral to the demultiplexer (subtitle file, message stream)
+#define STREAM_GOT_CI                (1<<14) // Compression info present
+#define STREAM_GOT_NO_CI             (1<<15) // Compression info tested but not present
+#define STREAM_DISCONT               (1<<16) // Stream is discontinuous
+#define STREAM_STANDALONE            (1<<18) // Standalone decoder
+#define STREAM_EXTERN                (1<<19) // Exteral to the demultiplexer (subtitle file, message stream)
 
-#define STREAM_PES_TIMESTAMPS     (1<<20) // Use timestamps from the PES packets
-#define STREAM_NEED_START_PTS     (1<<21) /* Take start PTS from first packet */
+#define STREAM_STARTED               (1<<22) /* Stream started already */
 
-#define STREAM_STARTED            (1<<22) /* Stream started already */
+#define STREAM_WRITE_STARTED         (1<<23)
+
+// Set by the ogg demultiplexer to specify that the pts_end is set by the demuxer backend
+#define STREAM_DEMUXER_SETS_PTS_END  (1<<24)
+
 
 /* Stream could not get extract compression info from the
  * demuxer
  */
 
-#define STREAM_SET_SYNC(s, t)  (s)->sync_time = t
+#define STREAM_SET_SYNC(s, t)  (s)->sync_time = t; if((s)->pbuffer) gavl_packet_buffer_set_out_pts((s)->pbuffer, t)
 #define STREAM_GET_SYNC(s)     (s)->sync_time
 
 #define STREAM_UNSET_SYNC(s)   (s)->sync_time = GAVL_TIME_UNDEFINED
@@ -364,12 +315,11 @@ typedef struct
   gavl_video_format_t * format;
   //      int palette_changed;
       
-  bgav_video_parser_t * parser;
-  bgav_keyframe_table_t * kft;
+  // bgav_keyframe_table_t * kft;
       
   //  int max_ref_frames; /* Needed for VDPAU */
       
-  bgav_video_format_tracker_t * ft;
+  //  bgav_video_format_tracker_t * ft;
   /* Palette */
   int pal_sent;
   gavl_palette_t * pal;
@@ -389,9 +339,16 @@ typedef struct
   
 struct bgav_stream_s
   {
-  gavl_dictionary_t * info;
+  gavl_dictionary_t in_info;
   
-  uint32_t max_packet_size_tmp; // Incremented during parsing
+  gavl_dictionary_t * info;
+  gavl_dictionary_t * info_ext;
+  
+  gavl_packet_source_t * psrc_priv; // Packet source coming right after the packet buffer
+  
+  bgav_packet_parser_t * parser;
+  
+  
   void * priv;
   void * decoder_priv;
   
@@ -404,7 +361,8 @@ struct bgav_stream_s
   bgav_stream_action_t action;
   int stream_id; /* Format specific stream id */
   gavl_stream_type_t type;
-  bgav_packet_buffer_t * packet_buffer;
+
+  //  bgav_packet_buffer_t * packet_buffer;
   
   uint32_t fourcc;
 
@@ -419,17 +377,17 @@ struct bgav_stream_s
    *  Demuxers can, however, define other timescales.
    */
   int timescale;
-
+  
    /*
     * Sync time:
     * 
     * - *Only* valid for resynchronization during seeking
     *
     * - If the demuxer seeks, it sets the sync_time in
-    *   *stream* timescale
+    *   *packet* timescale
     *
     * - If we seek sample accurately, it's the output time
-    *   in *codec* timescale
+    *   in *sample* timescale
     */
   
   int64_t sync_time;
@@ -480,8 +438,10 @@ struct bgav_stream_s
   
   /* The track, where this stream belongs */
   bgav_track_t * track;
-  bgav_file_index_t * file_index;
+  //   bgav_file_index_t * file_index;
 
+  gavl_seek_index_t index;
+  
   void (*process_packet)(bgav_stream_t * s, bgav_packet_t * p);
 
   /* Cleanup function (can be set by demuxers) */
@@ -493,31 +453,24 @@ struct bgav_stream_s
   /* timecode table (for video streams only for now) */
   bgav_timecode_table_t * timecode_table;
   
-  bgav_bsf_t * bsf;
+  bgav_packet_filter_t * pf;
   
-  bgav_packet_source_t src; /* Where to get packets */
-  
-  bgav_packet_pool_t * pp;  /* Where to put consumed
-                               packets for later use */
-
-  bgav_packet_t * out_packet_b;
-  gavl_packet_t out_packet_g;
-  
-  gavl_packet_source_t * psrc; /* Output packets for the public API */
-  
-  /* Correct timestamps from broken containers */
-  bgav_packet_timer_t * pt;
-  
-  /* Detect frametypes from broken containers */
-  bgav_frametype_detector_t * fd; 
-
   /* Compression info (the ci-pointer might be changed by a bitstream filter) */
   gavl_compression_info_t * ci;
   gavl_compression_info_t ci_orig;
+  gavl_compression_info_t ci_out;
   
   /* If this is set, we will pass this to the
      source */
   gavl_video_frame_t * vframe;
+  
+  /* New gavlized packet handling */
+
+  gavl_packet_source_t * psrc; /* Output packets for the public API */
+  gavl_packet_sink_t * psink;
+  gavl_packet_buffer_t * pbuffer;
+
+  gavl_packet_sink_t * psink_parse; // Packet sink used with index building or duration scanning
   
   union
     {
@@ -545,8 +498,6 @@ struct bgav_stream_s
       
       int preroll;
       
-      bgav_audio_parser_t * parser;
-
       gavl_audio_frame_t * frame;
       
       gavl_audio_source_t * source;
@@ -556,11 +507,8 @@ struct bgav_stream_s
     struct
       {
       bgav_stream_video_t video; // Must be first element
-//      bgav_video_parser_t * parser;
       /* Charset converter for text subtitles */
       bgav_subtitle_converter_t * cnv;
-      
-      bgav_subtitle_reader_context_t * subreader;
       
       char * charset;
       
@@ -580,6 +528,12 @@ struct bgav_stream_s
 
 /* stream.c */
 
+void bgav_stream_flush(bgav_stream_t * s);
+// void bgav_stream_set_continuous(bgav_stream_t * s);
+
+gavl_sink_status_t bgav_stream_put_packet_get_duration(void * priv, gavl_packet_t * p);
+gavl_sink_status_t bgav_stream_put_packet_parse(void * priv, gavl_packet_t * p);
+
 int bgav_stream_start(bgav_stream_t * stream);
 void bgav_stream_stop(bgav_stream_t * stream);
 void bgav_stream_create_packet_buffer(bgav_stream_t * stream);
@@ -589,6 +543,9 @@ void bgav_stream_free(bgav_stream_t * stream);
 void bgav_stream_dump(bgav_stream_t * s);
 void bgav_stream_set_extradata(bgav_stream_t * s, const uint8_t * data, int len);
 
+void bgav_stream_set_parse_full(bgav_stream_t * s);
+void bgav_stream_set_parse_frame(bgav_stream_t * s);
+
 void bgav_stream_set_from_gavl(bgav_stream_t * s,
                                gavl_dictionary_t * dict);
 
@@ -597,9 +554,6 @@ int bgav_streams_foreach(bgav_stream_t * s, int num,
 
 int64_t bgav_stream_get_duration(bgav_stream_t * s);
 
-/* Read for a packet source */
-gavl_source_status_t
-bgav_stream_read_packet_func(void * sp, gavl_packet_t ** p);
 
 /* Top level packet functions */
 bgav_packet_t * bgav_stream_get_packet_write(bgav_stream_t * s);
@@ -620,16 +574,17 @@ bgav_stream_read_func_discontinuous(bgav_stream_t * s, gavl_packet_t ** p);
 gavl_source_status_t
 bgav_stream_get_packet_read(bgav_stream_t * s, bgav_packet_t ** ret);
 gavl_source_status_t
-bgav_stream_peek_packet_read(bgav_stream_t * s, bgav_packet_t ** ret, int force);
+bgav_stream_peek_packet_read(bgav_stream_t * s, bgav_packet_t ** ret);
 
 void bgav_stream_done_packet_read(bgav_stream_t * s, bgav_packet_t * p);
 
 
-int bgav_stream_get_index(bgav_stream_t * s);
-
 /* Which timestamp would come if we would decode right now? */
 
 gavl_time_t bgav_stream_next_timestamp(bgav_stream_t *);
+
+/* Set timescales and stuff */
+void bgav_stream_set_timimg(bgav_stream_t * s);
 
 /* Clear the packet buffer, called before seeking */
 
@@ -650,7 +605,6 @@ int bgav_stream_skipto(bgav_stream_t * s, int64_t * time, int scale);
 
 
 #define TRACK_SAMPLE_ACCURATE (1<<0)
-#define TRACK_HAS_FILE_INDEX  (1<<1)
 #define TRACK_HAS_COMPRESSION (1<<2)
 
 struct bgav_track_s
@@ -673,6 +627,14 @@ struct bgav_track_s
   int flags;
 
   gavl_dictionary_t * info;
+  
+  /* Data start (set intially to -1, maybe set to
+     other values by demuxers). It can be used by the core to
+     seek to the position, where the demuxer can start working
+  */
+  int64_t data_start;
+  int64_t data_end; // Can be set by the demuxer to the end of the packet data section
+  
   };
 
 /* track.c */
@@ -727,10 +689,12 @@ bgav_track_add_text_stream(bgav_track_t * t, const bgav_options_t * opt,
 bgav_stream_t *
 bgav_track_add_overlay_stream(bgav_track_t * t, const bgav_options_t * opt);
 
+#if 0
 bgav_stream_t *
 bgav_track_attach_subtitle_reader(bgav_track_t * t,
                                   const bgav_options_t * opt,
                                   bgav_subtitle_reader_context_t * r);
+#endif
 
 bgav_stream_t *
 bgav_track_find_stream(bgav_demuxer_context_t * t, int stream_id);
@@ -844,16 +808,6 @@ struct bgav_options_s
   int rtp_port_base;
   int rtp_try_tcp; /* try TCP before falling back to UDP */
   
-  /* http options */
-
-  int http_use_proxy;
-  char * http_proxy_host;
-  int http_proxy_port;
-
-  int    http_proxy_auth;
-  char * http_proxy_user;
-  char * http_proxy_pass;
-  
   int http_shoutcast_metadata;
 
   /* ftp options */
@@ -866,7 +820,6 @@ struct bgav_options_s
   
   int audio_dynrange;
   int seamless;
-  int seek_subtitles;
 
   /* Postprocessing level (0.0 .. 1.0) */
   
@@ -981,15 +934,10 @@ struct bgav_input_context_s
   /* Some input modules already fire up a demuxer */
     
   bgav_demuxer_context_t * demuxer;
-
-  /*
-   *  These can be NULL. If not, they might be used to
-   *  choose the right demultiplexer for sources, which
-   *  don't support format detection by content
-   */
   
-  char * filename;
-  char * url;
+  char * location;
+  //  char * filename;
+  //  char * url;
   
   /* For reading textfiles */
   char * charset;
@@ -1014,7 +962,7 @@ struct bgav_input_context_s
   int64_t total_sectors;
   int64_t sector_position;
 
-  const bgav_options_t * opt;
+  bgav_options_t opt;
   
   // Stream ID, which will be used for syncing (for DVB)
   int sync_id;
@@ -1139,8 +1087,11 @@ void bgav_input_ensure_buffer_size(bgav_input_context_t * ctx, int len);
 /* Input module to read from memory */
 
 bgav_input_context_t * bgav_input_open_memory(uint8_t * data,
-                                              uint32_t data_size,
-                                              const bgav_options_t * opt);
+                                              uint32_t data_size);
+
+bgav_input_context_t * bgav_input_open_sub(bgav_input_context_t * src,
+                                           int64_t start,
+                                           int64_t end);
 
 /* Reopen a memory input with new data and minimal CPU overhead */
 
@@ -1242,6 +1193,8 @@ gavl_timecode_t
 bgav_timecode_table_get_timecode(bgav_timecode_table_t * table,
                                  int64_t pts);
 
+#if 0
+
 /*
  * File index
  *
@@ -1302,6 +1255,7 @@ struct bgav_file_index_s
 
 bgav_file_index_t * bgav_file_index_create();
 void bgav_file_index_destroy(bgav_file_index_t *);
+#endif
 
 gavl_source_status_t bgav_demuxer_next_packet_fileindex(bgav_demuxer_context_t * ctx);
 gavl_source_status_t bgav_demuxer_next_packet_interleaved(bgav_demuxer_context_t * ctx);
@@ -1352,6 +1306,12 @@ struct bgav_demuxer_s
 
   int (*select_track)(bgav_demuxer_context_t*, int track);
 
+  /* After the input seeked to an arbitrary position, resync the stream
+     and generate valid packet timestamps after that. This enables
+     generic seeking support for MPEG-PS, MPEG-TS, OGG and ASF */
+  
+  int (*post_seek_resync)(bgav_demuxer_context_t*);
+  
   /* Some demuxers have their own magic to build a file index */
   //  void (*build_index)(bgav_demuxer_context_t*);
 
@@ -1368,8 +1328,6 @@ struct bgav_demuxer_s
 #define BGAV_DEMUXER_PEEK_FORCES_READ     (1<<2) /* This is set if only subtitle streams are read */
 #define BGAV_DEMUXER_SI_SEEKING           (1<<3) /* Demuxer is seeking */
 #define BGAV_DEMUXER_SI_PRIVATE_FUNCS     (1<<4) /* We have a suprindex but use private seek/demux funcs */
-#define BGAV_DEMUXER_HAS_TIMESTAMP_OFFSET (1<<5) /* Timestamp offset (from input) is valid */
-#define BGAV_DEMUXER_HAS_DATA_START       (1<<7) /* Has data start */
 
 #define BGAV_DEMUXER_BUILD_INDEX          (1<<8) /* We're just building
                                                     an index */
@@ -1381,6 +1339,11 @@ struct bgav_demuxer_s
 #define BGAV_DEMUXER_DISCONT              (1<<10) /*
                                                    * True if we have just one active subtitle stream with attached subreader
                                                    */
+
+/* Use generic code to get the duration */
+#define BGAV_DEMUXER_GET_DURATION          (1<<11)
+
+
 
 #define INDEX_MODE_NONE   0 /* Default: No sample accuracy */
 /* Packets have precise timestamps and durations and are adjacent in the file */
@@ -1402,7 +1365,6 @@ struct bgav_demuxer_s
 #define DEMUX_MODE_STREAM 0
 #define DEMUX_MODE_SI_I   1 /* Interleaved with superindex */
 #define DEMUX_MODE_SI_NI  2 /* Non-interleaved with superindex */
-#define DEMUX_MODE_FI     3 /* Non-interleaved with file-index */
 
 struct bgav_demuxer_context_s
   {
@@ -1431,17 +1393,6 @@ struct bgav_demuxer_context_s
    */
   bgav_superindex_t * si;
   
-  /* Timestamp offset: By definition, timestamps for a track
-     start at 0. The offset can be set either by the demuxer or
-     by some inputs (DVD). */
-
-  int64_t timestamp_offset;
-
-  /* Data start (set in intially to -1, maybe set to
-     other values by demuxers). It can be used by the core to
-     seek to the position, where the demuxer can start working
-  */
-  int64_t data_start;
 
   /* Data size for simple formats */
 // int64_t data_size;
@@ -1470,12 +1421,12 @@ const bgav_demuxer_t * bgav_demuxer_probe(bgav_input_context_t * input);
 void bgav_demuxer_create_buffers(bgav_demuxer_context_t * demuxer);
 void bgav_demuxer_destroy(bgav_demuxer_context_t * demuxer);
 
-gavl_source_status_t
-bgav_demuxer_get_packet_read(void * stream, bgav_packet_t **);
+/*
+ *  Get the duration of the current track for demuxers which, have the
+ *  post_seek_resync method
+ */
 
-gavl_source_status_t
-bgav_demuxer_peek_packet_read(void * stream, bgav_packet_t **,
-                              int force);
+int bgav_demuxer_get_duration(bgav_demuxer_context_t * ctx);
 
 /* Generic get/peek functions */
 
@@ -1483,7 +1434,7 @@ void
 bgav_demuxer_seek(bgav_demuxer_context_t * demuxer,
                   int64_t time, int scale);
 
-int
+gavl_source_status_t 
 bgav_demuxer_next_packet(bgav_demuxer_context_t * demuxer);
 
 /*
@@ -1683,8 +1634,7 @@ int bgav_udp_write(const bgav_options_t * opt,
 #define BGAV_UTF8 "UTF-8" // iconf string for UTF-8
 
 bgav_charset_converter_t *
-bgav_charset_converter_create(const bgav_options_t * opt,
-                              const char * in_charset,
+bgav_charset_converter_create(const char * in_charset,
                               const char * out_charset);
 
 void bgav_charset_converter_destroy(bgav_charset_converter_t *);
@@ -1701,9 +1651,9 @@ int bgav_convert_string_realloc(bgav_charset_converter_t * cnv,
 /* Subtitle converter (converts character sets and removes \r */
 
 
-bgav_subtitle_converter_t * bgav_subtitle_converter_create(bgav_stream_t * s);
+bgav_subtitle_converter_t * bgav_subtitle_converter_create(const char * charset);
 void bgav_subtitle_converter_destroy(bgav_subtitle_converter_t* cnv);
-void bgav_subtitle_converter_reset(bgav_subtitle_converter_t * cnv);
+gavl_packet_source_t * bgav_subtitle_converter_connect(bgav_subtitle_converter_t * cnv, gavl_packet_source_t * src);
 
 
 /* audio.c */
@@ -1832,6 +1782,7 @@ const char * gavl_language_get_label_from_code(const char * label);
 
 void bgav_correct_language(char * lang);
 
+#if 0
 /* subreader.c */
 
 struct bgav_subtitle_reader_context_s
@@ -1843,7 +1794,6 @@ struct bgav_subtitle_reader_context_s
   int stream;
   
   bgav_stream_t * s;
-  bgav_packet_t * out_packet;
   
   char * info; /* Derived from filename difference */
   char * filename; /* Name of the subtitle file */
@@ -1864,6 +1814,10 @@ struct bgav_subtitle_reader_context_s
 
   /* Private data */
   void * priv;
+  
+  gavl_packet_source_t * psrc;
+  
+  int64_t seek_time;
   };
 
 struct bgav_subtitle_reader_s
@@ -1895,7 +1849,6 @@ void bgav_subtitle_reader_destroy(bgav_stream_t *);
 void bgav_subtitle_reader_seek(bgav_stream_t *,
                                int64_t time, int scale);
 
-
 /* Packet source functions */
 
 gavl_source_status_t
@@ -1905,6 +1858,7 @@ bgav_subtitle_reader_read_packet(void * subreader,
 gavl_source_status_t
 bgav_subtitle_reader_peek_packet(void * subreader,
                                  bgav_packet_t ** p, int force);
+#endif
 
 /* log.c */
 
@@ -1961,6 +1915,7 @@ void bgav_translation_init();
 #define TRS(s) (s)
 
 
+#if 0
 /* keyframetable.c */
 
 /*
@@ -1983,20 +1938,23 @@ bgav_keyframe_table_t * bgav_keyframe_table_create_si(bgav_superindex_t * si,
                                                       bgav_stream_t * s);
 
 void bgav_keyframe_table_destroy(bgav_keyframe_table_t *);
-
-/* formattracker.c */
-
-bgav_video_format_tracker_t *
-bgav_video_format_tracker_create(bgav_stream_t * s);
-
-void bgav_video_format_tracker_destroy(bgav_video_format_tracker_t *);
-
-
-
 /* Returns the index position */
 int bgav_keyframe_table_seek(bgav_keyframe_table_t *,
                              int64_t  seek_pts,
                              int64_t * kf_pts);
+
+#endif
+/* formattracker.c */
+
+
+#if 0
+bgav_video_format_tracker_t *
+bgav_video_format_tracker_create(bgav_stream_t * s);
+
+void bgav_video_format_tracker_destroy(bgav_video_format_tracker_t *);
+#endif
+
+
 
 /* parse_dca.c */
 #ifdef HAVE_DCA
@@ -2005,6 +1963,30 @@ void bgav_dca_flags_2_channel_setup(int flags, gavl_audio_format_t * format);
 
 /* videoparser.c */
 int bgav_video_is_divx4(uint32_t fourcc);
+
+
+#if 0
+/* New gavlized packet handling */
+
+typedef int (*bgav_find_frame_end_func)(gavl_buffer_t * buf, int * state);
+
+
+typedef struct
+  {
+  gavl_packet_sink_t * sink;
+  gavl_packet_sink_t * dst;
+
+  gavl_buffer_t buf; // For finding the frame boundary
+
+  
+  
+  } bgav_packet_parser_t;
+
+bgav_packet_parser_t * bgav_packet_parser_create(const gavl_dictionary_t * stream_info,
+                                                 gavl_packet_sink_t * sink);
+
+void bgav_packet_parser_destroy(bgav_packet_parser_t *);
+#endif
 
 /* Global locking around avcodec_[open|close]()
    Defined in video_ffmpeg.c, used from audio_ffmpeg.c as well

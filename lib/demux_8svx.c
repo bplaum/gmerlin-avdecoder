@@ -205,8 +205,7 @@ static int open_8svx(bgav_demuxer_context_t * ctx)
   if(hdr.sCompression > 0)
     return 0;
   
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+  ctx->tt->cur->data_start = ctx->input->position;
 
   as = bgav_track_add_audio_stream(ctx->tt->cur, ctx->opt);
   as->stats.total_bytes = chunk_header.size;
@@ -244,8 +243,8 @@ static gavl_source_status_t next_packet_8svx(bgav_demuxer_context_t * ctx)
 
   bytes_to_read = samples_to_bytes(s, SAMPLES2READ);
   
-  if(ctx->input->position + bytes_to_read > ctx->data_start + s->stats.total_bytes)
-    bytes_to_read = ctx->data_start + s->stats.total_bytes - ctx->input->position;
+  if(ctx->input->position + bytes_to_read > ctx->tt->cur->data_start + s->stats.total_bytes)
+    bytes_to_read = ctx->tt->cur->data_start + s->stats.total_bytes - ctx->input->position;
 
   if(bytes_to_read <= 0)
     return GAVL_SOURCE_EOF;
@@ -253,13 +252,14 @@ static gavl_source_status_t next_packet_8svx(bgav_demuxer_context_t * ctx)
   p = bgav_stream_get_packet_write(s);
 
   bgav_packet_alloc(p, bytes_to_read);
-
-  p->pts = (ctx->input->position - ctx->data_start) / s->data.audio.block_align;
+  
   PACKET_SET_KEYFRAME(p);
-
+  
   bytes_read = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
   
   p->buf.len = bytes_read;
+
+  p->duration = p->buf.len / s->data.audio.block_align;
   
   bgav_stream_done_packet_write(s, p);
   return GAVL_SOURCE_OK;
@@ -275,7 +275,7 @@ static void seek_8svx(bgav_demuxer_context_t * ctx, gavl_time_t time,
   
   sample = gavl_time_rescale(scale, s->data.audio.format->samplerate, time);
   
-  position =  samples_to_bytes(s, sample) + ctx->data_start;
+  position =  samples_to_bytes(s, sample) + ctx->tt->cur->data_start;
   bgav_input_seek(ctx->input, position, SEEK_SET);
   
   STREAM_SET_SYNC(s, sample);

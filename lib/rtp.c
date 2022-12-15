@@ -428,7 +428,7 @@ init_stream(bgav_demuxer_context_t * ctx,
       sp->control_url = gavl_strdup(control);
     }
   if(!sp->control_url)
-    sp->control_url = bgav_sprintf("%s/%s", ctx->input->url, control);
+    sp->control_url = bgav_sprintf("%s/%s", ctx->input->location, control);
   return 1;
   }
 
@@ -862,7 +862,7 @@ int bgav_demuxer_rtp_open(bgav_demuxer_context_t * ctx,
 
   pthread_mutex_init(&priv->mutex, NULL);
   
-  priv->input_mem = bgav_input_open_memory(NULL, 0, ctx->opt);
+  priv->input_mem = bgav_input_open_memory(NULL, 0);
   
   ctx->tt = bgav_track_table_create(1);
 
@@ -1466,7 +1466,7 @@ static int init_mpv(bgav_stream_t * s)
   rtp_stream_priv_t * sp;
   sp = s->priv;
   sp->process = process_mpv;
-  s->flags |= STREAM_PARSE_FULL;
+  bgav_stream_set_parse_full(s);
   return 1;
   }
 

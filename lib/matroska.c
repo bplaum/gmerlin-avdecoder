@@ -1971,7 +1971,7 @@ int bgav_mkv_cluster_read(bgav_input_context_t * ctx,
   uint8_t buf[64];
   int buf_len;
   
-  input_mem = bgav_input_open_memory(NULL, 0, ctx->opt);
+  input_mem = bgav_input_open_memory(NULL, 0);
   
   while((ctx->position < parent->end) && !done)
     {

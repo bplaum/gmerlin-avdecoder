@@ -80,7 +80,7 @@ static int64_t pos_2_time(bgav_demuxer_context_t * ctx, int64_t pos)
   bgav_stream_t * s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
   
   priv = ctx->priv;
-  return ((pos - ctx->data_start) * priv->samples_per_block) / (s->data.audio.block_align);
+  return ((pos - ctx->tt->cur->data_start) * priv->samples_per_block) / (s->data.audio.block_align);
   }
 
 static int64_t time_2_pos(bgav_demuxer_context_t * ctx, int64_t time)
@@ -89,7 +89,7 @@ static int64_t time_2_pos(bgav_demuxer_context_t * ctx, int64_t time)
   bgav_stream_t * s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
 
   priv = ctx->priv;
-  return ctx->data_start +
+  return ctx->tt->cur->data_start +
     (time *
      s->data.audio.block_align)/(priv->samples_per_block);
   
@@ -189,19 +189,17 @@ static int open_au(bgav_demuxer_context_t * ctx)
 
   /* Get data start and duration */
 
-  ctx->data_start = ctx->input->position;
+  ctx->tt->cur->data_start = ctx->input->position;
 
   if(ctx->input->total_bytes > 0)
-    as->stats.total_bytes = ctx->input->total_bytes - ctx->data_start;
+    as->stats.total_bytes = ctx->input->total_bytes - ctx->tt->cur->data_start;
   
   priv->samples_per_block = samples_per_block;
 
   if(as->stats.total_bytes)
     {
-    as->stats.pts_end = pos_2_time(ctx, ctx->data_start + as->stats.total_bytes);
+    as->stats.pts_end = pos_2_time(ctx, ctx->tt->cur->data_start + as->stats.total_bytes);
     }
-  
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
   
   bgav_track_set_format(ctx->tt->cur, "AU/SND", "audio/x-au");
   
@@ -237,10 +235,10 @@ static void seek_au(bgav_demuxer_context_t * ctx, gavl_time_t time, int scale)
   s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
   
   position = time_2_pos(ctx, gavl_time_rescale(scale, s->timescale, time));
-  position -= ctx->data_start;
+  position -= ctx->tt->cur->data_start;
   position /= s->data.audio.block_align;
   position *= s->data.audio.block_align;
-  position += ctx->data_start;
+  position += ctx->tt->cur->data_start;
   bgav_input_seek(ctx->input, position, SEEK_SET);
   STREAM_SET_SYNC(s, pos_2_time(ctx, position));
   }

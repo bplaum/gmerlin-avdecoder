@@ -40,9 +40,9 @@ static void build_edl_mxf(bgav_demuxer_context_t * ctx);
 static int probe_mxf(bgav_input_context_t * input)
   {
   char * pos;
-  if(input->filename)
+  if(input->location)
     {
-    pos = strrchr(input->filename, '.');
+    pos = strrchr(input->location, '.');
     if(!pos)
       return 0;
     if(!strcasecmp(pos, ".mxf"))
@@ -53,7 +53,6 @@ static int probe_mxf(bgav_input_context_t * input)
 
 typedef struct
   {
-  int64_t pts_counter;
   int eof;
   /* Constant frame size for clip-wrapped streams, which are TRUE CBR */
   int frame_size;
@@ -79,18 +78,14 @@ static void set_pts(bgav_stream_t * s, stream_priv_t * sp,
   {
   if(s->type == GAVL_STREAM_VIDEO)
     {
-    p->pts = sp->pts_counter;
     p->duration = s->data.video.format->frame_duration;
-    sp->pts_counter += p->duration;
     if(sp->frame_size)
       PACKET_SET_KEYFRAME(p);
     }
   else if(s->type == GAVL_STREAM_AUDIO)
     {
-    p->pts = sp->pts_counter;
     if(s->data.audio.block_align)
       p->duration = p->buf.len / s->data.audio.block_align;
-    sp->pts_counter += p->duration;
     PACKET_SET_KEYFRAME(p);
     }
   }
@@ -109,7 +104,7 @@ static int next_packet_clip_wrapped_const(bgav_demuxer_context_t * ctx, bgav_str
   /* Need the KLV packet for this stream */
   if(!sp->start)
     {
-    bgav_input_seek(ctx->input, ctx->data_start, SEEK_SET);
+    bgav_input_seek(ctx->input, ctx->tt->cur->data_start, SEEK_SET);
     while(1)
       {
       if(!bgav_mxf_klv_read(ctx->input, &klv))
@@ -224,9 +219,7 @@ static int process_packet_frame_wrapped(bgav_demuxer_context_t * ctx)
         }
       bgav_input_skip(ctx->input, 32 - s->data.audio.format->num_channels * 4);
       }
-    p->pts = sp->pts_counter;
     p->duration = num_samples;
-    sp->pts_counter += num_samples;
     }
   else
     {
@@ -366,6 +359,10 @@ static void init_audio_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
       priv->frame_size = 1024 * s->data.audio.block_align; /* 1024 samples */
     s->index_mode = INDEX_MODE_SIMPLE;
     }
+  else
+    {
+    s->flags |= STREAM_PARSE_FRAME;
+    }
   }
 
 static void init_timecode_track(bgav_stream_t * vs, mxf_track_t * timecode_track)
@@ -406,12 +403,12 @@ static void init_video_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
      (s->fourcc == BGAV_MK_FOURCC('m','x','3','n')))
     {
     s->index_mode = INDEX_MODE_SIMPLE;
-    s->flags |= STREAM_PARSE_FRAME;
+    bgav_stream_set_parse_frame(s);
     }
   else if(s->fourcc == BGAV_MK_FOURCC('m','p','4','v'))
     {
     s->index_mode = INDEX_MODE_SIMPLE;
-    s->flags |= STREAM_PARSE_FULL; 
+    bgav_stream_set_parse_full(s);
     }
   else
     s->index_mode = INDEX_MODE_SIMPLE;
@@ -480,7 +477,6 @@ handle_source_track_simple(bgav_demuxer_context_t * ctx,
     
     if(ss->stream_type == GAVL_STREAM_AUDIO)
       {
-
       fourcc = bgav_mxf_get_audio_fourcc(sd);
       if(!fourcc)
         return;
@@ -631,9 +627,7 @@ static int open_mxf(bgav_demuxer_context_t * ctx)
   if(priv->mxf.header.max_material_sequence_components >= 1)
     build_edl_mxf(ctx);    
   
-  ctx->data_start = priv->mxf.data_start;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
-
+  ctx->tt->cur->data_start = priv->mxf.data_start;
   /* Decide index mode */
   ctx->index_mode = INDEX_MODE_MIXED;
   for(i = 0; i < ctx->tt->cur->num_streams; i++)
@@ -716,7 +710,6 @@ static void reset_streams(bgav_stream_t * streams, int num)
       {
       sp->pos = sp->start;
       sp->eof = 0;
-      sp->pts_counter = 0;
       }
     }
   }
@@ -740,15 +733,6 @@ static void close_mxf(bgav_demuxer_context_t * ctx)
   free(priv);
   }
 
-static void resync_mxf(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
-  {
-  stream_priv_t * sp = s->priv;
-  sp->pts_counter = STREAM_GET_SYNC(s);
-  
-  if(s->file_index)
-    sp->pos = s->file_index->entries[s->index_position].position;
-  
-  }
 
 const bgav_demuxer_t bgav_demuxer_mxf =
   {
@@ -756,7 +740,6 @@ const bgav_demuxer_t bgav_demuxer_mxf =
     .open         = open_mxf,
     .select_track = select_track_mxf,
     .next_packet  = next_packet_mxf,
-    .resync       = resync_mxf,
     .seek         = seek_mxf,
     .close        = close_mxf
   };
@@ -926,11 +909,11 @@ static void build_edl_mxf(bgav_demuxer_context_t * ctx)
   
   priv = ctx->priv;
 
-  if(!ctx->input->filename)
+  if(!ctx->input->location)
     return;
   
   edl = gavl_edl_create(&ctx->tt->info);
-  gavl_dictionary_set_string(edl, GAVL_META_URI, ctx->input->filename);
+  gavl_dictionary_set_string(edl, GAVL_META_URI, ctx->input->location);
   
   /* We simply open the Material packages */
   

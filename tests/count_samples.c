@@ -33,7 +33,7 @@ int main(int argc, char ** argv)
   bgav_t * file;
   int arg_index;
   bgav_options_t * opt;
-  
+  int dump_packets = 0;
   int64_t count;
   int64_t first_pts = GAVL_TIME_UNDEFINED;
   
@@ -64,6 +64,11 @@ int main(int argc, char ** argv)
       skip_neg = 0;
       arg_index++;
       }
+    else if(!strcmp(argv[arg_index], "-dp"))
+      {
+      dump_packets = 1;
+      arg_index++;
+      }
     else if(!strcmp(argv[arg_index], "-as"))
       {
       stream = strtol(argv[arg_index+1], NULL, 10);
@@ -82,6 +87,9 @@ int main(int argc, char ** argv)
   
   if(sample_accurate)
     bgav_options_set_sample_accurate(opt, 1);
+
+  if(dump_packets)
+    bgav_options_set_dump_packets(opt, 1);
 
   if(!bgav_open(file, argv[argc-1]))
     {

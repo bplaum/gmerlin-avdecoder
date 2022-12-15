@@ -89,7 +89,7 @@ extern const bgav_demuxer_t bgav_demuxer_cue;
 extern const bgav_demuxer_t bgav_demuxer_vtt;
 
 #ifdef HAVE_VORBIS
-extern const bgav_demuxer_t bgav_demuxer_ogg;
+extern const bgav_demuxer_t bgav_demuxer_ogg2;
 #endif
 
 extern const bgav_demuxer_t bgav_demuxer_dv;
@@ -160,7 +160,7 @@ static const demuxer_t demuxers[] =
     { &bgav_demuxer_cue,       "CUE" },
     { &bgav_demuxer_matroska,  "Matroska" },
 #ifdef HAVE_VORBIS
-    { &bgav_demuxer_ogg, "Ogg Bitstream" },
+    { &bgav_demuxer_ogg2, "Ogg Bitstream" },
 #endif
 #ifdef HAVE_LIBA52
     { &bgav_demuxer_a52, "A52 Bitstream" },
@@ -483,10 +483,8 @@ void bgav_demuxer_stop(bgav_demuxer_context_t * ctx)
   ctx->priv = NULL;
     
   /* Reset global variables */
-  ctx->flags &= ~(BGAV_DEMUXER_SI_SEEKING |
-                  BGAV_DEMUXER_HAS_TIMESTAMP_OFFSET);
+  ctx->flags &= ~BGAV_DEMUXER_SI_SEEKING;
   
-  ctx->timestamp_offset = 0;
   if(ctx->si)
     {
     bgav_superindex_destroy(ctx->si);
@@ -494,6 +492,7 @@ void bgav_demuxer_stop(bgav_demuxer_context_t * ctx)
     }
   
   }
+
 
 gavl_source_status_t bgav_demuxer_next_packet_interleaved(bgav_demuxer_context_t * ctx)
   {
@@ -545,8 +544,12 @@ gavl_source_status_t bgav_demuxer_next_packet_interleaved(bgav_demuxer_context_t
   bgav_packet_alloc(p, ctx->si->entries[ctx->si->current_position].size);
   p->buf.len = ctx->si->entries[ctx->si->current_position].size;
   p->flags = ctx->si->entries[ctx->si->current_position].flags;
+
+  if(stream->flags & STREAM_DTS_ONLY)
+    p->dts = ctx->si->entries[ctx->si->current_position].pts;
+  else
+    p->pts = ctx->si->entries[ctx->si->current_position].pts;
   
-  p->pts = ctx->si->entries[ctx->si->current_position].pts;
   p->duration = ctx->si->entries[ctx->si->current_position].duration;
   p->position = ctx->si->current_position;
 
@@ -618,10 +621,11 @@ static int next_packet_noninterleaved(bgav_demuxer_context_t * ctx)
   
   }
 
-int bgav_demuxer_next_packet(bgav_demuxer_context_t * demuxer)
+gavl_source_status_t bgav_demuxer_next_packet(bgav_demuxer_context_t * demuxer)
   {
-  int ret = 0, i;
-
+  gavl_source_status_t ret = GAVL_SOURCE_EOF;
+  int i;
+  
   /* Send state */
   if((demuxer->b->flags & (BGAV_FLAG_STATE_SENT|BGAV_FLAG_IS_RUNNING)) ==
      (BGAV_FLAG_IS_RUNNING))
@@ -647,11 +651,6 @@ int bgav_demuxer_next_packet(bgav_demuxer_context_t * demuxer)
       if(demuxer->request_stream->flags & STREAM_EOF_D)
         return 0;
       ret = next_packet_noninterleaved(demuxer);
-      if(!ret)
-        demuxer->request_stream->flags |= STREAM_EOF_D;
-      break;
-    case DEMUX_MODE_FI:
-      ret = bgav_demuxer_next_packet_fileindex(demuxer);
       if(!ret)
         demuxer->request_stream->flags |= STREAM_EOF_D;
       break;
@@ -681,6 +680,7 @@ int bgav_demuxer_next_packet(bgav_demuxer_context_t * demuxer)
   return ret;
   }
 
+#if 0
 gavl_source_status_t
 bgav_demuxer_get_packet_read(void * stream1, bgav_packet_t ** ret)
   {
@@ -745,6 +745,7 @@ bgav_demuxer_peek_packet_read(void * stream1, bgav_packet_t ** ret,
     *ret = bgav_packet_buffer_peek_packet_read(s->packet_buffer);
   return GAVL_SOURCE_OK;
   }
+#endif
 
 void bgav_formats_dump()
   {
@@ -755,4 +756,167 @@ void bgav_formats_dump()
   for(i = 0; i < num_sync_demuxers; i++)
     bgav_dprintf("<li>%s\n", sync_demuxers[i].format_name);
   bgav_dprintf("</ul>\n");
+  }
+
+static void parse_start(bgav_demuxer_context_t * ctx, int type_mask, int dur)
+  {
+  int j;
+  bgav_track_clear(ctx->tt->cur);
+  
+  for(j = 0; j < ctx->tt->cur->num_streams; j++)
+    {
+    if(!(ctx->tt->cur->streams[j].type & type_mask))
+      continue;
+    ctx->tt->cur->streams[j].action = BGAV_STREAM_PARSE;
+
+    if(dur)
+      {
+      ctx->tt->cur->streams[j].psink_parse =
+        gavl_packet_sink_create(NULL,
+                                bgav_stream_put_packet_get_duration,
+                                &ctx->tt->cur->streams[j]);
+      
+      gavl_packet_buffer_set_calc_frame_durations(ctx->tt->cur->streams[j].pbuffer, 1);
+      }
+    else
+      {
+      ctx->tt->cur->streams[j].psink_parse =
+        gavl_packet_sink_create(NULL,
+                                bgav_stream_put_packet_parse,
+                                &ctx->tt->cur->streams[j]);
+
+      gavl_packet_buffer_set_mark_last(ctx->tt->cur->streams[j].pbuffer, 1);
+      gavl_packet_buffer_set_calc_frame_durations(ctx->tt->cur->streams[j].pbuffer, 1);
+      }
+    }
+  }
+
+static void parse_end(bgav_demuxer_context_t * ctx, int type_mask)
+  {
+  int j;
+  bgav_track_clear(ctx->tt->cur);
+  for(j = 0; j < ctx->tt->cur->num_streams; j++)
+    {
+    if(!(ctx->tt->cur->streams[j].type & type_mask))
+      continue;
+    ctx->tt->cur->streams[j].action = BGAV_STREAM_MUTE;
+    gavl_packet_buffer_clear(ctx->tt->cur->streams[j].pbuffer);
+    if(ctx->tt->cur->streams[j].psink_parse)
+      {
+      gavl_packet_sink_destroy(ctx->tt->cur->streams[j].psink_parse);
+      ctx->tt->cur->streams[j].psink_parse = NULL;
+      }
+
+    gavl_packet_buffer_set_mark_last(ctx->tt->cur->streams[j].pbuffer, 0);
+    gavl_packet_buffer_set_calc_frame_durations(ctx->tt->cur->streams[j].pbuffer, 0);
+    
+    }
+  bgav_input_seek(ctx->input, ctx->tt->cur->data_start, SEEK_SET);
+  }
+
+static int parse_packet(bgav_demuxer_context_t * ctx)
+  {
+  int i;
+  gavl_packet_t * p = NULL;
+
+  if(bgav_demuxer_next_packet(ctx) != GAVL_SOURCE_OK)
+    return 0;
+    
+  for(i = 0; i < ctx->tt->cur->num_streams; i++)
+    {
+    if(!ctx->tt->cur->streams[i].psink_parse)
+      continue;
+    
+    while(1)
+      {
+      p = NULL;
+      if(gavl_packet_source_read_packet(gavl_packet_buffer_get_source(ctx->tt->cur->streams[i].pbuffer), &p) != GAVL_SOURCE_OK)
+        break;
+      gavl_packet_sink_put_packet(ctx->tt->cur->streams[i].psink_parse, p);
+      }
+    }
+  return 1;
+  }
+
+int bgav_demuxer_get_duration(bgav_demuxer_context_t * ctx)
+  {
+  int i;
+  int done = 0;
+  int64_t position;
+  int64_t end_position;
+  int type_mask = GAVL_STREAM_AUDIO | GAVL_STREAM_VIDEO;
+
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Getting stream duration");
+  
+  parse_start(ctx, type_mask, 1);
+
+  if(ctx->tt->cur->data_end > 0)
+    end_position = ctx->tt->cur->data_end;
+  else
+    end_position = ctx->input->total_bytes;
+
+  position = end_position;
+  
+  while(!done)
+    {
+    position -= 1024*1024; // Start 1 MB from track end
+    
+    if(position < ctx->tt->cur->data_start)
+      position = ctx->tt->cur->data_start;
+
+    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Trying position: %"PRId64, position);
+    
+    bgav_input_seek(ctx->input, position, SEEK_SET);
+    if(!ctx->demuxer->post_seek_resync(ctx))
+      return 0;
+    
+    while(parse_packet(ctx))
+      ;
+    
+    /* Check if we are done */
+
+    done = 1;
+
+    for(i = 0; i < ctx->tt->cur->num_streams; i++)
+      {
+      if(!(ctx->tt->cur->streams[i].type & type_mask))
+        continue;
+      if(ctx->tt->cur->streams[i].stats.pts_end == GAVL_TIME_UNDEFINED)
+        {
+        done = 0;
+        break;
+        }
+      }
+    
+    if(!done)
+      {
+      bgav_track_clear(ctx->tt->cur);
+      
+      /* Reached beginning */
+      if(position == ctx->tt->cur->data_start)
+        {
+        parse_end(ctx, type_mask);
+        return 0;
+        }
+      }
+    }
+  
+  parse_end(ctx, type_mask);
+  return 1;
+  }
+
+void bgav_demuxer_parse_track(bgav_demuxer_context_t * ctx)
+  {
+  int type_mask = GAVL_STREAM_AUDIO | GAVL_STREAM_VIDEO | GAVL_STREAM_TEXT | GAVL_STREAM_OVERLAY;
+
+  parse_start(ctx, type_mask, 0);
+  
+  bgav_input_seek(ctx->input, ctx->tt->cur->data_start, SEEK_SET);
+  ctx->demuxer->post_seek_resync(ctx);
+  
+  while(parse_packet(ctx))
+    ;
+  
+  parse_end(ctx, type_mask);
+  
   }

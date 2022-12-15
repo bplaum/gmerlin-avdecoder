@@ -157,7 +157,7 @@ static int open_ra(bgav_demuxer_context_t * ctx)
     return 0;
     }
 
-  charset_cnv = bgav_charset_converter_create(ctx->opt, "ISO-8859-1", BGAV_UTF8);
+  charset_cnv = bgav_charset_converter_create("ISO-8859-1", BGAV_UTF8);
   
   /* Read title */
   len = audio_header[offset];

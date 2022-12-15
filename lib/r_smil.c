@@ -29,21 +29,15 @@
 
 static int probe_smil(bgav_input_context_t * input)
   {
-  char * pos;
   uint8_t buf[5];
 
   /* We accept all files, which end with .smil or .smi */
 
-  if(input->filename)
-    {
-    pos = strrchr(input->filename, '.');
-    if(pos)
-      {
-      if(!strcasecmp(pos, ".smi") ||
-         !strcasecmp(pos, ".smil"))
-        return 1;
-      }
-    }
+  if(input->location &&
+     (gavl_string_ends_with_i(input->location, ".smil") ||
+      gavl_string_ends_with_i(input->location, ".smi")))
+    return 1;
+  
   if(bgav_input_get_data(input, buf, 5) < 5)
     return 0;
   if((buf[0] == '<') &&
@@ -240,13 +234,13 @@ static bgav_track_table_t * xml_2_smil(bgav_input_context_t * input,
     node = node->next;
     }
 
-  if(!url_base && input->url)
+  if(!url_base && input->location)
     {
-    pos = strrchr(input->url, '/');
+    pos = strrchr(input->location, '/');
     if(pos)
       {
       pos++;
-      url_base = gavl_strndup(input->url, pos);
+      url_base = gavl_strndup(input->location, pos);
       }
     }
   

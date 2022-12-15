@@ -107,7 +107,6 @@ void bgav_audio_parser_init_dca(bgav_audio_parser_t * parser);
 void bgav_audio_parser_init_speex(bgav_audio_parser_t * parser);
 #endif
 
-
 #ifdef HAVE_VORBIS
 void bgav_audio_parser_init_vorbis(bgav_audio_parser_t * parser);
 #endif

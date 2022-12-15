@@ -25,7 +25,6 @@
 #include <vc1_header.h>
 #include <mpv_header.h>
 #include <parser.h>
-#include <videoparser_priv.h>
 
 
 #define VC1_NEED_START 0
@@ -56,7 +55,7 @@ typedef struct
   int state;
   } vc1_priv_t;
 
-static void unescape_data(bgav_video_parser_t * parser,
+static void unescape_data(bgav_packet_parser_t * parser,
                           const uint8_t * ptr, int len)
   {
   vc1_priv_t * priv = parser->priv;
@@ -70,7 +69,7 @@ static void unescape_data(bgav_video_parser_t * parser,
     bgav_vc1_unescape_buffer(ptr, len, priv->buf);
   }
 
-static void handle_sequence(bgav_video_parser_t * parser,
+static void handle_sequence(bgav_packet_parser_t * parser,
                             const uint8_t * ptr,
                             const uint8_t * end)
   {
@@ -80,126 +79,21 @@ static void handle_sequence(bgav_video_parser_t * parser,
     return;
 
   unescape_data(parser, ptr, end - ptr);
-  bgav_vc1_sequence_header_read(parser->s->opt, &priv->sh, 
+  bgav_vc1_sequence_header_read(&priv->sh, 
                                 priv->buf, priv->buf_len);
   bgav_vc1_sequence_header_dump(&priv->sh);
   
   if(priv->sh.profile == PROFILE_ADVANCED)
     {
-    parser->format->timescale = priv->sh.h.adv.timescale;
-    parser->format->frame_duration = priv->sh.h.adv.frame_duration;
+    parser->vfmt->timescale = priv->sh.h.adv.timescale;
+    parser->vfmt->frame_duration = priv->sh.h.adv.frame_duration;
     }
 
   
   priv->have_sh = 1;
   }
 
-#if 0
-static void handle_picture(bgav_video_parser_t * parser)
-  {
-  bgav_vc1_picture_header_adv_t aph;
-  vc1_priv_t * priv = parser->priv;
-
-  if(priv->sh.profile == PROFILE_ADVANCED)
-    {
-    unescape_data(parser);
-    bgav_vc1_picture_header_adv_read(parser->s->opt,
-                                     &aph,
-                                     priv->buf, priv->buf_len,
-                                     &priv->sh);
-    
-    bgav_vc1_picture_header_adv_dump(&aph);
-    bgav_video_parser_set_coding_type(parser, aph.coding_type);
-
-    }
-  // else
-    
-  }
-
-static int parse_vc1(bgav_video_parser_t * parser)
-  {
-  const uint8_t * sc;
-  vc1_priv_t * priv = parser->priv;
-  
-  switch(priv->state)
-    {
-    case VC1_NEED_START:
-      sc = bgav_mpv_find_startcode(parser->buf.buffer + parser->pos,
-                                   parser->buf.buffer + parser->buf.size);
-      if(!sc)
-        return PARSER_NEED_DATA;
-      bgav_video_parser_flush(parser, sc - parser->buf.buffer);
-      parser->pos = 0;
-
-      priv->state = VC1_HAVE_START;
-      break;
-    case VC1_HAVE_START:
-      switch(parser->buf.buffer[parser->pos+3])
-        {
-        case VC1_CODE_SEQUENCE:
-          /* Set picture start */
-          if(!priv->has_picture_start &&
-             !bgav_video_parser_set_picture_start(parser))
-            return PARSER_ERROR;
-          priv->has_picture_start = 1;
-          
-          break;
-        case VC1_CODE_ENTRY_POINT:
-          
-          /* Set picture start */
-          if(!priv->has_picture_start &&
-             !bgav_video_parser_set_picture_start(parser))
-            return PARSER_ERROR;
-          priv->has_picture_start = 1;
-          break;
-        case VC1_CODE_PICTURE:
-          /* Extract extradata */
-          if(!parser->s->ci.global_header)
-            {
-            bgav_video_parser_extract_header(parser);
-            //            bgav_video_parser_flush(parser, parser->header_len);
-            return PARSER_CONTINUE;
-            }
-
-          /* Set picture start */
-          if(!priv->has_picture_start &&
-             !bgav_video_parser_set_picture_start(parser))
-            return PARSER_ERROR;
-          priv->has_picture_start = 0;
-
-        
-          break;
-        }
-      /* Need to find the end */
-      priv->state = VC1_NEED_END;
-      break;
-    case VC1_NEED_END:
-      sc = bgav_mpv_find_startcode(parser->buf.buffer + parser->pos + 4,
-                                   parser->buf.buffer + parser->buf.size);
-      if(!sc)
-        return PARSER_NEED_DATA;
-      
-      priv->chunk_len = sc - (parser->buf.buffer + parser->pos);
-      // fprintf(stderr, "Got nal %d bytes\n", priv->nal_len);
-      priv->state = VC1_HAVE_END;
-      break;
-    case VC1_HAVE_END:
-      if((parser->buf.buffer[parser->pos+3] == VC1_CODE_SEQUENCE) &&
-         !priv->have_sh)
-        handle_sequence(parser);
-      else if(parser->buf.buffer[parser->pos+3] == VC1_CODE_PICTURE)
-        handle_picture(parser);
-      parser->pos += priv->chunk_len;
-      priv->state = VC1_HAVE_START;
-      break;
-      
-    }
-  return PARSER_CONTINUE;
-  }
-
-#endif
-
-static int find_frame_boundary_vc1(bgav_video_parser_t * parser, int * skip)
+static int find_frame_boundary_vc1(bgav_packet_parser_t * parser, int * skip)
   {
   const uint8_t * sc;
   vc1_priv_t * priv = parser->priv;
@@ -207,13 +101,13 @@ static int find_frame_boundary_vc1(bgav_video_parser_t * parser, int * skip)
   
   while(1)
     {
-    sc = bgav_mpv_find_startcode(parser->buf.buf + parser->pos,
+    sc = bgav_mpv_find_startcode(parser->buf.buf + parser->buf.pos,
                                  parser->buf.buf + parser->buf.len - 4);
     if(!sc)
       {
-      parser->pos = parser->buf.len - 4;
-      if(parser->pos < 0)
-        parser->pos = 0;
+      parser->buf.pos = parser->buf.len - 4;
+      if(parser->buf.pos < 0)
+        parser->buf.pos = 0;
       return 0;
       }
 
@@ -232,29 +126,28 @@ static int find_frame_boundary_vc1(bgav_video_parser_t * parser, int * skip)
         break;
       }
     
-    parser->pos = sc - parser->buf.buf;
+    parser->buf.pos = sc - parser->buf.buf;
     
     if(new_state < 0)
-      parser->pos += 4;
+      parser->buf.pos += 4;
     else if(((new_state == STATE_PICTURE) && (priv->state == STATE_PICTURE)) ||
             ((new_state <= STATE_PICTURE) && (new_state < priv->state)))
       {
       *skip = 4;
-      parser->pos = sc - parser->buf.buf;
+      parser->buf.pos = sc - parser->buf.buf;
       priv->state = new_state;
       return 1;
       }
     else
       {
-      parser->pos += 4;
+      parser->buf.pos += 4;
       priv->state = new_state;
       }
     }
   return 0;
   }
 
-static int parse_frame_vc1(bgav_video_parser_t * parser, bgav_packet_t * p,
-                            int64_t prs_orig)
+static int parse_frame_vc1(bgav_packet_parser_t * parser, bgav_packet_t * p)
   {
   const uint8_t * ptr;
   const uint8_t * sh_start = NULL;
@@ -290,10 +183,9 @@ static int parse_frame_vc1(bgav_video_parser_t * parser, bgav_packet_t * p,
           PACKET_SET_SKIP(p);
           return 1;
           }
-        else if(sh_start && !parser->s->ci->codec_header.len)
+        else if(sh_start && !parser->ci.codec_header.len)
           {
-          bgav_stream_set_extradata(parser->s,
-                                    sh_start, chunk_end - sh_start);
+          gavl_buffer_append_data(&parser->ci.codec_header, sh_start, chunk_end - sh_start);
 #if 0
           fprintf(stderr, "Setting extradata %ld bytes\n",
                   chunk_end - sh_start);
@@ -308,14 +200,13 @@ static int parse_frame_vc1(bgav_video_parser_t * parser, bgav_packet_t * p,
           return 1;
           }
 
-        p->duration = parser->format->frame_duration;
+        p->duration = parser->vfmt->frame_duration;
         
         if(priv->sh.profile == PROFILE_ADVANCED)
           {
           bgav_vc1_picture_header_adv_t aph;
           unescape_data(parser, chunk_start, chunk_end - chunk_start);
-          bgav_vc1_picture_header_adv_read(parser->s->opt,
-                                           &aph,
+          bgav_vc1_picture_header_adv_read(&aph,
                                            priv->buf, priv->buf_len,
                                            &priv->sh);
           
@@ -338,7 +229,7 @@ static int parse_frame_vc1(bgav_video_parser_t * parser, bgav_packet_t * p,
   return 0;
   }
   
-static void cleanup_vc1(bgav_video_parser_t * parser)
+static void cleanup_vc1(bgav_packet_parser_t * parser)
   {
   vc1_priv_t * priv = parser->priv;
   if(priv->buf)
@@ -346,14 +237,14 @@ static void cleanup_vc1(bgav_video_parser_t * parser)
   free(priv);
   }
 
-static void reset_vc1(bgav_video_parser_t * parser)
+static void reset_vc1(bgav_packet_parser_t * parser)
   {
   vc1_priv_t * priv = parser->priv;
   priv->state = STATE_SYNC;
   priv->has_picture_start = 0;
   }
 
-void bgav_video_parser_init_vc1(bgav_video_parser_t * parser)
+void bgav_packet_parser_init_vc1(bgav_packet_parser_t * parser)
   {
   vc1_priv_t * priv;
   priv = calloc(1, sizeof(*priv));

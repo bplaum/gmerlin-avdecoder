@@ -37,12 +37,6 @@
 /* Number of sectors to read at once when searching backwards */
 #define SCAN_SECTORS 16
 
-/* LPCM stuff */
-
-typedef struct
-  {
-  int64_t out_pts;
-  } lpcm_t;
 
 /* We scan at most one megabyte */
 
@@ -207,7 +201,7 @@ static void goto_sector_cdxa(bgav_demuxer_context_t * ctx, int64_t sector)
   mpegps_priv_t * priv;
   priv = ctx->priv;
 
-  bgav_input_seek(ctx->input, ctx->data_start + priv->sector_size_raw * (sector + priv->start_sector),
+  bgav_input_seek(ctx->input, ctx->tt->cur->data_start + priv->sector_size_raw * (sector + priv->start_sector),
                   SEEK_SET);
   bgav_input_reopen_memory(priv->input_mem,
                            NULL, 0);
@@ -254,7 +248,6 @@ static int read_sector_input(bgav_demuxer_context_t * ctx)
 
 static int select_track_mpegps(bgav_demuxer_context_t * ctx, int track)
   {
-  int i;
   mpegps_priv_t * priv;
   priv = ctx->priv;
 
@@ -266,26 +259,12 @@ static int select_track_mpegps(bgav_demuxer_context_t * ctx, int track)
 
   priv->is_running = 0;
   
-  if(ctx->data_start != ctx->input->position)
+  if(ctx->tt->cur->data_start != ctx->input->position)
     {
     if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
-      bgav_input_seek(ctx->input, ctx->data_start, SEEK_SET);
+      bgav_input_seek(ctx->input, ctx->tt->cur->data_start, SEEK_SET);
     else
       return 0;
-    }
-
-  for(i = 0; i < ctx->tt->cur->num_audio_streams; i++)
-    {
-    bgav_stream_t * s;
-    
-    s = bgav_track_get_audio_stream(ctx->tt->cur, i);
-    
-    if(s->fourcc == BGAV_MK_FOURCC('L','P','C','M'))
-      {
-      lpcm_t * lp = s->priv;
-      if(lp)
-        lp->out_pts = GAVL_TIME_UNDEFINED;
-      }
     }
   
   return 1;
@@ -302,7 +281,7 @@ static void init_sector_mode(bgav_demuxer_context_t * ctx)
   mpegps_priv_t * priv;
   priv = ctx->priv;
 
-  priv->input_mem          = bgav_input_open_memory(NULL, 0, ctx->opt);
+  priv->input_mem          = bgav_input_open_memory(NULL, 0);
 
   if(priv->goto_sector)
     {
@@ -392,13 +371,6 @@ static void init_sector_mode(bgav_demuxer_context_t * ctx)
     return;
   }
 
-/* LPCM stuff */
-
-static void cleanup_lpcm(bgav_stream_t * s)
-  {
-  free(s->priv);
-  }
-
 static void init_stream(bgav_stream_t * s, uint32_t fourcc,
                         int stream_id)
   {
@@ -418,7 +390,6 @@ static int next_packet(bgav_demuxer_context_t * ctx,
   int got_packet = 0;
   uint32_t start_code;
   
-  bgav_packet_t * p;
   mpegps_priv_t * priv;
   bgav_stream_t * stream = NULL;
 
@@ -542,7 +513,7 @@ static int next_packet(bgav_demuxer_context_t * ctx,
             {
             stream = bgav_track_add_audio_stream(ctx->tt->cur, ctx->opt);
             stream->index_mode = INDEX_MODE_SIMPLE;
-            // stream->timescale = 90000;
+            stream->timescale = 90000;
             stream->fourcc = BGAV_MK_FOURCC('L', 'P', 'C', 'M');
             stream->stream_id = priv->pes_header.stream_id;
             /* Hack: This is set by the core later. We must set it here,
@@ -554,13 +525,6 @@ static int next_packet(bgav_demuxer_context_t * ctx,
 
           if(stream && !stream->data.audio.format->samplerate)
             {
-            if(!stream->priv)
-              {
-              lpcm_t * lp = calloc(1, sizeof(*lp));
-              lp->out_pts = GAVL_TIME_UNDEFINED;
-              stream->priv = lp;
-              stream->cleanup = cleanup_lpcm;
-              }
             
             /* emphasis (1), muse(1), reserved(1), frame number(5) */
             bgav_input_skip(input, 1);
@@ -718,9 +682,7 @@ static int next_packet(bgav_demuxer_context_t * ctx,
 
       if(stream)
         {
-        if((priv->do_sync) &&
-           !STREAM_HAS_SYNC(stream) &&
-           (priv->pes_header.pts < 0))
+        if((priv->pes_header.pts < 0) && !stream->packet)
           {
           bgav_input_skip(input, priv->pes_header.payload_size);
           return 1;
@@ -733,79 +695,56 @@ static int next_packet(bgav_demuxer_context_t * ctx,
         if(!priv->find_streams)
           {
           //  fprintf(stderr, "get packet %d\n", stream->stream_id);
+
+          if(stream->packet && (priv->pes_header.pts > 0))
+            {
+            bgav_stream_done_packet_write(stream, stream->packet);
+            stream->packet = NULL;
+            }
           
-          p = bgav_stream_get_packet_write(stream);
-          p->position = priv->position;
-          bgav_packet_alloc(p, priv->pes_header.payload_size);
-          if(bgav_input_read_data(input, p->buf.buf, 
+          if(!stream->packet)
+            {
+            stream->packet = bgav_stream_get_packet_write(stream);
+            stream->packet->position = priv->position;
+            stream->packet->pes_pts = priv->pes_header.pts;
+            }
+          bgav_packet_alloc(stream->packet, stream->packet->buf.len + priv->pes_header.payload_size);
+          
+          if(bgav_input_read_data(input, stream->packet->buf.buf + stream->packet->buf.len,
                                   priv->pes_header.payload_size) <
              priv->pes_header.payload_size)
             {
-            bgav_stream_done_packet_write(stream, p);
+            bgav_stream_done_packet_write(stream, stream->packet);
             return 0;
             }
-          p->buf.len = priv->pes_header.payload_size;
-        
-          if(priv->pes_header.pts != GAVL_TIME_UNDEFINED)
-            {
-            if(!(ctx->flags & BGAV_DEMUXER_HAS_TIMESTAMP_OFFSET))
-              {
-              ctx->timestamp_offset = -priv->pes_header.pts;
-              ctx->flags |= BGAV_DEMUXER_HAS_TIMESTAMP_OFFSET;
-              }
+          stream->packet->buf.len += priv->pes_header.payload_size;
 
-            if(stream->fourcc != BGAV_MK_FOURCC('L', 'P', 'C', 'M'))
-              {
-              p->pts = priv->pes_header.pts + ctx->timestamp_offset;
-              
-              // if(p->pts < 0)
-            //              p->pts = 0;
-              
-              if(priv->do_sync && !STREAM_HAS_SYNC(stream))
-                STREAM_SET_SYNC(stream, p->pts);
-              }
-            }
-          /* Get LPCM PTS and duration */
+          if(stream->packet->pes_pts == GAVL_TIME_UNDEFINED)
+            stream->packet->pes_pts = priv->pes_header.pts;
+          
+          /* Get LPCM duration */
           if(stream->fourcc == BGAV_MK_FOURCC('L', 'P', 'C', 'M'))
             {
-            lpcm_t * lp = stream->priv;
-            
+            if(stream->packet->duration < 0)
+              stream->packet->duration = 0;
             switch(stream->data.audio.bits_per_sample)
               {
               case 16:
                 /* 4 bytes -> 2 samples */
-                p->duration = p->buf.len / (stream->data.audio.format->num_channels*2);
-                break;
+                 stream->packet->duration = stream->packet->buf.len / (stream->data.audio.format->num_channels*2);
+                 break;
               case 20:
                 /* 5 bytes -> 2 samples */
                 /* http://lists.mplayerhq.hu/pipermail/ffmpeg-devel/2006-September/016319.html */
-                p->duration = (2 * p->buf.len) /
+                stream->packet->duration = (2 * stream->packet->buf.len) /
                   (stream->data.audio.format->num_channels*5);
                 break;
               case 24:
                 /* 6 bytes -> 2 samples */
-                p->duration = p->buf.len / (stream->data.audio.format->num_channels*3);
+                stream->packet->duration = stream->packet->buf.len / (stream->data.audio.format->num_channels*3);
                 break;
               }
-            if(lp->out_pts == GAVL_TIME_UNDEFINED)
-              {
-              if(priv->pes_header.pts != GAVL_TIME_UNDEFINED)
-                {
-                lp->out_pts =
-                  gavl_time_rescale(90000, stream->data.audio.format->samplerate,
-                                    priv->pes_header.pts + ctx->timestamp_offset);
-                }
-              else
-                lp->out_pts = 0;
-              }
-            p->pts = lp->out_pts;
-
-            if(priv->do_sync && !STREAM_HAS_SYNC(stream))
-              STREAM_SET_SYNC(stream, p->pts);
-            
-            lp->out_pts += p->duration;
             }
-          bgav_stream_done_packet_write(stream, p);
           }
         else
           {
@@ -905,7 +844,7 @@ static void find_streams(bgav_demuxer_context_t * ctx)
     ctx->input = input_save;
     }
   else
-    bgav_input_seek(ctx->input, ctx->data_start, SEEK_SET);
+    bgav_input_seek(ctx->input, ctx->tt->cur->data_start, SEEK_SET);
   
   return;
   }
@@ -946,7 +885,7 @@ static void get_duration(bgav_demuxer_context_t * ctx)
     gavl_track_set_duration(ctx->tt->cur->info, 
                             ((int64_t)(scr_end - scr_start) * GAVL_TIME_SCALE) / 90000);
     
-    bgav_input_seek(ctx->input, ctx->data_start, SEEK_SET);
+    bgav_input_seek(ctx->input, ctx->tt->cur->data_start, SEEK_SET);
     }
   else if(ctx->input->total_bytes && priv->pack_header.mux_rate)
     {
@@ -1014,7 +953,7 @@ static int init_cdxa(bgav_demuxer_context_t * ctx)
       break;
     bgav_input_skip(ctx->input, size);
     }
-  ctx->data_start = ctx->input->position;
+  ctx->tt->cur->data_start = ctx->input->position;
   priv->data_size = size;
 
   priv->total_sectors      = priv->data_size / CDXA_SECTOR_SIZE_RAW;
@@ -1063,15 +1002,13 @@ static int init_mpegps(bgav_demuxer_context_t * ctx)
       break;
     }
 
-  ctx->data_start = ctx->input->position;
+  ctx->tt->cur->data_start = ctx->input->position;
   if(ctx->input->total_bytes)
-    priv->data_size = ctx->input->total_bytes - ctx->data_start;
+    priv->data_size = ctx->input->total_bytes - ctx->tt->cur->data_start;
 
 
   if(!bgav_pack_header_read(ctx->input, &priv->pack_header))
     return 0;
-  
-  //  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
   
   return 1;
   }
@@ -1156,25 +1093,20 @@ static int open_mpegps(bgav_demuxer_context_t * ctx)
       s = bgav_track_get_audio_stream(ctx->tt->tracks[i], j);
       
       if(s->fourcc != BGAV_MK_FOURCC('L', 'P', 'C', 'M'))
-        s->flags |= STREAM_PARSE_FULL;
+        bgav_stream_set_parse_full(s);
       
-      s->stats.pts_start = GAVL_TIME_UNDEFINED;
-      s->flags |= STREAM_NEED_START_PTS;
       }
     for(j = 0; j < ctx->tt->tracks[i]->num_video_streams; j++)
       {
       s = bgav_track_get_video_stream(ctx->tt->tracks[i], j);
 
-      s->flags |= STREAM_PARSE_FULL;
-      s->stats.pts_start = GAVL_TIME_UNDEFINED;
-      s->flags |= STREAM_NEED_START_PTS;
+      bgav_stream_set_parse_full(s);
+      
       }
     for(j = 0; j < ctx->tt->tracks[i]->num_overlay_streams; j++)
       {
       s = bgav_track_get_overlay_stream(ctx->tt->tracks[i], j);
-      s->flags |= STREAM_PARSE_FULL;
-      s->stats.pts_start = GAVL_TIME_UNDEFINED;
-      s->flags |= STREAM_NEED_START_PTS;
+      bgav_stream_set_parse_full(s);
       }
     }
   ctx->index_mode = INDEX_MODE_MIXED;
@@ -1196,11 +1128,11 @@ static void seek_normal(bgav_demuxer_context_t * ctx, int64_t time,
   //  file_position = (priv->pack_header.mux_rate*50*time)/GAVL_TIME_SCALE;
   /* Using double is ugly, but in integer, this can overflow for large file (even in 64 bit).
      We do iterative seeking at this point anyway. */
-  file_position = ctx->data_start +
+  file_position = ctx->tt->cur->data_start +
     (int64_t)(priv->data_size * (double)gavl_time_unscale(scale, time)/(double)dur + 0.5);
 
-  if(file_position <= ctx->data_start)
-    file_position = ctx->data_start+1;
+  if(file_position <= ctx->tt->cur->data_start)
+    file_position = ctx->tt->cur->data_start+1;
   if(file_position >= ctx->input->total_bytes)
     file_position = ctx->input->total_bytes - 4;
 
@@ -1217,7 +1149,7 @@ static void seek_normal(bgav_demuxer_context_t * ctx, int64_t time,
     else
       {
       file_position -= 2000; /* Go a bit back */
-      if(file_position <= ctx->data_start)
+      if(file_position <= ctx->tt->cur->data_start)
         {
         break; /* Escape from inifinite loop */
         }
@@ -1262,24 +1194,8 @@ static void seek_sector(bgav_demuxer_context_t * ctx, gavl_time_t time,
 
 static void seek_mpegps(bgav_demuxer_context_t * ctx, int64_t time, int scale)
   {
-  int i;
   mpegps_priv_t * priv;
-  bgav_stream_t * s;
   priv = ctx->priv;
-
-  /* Reset lpcm timestamps */
-  for(i = 0; i < ctx->tt->cur->num_audio_streams; i++)
-    {
-    s = bgav_track_get_audio_stream(ctx->tt->cur, i);
-    
-    if(s->fourcc == BGAV_MK_FOURCC('L','P','C','M'))
-      {
-      lpcm_t * lp = s->priv;
-      if(lp)
-        lp->out_pts = GAVL_TIME_UNDEFINED;
-      }
-    }
-
   
   if(ctx->input->input->seek_time)
     {

@@ -134,8 +134,7 @@ int bgav_input_read_convert_line(bgav_input_context_t * input,
     gavl_buffer_t line_buf;
     
     if(!input->cnv)
-      input->cnv = bgav_charset_converter_create(input->opt,
-                                                 input->charset, BGAV_UTF8);
+      input->cnv = bgav_charset_converter_create(input->charset, BGAV_UTF8);
 
     gavl_buffer_init(&line_buf);
     
@@ -173,16 +172,22 @@ static int input_read_data(bgav_input_context_t * ctx, uint8_t * buffer, int len
       return 0;
     }
   
-  if(ctx->buf.len)
+  if(ctx->buf.pos < ctx->buf.len)
     {
-    if(len > ctx->buf.len)
-      bytes_to_copy = ctx->buf.len;
+    if(len > ctx->buf.len - ctx->buf.pos)
+      bytes_to_copy = ctx->buf.len - ctx->buf.pos;
     else
       bytes_to_copy = len;
 
-    memcpy(buffer, ctx->buf.buf, bytes_to_copy);
+    memcpy(buffer, ctx->buf.buf + ctx->buf.pos, bytes_to_copy);
     
-    gavl_buffer_flush(&ctx->buf, bytes_to_copy);
+    // gavl_buffer_flush(&ctx->buf, bytes_to_copy);
+    
+    ctx->buf.pos += bytes_to_copy;
+
+    if(ctx->buf.pos == ctx->buf.len)
+      gavl_buffer_reset(&ctx->buf);
+    
     bytes_read += bytes_to_copy;
     }
 
@@ -221,6 +226,12 @@ void bgav_input_ensure_buffer_size(bgav_input_context_t * ctx, int len)
     return;
     }
 
+  if(ctx->buf.len - ctx->buf.pos >= len)
+    return;
+  
+  if(ctx->buf.pos > 0)
+    gavl_buffer_flush(&ctx->buf, ctx->buf.pos);
+  
   if(ctx->buf.len < len)
     {
     gavl_buffer_alloc(&ctx->buf, len);
@@ -231,7 +242,6 @@ void bgav_input_ensure_buffer_size(bgav_input_context_t * ctx, int len)
     if(result < 0)
       result = 0;
     ctx->buf.len += result;
-    
     }
   }
 
@@ -251,7 +261,7 @@ int bgav_input_get_data(bgav_input_context_t * ctx, uint8_t * buffer, int len)
   bytes_gotten = (len > ctx->buf.len) ? ctx->buf.len : len;
   
   if(bytes_gotten)
-    memcpy(buffer, ctx->buf.buf, bytes_gotten);
+    memcpy(buffer, ctx->buf.buf + ctx->buf.pos, bytes_gotten);
   
   return bytes_gotten;
   }
@@ -908,7 +918,7 @@ int bgav_input_open(bgav_input_context_t * ctx,
 
 void bgav_input_close(bgav_input_context_t * ctx)
   {
-  const bgav_options_t * opt;
+  bgav_options_t opt;
   if(ctx->input && ctx->priv)
     {
     ctx->input->close(ctx);
@@ -917,12 +927,10 @@ void bgav_input_close(bgav_input_context_t * ctx)
 
   gavl_buffer_free(&ctx->buf);
 
-  if(ctx->filename)
-    free(ctx->filename);
+  if(ctx->location)
+    free(ctx->location);
   if(ctx->index_file)
     free(ctx->index_file);
-  if(ctx->url)
-    free(ctx->url);
   if(ctx->id3v2)
     bgav_id3v2_destroy(ctx->id3v2);
   if(ctx->charset)
@@ -933,15 +941,16 @@ void bgav_input_close(bgav_input_context_t * ctx)
   if(ctx->tt)
     bgav_track_table_unref(ctx->tt);
     
-  gavl_dictionary_free(&ctx->m);
+  gavl_dictionary_reset(&ctx->m);
   //  free(ctx);
-  
-  opt = ctx->opt;
-  memset(ctx, 0, sizeof(*ctx));
-  ctx->opt = opt;
 
   if(ctx->yml)
     bgav_yml_free(ctx->yml);
+  
+  memcpy(&opt, &ctx->opt, sizeof(opt));
+  memset(ctx, 0, sizeof(*ctx));
+  memcpy(&ctx->opt, &opt, sizeof(opt));
+  
 
   return;
   }
@@ -965,18 +974,22 @@ void bgav_input_skip(bgav_input_context_t * ctx, int64_t bytes)
   if(bytes < 0)
     fprintf(stderr, "Bytes < 0 in bgav_input_skip. That's most likely a bug\n");
 
-  if(ctx->buf.len)
+  if(ctx->buf.len > ctx->buf.pos)
     {
-    if(ctx->buf.len >= bytes_to_skip)
+    if(ctx->buf.len - ctx->buf.pos >= bytes_to_skip)
       {
-      gavl_buffer_flush(&ctx->buf, bytes_to_skip);
-      ctx->position += bytes;
+      ctx->buf.pos += bytes_to_skip;
+      ctx->position += bytes_to_skip;
+
+      if(ctx->buf.pos == ctx->buf.len)
+        gavl_buffer_reset(&ctx->buf);
       return;
       }
     else
       {
-      bytes_to_skip -= ctx->buf.len;
-      ctx->position += ctx->buf.len;
+      int bytes_skipped = ctx->buf.len - ctx->buf.pos;
+      bytes_to_skip -= bytes_skipped;
+      ctx->position += bytes_skipped;
       gavl_buffer_reset(&ctx->buf);
       }
     }
@@ -1111,9 +1124,11 @@ bgav_input_context_t * bgav_input_create(bgav_t * b, const bgav_options_t * opt)
   ret->b = b;
 
   if(b)
-    ret->opt = &b->opt;
+    bgav_options_copy(&ret->opt, &b->opt);
+  else if(opt)
+    bgav_options_copy(&ret->opt, opt);
   else
-    ret->opt = opt;
+    bgav_options_set_defaults(&ret->opt);
   
   return ret;
   }
@@ -1123,43 +1138,47 @@ int bgav_input_reopen(bgav_input_context_t * ctx)
   {
   gavl_time_t delay_time = GAVL_TIME_SCALE / 2;
   const bgav_input_t * input;
-  char * url = NULL;
+  char * location = NULL;
   int ret = 0;
   char * redir = NULL;
-  const bgav_options_t * opt;
+  bgav_options_t opt;
   bgav_track_table_t * tt = NULL;
 
   bgav_t * b;
   
-  if(ctx->url)
+  if(ctx->location)
     {
-    url = ctx->url;
+    location = ctx->location;
     input = ctx->input;
-    opt = ctx->opt;
+
+    bgav_options_copy(&opt, &ctx->opt);
+    
 
     b = ctx->b;
     
     tt = ctx->tt;
     ctx->tt = NULL;
     
-    ctx->url = NULL;
+    ctx->location = NULL;
     
     bgav_input_close(ctx);
 
-    gavl_metadata_add_src(&ctx->m, GAVL_META_SRC, NULL, url);
+    gavl_metadata_add_src(&ctx->m, GAVL_META_SRC, NULL, location);
     
     /* Give the server time to recreate */
     gavl_time_delay(&delay_time);
 
     ctx->input = input;
-    ctx->opt = opt;
+
+    bgav_options_copy(&ctx->opt, &opt);
+    
     ctx->b = b;
     
-    if(!ctx->input->open(ctx, url, &redir))
+    if(!ctx->input->open(ctx, location, &redir))
       {
       if(redir) free(redir);
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-               "Reopening %s failed", url);
+               "Reopening %s failed", location);
       goto fail;
       }
     //    init_buffering(ctx);
@@ -1169,8 +1188,8 @@ int bgav_input_reopen(bgav_input_context_t * ctx)
     ctx->tt = tt;
     }
   fail:
-  if(url)
-    free(url);
+  if(location)
+    free(location);
   return ret;
   }
 
@@ -1186,12 +1205,10 @@ bgav_yml_node_t * bgav_input_get_yml(bgav_input_context_t * ctx)
   return NULL;
   }
 
-char * bgav_input_absolute_url(bgav_input_context_t * ctx, const char * url)
+char * bgav_input_absolute_url(bgav_input_context_t * ctx, const char * location)
   {
-  if(ctx->url)
-    return gavl_get_absolute_uri(url, ctx->url);
-  else if(ctx->filename)
-    return gavl_get_absolute_uri(url, ctx->filename);
+  if(ctx->location)
+    return gavl_get_absolute_uri(location, ctx->location);
   return NULL;
   }
 

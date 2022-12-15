@@ -22,6 +22,7 @@
 #ifndef BGAV_BSF_PRIVATE_H_INCLUDED
 #define BGAV_BSF_PRIVATE_H_INCLUDED
 
+
 struct bgav_bsf_s
   {
   /* Where to get packets */

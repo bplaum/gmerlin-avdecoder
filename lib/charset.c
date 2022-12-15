@@ -32,15 +32,13 @@
 struct bgav_charset_converter_s
   {
   iconv_t cd;
-  const bgav_options_t * opt;
   int utf_8_16;
   char * out_charset;
   };
   
 
 bgav_charset_converter_t *
-bgav_charset_converter_create(const bgav_options_t * opt,
-                              const char * in_charset,
+bgav_charset_converter_create(const char * in_charset,
                               const char * out_charset)
   {
   bgav_charset_converter_t * ret = calloc(1, sizeof(*ret));
@@ -52,7 +50,6 @@ bgav_charset_converter_create(const bgav_options_t * opt,
     }
   else  
     ret->cd = iconv_open(out_charset, in_charset);
-  ret->opt = opt;
   
   return ret;
   }

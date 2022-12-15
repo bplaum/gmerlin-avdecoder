@@ -363,29 +363,28 @@ static int is_null(const char * ptr, int num_bytes, int len)
 static char * get_charset(uint8_t * data,
                           uint8_t cs, 
                           bgav_charset_converter_t ** cnv,
-                          int * bytes_per_char, 
-                          const bgav_options_t * opt)
+                          int * bytes_per_char)
   {
   char * pos = NULL;
   switch(cs)
     {
     case ENCODING_LATIN1:
       *bytes_per_char = 1;
-      *cnv = bgav_charset_converter_create(opt, "LATIN1", BGAV_UTF8);
+      *cnv = bgav_charset_converter_create("LATIN1", BGAV_UTF8);
       pos = (char*)data;
       break;
     case ENCODING_UTF16_BOM:
       *bytes_per_char = 2;
 
       if((data[0] == 0xFF) && (data[1] == 0xFE))
-        *cnv = bgav_charset_converter_create(opt, "UTF16LE", BGAV_UTF8);
+        *cnv = bgav_charset_converter_create("UTF16LE", BGAV_UTF8);
       else if((data[1] == 0xFF) && (data[0] == 0xFE))
-        *cnv = bgav_charset_converter_create(opt, "UTF16BE", BGAV_UTF8);
+        *cnv = bgav_charset_converter_create("UTF16BE", BGAV_UTF8);
       pos = ((char*)data) + 2;
       break;
     case ENCODING_UTF16_BE:
       *bytes_per_char = 2;
-      *cnv = bgav_charset_converter_create(opt, "UTF16BE", BGAV_UTF8);
+      *cnv = bgav_charset_converter_create("UTF16BE", BGAV_UTF8);
       pos = (char*)data;
       break;
     case ENCODING_UTF8:
@@ -396,8 +395,7 @@ static char * get_charset(uint8_t * data,
   return pos;
   }
 
-static char ** read_string_list(const bgav_options_t * opt,
-                                uint8_t * data, int data_size)
+static char ** read_string_list(uint8_t * data, int data_size)
   {
   int bytes_per_char = 0;
   int i;
@@ -416,7 +414,7 @@ static char ** read_string_list(const bgav_options_t * opt,
   
   data++; 
  
-  pos = get_charset(data, encoding, &cnv, &bytes_per_char, opt);
+  pos = get_charset(data, encoding, &cnv, &bytes_per_char);
   
   end_pos = pos;
 
@@ -470,8 +468,7 @@ static char ** read_string_list(const bgav_options_t * opt,
   }
 
 static bgav_id3v2_picture_t * 
-read_picture(const bgav_options_t * opt,
-             uint8_t * data, int data_size)
+read_picture(uint8_t * data, int data_size)
   {
   int charset;
   int bytes_per_char = 1;
@@ -499,7 +496,7 @@ read_picture(const bgav_options_t * opt,
   ret->picture_type = *data;
   data++;
 
-  pos = get_charset(data, charset, &cnv, &bytes_per_char, opt);
+  pos = get_charset(data, charset, &cnv, &bytes_per_char);
  
   end_pos = pos;
 
@@ -611,11 +608,11 @@ static int read_frame(bgav_input_context_t * input,
      BGAV_MK_FOURCC('T', 0x00, 0x00, 0x00)) &&
      (ret->header.fourcc != BGAV_MK_FOURCC('T', 'X', 'X', 'X')))
     {
-    ret->strings = read_string_list(input->opt, data, ret->header.data_size);
+    ret->strings = read_string_list(data, ret->header.data_size);
     }
   else if(ret->header.fourcc == BGAV_MK_FOURCC('A', 'P', 'I', 'C'))
     {
-    ret->picture = read_picture(input->opt, data, ret->header.data_size);
+    ret->picture = read_picture(data, ret->header.data_size);
     
     }
   else /* Copy raw data */
@@ -657,7 +654,7 @@ bgav_id3v2_tag_t * bgav_id3v2_read(bgav_input_context_t * input)
     goto fail;
   
   ret = calloc(1, sizeof(*ret));
-  ret->opt = input->opt;
+  ret->opt = &input->opt;
   /* Read header */
   
   if(!bgav_input_read_data(input, &ret->header.major_version, 1) ||
@@ -686,7 +683,7 @@ bgav_id3v2_tag_t * bgav_id3v2_read(bgav_input_context_t * input)
   if(bgav_input_read_data(input, data, data_size) < data_size)
     goto fail;
 
-  input_mem = bgav_input_open_memory(data, data_size, input->opt);
+  input_mem = bgav_input_open_memory(data, data_size);
     
   while(input_mem->position < data_size)
     {
@@ -878,21 +875,21 @@ static char * get_comment(const bgav_options_t * opt,
     {
     case ENCODING_LATIN1:
       bytes_per_char = 1;
-      cnv = bgav_charset_converter_create(opt, "LATIN1", BGAV_UTF8);
+      cnv = bgav_charset_converter_create("LATIN1", BGAV_UTF8);
       pos = frame->data + 4;
       break;
     case ENCODING_UTF16_BOM:
       bytes_per_char = 2;
 
       if((frame->data[4] == 0xFF) && (frame->data[5] == 0xFE))
-        cnv = bgav_charset_converter_create(opt, "UTF16LE", BGAV_UTF8);
+        cnv = bgav_charset_converter_create("UTF16LE", BGAV_UTF8);
       else if((frame->data[5] == 0xFF) && (frame->data[4] == 0xFE))
-        cnv = bgav_charset_converter_create(opt, "UTF16BE", BGAV_UTF8);
+        cnv = bgav_charset_converter_create("UTF16BE", BGAV_UTF8);
       pos = frame->data + 6;
       break;
     case ENCODING_UTF16_BE:
       bytes_per_char = 2;
-      cnv = bgav_charset_converter_create(opt, "UTF16BE", BGAV_UTF8);
+      cnv = bgav_charset_converter_create("UTF16BE", BGAV_UTF8);
       pos = frame->data + 4;
       break;
     case ENCODING_UTF8:

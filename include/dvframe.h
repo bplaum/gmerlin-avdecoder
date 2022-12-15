@@ -44,10 +44,10 @@ void bgav_dv_dec_set_header(bgav_dv_dec_t*, uint8_t * data);
 int bgav_dv_dec_get_frame_size(bgav_dv_dec_t*);
 
 /* Call this after seeking */
-void bgav_dv_dec_set_frame_counter(bgav_dv_dec_t*, int64_t frames);
+// void bgav_dv_dec_set_frame_counter(bgav_dv_dec_t*, int64_t frames);
 
 /* Call this after seeking */
-void bgav_dv_dec_set_sample_counter(bgav_dv_dec_t*, int64_t samples);
+// void bgav_dv_dec_set_sample_counter(bgav_dv_dec_t*, int64_t samples);
 
 /* Sets the frame for parsing. data must be frame_size bytes long */
 
@@ -67,8 +67,7 @@ gavl_pixelformat_t bgav_dv_dec_get_pixelformat(bgav_dv_dec_t*);
 
 
 void bgav_dv_dec_get_timecode_format(bgav_dv_dec_t * d,
-                                     gavl_timecode_format_t * tf,
-                                     const bgav_options_t * opt);
+                                     gavl_timecode_format_t * tf);
 
 
 /* Set up audio and video streams */

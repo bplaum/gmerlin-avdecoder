@@ -43,7 +43,7 @@ typedef struct
 int bgav_flac_streaminfo_read(const uint8_t * ptr, bgav_flac_streaminfo_t * ret);
 void bgav_flac_streaminfo_dump(bgav_flac_streaminfo_t * si);
 
-void bgav_flac_streaminfo_init_stream(bgav_flac_streaminfo_t * si, bgav_stream_t * s);
+void bgav_flac_streaminfo_init_stream(bgav_flac_streaminfo_t * si, gavl_dictionary_t * s);
 
 /* Frame header */
 

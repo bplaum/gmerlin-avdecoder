@@ -25,9 +25,11 @@
 
 #include <avdec_private.h>
 #include <parser.h>
-#include <videoparser_priv.h>
 #include <mpv_header.h>
 #include <h264_header.h>
+
+#include <gavl/metatags.h>
+
 
 // #define DUMP_AVCHD_SEI
 // #define DUMP_SEI
@@ -47,6 +49,7 @@
 #define FLAG_HAVE_SPS          (1<<1)
 #define FLAG_HAVE_PPS          (1<<2)
 // #define FLAG_USE_PTS           (1<<3)
+#define FLAG_PES_TIMESTAMPS    (1<<3)
 
 typedef struct
   {
@@ -66,7 +69,7 @@ typedef struct
   int flags;
   } h264_priv_t;
 
-static void get_rbsp(bgav_video_parser_t * parser, const uint8_t * pos, int len)
+static void get_rbsp(bgav_packet_parser_t * parser, const uint8_t * pos, int len)
   {
   h264_priv_t * priv = parser->priv;
   if(priv->rbsp_alloc < len)
@@ -83,14 +86,14 @@ static const uint8_t avchd_mdpm[] =
 
 #define BCD_2_INT(c) ((c >> 4)*10+(c&0xf))
 
-static void reset_h264(bgav_video_parser_t * parser)
+static void reset_h264(bgav_packet_parser_t * parser)
   {
   h264_priv_t * priv = parser->priv;
   priv->state = STATE_SYNC;
   //  priv->have_sps = 0;
   }
 
-static void cleanup_h264(bgav_video_parser_t * parser)
+static void cleanup_h264(bgav_packet_parser_t * parser)
   {
   h264_priv_t * priv = parser->priv;
   bgav_h264_sps_free(&priv->sps);
@@ -101,7 +104,7 @@ static void cleanup_h264(bgav_video_parser_t * parser)
   }
 
 static void
-handle_sei_new(bgav_video_parser_t * parser, bgav_packet_t * p)
+handle_sei_new(bgav_packet_parser_t * parser, bgav_packet_t * p)
   {
   int sei_type, sei_size;
   uint8_t * ptr, * ptr_start;
@@ -141,7 +144,7 @@ handle_sei_new(bgav_video_parser_t * parser, bgav_packet_t * p)
                                         &pt);
         // fprintf(stderr, "Got SEI pic_timing, pic_struct: %d\n", pt.pic_struct);
 
-        p->duration = parser->format->frame_duration;
+        p->duration = parser->vfmt->frame_duration;
         
         switch(pt.pic_struct)
           {
@@ -164,17 +167,17 @@ handle_sei_new(bgav_video_parser_t * parser, bgav_packet_t * p)
             break;
           case 5: // top field, bottom field, top field repeated, in that order
             p->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
-            p->duration = (parser->format->frame_duration*3)/2;
+            p->duration = (parser->vfmt->frame_duration*3)/2;
             break;
           case 6: // bottom field, top field, bottom field 
             p->interlace_mode = GAVL_INTERLACE_BOTTOM_FIRST;
-            p->duration = (parser->format->frame_duration*3)/2;
+            p->duration = (parser->vfmt->frame_duration*3)/2;
             break;
           case 7: // frame doubling                         
-            p->duration = parser->format->frame_duration*2;
+            p->duration = parser->vfmt->frame_duration*2;
             break;
           case 8: // frame tripling
-            p->duration = parser->format->frame_duration*3;
+            p->duration = parser->vfmt->frame_duration*3;
             break;
           }
         /* Output timecode */
@@ -257,19 +260,19 @@ handle_sei_new(bgav_video_parser_t * parser, bgav_packet_t * p)
             {
 //            fprintf(stderr, "%04d-%02d-%02d %02d:%02d:%02d\n", 
 //                    year, month, day, hour, minute, second);
-            if(!parser->format->timecode_format.int_framerate)
+            if(!parser->vfmt->timecode_format.int_framerate)
               {
               /* Get the timecode framerate */
-              parser->format->timecode_format.int_framerate =
-                parser->format->timescale / parser->format->frame_duration;
-              if(parser->format->timescale % parser->format->frame_duration)
-                parser->format->timecode_format.int_framerate++;
+              parser->vfmt->timecode_format.int_framerate =
+                parser->vfmt->timescale / parser->vfmt->frame_duration;
+              if(parser->vfmt->timescale % parser->vfmt->frame_duration)
+                parser->vfmt->timecode_format.int_framerate++;
               
               /* For NTSC framerate we make a drop frame timecode */
               
-              if((int64_t)parser->format->timescale * 1001 ==
-                 (int64_t)parser->format->frame_duration * 30000)
-                parser->format->timecode_format.flags |= GAVL_TIMECODE_DROP_FRAME;
+              if((int64_t)parser->vfmt->timescale * 1001 ==
+                 (int64_t)parser->vfmt->frame_duration * 30000)
+                parser->vfmt->timecode_format.flags |= GAVL_TIMECODE_DROP_FRAME;
               
               /* We output only the first timecode in the file since the rest is redundant */
               gavl_timecode_from_hmsf(&p->timecode,
@@ -358,8 +361,8 @@ handle_sei_new(bgav_video_parser_t * parser, bgav_packet_t * p)
   }
 
 
-static int parse_frame_avc(bgav_video_parser_t * parser,
-                           bgav_packet_t * p, int64_t pts_orig)
+static int parse_frame_avc(bgav_packet_parser_t * parser,
+                           bgav_packet_t * p)
   {
   int nal_len = 0;
   bgav_h264_nal_header_t nh;
@@ -400,10 +403,40 @@ static int parse_frame_avc(bgav_video_parser_t * parser,
        (nh.unit_type == H264_NAL_IDR_SLICE) ||
        (nh.unit_type == H264_NAL_SLICE_PARTITION_A))
       {
+      bgav_h264_slice_header_t sh;
+      
       if(nh.ref_idc)
-        {
         PACKET_SET_REF(p);
-        return 1;
+      
+      get_rbsp(parser, ptr, nal_len - 1);
+
+      bgav_h264_slice_header_parse(priv->rbsp, priv->rbsp_len,
+                                   &priv->sps,
+                                   &sh);
+      
+      //          bgav_h264_slice_header_dump(&priv->sps,
+      //                                      &sh);
+      
+      if(!(p->flags & GAVL_PACKET_TYPE_MASK))
+        {
+        switch(sh.slice_type)
+          {
+          case 2:
+          case 7:
+            p->flags |= BGAV_CODING_TYPE_I;
+            break;
+          case 0:
+          case 5:
+            p->flags |= BGAV_CODING_TYPE_P;
+            break;
+          case 1:
+          case 6:
+            p->flags |= BGAV_CODING_TYPE_B;
+            break;
+          default: /* Assume the worst */
+            fprintf(stderr, "Unknown slice type %d\n", sh.slice_type);
+            break;
+          }
         }
       }
     ptr += (nal_len - 1);
@@ -411,7 +444,7 @@ static int parse_frame_avc(bgav_video_parser_t * parser,
   return 1;
   }
 
-static int find_frame_boundary_h264(bgav_video_parser_t * parser, int * skip)
+static int find_frame_boundary_h264(bgav_packet_parser_t * parser, int * skip)
   {
   int header_len;
   bgav_h264_nal_header_t nh;
@@ -428,20 +461,20 @@ static int find_frame_boundary_h264(bgav_video_parser_t * parser, int * skip)
     //                 16);
 
     sc =
-      bgav_h264_find_nal_start(parser->buf.buf + parser->pos,
-                               parser->buf.len - parser->pos);
+      bgav_h264_find_nal_start(parser->buf.buf + parser->buf.pos,
+                               parser->buf.len - parser->buf.pos);
     if(!sc)
       {
-      parser->pos = parser->buf.len - 5;
-      if(parser->pos < 0)
-        parser->pos = 0;
+      parser->buf.pos = parser->buf.len - 5;
+      if(parser->buf.pos < 0)
+        parser->buf.pos = 0;
       return 0;
       }
     
-    parser->pos = sc - parser->buf.buf;
+    parser->buf.pos = sc - parser->buf.buf;
   
-    header_len = bgav_h264_decode_nal_header(parser->buf.buf + parser->pos,
-                                             parser->buf.len - parser->pos,
+    header_len = bgav_h264_decode_nal_header(parser->buf.buf + parser->buf.pos,
+                                             parser->buf.len - parser->buf.pos,
                                              &nh);
 
     if(priv->has_aud)
@@ -454,7 +487,7 @@ static int find_frame_boundary_h264(bgav_video_parser_t * parser, int * skip)
         }
       else
         {
-        parser->pos += header_len;
+        parser->buf.pos += header_len;
         continue;
         }
       }
@@ -482,7 +515,7 @@ static int find_frame_boundary_h264(bgav_video_parser_t * parser, int * skip)
       case H264_NAL_ACCESS_UNIT_DEL:
         priv->has_aud = 1;
         *skip = header_len;
-        parser->pos = sc - parser->buf.buf;
+        parser->buf.pos = sc - parser->buf.buf;
         return 1;
         break;
       case H264_NAL_END_OF_SEQUENCE:
@@ -490,11 +523,11 @@ static int find_frame_boundary_h264(bgav_video_parser_t * parser, int * skip)
       case H264_NAL_FILLER_DATA:
         break;
       }
-    parser->pos = sc - parser->buf.buf;
+    parser->buf.pos = sc - parser->buf.buf;
     
     if(new_state < 0)
       {
-      parser->pos += header_len;
+      parser->buf.pos += header_len;
       }
     else if((new_state < priv->state) ||
             /* We assume that multiple slices belong to different pictures
@@ -510,40 +543,39 @@ static int find_frame_boundary_h264(bgav_video_parser_t * parser, int * skip)
       }
     else
       {
-      parser->pos += header_len;
+      parser->buf.pos += header_len;
       priv->state = new_state;
       }
     }
   return 0;
   }
 
-static void handle_sps(bgav_video_parser_t * parser)
+static void handle_sps(bgav_packet_parser_t * parser)
   {
   h264_priv_t * priv = parser->priv;
 
   //  fprintf(stderr, "Got SPS:\n");
   //  bgav_h264_sps_dump(&priv->sps);
   
-  if(!parser->format->timescale)
+  if(!parser->vfmt->timescale)
     {
-    parser->format->timescale = priv->sps.vui.time_scale;
-    parser->format->frame_duration = priv->sps.vui.num_units_in_tick * 2;
+    parser->vfmt->timescale = priv->sps.vui.time_scale;
+    parser->vfmt->frame_duration = priv->sps.vui.num_units_in_tick * 2;
     }
   
-  // bgav_video_parser_set_framerate(parser);
+  // bgav_packet_parser_set_framerate(parser);
         
   bgav_h264_sps_get_image_size(&priv->sps,
-                               parser->format);
-  parser->s->ci->max_ref_frames = priv->sps.num_ref_frames;
-        
+                               parser->vfmt);
+  
   if(!priv->sps.frame_mbs_only_flag)
-    parser->s->ci->flags |= GAVL_COMPRESSION_HAS_FIELD_PICTURES;
+    parser->ci.flags |= GAVL_COMPRESSION_HAS_FIELD_PICTURES;
   
   if(!priv->sps.vui.bitstream_restriction_flag ||
      priv->sps.vui.num_reorder_frames)
-    parser->s->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
+    parser->ci.flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
   else
-    parser->s->ci->flags &= ~GAVL_COMPRESSION_HAS_B_FRAMES;
+    parser->ci.flags &= ~GAVL_COMPRESSION_HAS_B_FRAMES;
     
   }
 
@@ -558,10 +590,7 @@ static const uint8_t * get_nal_end(bgav_packet_t * p,
   return ret;
   }
 
-
-
-
-static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int64_t pts_orig)
+static int parse_frame_h264(bgav_packet_parser_t * parser, bgav_packet_t * p)
   {
   bgav_h264_nal_header_t nh;
   const uint8_t * nal_end;
@@ -579,8 +608,8 @@ static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int
 
   h264_priv_t * priv = parser->priv;
 
-  //  fprintf(stderr, "parse_frame %"PRId64"\n", pts_orig);
-
+  //  fprintf(stderr, "parse_frame h264\n");
+  
   nal_start = p->buf.buf; // Assume that we have a startcode
   
   while(nal_start < p->buf.buf + p->buf.len)
@@ -593,12 +622,12 @@ static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int
     
     ptr += header_len;
     
-    // fprintf(stderr, "Got NAL: %d\n", nh.unit_type);
+    //    fprintf(stderr, "Got NAL: %d\n", nh.unit_type);
     
     switch(nh.unit_type)
       {
       case H264_NAL_SPS:
-        //      fprintf(stderr, "Got SPS\n");
+        //        fprintf(stderr, "Got SPS\n");
         if(!(priv->flags & FLAG_HAVE_SPS))
           {
           // fprintf(stderr, "Got SPS %d bytes\n", priv->nal_len);
@@ -608,8 +637,7 @@ static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int
           nal_end = get_nal_end(p, ptr);
           get_rbsp(parser, ptr, nal_end - ptr);
           
-          bgav_h264_sps_parse(parser->s->opt,
-                              &priv->sps,
+          bgav_h264_sps_parse(&priv->sps,
                               priv->rbsp, priv->rbsp_len);
           //          bgav_h264_sps_dump(&priv->sps);
 
@@ -619,20 +647,33 @@ static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int
           
           priv->flags |= FLAG_HAVE_SPS;
 
-          if(!parser->format->timescale)
+          if(!parser->vfmt->timescale)
             {
+            const gavl_dictionary_t * m;
+            int timescale = 0;
+
+            if(!(m = gavl_stream_get_metadata(parser->info)) ||
+               !gavl_dictionary_get_int(m, GAVL_META_STREAM_PACKET_TIMESCALE, &timescale))
+              {
+              gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Stream has no timing info and no PES timescale");
+              return 0;
+              }
+            
             gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Stream has no timing info, using PES timestamps");
-            parser->format->timescale = parser->s->timescale;
-            parser->format->framerate_mode = GAVL_FRAMERATE_VARIABLE;
-            parser->s->flags |= (STREAM_NO_DURATIONS | STREAM_PES_TIMESTAMPS);
+            parser->vfmt->timescale = timescale;
+            parser->vfmt->framerate_mode = GAVL_FRAMERATE_VARIABLE;
+
+            priv->flags |= FLAG_PES_TIMESTAMPS;
+
+            // parser->s->flags |= (STREAM_NO_DURATIONS | STREAM_PES_TIMESTAMPS);
             }
           
-          if(parser->s->flags & STREAM_PES_TIMESTAMPS)
-            parser->flags &= ~PARSER_GEN_PTS;
+          //          if(parser->s->flags & STREAM_PES_TIMESTAMPS)
+          //            parser->flags &= ~PARSER_GEN_PTS;
           }
         break;
       case H264_NAL_PPS:
-        //      fprintf(stderr, "Got PPS\n");
+        //        fprintf(stderr, "Got PPS\n");
         if(!(priv->flags & FLAG_HAVE_PPS))
           {
           nal_end = get_nal_end(p, ptr);
@@ -653,25 +694,23 @@ static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int
         fprintf(stderr, "Got slice\n");
 #endif
         
-        if(!parser->s->ci->codec_header.len &&
-           sps_start && sps_end &&
+        if(sps_start && sps_end &&
            pps_start && pps_end)
           {
-          gavl_buffer_append_data(&parser->s->ci->codec_header, sps_start, sps_end - sps_start);
-          gavl_buffer_append_data(&parser->s->ci->codec_header, pps_start, pps_end - pps_start);
+          if(!parser->ci.codec_header.len)
+            {
+            gavl_buffer_append_data(&parser->ci.codec_header, sps_start, sps_end - sps_start);
+            gavl_buffer_append_data(&parser->ci.codec_header, pps_start, pps_end - pps_start);
+            }
+          
           }
+
         
         /* Decode slice header if necessary */
         if((priv->flags & (FLAG_HAVE_SPS|FLAG_HAVE_PPS)) != (FLAG_HAVE_SPS|FLAG_HAVE_PPS))
           {
           PACKET_SET_SKIP(p);
-
-          if(parser->s->flags & STREAM_PES_TIMESTAMPS)
-            {
-            p->pts = pts_orig;
-            p->duration = -1;
-            }
-          
+          fprintf(stderr, "Skipping frame before SPS and PPS\n");
           return 1;
           }
 #if 0
@@ -680,7 +719,7 @@ static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int
           return 1;
 #endif        
         /* Here we can be sure that the frame duration is already set */
-        p->duration = parser->format->frame_duration;
+        p->duration = parser->vfmt->frame_duration;
         
         /* has_picture_start is also set if the sps was found, so we must check for
            coding_type as well */
@@ -690,11 +729,12 @@ static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int
         get_rbsp(parser, ptr, nal_end - ptr);
         
         bgav_h264_slice_header_parse(priv->rbsp, priv->rbsp_len,
-                                       &priv->sps,
-                                       &sh);
-          //          bgav_h264_slice_header_dump(&priv->sps,
-          //                                      &sh);
-          
+                                     &priv->sps,
+                                     &sh);
+        
+        //          bgav_h264_slice_header_dump(&priv->sps,
+        //                                      &sh);
+        
         if(!(p->flags & GAVL_PACKET_TYPE_MASK))
           {
           switch(sh.slice_type)
@@ -717,26 +757,13 @@ static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int
             }
           }
         if(sh.field_pic_flag)
-          p->flags |= PACKET_FLAG_FIELD_PIC;
-
-        if(parser->s->flags & STREAM_PES_TIMESTAMPS)
-          {
-          p->pts = pts_orig;
-          p->duration = -1;
-          }
+          p->flags |= GAVL_PACKET_FIELD_PIC;
         
-        return 1;
+        goto ok;
         break;
       case H264_NAL_SLICE_PARTITION_B:
       case H264_NAL_SLICE_PARTITION_C:
-
-        if(parser->s->flags & STREAM_PES_TIMESTAMPS)
-          {
-          p->pts = pts_orig;
-          p->duration = -1;
-          }
-
-        return 1;
+        goto ok;
         break;
       case H264_NAL_ACCESS_UNIT_DEL:
 #if 0 // Too unreliable??
@@ -774,16 +801,29 @@ static int parse_frame_h264(bgav_video_parser_t * parser, bgav_packet_t * p, int
     nal_start = nal_end;
     }
   return 0;
+
+  ok:
+  
+  //  fprintf(stderr, "parse_frame h264 done\n");
+  //  gavl_packet_dump(p);
+  
+  if(priv->flags & FLAG_PES_TIMESTAMPS)
+    {
+    p->pts = p->pes_pts;
+    p->duration = GAVL_TIME_UNDEFINED;
+    }
+  
+  return 1;
   }
 
-static int parse_avc_extradata(bgav_video_parser_t * parser)
+static int parse_avc_extradata(bgav_packet_parser_t * parser)
   {
   const uint8_t * ptr;
   bgav_h264_nal_header_t nh;
   int nal_len;
   h264_priv_t * priv = parser->priv;
   
-  ptr = parser->s->ci->codec_header.buf;
+  ptr = parser->ci.codec_header.buf;
   //  end = ptr + parser->s->ci->global_header_len;
 
   ptr += 4; // Version, profile, profile compat, level
@@ -810,23 +850,21 @@ static int parse_avc_extradata(bgav_video_parser_t * parser)
   
   get_rbsp(parser, ptr, nal_len - 1);
   
-  bgav_h264_sps_parse(parser->s->opt,
-                      &priv->sps,
+  bgav_h264_sps_parse(&priv->sps,
                       priv->rbsp, priv->rbsp_len);
 
   priv->flags |= (FLAG_HAVE_SPS|FLAG_HAVE_PPS);
 
-  if(!parser->format->image_width || !parser->format->image_height)
+  if(!parser->vfmt->image_width || !parser->vfmt->image_height)
     {
     bgav_h264_sps_get_image_size(&priv->sps,
-                                 parser->format);
+                                 parser->vfmt);
     }
-  parser->s->ci->max_ref_frames = priv->sps.num_ref_frames;
-//  bgav_h264_sps_dump(&priv->sps);
   
   return 1;
   }
 
+#if 0
 void bgav_video_parser_init_h264(bgav_video_parser_t * parser)
   {
   h264_priv_t * priv;
@@ -858,4 +896,37 @@ void bgav_video_parser_init_h264(bgav_video_parser_t * parser)
 
   priv->state = STATE_SYNC;
   
+  }
+#endif
+
+void bgav_packet_parser_init_h264(bgav_packet_parser_t * parser)
+  {
+  h264_priv_t * priv;
+  priv = calloc(1, sizeof(*priv));
+  parser->priv = priv;
+
+  parser->cleanup = cleanup_h264;
+  parser->reset = reset_h264;
+  
+  if(parser->vfmt->interlace_mode == GAVL_INTERLACE_UNKNOWN)
+    parser->vfmt->interlace_mode = GAVL_INTERLACE_MIXED;
+  
+  /* Parse avc1 extradata */
+  if(parser->fourcc == BGAV_MK_FOURCC('a', 'v', 'c', '1'))
+    {
+    if(!parser->ci.codec_header.len)
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
+               "avc1 stream needs extradata");
+      return;
+      }
+    parse_avc_extradata(parser);
+    parser->parse_frame = parse_frame_avc;
+    }
+  else
+    parser->parse_frame = parse_frame_h264;
+
+  parser->find_frame_boundary = find_frame_boundary_h264;
+
+  priv->state = STATE_SYNC;
   }

@@ -25,7 +25,6 @@
 
 #include <avdec_private.h>
 #include <parser.h>
-#include <videoparser_priv.h>
 
 #include <cavs_header.h>
 #include <mpv_header.h>
@@ -46,19 +45,16 @@ typedef struct
   /* Sequence header */
   bgav_cavs_sequence_header_t seq;
   int have_seq;
-  int has_picture_start;
   int state;
   } cavs_priv_t;
 
-static void reset_cavs(bgav_video_parser_t * parser)
+static void reset_cavs(bgav_packet_parser_t * parser)
   {
   cavs_priv_t * priv = parser->priv;
   priv->state = STATE_SYNC;
-  priv->has_picture_start = 0;
   }
 
-static int parse_frame_cavs(bgav_video_parser_t * parser, bgav_packet_t * p,
-                            int64_t pts_orig)
+static int parse_frame_cavs(bgav_packet_parser_t * parser, bgav_packet_t * p)
   {
   int start_code;
   int len;
@@ -83,8 +79,7 @@ static int parse_frame_cavs(bgav_video_parser_t * parser, bgav_packet_t * p,
       case CAVS_CODE_SEQUENCE:
         if(!priv->have_seq)
           {
-          len = bgav_cavs_sequence_header_read(parser->s->opt,
-                                               &priv->seq,
+          len = bgav_cavs_sequence_header_read(&priv->seq,
                                                ptr, end - ptr);
           if(!len)
             return 0;
@@ -96,15 +91,15 @@ static int parse_frame_cavs(bgav_video_parser_t * parser, bgav_packet_t * p,
           ptr += len;
           
           bgav_mpv_get_framerate(priv->seq.frame_rate_code,
-                                 &parser->format->timescale,
-                                 &parser->format->frame_duration);
+                                 &parser->vfmt->timescale,
+                                 &parser->vfmt->frame_duration);
           
-          parser->format->image_width  = priv->seq.horizontal_size;
-          parser->format->image_height = priv->seq.vertical_size;
-          parser->format->frame_width  =
-            (parser->format->image_width + 15) & ~15;
-          parser->format->frame_height  =
-            (parser->format->image_height + 15) & ~15;
+          parser->vfmt->image_width  = priv->seq.horizontal_size;
+          parser->vfmt->image_height = priv->seq.vertical_size;
+          parser->vfmt->frame_width  =
+            (parser->vfmt->image_width + 15) & ~15;
+          parser->vfmt->frame_height  =
+            (parser->vfmt->image_height + 15) & ~15;
       
           priv->have_seq = 1;
           }
@@ -120,8 +115,7 @@ static int parse_frame_cavs(bgav_video_parser_t * parser, bgav_packet_t * p,
           return 1;
           }
         
-        len = bgav_cavs_picture_header_read(parser->s->opt,
-                                            &ph, ptr, end - ptr, &priv->seq);
+        len = bgav_cavs_picture_header_read(&ph, ptr, end - ptr, &priv->seq);
 
         if(!len)
           return 0;
@@ -129,7 +123,7 @@ static int parse_frame_cavs(bgav_video_parser_t * parser, bgav_packet_t * p,
         bgav_cavs_picture_header_dump(&ph, &priv->seq);
 #endif
         PACKET_SET_CODING_TYPE(p, ph.coding_type);
-        p->duration = parser->format->frame_duration;
+        p->duration = parser->vfmt->frame_duration;
         return 1;
         break;
       default:
@@ -140,23 +134,26 @@ static int parse_frame_cavs(bgav_video_parser_t * parser, bgav_packet_t * p,
   return 0;
   }
 
-static int find_frame_boundary_cavs(bgav_video_parser_t * parser,
+static int find_frame_boundary_cavs(bgav_packet_parser_t * parser,
                                     int * skip)
   {
   const uint8_t * sc;
   cavs_priv_t * priv = parser->priv;
   int new_state;
   int start_code;
+
+  if(!(priv->state))
+    priv->state = STATE_SYNC;
   
   while(1)
     {
-    sc = bgav_mpv_find_startcode(parser->buf.buf + parser->pos,
+    sc = bgav_mpv_find_startcode(parser->buf.buf + parser->buf.pos,
                                  parser->buf.buf + parser->buf.len - 4);
     if(!sc)
       {
-      parser->pos = parser->buf.len - 4;
-      if(parser->pos < 0)
-        parser->pos = 0;
+      parser->buf.pos = parser->buf.len - 4;
+      if(parser->buf.pos < 0)
+        parser->buf.pos = 0;
       return 0;
       }
 
@@ -176,38 +173,37 @@ static int find_frame_boundary_cavs(bgav_video_parser_t * parser,
         break;
       }
     
-    parser->pos = sc - parser->buf.buf;
+    parser->buf.pos = sc - parser->buf.buf;
     
     if(new_state < 0)
-      parser->pos += 4;
+      parser->buf.pos += 4;
     else if(((new_state == STATE_PICTURE) && (priv->state == STATE_PICTURE)) ||
             (new_state < priv->state))
       {
       *skip = 4;
-      parser->pos = sc - parser->buf.buf;
+      parser->buf.pos = sc - parser->buf.buf;
       priv->state = new_state;
       return 1;
       }
     else
       {
-      parser->pos += 4;
+      parser->buf.pos += 4;
       priv->state = new_state;
       }
     }
   return 0;
   }
 
-static void cleanup_cavs(bgav_video_parser_t * parser)
+static void cleanup_cavs(bgav_packet_parser_t * parser)
   {
   free(parser->priv);
   }
 
-void bgav_video_parser_init_cavs(bgav_video_parser_t * parser)
+void bgav_packet_parser_init_cavs(bgav_packet_parser_t * parser)
   {
   cavs_priv_t * priv;
   priv = calloc(1, sizeof(*priv));
 
-  priv->state = STATE_SYNC;
   parser->priv = priv;
   //  parser->parse = parse_cavs;
   parser->parse_frame = parse_frame_cavs;

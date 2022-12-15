@@ -124,8 +124,7 @@ int bgav_mpeg4_get_start_code(const uint8_t * data)
 #define SHAPE_BINARY_ONLY 2
 #define SHAPE_GRAYSCALE   3
 
-int bgav_mpeg4_vol_header_read(const bgav_options_t * opt,
-                               bgav_mpeg4_vol_header_t * ret,
+int bgav_mpeg4_vol_header_read(bgav_mpeg4_vol_header_t * ret,
                                const uint8_t * buffer, int len)
   {
   bgav_bitstream_t b;
@@ -293,8 +292,7 @@ void bgav_mpeg4_vol_header_dump(bgav_mpeg4_vol_header_t * h)
   
   }
                                
-int bgav_mpeg4_vop_header_read(const bgav_options_t * opt,
-                               bgav_mpeg4_vop_header_t * ret,
+int bgav_mpeg4_vop_header_read(bgav_mpeg4_vop_header_t * ret,
                                const uint8_t * buffer, int len,
                                const bgav_mpeg4_vol_header_t * vol)
   {

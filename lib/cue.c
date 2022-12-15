@@ -19,13 +19,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
-#include <avdec_private.h>
-#include <cue.h>
-
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <glob.h>
+
+
+#include <avdec_private.h>
+#include <cue.h>
+
+
 
 #include <gavl/trackinfo.h>
 #include <gavl/metatags.h>
@@ -71,6 +75,7 @@ struct bgav_cue_s
 
   };
 
+#if 0
 static bgav_input_context_t *
 get_cue_file(bgav_input_context_t * audio_file)
   {
@@ -118,6 +123,61 @@ get_cue_file(bgav_input_context_t * audio_file)
   free(filename);
   return ret;
   }
+#endif
+
+static int glob_errfunc(const char *epath, int eerrno)
+  {
+  fprintf(stderr, "glob error: Cannot access %s: %s\n",
+          epath, strerror(eerrno));
+  return 0;
+  }
+
+static char * get_audio_file(const char * cue_file)
+  {
+  int i;
+  glob_t glob_buf;
+  char * pattern;
+  char * pos;
+  char * ret = NULL;
+  
+  pattern = gavl_strdup(cue_file);
+  pos = strrchr(pattern, '.');
+  pos++;
+  *pos = '*';
+  pos++;
+  *pos = '\0';
+
+  pattern = gavl_escape_string(pattern, "[]?");
+  
+  memset(&glob_buf, 0, sizeof(glob_buf));
+
+  if(glob(pattern, 0, glob_errfunc, &glob_buf))
+    {
+    // fprintf(stderr, "glob returned %d\n", result);
+    goto fail;
+    }
+
+  i = 0;
+
+  for(i = 0; i < glob_buf.gl_pathc; i++)
+    {
+    if(gavl_string_ends_with_i(glob_buf.gl_pathv[i], ".wav") ||
+       gavl_string_ends_with_i(glob_buf.gl_pathv[i], ".flac") ||
+       gavl_string_ends_with_i(glob_buf.gl_pathv[i], ".ape") ||
+       gavl_string_ends_with_i(glob_buf.gl_pathv[i], ".wv"))
+      {
+      ret = gavl_strdup(glob_buf.gl_pathv[i]);
+      break;
+      }
+    }
+
+  fail:
+  
+  if(pattern)
+    free(pattern);
+  globfree(&glob_buf);
+  return ret;
+  }
 
 static const char * skip_space(const char * ptr)
   {
@@ -159,7 +219,7 @@ static uint32_t get_frame(const char * pos)
   }
 
 bgav_cue_t *
-bgav_cue_read(bgav_input_context_t * audio_file)
+bgav_cue_read(bgav_input_context_t * ctx)
   {
   bgav_cue_t * ret = NULL;
   const char * pos;
@@ -168,8 +228,6 @@ bgav_cue_read(bgav_input_context_t * audio_file)
 
   gavl_buffer_t line_buf;
   
-  bgav_input_context_t * ctx = get_cue_file(audio_file);
-
   if(!ctx)
     goto fail;
 
@@ -274,28 +332,51 @@ bgav_cue_read(bgav_input_context_t * audio_file)
       }
     }
 
-  bgav_input_close(ctx);
-  bgav_input_destroy(ctx);
   gavl_buffer_free(&line_buf);
-
+  
   return ret;
-
+  
   fail:
   if(ret)
     bgav_cue_destroy(ret);
-  if(ctx)
-    {
-    bgav_input_close(ctx);
-    bgav_input_destroy(ctx);
-    }
   gavl_buffer_free(&line_buf);
   return NULL;
   
   }
 
+static int64_t get_file_duration(const char * filename)
+  {
+  bgav_t  * b;
+  const gavl_dictionary_t * dict;
+  gavl_stream_stats_t stats;
+  
+  b = bgav_create();
+  if(!bgav_open(b, filename))
+    {
+    bgav_close(b);
+    return GAVL_TIME_UNDEFINED;
+    }
+  
+  if(!bgav_select_track(b, 0) ||
+     !bgav_set_audio_stream(b, 0, BGAV_STREAM_DECODE) ||
+     !bgav_start(b) ||
+     !(dict = bgav_get_media_info(b)) ||
+     !(dict = gavl_get_track(dict, 0)) ||
+     !(dict = gavl_track_get_audio_stream(dict, 0)) ||
+     !gavl_stream_get_stats(dict, &stats))
+    {
+    bgav_close(b);
+    return GAVL_TIME_UNDEFINED;
+    }
+  bgav_close(b);
+  
+  return stats.pts_end - stats.pts_start;
+  
+  }
+
 gavl_dictionary_t * bgav_cue_get_edl(bgav_cue_t * cue,
-                                     int64_t total_samples,
-                                     gavl_dictionary_t * parent)
+                                     gavl_dictionary_t * parent,
+                                     const char * filename)
   {
   int i, j;
   gavl_dictionary_t * stream;
@@ -310,7 +391,11 @@ gavl_dictionary_t * bgav_cue_get_edl(bgav_cue_t * cue,
   
   int64_t last_time = GAVL_TIME_UNDEFINED;
   int64_t seg_time  = GAVL_TIME_UNDEFINED;
+  char * audio_file;
+  int64_t total_samples;
   
+  audio_file = get_audio_file(filename);
+  total_samples = get_file_duration(audio_file);
   
   /* Create common metadata entries */
   memset(&m , 0, sizeof(m));
@@ -395,6 +480,7 @@ gavl_dictionary_t * bgav_cue_get_edl(bgav_cue_t * cue,
       gavl_dictionary_set_int(mp, GAVL_META_STREAM_SAMPLE_TIMESCALE, 44100);
       
       seg = gavl_edl_add_segment(stream);
+      gavl_edl_segment_set_url(seg, audio_file);
       
       for(j = 0; j < cue->tracks[i].num_indices; j++)
         {
@@ -448,12 +534,16 @@ gavl_dictionary_t * bgav_cue_get_edl(bgav_cue_t * cue,
     }
   
   gavl_dictionary_free(&m);
-
+  
   gavl_edl_finalize(ret);
+  
+  if(audio_file)
+    free(audio_file);
   
   return ret;
   }
 
+#if 0
 void bgav_demuxer_init_cue(bgav_demuxer_context_t * ctx)
   {
   bgav_cue_t * cue = bgav_cue_read(ctx->input);
@@ -471,7 +561,7 @@ void bgav_demuxer_init_cue(bgav_demuxer_context_t * ctx)
     gavl_dictionary_set_string(edl, GAVL_META_URI, ctx->input->filename);
     }
   }
-
+#endif
 
 void bgav_cue_destroy(bgav_cue_t * cue)
   {

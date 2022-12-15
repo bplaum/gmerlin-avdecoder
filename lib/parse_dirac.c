@@ -24,7 +24,6 @@
 
 #include <avdec_private.h>
 #include <parser.h>
-#include <videoparser_priv.h>
 
 #include <dirac_header.h>
 
@@ -42,60 +41,60 @@ typedef struct
   
   } dirac_priv_t;
 
-static void cleanup_dirac(bgav_video_parser_t * parser)
+static void cleanup_dirac(bgav_packet_parser_t * parser)
   {
   free(parser->priv);
   }
 
-static void reset_dirac(bgav_video_parser_t * parser)
+static void reset_dirac(bgav_packet_parser_t * parser)
   {
   dirac_priv_t * priv;
   priv = parser->priv;
   priv->pic_num_max = -1;
   }
 
-static void set_format(bgav_video_parser_t * parser)
+static void set_format(bgav_packet_parser_t * parser)
   {
   dirac_priv_t * priv = parser->priv;
 
   /* Framerate */
-  if(!parser->format->timescale || !parser->format->frame_duration)
+  if(!parser->vfmt->timescale || !parser->vfmt->frame_duration)
     {
-    parser->format->timescale = priv->sh.timescale;
-    parser->format->frame_duration = priv->sh.frame_duration;
+    parser->vfmt->timescale = priv->sh.timescale;
+    parser->vfmt->frame_duration = priv->sh.frame_duration;
     }
 
   /* Image size */
-  if(!parser->format->image_width || !parser->format->image_height)
+  if(!parser->vfmt->image_width || !parser->vfmt->image_height)
     {
-    parser->format->image_width  = priv->sh.width;
-    parser->format->image_height = priv->sh.height;
+    parser->vfmt->image_width  = priv->sh.width;
+    parser->vfmt->image_height = priv->sh.height;
 
-    parser->format->frame_width  = priv->sh.width;
-    parser->format->frame_height = priv->sh.height;
+    parser->vfmt->frame_width  = priv->sh.width;
+    parser->vfmt->frame_height = priv->sh.height;
     }
 
   /* Pixel size */
-  if(!parser->format->pixel_width || !parser->format->pixel_height)
+  if(!parser->vfmt->pixel_width || !parser->vfmt->pixel_height)
     {
-    parser->format->pixel_width  = priv->sh.pixel_width;
-    parser->format->pixel_height = priv->sh.pixel_height;
+    parser->vfmt->pixel_width  = priv->sh.pixel_width;
+    parser->vfmt->pixel_height = priv->sh.pixel_height;
     }
 
   /* Interlacing */
   if(priv->sh.source_sampling == 1)
     {
     if(priv->sh.top_first)
-      parser->format->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
+      parser->vfmt->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
     else
-      parser->format->interlace_mode = GAVL_INTERLACE_BOTTOM_FIRST;
+      parser->vfmt->interlace_mode = GAVL_INTERLACE_BOTTOM_FIRST;
     }
   else
-      parser->format->interlace_mode = GAVL_INTERLACE_NONE;
+      parser->vfmt->interlace_mode = GAVL_INTERLACE_NONE;
   }
 
-static int parse_frame_dirac(bgav_video_parser_t * parser,
-                             bgav_packet_t * p, int64_t pts_orig)
+static int parse_frame_dirac(bgav_packet_parser_t * parser,
+                             bgav_packet_t * p)
   {
   int code, len;
   dirac_priv_t * priv;
@@ -117,8 +116,8 @@ static int parse_frame_dirac(bgav_video_parser_t * parser,
       case DIRAC_CODE_SEQUENCE:
         if(!priv->have_sh)
           {
-          if(!parser->s->ci->codec_header.len)
-            bgav_stream_set_extradata(parser->s, start, len);
+          if(!parser->ci.codec_header.len)
+            gavl_buffer_append_data(&parser->ci.codec_header, start, len);
           
           if(!bgav_dirac_sequence_header_parse(&priv->sh,
                                                start, end - start))
@@ -133,10 +132,10 @@ static int parse_frame_dirac(bgav_video_parser_t * parser,
         if(!priv->have_sh)
           {
           PACKET_SET_SKIP(p);
-          return PARSER_DISCARD;
+          return 1;
           }
         if(!bgav_dirac_picture_header_parse(&ph, start, end - start))
-          return PARSER_ERROR;
+          return 0;
         //        bgav_dirac_picture_header_dump(&ph);
 
         if(priv->pic_num_first < 0)
@@ -147,8 +146,8 @@ static int parse_frame_dirac(bgav_video_parser_t * parser,
 
         /* Generate true timestamp from picture counter */
         p->pts = (ph.pic_num - priv->pic_num_first) *
-          parser->s->data.video.format->frame_duration + priv->pts_first;
-        p->duration = parser->s->data.video.format->frame_duration;
+          parser->vfmt->frame_duration + priv->pts_first;
+        p->duration = parser->vfmt->frame_duration;
         
         if(ph.num_refs == 0)
           {
@@ -180,17 +179,17 @@ static int parse_frame_dirac(bgav_video_parser_t * parser,
   return 0;
   }
 
-void bgav_video_parser_init_dirac(bgav_video_parser_t * parser)
+void bgav_packet_parser_init_dirac(bgav_packet_parser_t * parser)
   {
   dirac_priv_t * priv;
   priv = calloc(1, sizeof(*priv));
   parser->priv        = priv;
 
-  if(parser->s->ci->codec_header.len)
+  if(parser->ci.codec_header.len)
     {
     if(bgav_dirac_sequence_header_parse(&priv->sh,
-                                        parser->s->ci->codec_header.buf,
-                                        parser->s->ci->codec_header.len))
+                                        parser->ci.codec_header.buf,
+                                        parser->ci.codec_header.len))
       {
       priv->have_sh = 1;
       set_format(parser);
@@ -198,7 +197,7 @@ void bgav_video_parser_init_dirac(bgav_video_parser_t * parser)
       //      bgav_dirac_sequence_header_dump(&priv->sh);
       }
     }
-
+  
   priv->pic_num_first = -1;
   priv->pts_first = GAVL_TIME_UNDEFINED;
   

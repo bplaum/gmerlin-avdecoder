@@ -314,7 +314,6 @@ typedef struct
   asf_main_header_t hdr;
   uint8_t * packet_buffer;
   int64_t data_size;
-  int do_sync;
 
   uint32_t first_timestamp;
   int need_first_timestamp;
@@ -404,7 +403,7 @@ static int read_metadata(bgav_demuxer_context_t * ctx)
      !bgav_input_read_16_le(ctx->input, &len5))
     goto fail;
 
-  cnv = bgav_charset_converter_create(ctx->opt, "UTF-16LE", BGAV_UTF8);
+  cnv = bgav_charset_converter_create("UTF-16LE", BGAV_UTF8);
   
   str_len = len1;
   if(str_len < len2)
@@ -738,8 +737,7 @@ static int open_asf(bgav_demuxer_context_t * ctx)
   ctx->packet_size = asf->hdr.max_pktsize;
   asf->packet_buffer = malloc(ctx->packet_size);
   
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+  ctx->tt->cur->data_start = ctx->input->position;
 
   /* Update stream bitrates */
 
@@ -755,8 +753,6 @@ static int open_asf(bgav_demuxer_context_t * ctx)
     ctx->flags |= (BGAV_DEMUXER_CAN_SEEK | BGAV_DEMUXER_SEEK_ITERATIVE);
 
   bgav_track_set_format(ctx->tt->cur, "ASF", "application/x-mplayer2");
-  
-  //  bgav_track_set_format(ctx->tt->cur, "ASF", "");
   
   return 1;
   fail:
@@ -998,16 +994,9 @@ static void add_packet(bgav_demuxer_context_t * ctx,
   
   if(!s)
     return;
-  
-  if(asf->do_sync)
-    {
-    if((s->type == GAVL_STREAM_VIDEO) &&
-       !STREAM_HAS_SYNC(s) && (!keyframe || (offs > 0)))
-      return;
-    else if((s->type == GAVL_STREAM_AUDIO) &&
-            !STREAM_HAS_SYNC(s) && (offs > 0))
-      return;
-    }
+
+  if(!s->packet && (offs > 0))
+    return;
   
   if(s->packet)
     {
@@ -1064,16 +1053,14 @@ static void add_packet(bgav_demuxer_context_t * ctx,
     time -= asf->first_timestamp;
   else
     time = 0;
-  
-  s->packet->pts = time;
 
+  if(s->type == GAVL_STREAM_AUDIO)
+    s->packet->pes_pts = time;
+  else
+    s->packet->pts = time;
   
   // s->packet->timestamp -= ((gavl_time_t)(asf->hdr.preroll) * GAVL_TIME_SCALE) / 1000;
   
-  if(asf->do_sync && !STREAM_HAS_SYNC(s))
-    {
-    STREAM_SET_SYNC(s, time);
-    }
   if(keyframe)
     PACKET_SET_KEYFRAME(s->packet);
   s->packet_seq = seq;
@@ -1163,18 +1150,10 @@ static void seek_asf(bgav_demuxer_context_t * ctx, int64_t time, int scale)
               (gavl_time_to_seconds(gavl_time_unscale(scale, time))/
                gavl_time_to_seconds(gavl_track_get_duration(ctx->tt->cur->info))));
   
-  filepos = ctx->data_start +
+  filepos = ctx->tt->cur->data_start +
     ctx->packet_size * asf->packets_read;
   
   bgav_input_seek(ctx->input, filepos, SEEK_SET);
-
-  asf->do_sync = 1;
-  while(!bgav_track_has_sync(ctx->tt->cur))
-    {
-    if(!next_packet_asf(ctx))
-      return;
-    }
-  asf->do_sync = 0;
   
   }
 

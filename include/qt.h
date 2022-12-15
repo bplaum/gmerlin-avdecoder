@@ -508,8 +508,7 @@ int bgav_qt_stsd_read(qt_atom_header_t * h, bgav_input_context_t * ctx,
                       qt_stsd_t * ret);
 
 void bgav_qt_stsd_free(qt_stsd_t * c);
-int bgav_qt_stsd_finalize(qt_stsd_t * c, qt_trak_t * trak,
-                          const bgav_options_t * opt);
+int bgav_qt_stsd_finalize(qt_stsd_t * c, qt_trak_t * trak);
 
 void bgav_qt_stsd_dump(int indent, qt_stsd_t * c);
 

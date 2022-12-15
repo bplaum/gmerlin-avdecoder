@@ -302,8 +302,7 @@ static int open_avs(bgav_demuxer_context_t * ctx)
   
   s->stats.pts_end = GAVL_PTR_2_32LE(&header[12]);
   
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+  ctx->tt->cur->data_start = ctx->input->position;
   
 #if 1
   priv->need_audio_format = 1;

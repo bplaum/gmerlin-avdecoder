@@ -42,14 +42,12 @@ struct bgav_png_reader_s
   uint8_t * buffer;
   
   gavl_video_format_t format;
-  int depth;
   };
 
-bgav_png_reader_t * bgav_png_reader_create(int depth)
+bgav_png_reader_t * bgav_png_reader_create(void)
   {
   bgav_png_reader_t * ret;
   ret = calloc(1, sizeof(*ret));
-  ret->depth = depth;
   return ret;
   }
 
@@ -74,8 +72,7 @@ static void read_function(png_structp png_ptr,
     }
   }
 
-int bgav_png_reader_read_header(const bgav_options_t * opt,
-                                bgav_png_reader_t * png,
+int bgav_png_reader_read_header(bgav_png_reader_t * png,
                                 uint8_t * buffer, int buffer_size,
                                 gavl_video_format_t * format)
   {
@@ -206,7 +203,7 @@ int bgav_png_reader_read_header(const bgav_options_t * opt,
       else
         png->format.pixelformat = GAVL_GRAY_8;
       }
-    else if(has_alpha && (png->depth != 24))
+    else if(has_alpha)
       png->format.pixelformat = GAVL_RGBA_32;
     else
       png->format.pixelformat = GAVL_RGB_24;

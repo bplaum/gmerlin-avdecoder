@@ -179,8 +179,7 @@ typedef struct
   
   } bgav_h264_sps_t;
 
-int bgav_h264_sps_parse(const bgav_options_t * opt,
-                        bgav_h264_sps_t *,
+int bgav_h264_sps_parse(bgav_h264_sps_t *,
                         const uint8_t * buffer, int len);
 
 void bgav_h264_sps_free(bgav_h264_sps_t *);

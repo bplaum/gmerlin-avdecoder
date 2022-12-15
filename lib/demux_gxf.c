@@ -252,13 +252,13 @@ static int parse_track(bgav_input_context_t * input,
     case 20:
       vs = bgav_track_add_video_stream(t, opt);
       vs->fourcc = BGAV_MK_FOURCC('m','p','v','2');
-      vs->flags |= STREAM_PARSE_FRAME;
+      bgav_stream_set_parse_frame(vs);
       break;
     case 22:
     case 23:
       vs = bgav_track_add_video_stream(t, opt);
       vs->fourcc = BGAV_MK_FOURCC('m','p','v','1');
-      vs->flags |= STREAM_PARSE_FRAME;
+      bgav_stream_set_parse_frame(vs);
       break;
     case 9:
       as = bgav_track_add_audio_stream(t, opt);
@@ -484,8 +484,7 @@ static int open_gxf(bgav_demuxer_context_t * ctx)
       }
     }
   
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+  ctx->tt->cur->data_start = ctx->input->position;
   
   /* Get number of fields and timescales */
   vs = bgav_track_get_video_stream(ctx->tt->cur, 0);

@@ -46,8 +46,7 @@ int bgav_cavs_get_start_code(const uint8_t * data)
   return 0;
   }
 
-int bgav_cavs_sequence_header_read(const bgav_options_t * opt,
-                                   bgav_cavs_sequence_header_t * ret,
+int bgav_cavs_sequence_header_read(bgav_cavs_sequence_header_t * ret,
                                    const uint8_t * buffer, int len)
   {
   bgav_bitstream_t b;
@@ -95,8 +94,7 @@ void bgav_cavs_sequence_header_dump(const bgav_cavs_sequence_header_t * h)
   }
 
 
-int bgav_cavs_picture_header_read(const bgav_options_t * opt,
-                                  bgav_cavs_picture_header_t * ret,
+int bgav_cavs_picture_header_read(bgav_cavs_picture_header_t * ret,
                                   const uint8_t * buffer, int len,
                                   const bgav_cavs_sequence_header_t * seq)
   {

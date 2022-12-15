@@ -85,7 +85,11 @@ struct bgav_video_parser_s
   gavl_buffer_t buf;
   
   int flags;
-  int pos;
+
+  /* Used and maintained by find_frame_boundary */
+  int state;
+  
+  //  int pos;
   
   //  parse_func        parse;
   //  parse_header_func parse_header;
@@ -130,11 +134,15 @@ struct bgav_video_parser_s
 
   /* Packet position from which we can start decoding */
   int64_t start_pos;
+
+  /* New push API */
+  gavl_packet_sink_t * sink;
+  gavl_packet_sink_t * next;
   
   };
 
 void bgav_video_parser_init_mpeg12(bgav_video_parser_t * parser);
-void bgav_video_parser_init_h264(bgav_video_parser_t * parser);
+// void bgav_video_parser_init_h264(bgav_video_parser_t * parser);
 void bgav_video_parser_init_mpeg4(bgav_video_parser_t * parser);
 void bgav_video_parser_init_cavs(bgav_video_parser_t * parser);
 void bgav_video_parser_init_vc1(bgav_video_parser_t * parser);
@@ -147,7 +155,7 @@ void bgav_video_parser_init_dvdsub(bgav_video_parser_t * parser);
 void bgav_video_parser_init_vp8(bgav_video_parser_t * parser);
 void bgav_video_parser_init_vp9(bgav_video_parser_t * parser);
 
-void bgav_video_parser_flush(bgav_video_parser_t * parser, int bytes);
+void bgav_video_parser_flush_data(bgav_video_parser_t * parser, int bytes);
 
 #endif // BGAV_VIDEOPARSER_PRIV_H_INCLUDED
 

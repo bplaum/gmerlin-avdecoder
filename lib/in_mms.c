@@ -58,7 +58,7 @@ static int open_mms(bgav_input_context_t * ctx, const char * url, char ** r)
 
   /* Open mms connection */
   
-  priv->mms = bgav_mms_open(ctx->opt, url);
+  priv->mms = bgav_mms_open(&ctx->opt, url);
   if(!priv->mms)
     goto fail;
 
@@ -69,7 +69,7 @@ static int open_mms(bgav_input_context_t * ctx, const char * url, char ** r)
   if(!header)
     goto fail;
 
-  input = bgav_input_open_memory(header, header_len, ctx->opt);
+  input = bgav_input_open_memory(header, header_len);
 
   ctx->demuxer = bgav_demuxer_create(ctx->b, &bgav_demuxer_asf, input);
 
@@ -111,7 +111,7 @@ static int open_mms(bgav_input_context_t * ctx, const char * url, char ** r)
 
   ctx->demuxer->flags &= ~BGAV_DEMUXER_CAN_SEEK;
   
-  ctx->url = gavl_strdup(url);
+  ctx->location = gavl_strdup(url);
   
   return 1;
   

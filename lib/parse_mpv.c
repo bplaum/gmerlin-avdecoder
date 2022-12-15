@@ -25,8 +25,6 @@
 
 #include <avdec_private.h>
 #include <parser.h>
-#include <videoparser_priv.h>
-
 #include <mpv_header.h>
 
 #define LOG_DOMAIN "parse_mpv"
@@ -39,118 +37,113 @@
 #define STATE_PICTURE                         3
 #define STATE_SLICE                           4
 
+#define FLAG_HAVE_SH             (1<<0)
+#define FLAG_D10                 (1<<1)
+#define FLAG_INTRA_SLICE_REFRESH (1<<2)
+
 typedef struct
   {
   /* Sequence header */
   bgav_mpv_sequence_header_t sh;
-  int have_sh;
   int state;
   
-  int d10; // Special handling for D10 */
-  
-  int framerate_from_container;
-
-  int have_header;
-  
+  int flags;
   } mpeg12_priv_t;
 
-static void reset_mpeg12(bgav_video_parser_t * parser)
+static void reset_mpeg12(bgav_packet_parser_t * parser)
   {
   mpeg12_priv_t * priv = parser->priv;
   priv->state = STATE_SYNC;
   }
 
-static int extract_header(bgav_video_parser_t * parser, bgav_packet_t * p,
+static int extract_header(bgav_packet_parser_t * parser, bgav_packet_t * p,
                           const uint8_t * header_end)
   {
   mpeg12_priv_t * priv = parser->priv;
   
   if(!p->header_size)
     p->header_size = header_end - p->buf.buf;
-  
-  if(priv->have_header)
-    return 1;
 
-  if(!parser->s->ci->codec_header.len)
-    bgav_stream_set_extradata(parser->s, p->buf.buf, header_end - p->buf.buf);
+  if(parser->ci.codec_header.len)
+    return 1;
   
-  if(parser->s->fourcc == BGAV_MK_FOURCC('m','p','g','v'))
+  gavl_buffer_append_data(&parser->ci.codec_header, p->buf.buf, header_end - p->buf.buf);
+  
+  if(parser->fourcc == BGAV_MK_FOURCC('m','p','g','v'))
     {
     if(priv->sh.mpeg2)
       {
-      parser->s->fourcc = BGAV_MK_FOURCC('m','p','v','2');
-      gavl_dictionary_set_string_nocopy(parser->s->m, GAVL_META_FORMAT,
-                              bgav_sprintf("MPEG-2"));
+      parser->fourcc = BGAV_MK_FOURCC('m','p','v','2');
+      gavl_dictionary_set_string_nocopy(parser->m, GAVL_META_FORMAT,
+                                        bgav_sprintf("MPEG-2"));
       }
     else
       {
-      parser->s->fourcc = BGAV_MK_FOURCC('m','p','v','1');
-      gavl_dictionary_set_string_nocopy(parser->s->m, GAVL_META_FORMAT,
-                              bgav_sprintf("MPEG-1"));
+      parser->fourcc = BGAV_MK_FOURCC('m','p','v','1');
+      gavl_dictionary_set_string_nocopy(parser->m, GAVL_META_FORMAT,
+                                        bgav_sprintf("MPEG-1"));
       }
     }
 
   /* Set framerate */
   
-  if(!parser->format->timescale)
+  if(!parser->vfmt->timescale)
     {
     bgav_mpv_get_framerate(priv->sh.frame_rate_index,
-                           &parser->format->timescale,
-                           &parser->format->frame_duration);
+                           &parser->vfmt->timescale,
+                           &parser->vfmt->frame_duration);
     
     if(priv->sh.mpeg2)
       {
-      parser->format->timescale *= (priv->sh.ext.timescale_ext+1) * 2;
-      parser->format->frame_duration *= (priv->sh.ext.frame_duration_ext+1) * 2;
-      parser->format->framerate_mode = GAVL_FRAMERATE_VARIABLE;
+      parser->vfmt->timescale *= (priv->sh.ext.timescale_ext+1) * 2;
+      parser->vfmt->frame_duration *= (priv->sh.ext.frame_duration_ext+1) * 2;
+      parser->vfmt->framerate_mode = GAVL_FRAMERATE_VARIABLE;
       }
     }
 
   /* Set picture size */
   
-  if(!parser->format->image_width)
-    bgav_mpv_get_size(&priv->sh, parser->format);
+  if(!parser->vfmt->image_width)
+    bgav_mpv_get_size(&priv->sh, parser->vfmt);
   
   /* Special handling for D10 */
-  if(priv->d10)
+  if(priv->flags & FLAG_D10)
     {
-    if(parser->format->image_height == 608)
-      parser->format->image_height = 576;
-    else if(parser->format->image_height == 512)
-      parser->format->image_height = 486;
+    if(parser->vfmt->image_height == 608)
+      parser->vfmt->image_height = 576;
+    else if(parser->vfmt->image_height == 512)
+      parser->vfmt->image_height = 486;
     }
   
   /* Set pixel size */
-  bgav_mpv_get_pixel_aspect(&priv->sh, parser->format);
+  bgav_mpv_get_pixel_aspect(&priv->sh, parser->vfmt);
   
   /* Pixelformat */
-  if(parser->format->pixelformat == GAVL_PIXELFORMAT_NONE)
-    parser->format->pixelformat = bgav_mpv_get_pixelformat(&priv->sh);
+  if(parser->vfmt->pixelformat == GAVL_PIXELFORMAT_NONE)
+    parser->vfmt->pixelformat = bgav_mpv_get_pixelformat(&priv->sh);
 
   /* Other stuff */
   if(priv->sh.mpeg2 && priv->sh.ext.low_delay)
-    parser->s->ci->flags &= ~GAVL_COMPRESSION_HAS_B_FRAMES;
-
-  /* Bitrate */
-  parser->s->codec_bitrate = priv->sh.bitrate * 400;
-  if(priv->sh.mpeg2)
-    parser->s->codec_bitrate += (priv->sh.ext.bitrate_ext << 18) * 400;
-
-  /* VBV buffer size */
-  parser->s->ci->video_buffer_size = priv->sh.vbv_buffer_size_value;
-  if(priv->sh.mpeg2)
-    parser->s->ci->video_buffer_size +=
-      (priv->sh.ext.vbv_buffer_size_ext<<10);
-
-  parser->s->ci->video_buffer_size *= (1024 * 16);
-  parser->s->ci->video_buffer_size /= 8; // bits -> bytes
+    parser->ci.flags &= ~GAVL_COMPRESSION_HAS_B_FRAMES;
   
-  priv->have_header = 1;
+  /* Bitrate */
+  parser->ci.bitrate = priv->sh.bitrate * 400;
+  if(priv->sh.mpeg2)
+    parser->ci.bitrate += (priv->sh.ext.bitrate_ext << 18) * 400;
+  
+  /* VBV buffer size */
+  parser->ci.video_buffer_size = priv->sh.vbv_buffer_size_value;
+  if(priv->sh.mpeg2)
+    parser->ci.video_buffer_size +=
+      (priv->sh.ext.vbv_buffer_size_ext<<10);
+  
+  parser->ci.video_buffer_size *= (1024 * 16);
+  parser->ci.video_buffer_size /= 8; // bits -> bytes
+  
   return 1;
   }
 
-static int parse_frame_mpeg12(bgav_video_parser_t * parser, bgav_packet_t * p,
-                              int64_t pts_orig)
+static int parse_frame_mpeg12(bgav_packet_parser_t * parser, bgav_packet_t * p)
   {
   const uint8_t * sc;
   mpeg12_priv_t * priv = parser->priv;
@@ -192,10 +185,9 @@ static int parse_frame_mpeg12(bgav_video_parser_t * parser, bgav_packet_t * p,
     switch(start_code)
       {
       case MPEG_CODE_SEQUENCE:
-        if(!priv->have_sh)
+        if(!(priv->flags & FLAG_HAVE_SH))
           {
-          len = bgav_mpv_sequence_header_parse(parser->s->opt,
-                                               &priv->sh,
+          len = bgav_mpv_sequence_header_parse(&priv->sh,
                                                start, end - start);
           if(!len)
             return 0;
@@ -204,15 +196,14 @@ static int parse_frame_mpeg12(bgav_video_parser_t * parser, bgav_packet_t * p,
              still images */
           if(p->sequence_end_pos)
             {
-            if(!STREAM_IS_STILL(parser->s))
+            if(parser->vfmt->framerate_mode != GAVL_FRAMERATE_STILL)
               {
-              gavl_log(GAVL_LOG_INFO, LOG_DOMAIN,
-                       "Detected still image");
-              STREAM_SET_STILL(parser->s);
+              gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Detected still image");
+              parser->vfmt->framerate_mode = GAVL_FRAMERATE_STILL;
+              parser->ci.flags &= ~(GAVL_COMPRESSION_HAS_P_FRAMES|GAVL_COMPRESSION_HAS_B_FRAMES);
               }
             }
-          
-          priv->have_sh = 1;
+          priv->flags |= FLAG_HAVE_SH;
           start += len;
           }
         else
@@ -221,11 +212,10 @@ static int parse_frame_mpeg12(bgav_video_parser_t * parser, bgav_packet_t * p,
 
         break;
       case MPEG_CODE_SEQUENCE_EXT:
-        if(priv->have_sh && !priv->sh.mpeg2)
+        if((priv->flags |= FLAG_HAVE_SH) && !priv->sh.mpeg2)
           {
           len =
-            bgav_mpv_sequence_extension_parse(parser->s->opt,
-                                              &priv->sh.ext,
+            bgav_mpv_sequence_extension_parse(&priv->sh.ext,
                                               start, end - start);
           if(!len)
             return 0;
@@ -236,23 +226,23 @@ static int parse_frame_mpeg12(bgav_video_parser_t * parser, bgav_packet_t * p,
           start += 4;
         break;
       case MPEG_CODE_PICTURE:
-        if(!priv->have_sh)
+        if(!(priv->flags & FLAG_HAVE_SH))
           PACKET_SET_SKIP(p);
         else if(got_sh && !extract_header(parser, p, sc))
           return 0;
         
-        len = bgav_mpv_picture_header_parse(parser->s->opt,
-                                            &ph, start, end - start);
+        len = bgav_mpv_picture_header_parse(&ph, start, end - start);
         
-        if(parser->format->framerate_mode == GAVL_FRAMERATE_STILL)
+        if(parser->vfmt->framerate_mode == GAVL_FRAMERATE_STILL)
           {
-          parser->timestamp = gavl_time_rescale(parser->s->timescale,
-                                                parser->format->timescale,
-                                                pts_orig);
+          if(p->pes_pts != GAVL_TIME_UNDEFINED)
+            p->pts = gavl_time_rescale(parser->packet_timescale,
+                                       parser->vfmt->timescale,
+                                       p->pes_pts);
           p->duration = -1;
           }
         else
-          p->duration = parser->format->frame_duration;
+          p->duration = parser->vfmt->frame_duration;
           
         if(!len)
           return PARSER_ERROR;
@@ -261,10 +251,10 @@ static int parse_frame_mpeg12(bgav_video_parser_t * parser, bgav_packet_t * p,
         
         if(got_sh)
           {
-          if(!(parser->flags & PARSER_NO_I_FRAMES) &&
+          if(!(priv->flags & FLAG_INTRA_SLICE_REFRESH) &&
              (ph.coding_type == BGAV_CODING_TYPE_P))
             {
-            parser->flags |= PARSER_NO_I_FRAMES;
+            priv->flags |= FLAG_INTRA_SLICE_REFRESH;
             gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN,
                      "Detected intra slice refresh");
             }
@@ -276,8 +266,7 @@ static int parse_frame_mpeg12(bgav_video_parser_t * parser, bgav_packet_t * p,
           return 1;
         break;
       case MPEG_CODE_PICTURE_EXT:
-        len = bgav_mpv_picture_extension_parse(parser->s->opt,
-                                               &pe, start, end - start);
+        len = bgav_mpv_picture_extension_parse(&pe, start, end - start);
         if(!len)
           return PARSER_ERROR;
 
@@ -302,12 +291,12 @@ static int parse_frame_mpeg12(bgav_video_parser_t * parser, bgav_packet_t * p,
                 if(priv->sh.ext.progressive_sequence)
                   {
                   if(pe.top_field_first)
-                    delta_d = parser->format->frame_duration * 2;
+                    delta_d = parser->vfmt->frame_duration * 2;
                   else
-                    delta_d = parser->format->frame_duration;
+                    delta_d = parser->vfmt->frame_duration;
                   }
                 else if(pe.progressive_frame)
-                  delta_d = parser->format->frame_duration / 2;
+                  delta_d = parser->vfmt->frame_duration / 2;
               
                 p->duration += delta_d;
                 }
@@ -334,25 +323,24 @@ static int parse_frame_mpeg12(bgav_video_parser_t * parser, bgav_packet_t * p,
         if(got_sh && !extract_header(parser, p, sc))
           return 0;
         
-        len = bgav_mpv_gop_header_parse(parser->s->opt,
-                                        &gh, start, end - start);
+        len = bgav_mpv_gop_header_parse(&gh, start, end - start);
         
         if(!len)
           return PARSER_ERROR;
         
         start += len;
 
-        if(!parser->format->timecode_format.int_framerate && parser->format->frame_duration)
+        if(!parser->vfmt->timecode_format.int_framerate && parser->vfmt->frame_duration)
           {
-          parser->format->timecode_format.int_framerate =
-            parser->format->timescale /
-            parser->format->frame_duration;
+          parser->vfmt->timecode_format.int_framerate =
+            parser->vfmt->timescale /
+            parser->vfmt->frame_duration;
           if(gh.drop)
-            parser->format->timecode_format.flags |=
+            parser->vfmt->timecode_format.flags |=
               GAVL_TIMECODE_DROP_FRAME;
           }
 
-        if(parser->format->timecode_format.int_framerate)
+        if(parser->vfmt->timecode_format.int_framerate)
           {
           gavl_timecode_from_hmsf(&p->timecode,
                                   gh.hours,
@@ -370,7 +358,7 @@ static int parse_frame_mpeg12(bgav_video_parser_t * parser, bgav_packet_t * p,
     }
   }
 
-static int find_frame_boundary_mpeg12(bgav_video_parser_t * parser, int * skip)
+static int find_frame_boundary_mpeg12(bgav_packet_parser_t * parser, int * skip)
 
   {
   const uint8_t * sc;
@@ -380,13 +368,13 @@ static int find_frame_boundary_mpeg12(bgav_video_parser_t * parser, int * skip)
   
   while(1)
     {
-    sc = bgav_mpv_find_startcode(parser->buf.buf + parser->pos,
+    sc = bgav_mpv_find_startcode(parser->buf.buf + parser->buf.pos,
                                  parser->buf.buf + parser->buf.len - 1);
     if(!sc)
       {
-      parser->pos = parser->buf.len - 3;
-      if(parser->pos < 0)
-        parser->pos = 0;
+      parser->buf.pos = parser->buf.len - 3;
+      if(parser->buf.pos < 0)
+        parser->buf.pos = 0;
       return 0;
       }
 
@@ -411,7 +399,7 @@ static int find_frame_boundary_mpeg12(bgav_video_parser_t * parser, int * skip)
       case MPEG_CODE_END:
         //        fprintf(stderr, "Got sequence end\n");
         /* Sequence end is always a picture start */
-        parser->pos = (sc - parser->buf.buf) + 4;
+        parser->buf.pos = (sc - parser->buf.buf) + 4;
         *skip = 4;
         priv->state = STATE_SEQUENCE;
         return 1;
@@ -420,33 +408,33 @@ static int find_frame_boundary_mpeg12(bgav_video_parser_t * parser, int * skip)
         break;
       }
 
-    parser->pos = sc - parser->buf.buf;
+    parser->buf.pos = sc - parser->buf.buf;
     
     if(new_state < 0)
-      parser->pos += 4;
+      parser->buf.pos += 4;
     else if(((new_state <= STATE_PICTURE) && (new_state < priv->state)) ||
             ((priv->state == STATE_SYNC) && (new_state >=  STATE_PICTURE)))
       {
       *skip = 4;
-      parser->pos = sc - parser->buf.buf;
+      parser->buf.pos = sc - parser->buf.buf;
       priv->state = new_state;
       return 1;
       }
     else
       {
-      parser->pos += 4;
+      parser->buf.pos += 4;
       priv->state = new_state;
       }
     }
   return 0;
   }
 
-static void cleanup_mpeg12(bgav_video_parser_t * parser)
+static void cleanup_mpeg12(bgav_packet_parser_t * parser)
   {
   free(parser->priv);
   }
 
-void bgav_video_parser_init_mpeg12(bgav_video_parser_t * parser)
+void bgav_packet_parser_init_mpeg12(bgav_packet_parser_t * parser)
   {
   mpeg12_priv_t * priv;
   priv = calloc(1, sizeof(*priv));
@@ -458,21 +446,21 @@ void bgav_video_parser_init_mpeg12(bgav_video_parser_t * parser)
   parser->reset       = reset_mpeg12;
   parser->find_frame_boundary = find_frame_boundary_mpeg12;
 
-  parser->s->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
+  parser->ci.flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
   
-  if((parser->s->fourcc == BGAV_MK_FOURCC('m', 'x', '5', 'p')) ||
-     (parser->s->fourcc == BGAV_MK_FOURCC('m', 'x', '4', 'p')) ||
-     (parser->s->fourcc == BGAV_MK_FOURCC('m', 'x', '3', 'p')) ||
-     (parser->s->fourcc == BGAV_MK_FOURCC('m', 'x', '5', 'n')) ||
-     (parser->s->fourcc == BGAV_MK_FOURCC('m', 'x', '4', 'n')) ||
-     (parser->s->fourcc == BGAV_MK_FOURCC('m', 'x', '3', 'n')))
+  if((parser->fourcc == BGAV_MK_FOURCC('m', 'x', '5', 'p')) ||
+     (parser->fourcc == BGAV_MK_FOURCC('m', 'x', '4', 'p')) ||
+     (parser->fourcc == BGAV_MK_FOURCC('m', 'x', '3', 'p')) ||
+     (parser->fourcc == BGAV_MK_FOURCC('m', 'x', '5', 'n')) ||
+     (parser->fourcc == BGAV_MK_FOURCC('m', 'x', '4', 'n')) ||
+     (parser->fourcc == BGAV_MK_FOURCC('m', 'x', '3', 'n')))
     {
-    parser->s->codec_bitrate =
-      (((parser->s->fourcc & 0x0000FF00) >> 8) - '0') * 10000000;
-    priv->d10 = 1;
-    parser->s->ci->flags &= ~(GAVL_COMPRESSION_HAS_P_FRAMES|
-                             GAVL_COMPRESSION_HAS_B_FRAMES);
-    parser->format->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
+    parser->ci.bitrate =
+      (((parser->fourcc & 0x0000FF00) >> 8) - '0') * 10000000;
+    priv->flags |= FLAG_D10;
+    parser->ci.flags &= ~(GAVL_COMPRESSION_HAS_P_FRAMES|
+                          GAVL_COMPRESSION_HAS_B_FRAMES);
+    parser->vfmt->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
     }
   
   }

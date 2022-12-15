@@ -39,7 +39,7 @@ typedef struct
   gavl_v4l2_device_t * dev;
   gavl_hw_context_t * hwctx;
   
-  gavl_packet_source_t * psrc;
+  //  gavl_packet_source_t * psrc;
   
   } v4l2_t;
   
@@ -62,14 +62,10 @@ static int init_v4l2(bgav_stream_t * s)
   priv->hwctx = gavl_hw_ctx_create_v4l2(dev_file);
   
   priv->dev = gavl_hw_ctx_v4l2_get_device(priv->hwctx);
-  
-  priv->psrc =
-    gavl_packet_source_create_video(bgav_stream_read_packet_func, // get_packet,
-                                    s, GAVL_SOURCE_SRC_ALLOC, s->ci, s->data.video.format, GAVL_STREAM_VIDEO);
-  
+    
   //  fprintf(stderr, "Opened device %p\n", priv->dev);
   
-  if(!gavl_v4l2_device_init_decoder(priv->dev, s->info, priv->psrc))
+  if(!gavl_v4l2_device_init_decoder(priv->dev, s->info_ext, s->psrc))
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Initializing decoder failed");
     return 0;
@@ -101,9 +97,6 @@ static void close_v4l2(bgav_stream_t * s)
   //  if(priv->dev)
   //    gavl_v4l2_device_close(priv->dev);
   
-  if(priv->psrc)
-    gavl_packet_source_destroy(priv->psrc);
-
   if(priv->hwctx)
     gavl_hw_ctx_destroy(priv->hwctx);
   

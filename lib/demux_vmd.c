@@ -73,15 +73,9 @@ typedef struct
 static int probe_vmd(bgav_input_context_t * input)
   {
   uint16_t size;
-  char * pos;
-  if(input->filename)
-    {
-    pos = strrchr(input->filename, '.');
-    if(!pos)
-      return 0;
-    if(strcasecmp(pos, ".vmd"))
-      return 0;
-    }
+  if(!input->location || !gavl_string_ends_with(input->location, ".vmd"))
+    return 0;
+  
   if(!bgav_input_get_16_le(input, &size) ||
      (size != VMD_HEADER_SIZE - 2))
     return 0;
@@ -239,9 +233,7 @@ static int open_vmd(bgav_demuxer_context_t * ctx)
     
   ret = 1;
   
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
-
+  ctx->tt->cur->data_start = ctx->input->position;
   fail:
   if(raw_frame_table)
     free(raw_frame_table);

@@ -24,7 +24,7 @@
 
 typedef struct bgav_png_reader_s bgav_png_reader_t;
 
-bgav_png_reader_t * bgav_png_reader_create(int depth);
+bgav_png_reader_t * bgav_png_reader_create(void);
 void bgav_png_reader_destroy(bgav_png_reader_t* png);
 
 
@@ -33,8 +33,7 @@ void bgav_png_reader_reset(bgav_png_reader_t * png);
 int bgav_png_reader_read_image(bgav_png_reader_t * png,
                                gavl_video_frame_t * frame);
 
-int bgav_png_reader_read_header(const bgav_options_t * opt,
-                                bgav_png_reader_t * png,
+int bgav_png_reader_read_header(bgav_png_reader_t * png,
                                 uint8_t * buffer, int buffer_size,
                                 gavl_video_format_t * format);
 

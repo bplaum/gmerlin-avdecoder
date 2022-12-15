@@ -90,6 +90,7 @@
 
 /* Codec tags requiring special attention */
 
+#if 0
 static int check_codec(uint32_t wav_id, const uint32_t * list)
   {
   int index = 0;
@@ -101,6 +102,7 @@ static int check_codec(uint32_t wav_id, const uint32_t * list)
     }
   return 0;
   }
+#endif
 
 static const uint32_t video_codecs_intra[] =
   {
@@ -567,7 +569,7 @@ static int read_avih(bgav_input_context_t* input,
     {
     bgav_input_skip(input, PADD(ch->ckSize) - (input->position - start_pos));
     }
-  if(input->opt->dump_headers)
+  if(input->opt.dump_headers)
     dump_avih(ret);
   return result;
   }
@@ -678,7 +680,7 @@ static int read_strh(bgav_input_context_t * input, strh_t * ret,
     {
     bgav_input_skip(input, PADD(ch->ckSize) - (input->position - start_pos));
     }
-  if(input->opt->dump_headers)
+  if(input->opt.dump_headers)
     dump_strh(ret);
   return result;
   }
@@ -752,7 +754,7 @@ static int read_odml(bgav_input_context_t * input, odml_t * ret,
     {
     bgav_input_skip(input, ch->ckSize - 4 - input->position - start_pos);
     }
-  if(input->opt->dump_headers)
+  if(input->opt.dump_headers)
     dump_odml(ret);
   return 1;
   }
@@ -1364,21 +1366,31 @@ static int init_video_stream(bgav_demuxer_context_t * ctx,
   bg_vs->stream_id = (ctx->tt->cur->num_audio_streams +
                       ctx->tt->cur->num_video_streams) - 1;
 
+  if(bgav_check_fourcc(bg_vs->fourcc, video_codecs_intra))
+    {
+    bg_vs->ci->flags &= ~GAVL_COMPRESSION_HAS_P_FRAMES;
+    }
+
   if(bgav_video_is_divx4(bg_vs->fourcc))
     {
-    bg_vs->flags |=
-      (STREAM_DTS_ONLY | STREAM_PARSE_FRAME);
+    bg_vs->flags |= STREAM_DTS_ONLY;
     bg_vs->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
+    bgav_stream_set_parse_frame(bg_vs);
     }
-  else if(check_codec(bg_vs->fourcc, video_codecs_h264))
+  else if(bgav_check_fourcc(bg_vs->fourcc, video_codecs_h264))
     {
-    bg_vs->flags |= (STREAM_DTS_ONLY);
-
-    if(!bg_vs->ci->codec_header.len)
-      bg_vs->flags |= STREAM_PARSE_FRAME;
-    
+    bg_vs->flags |= STREAM_DTS_ONLY;
     bg_vs->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
+    if(!bg_vs->ci->codec_header.len)
+      bgav_stream_set_parse_frame(bg_vs);
     }
+  else if(bgav_check_fourcc(bg_vs->fourcc, bgav_dv_fourccs) ||
+          bgav_check_fourcc(bg_vs->fourcc, bgav_png_fourccs))
+    {
+    bg_vs->ci->flags &= ~GAVL_COMPRESSION_HAS_P_FRAMES;
+    bgav_stream_set_parse_frame(bg_vs);
+    }
+          
   
   return 1;
   }
@@ -1467,27 +1479,20 @@ static int process_packet_iavs(bgav_demuxer_context_t * ctx, int64_t position)
 static void seek_iavs(bgav_demuxer_context_t * ctx, gavl_time_t time,
                       int scale)
   {
-  avi_priv_t * priv;
-
   bgav_stream_t * as, *vs;
 
   vs = bgav_track_find_stream(ctx, DV_VIDEO_ID);
   as = bgav_track_find_stream(ctx, DV_AUDIO_ID);
   
-  
-  priv = ctx->priv;
-  
   bgav_superindex_seek(ctx->si, vs, &time, scale);
   
-  STREAM_SET_SYNC(as, gavl_time_rescale(vs->timescale, as->timescale, STREAM_GET_SYNC(vs)));
+  STREAM_SET_SYNC(as, gavl_time_rescale(vs->timescale, as->timescale, time));
   
   ctx->si->current_position = vs->index_position;
   bgav_input_seek(ctx->input, ctx->si->entries[ctx->si->current_position].offset,
                   SEEK_SET);
   vs->in_position = vs->index_position;
   
-  bgav_dv_dec_set_frame_counter(priv->dv_dec, vs->in_position);
-  bgav_dv_dec_set_sample_counter(priv->dv_dec, STREAM_GET_SYNC(as));
   }
 
 static gavl_source_status_t next_packet_iavs_si(bgav_demuxer_context_t * ctx)
@@ -1747,10 +1752,10 @@ static void idx1_build_superindex(bgav_demuxer_context_t * ctx)
      BGAV_MK_FOURCC('7', 'F', 'x', 'x'))
     first_pos++;
   if(avi->idx1.entries[first_pos].dwChunkOffset == 4)
-    base_offset = 4 + ctx->data_start;
+    base_offset = 4 + ctx->tt->cur->data_start;
   else
     /* For invalid files, which have the index relative to file start */
-    base_offset = 4 + ctx->data_start -
+    base_offset = 4 + ctx->tt->cur->data_start -
       ((int)avi->idx1.entries[first_pos].dwChunkOffset - 4);
   
   for(i = first_pos; i < avi->idx1.num_entries; i++)
@@ -1949,20 +1954,19 @@ static int open_avi(bgav_demuxer_context_t * ctx)
     bgav_dprintf("movi:\n");
     dump_chunk_header(&ch);
     }
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+  ctx->tt->cur->data_start = ctx->input->position;
 
   if(ch.ckSize)
     p->movi_size =  ch.ckSize - 4;
   else
     {
     if(ctx->input->total_bytes)
-      p->movi_size = ctx->input->total_bytes - ctx->data_start;
+      p->movi_size = ctx->input->total_bytes - ctx->tt->cur->data_start;
     }
 
   if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
     {
-    bgav_input_seek(ctx->input, ctx->data_start + p->movi_size, SEEK_SET);
+    bgav_input_seek(ctx->input, ctx->tt->cur->data_start + p->movi_size, SEEK_SET);
 
     if(probe_idx1(ctx->input) && read_idx1(ctx->input, &p->idx1))
       {
@@ -1970,7 +1974,7 @@ static int open_avi(bgav_demuxer_context_t * ctx)
       if(ctx->opt->dump_indices)
         dump_idx1(&p->idx1);
       }
-    bgav_input_seek(ctx->input, ctx->data_start, SEEK_SET);
+    bgav_input_seek(ctx->input, ctx->tt->cur->data_start, SEEK_SET);
     }
   
   /* Check, which index to build */
@@ -2019,16 +2023,16 @@ static int open_avi(bgav_demuxer_context_t * ctx)
     for(i = 0; i < ctx->tt->cur->num_audio_streams; i++)
       {
       s = bgav_track_get_audio_stream(ctx->tt->cur, i);
-      if(check_codec(s->fourcc, audio_codecs_sa))
+      if(bgav_check_fourcc(s->fourcc, audio_codecs_sa))
         continue;
-      else if(check_codec(s->fourcc, audio_codecs_parse_mpeg))
+      else if(bgav_check_fourcc(s->fourcc, audio_codecs_parse_mpeg))
         {
         s->index_mode = INDEX_MODE_SIMPLE;
-        s->flags |= STREAM_PARSE_FULL;
         ctx->index_mode = INDEX_MODE_SI_PARSE;
+        bgav_stream_set_parse_full(s);
         continue;
         }
-      else if(check_codec(s->fourcc, audio_codecs_parse_simple))
+      else if(bgav_check_fourcc(s->fourcc, audio_codecs_parse_simple))
         {
         s->index_mode = INDEX_MODE_SIMPLE;
         ctx->index_mode = INDEX_MODE_SI_PARSE;
@@ -2052,15 +2056,15 @@ static int open_avi(bgav_demuxer_context_t * ctx)
       s = bgav_track_get_video_stream(ctx->tt->cur, i);
       
       avi_vs = s->priv;
-      if(check_codec(s->fourcc,
+      if(bgav_check_fourcc(s->fourcc,
                      video_codecs_msmpeg4v1))
         avi_vs->is_keyframe = is_keyframe_msmpeg4v1;
-      else if(check_codec(s->fourcc,
+      else if(bgav_check_fourcc(s->fourcc,
                           video_codecs_msmpeg4v3))
         avi_vs->is_keyframe = is_keyframe_msmpeg4v3;
       else if(bgav_video_is_divx4(s->fourcc))
         avi_vs->is_keyframe = is_keyframe_mpeg4;
-      else if(!check_codec(s->fourcc,
+      else if(!bgav_check_fourcc(s->fourcc,
                            video_codecs_intra))
         ctx->index_mode = 0;
 
@@ -2072,18 +2076,18 @@ static int open_avi(bgav_demuxer_context_t * ctx)
       {
       s = bgav_track_get_audio_stream(ctx->tt->cur, i);
 
-      if(check_codec(s->fourcc, audio_codecs_sa))
+      if(bgav_check_fourcc(s->fourcc, audio_codecs_sa))
         {
         s->index_mode = INDEX_MODE_SIMPLE;
         continue;
         }
-      else if(check_codec(s->fourcc, audio_codecs_parse_mpeg))
+      else if(bgav_check_fourcc(s->fourcc, audio_codecs_parse_mpeg))
         {
         s->index_mode = INDEX_MODE_SIMPLE;
-        s->flags |= STREAM_PARSE_FULL;
+        bgav_stream_set_parse_full(s);
         continue;
         }
-      else if(check_codec(s->fourcc, audio_codecs_parse_simple))
+      else if(bgav_check_fourcc(s->fourcc, audio_codecs_parse_simple))
         {
         s->index_mode = INDEX_MODE_SIMPLE;
         ctx->index_mode = INDEX_MODE_SI_PARSE;
@@ -2166,7 +2170,7 @@ static gavl_source_status_t next_packet_avi(bgav_demuxer_context_t * ctx)
     return next_packet_iavs_si(ctx);
     }
   
-  if(ctx->input->position + 8 >= ctx->data_start + priv->movi_size)
+  if(ctx->input->position + 8 >= ctx->tt->cur->data_start + priv->movi_size)
     {
     return GAVL_SOURCE_EOF;
     }
@@ -2220,7 +2224,12 @@ static gavl_source_status_t next_packet_avi(bgav_demuxer_context_t * ctx)
       if(s->type == GAVL_STREAM_VIDEO)
         {
         avi_vs = s->priv;
-        p->pts = avi_vs->frame_counter * s->data.video.format->frame_duration;
+        
+        if(s->ci->flags & GAVL_COMPRESSION_HAS_B_FRAMES)
+          p->dts = avi_vs->frame_counter * s->data.video.format->frame_duration;
+        else
+          p->pts = avi_vs->frame_counter * s->data.video.format->frame_duration;
+        
         avi_vs->frame_counter++;
         if(s->action == BGAV_STREAM_PARSE)
           s->stats.pts_end = avi_vs->frame_counter * s->data.video.format->frame_duration;

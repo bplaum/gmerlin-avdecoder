@@ -43,7 +43,6 @@
 typedef struct
   {
   int64_t data_size;
-  int64_t sample_count;
   int block_samples;
   } aac_priv_t;
 
@@ -111,23 +110,21 @@ static int open_adts(bgav_demuxer_context_t * ctx)
   
   /* Create track */
 
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
-  
   ctx->tt = bgav_track_table_create(1);
-
+  ctx->tt->cur->data_start = ctx->input->position;
+  
   /* Check for id3v1 tag at the end */
 
   if((ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE) &&
-     ctx->input->url &&
-     (!gavl_string_starts_with(ctx->input->url, "http://")))
+     ctx->input->location &&
+     (!gavl_string_starts_with(ctx->input->location, "http://")))
     {
     bgav_input_seek(ctx->input, -128, SEEK_END);
     if(bgav_id3v1_probe(ctx->input))
       {
       id3v1 = bgav_id3v1_read(ctx->input);
       }
-    bgav_input_seek(ctx->input, ctx->data_start, SEEK_SET);
+    bgav_input_seek(ctx->input, ctx->tt->cur->data_start, SEEK_SET);
     }
 
   //  if(ctx->input->id3v2)
@@ -154,7 +151,7 @@ static int open_adts(bgav_demuxer_context_t * ctx)
                           ctx->tt->cur->metadata);
 
   if(ctx->input->total_bytes)
-    priv->data_size = ctx->input->total_bytes - ctx->data_start;
+    priv->data_size = ctx->input->total_bytes - ctx->tt->cur->data_start;
 
   if(id3v1)
     {
@@ -167,8 +164,6 @@ static int open_adts(bgav_demuxer_context_t * ctx)
   /* This fourcc reminds the decoder to call a different init function */
 
   s->fourcc = BGAV_MK_FOURCC('A', 'D', 'T', 'S');
-  s->stats.pts_start = GAVL_TIME_UNDEFINED;
-  s->flags |= STREAM_NEED_START_PTS;
   
   /* Initialize rest */
 
@@ -242,7 +237,6 @@ static gavl_source_status_t next_packet_adts(bgav_demuxer_context_t * ctx)
   
   p = bgav_stream_get_packet_write(s);
   
-  p->pts = priv->sample_count;
   p->duration = priv->block_samples * adts.num_blocks;
   p->position = ctx->input->position;
 
@@ -257,37 +251,22 @@ static gavl_source_status_t next_packet_adts(bgav_demuxer_context_t * ctx)
   
   bgav_stream_done_packet_write(s, p);
 
-  priv->sample_count += priv->block_samples * adts.num_blocks;
-  
   return GAVL_SOURCE_OK;
-  }
-
-static void resync_adts(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
-  {
-  aac_priv_t * priv;
-  priv = ctx->priv;
-  priv->sample_count = STREAM_GET_SYNC(s);
   }
 
 static int select_track_adts(bgav_demuxer_context_t * ctx, int track)
   {
-  aac_priv_t * priv;
   int64_t pts_start_num = 0;
   int     pts_start_den = 0;
   bgav_stream_t * s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
-
   
-  priv = ctx->priv;
-  priv->sample_count = 0;
-
   if(gavl_dictionary_get_int(&ctx->input->m, META_START_PTS_DEN, &pts_start_den) &&
      (pts_start_den > 0) &&
      gavl_dictionary_get_long(&ctx->input->m, META_START_PTS_NUM, &pts_start_num))
     {
-    priv->sample_count = gavl_time_rescale(pts_start_den, s->timescale, pts_start_num);
+    STREAM_SET_SYNC(s, gavl_time_rescale(pts_start_den, s->timescale, pts_start_num));
     gavl_stream_set_start_pts(s->info, pts_start_num, pts_start_den);
     }
-  
   return 1;
   }
 
@@ -301,10 +280,9 @@ static void close_adts(bgav_demuxer_context_t * ctx)
 
 const bgav_demuxer_t bgav_demuxer_adts =
   {
-    .probe =       probe_adts,
-    .open =        open_adts,
+    .probe        = probe_adts,
+    .open         = open_adts,
     .select_track = select_track_adts,
-    .next_packet = next_packet_adts,
-    .resync        = resync_adts,
-    .close =       close_adts,
+    .next_packet  = next_packet_adts,
+    .close        = close_adts,
   };

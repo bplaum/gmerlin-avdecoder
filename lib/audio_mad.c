@@ -276,7 +276,8 @@ static int init_mad(bgav_stream_t * s)
   
   /* Now, decode the first header to get the format */
   
-  get_data(s);
+  if(get_data(s) != GAVL_SOURCE_OK)
+    return 0;
   
   priv->do_init = 1;
 

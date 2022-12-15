@@ -156,8 +156,7 @@ static int open_dsicin(bgav_demuxer_context_t * ctx)
 
   bgav_track_set_format(ctx->tt->cur, "Delphine Software CIN", NULL);
   
-  ctx->data_start = ctx->input->position;
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
+  ctx->tt->cur->data_start = ctx->input->position;
   
   return 1;
   }

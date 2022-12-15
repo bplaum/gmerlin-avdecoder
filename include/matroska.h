@@ -449,7 +449,6 @@ typedef struct
      accurate positioning */
   int frame_samples;
   
-  int64_t pts; /* If we do our own pts calculation */
   } bgav_mkv_track_t;
 
 int bgav_mkv_track_read(bgav_input_context_t * ctx,

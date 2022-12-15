@@ -268,7 +268,7 @@ static gavl_source_status_t next_packet_mpc(bgav_demuxer_context_t * ctx)
   
   p->duration = fi.samples;
   p->buf.len = fi.samples * s->data.audio.format->num_channels * sizeof(float);
-  p->pts = s->in_position * MPC_FRAME_LENGTH;
+  
   //  p->audio_frame->valid_samples = result;
   
   bgav_stream_done_packet_write(s, p);
@@ -289,10 +289,8 @@ static void seek_mpc(bgav_demuxer_context_t * ctx, int64_t time, int scale)
   time /= MPC_FRAME_LENGTH;
   time *= MPC_FRAME_LENGTH;
   
-  STREAM_SET_SYNC(s, time);
-  mpc_demux_seek_sample(priv->demux, STREAM_GET_SYNC(s));
-  
-  s->in_position = STREAM_GET_SYNC(s) / MPC_FRAME_LENGTH;
+  STREAM_SET_SYNC(s, (time / MPC_FRAME_LENGTH) * MPC_FRAME_LENGTH );
+  mpc_demux_seek_sample(priv->demux, time);
   }
 
 static void close_mpc(bgav_demuxer_context_t * ctx)

@@ -26,27 +26,27 @@
 
 #include <gavl/trackinfo.h>
 
+static void track_init(bgav_track_table_t * tt, bgav_track_t * track)
+  {
+  track->info = gavl_append_track(&tt->info, NULL);
+  track->metadata = gavl_track_get_metadata_nc(track->info);
+  }
+
+
 bgav_track_table_t * bgav_track_table_create(int num_tracks)
   {
   bgav_track_table_t * ret;
   int i;
 
-  gavl_dictionary_t * m;
-  
-  gavl_dictionary_t track;
-
-  gavl_dictionary_init(&track);
-
-  
   ret = calloc(1, sizeof(*ret));
   ret->cur_idx = -1;
   
   gavl_dictionary_get_dictionary_create(&ret->info, GAVL_META_METADATA);
   
-  m = gavl_dictionary_get_dictionary_create(&track, GAVL_META_METADATA);
+  //  m = gavl_dictionary_get_dictionary_create(&track, GAVL_META_METADATA);
 
-  gavl_dictionary_set_int(m, GAVL_META_TOTAL, num_tracks);
-  gavl_dictionary_set_string(m, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_ITEM);
+  //  gavl_dictionary_set_int(m, GAVL_META_TOTAL, num_tracks);
+  //  gavl_dictionary_set_string(m, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_ITEM);
   
   if(num_tracks)
     {
@@ -55,18 +55,12 @@ bgav_track_table_t * bgav_track_table_create(int num_tracks)
     for(i = 0; i < num_tracks; i++)
       {
       ret->tracks[i] = calloc(1, sizeof(*ret->tracks[i]));
-      
-      ret->tracks[i]->info = gavl_append_track(&ret->info, &track);
-      ret->tracks[i]->metadata = gavl_track_get_metadata_nc(ret->tracks[i]->info);
-      
-      gavl_dictionary_set_int(ret->tracks[i]->metadata, GAVL_META_IDX, i);
+      track_init(ret, ret->tracks[i]);
       }
     ret->num_tracks = num_tracks;
     ret->cur = *ret->tracks;
     }
 
-  gavl_dictionary_free(&track);
-  
   ret->refcount = 1;
   return ret;
   }
@@ -77,9 +71,7 @@ bgav_track_t * bgav_track_table_append_track(bgav_track_table_t * t)
   memset(&t->tracks[t->num_tracks], 0, sizeof(t->tracks[t->num_tracks]));
 
   t->tracks[t->num_tracks] = calloc(1, sizeof(*t->tracks[t->num_tracks]));
-  
-  t->tracks[t->num_tracks]->info = gavl_append_track(&t->info, NULL);
-  t->tracks[t->num_tracks]->metadata = gavl_track_get_metadata_nc(t->tracks[t->num_tracks]->info);
+  track_init(t, t->tracks[t->num_tracks]);
   
   t->num_tracks++;
   

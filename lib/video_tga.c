@@ -88,33 +88,34 @@ static void dump_packet(uint8_t * data, int size)
   }
 #endif
 
-static int set_palette(bgav_stream_t * s, bgav_packet_t * p)
+static int set_palette(bgav_stream_t * s, gavl_palette_t * pal)
   {
   int i;
   tga_priv_t * priv;
+  
   priv = s->decoder_priv;
-  if(priv->ctab_size && (priv->ctab_size != p->pal->num_entries * 4))
+  if(priv->ctab_size && (priv->ctab_size != pal->num_entries * 4))
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
              "Palette size changed %d -> %d",
-             priv->ctab_size/4, p->pal->num_entries);
+             priv->ctab_size/4, pal->num_entries);
     return 0;
     }
   
-  priv->ctab_size = p->pal->num_entries * 4;
+  priv->ctab_size = pal->num_entries * 4;
 
   if(!priv->ctab)
     priv->ctab = malloc(priv->ctab_size);
   
-  for(i = 0; i < p->pal->num_entries; i++)
+  for(i = 0; i < pal->num_entries; i++)
     {
-    priv->ctab[i*4+0] = (p->pal->entries[i].r) >> 8;
-    priv->ctab[i*4+1] = (p->pal->entries[i].g) >> 8;
-    priv->ctab[i*4+2] = (p->pal->entries[i].b) >> 8;
-    priv->ctab[i*4+3] = (p->pal->entries[i].a) >> 8;
+    priv->ctab[i*4+0] = (pal->entries[i].r) >> 8;
+    priv->ctab[i*4+1] = (pal->entries[i].g) >> 8;
+    priv->ctab[i*4+2] = (pal->entries[i].b) >> 8;
+    priv->ctab[i*4+3] = (pal->entries[i].a) >> 8;
     }
   gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN,
-           "Setting palette %d entries", p->pal->num_entries);
+           "Setting palette %d entries", pal->num_entries);
   return 1;
   }
 
@@ -123,9 +124,9 @@ static gavl_source_status_t decode_tga(bgav_stream_t * s, gavl_video_frame_t * f
   gavl_source_status_t st;
   int result;
   tga_priv_t * priv;
+  gavl_palette_t * pal;
   
   priv = s->decoder_priv;
-  s->ci->flags &= ~GAVL_COMPRESSION_HAS_P_FRAMES;
   
   if(!(s->flags & STREAM_HAVE_FRAME))
     {
@@ -134,7 +135,9 @@ static gavl_source_status_t decode_tga(bgav_stream_t * s, gavl_video_frame_t * f
       return st;
 
     /* Set palette */
-    if(priv->p->pal && !set_palette(s, priv->p))
+    
+    if((pal = gavl_packet_get_extradata(priv->p, GAVL_PACKET_EXTRADATA_PALETTE)) &&
+       !set_palette(s, pal))
       return GAVL_SOURCE_EOF;
     
     result = tga_read_from_memory(&priv->tga, priv->p->buf.buf,
@@ -255,6 +258,7 @@ static int init_tga(bgav_stream_t * s)
   tga_priv_t * priv;
   priv = calloc(1, sizeof(*priv));
 
+  s->ci->flags &= ~GAVL_COMPRESSION_HAS_P_FRAMES;
   
   s->decoder_priv = priv;
   

@@ -91,6 +91,8 @@ typedef struct
 #else  
   ByteIOContext * pb;
 #endif // OLD_IO_API  
+
+  AVPacket * pkt;
   } ffmpeg_priv_t;
 
 /* Callbacks for URLProtocol */
@@ -175,13 +177,13 @@ static ff_const59 AVInputFormat * get_format(bgav_input_context_t * input)
   uint8_t data[PROBE_SIZE];
   AVProbeData avpd;
 
-  if(!input->filename)
+  if(!input->location)
     return 0;
   
   if(bgav_input_get_data(input, data, PROBE_SIZE) < PROBE_SIZE)
     return 0;
   
-  avpd.filename= input->filename;
+  avpd.filename= input->location;
   avpd.buf= data;
   avpd.buf_size= PROBE_SIZE;
   return av_probe_input_format(&avpd, 1);
@@ -662,10 +664,12 @@ static int open_ffmpeg(bgav_demuxer_context_t * ctx)
   priv = calloc(1, sizeof(*priv));
   ctx->priv = priv;
 
+  priv->pkt = av_packet_alloc();
+  
   /* With the current implementation in ffmpeg, this can be
      called multiple times */
 
-  tmp_string = bgav_sprintf("bgav:%s", ctx->input->filename);
+  tmp_string = bgav_sprintf("bgav:%s", ctx->input->location);
   
 #ifdef NEW_IO_API
   // TODO
@@ -816,6 +820,8 @@ static void close_ffmpeg(bgav_demuxer_context_t * ctx)
 #else
   av_close_input_file(priv->avfc);
 #endif
+
+  av_packet_free(&priv->pkt);
   
 #ifdef NEW_IO
   if(priv->buffer)
@@ -829,7 +835,6 @@ static gavl_source_status_t next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
   {
   int i;
   ffmpeg_priv_t * priv;
-  AVPacket pkt;
   AVStream * avs;
   gavl_palette_entry_t * pal;
   bgav_packet_t * p;
@@ -847,31 +852,29 @@ static gavl_source_status_t next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
   
   priv = ctx->priv;
   
-  if(av_read_frame(priv->avfc, &pkt) < 0)
+  if(av_read_frame(priv->avfc, priv->pkt) < 0)
     return GAVL_SOURCE_EOF;
   
-  s = bgav_track_find_stream(ctx, pkt.stream_index);
+  s = bgav_track_find_stream(ctx, priv->pkt->stream_index);
   if(!s)
     {
-    av_packet_unref(&pkt);
+    av_packet_unref(priv->pkt);
     return GAVL_SOURCE_OK;
     }
   
-  avs = priv->avfc->streams[pkt.stream_index];
+  avs = priv->avfc->streams[priv->pkt->stream_index];
   
   p = bgav_stream_get_packet_write(s);
-  bgav_packet_alloc(p, pkt.size);
-  memcpy(p->buf.buf, pkt.data, pkt.size);
-  p->buf.len = pkt.size;
+  bgav_packet_alloc(p, priv->pkt->size);
+  memcpy(p->buf.buf, priv->pkt->data, priv->pkt->size);
+  p->buf.len = priv->pkt->size;
   
-  if(pkt.pts != AV_NOPTS_VALUE)
+  if(priv->pkt->pts != AV_NOPTS_VALUE)
     {
-    p->pts=pkt.pts * priv->avfc->streams[pkt.stream_index]->time_base.num;
-    if(!STREAM_HAS_SYNC(s))
-      STREAM_SET_SYNC(s, p->pts);
+    p->pts=priv->pkt->pts * priv->avfc->streams[priv->pkt->stream_index]->time_base.num;
     
-    if((s->type == GAVL_STREAM_VIDEO) && pkt.duration)
-      p->duration = pkt.duration * avs->time_base.num;
+    if((s->type == GAVL_STREAM_VIDEO) && priv->pkt->duration)
+      p->duration = priv->pkt->duration * avs->time_base.num;
     }
   /* Handle palette */
   if((s->type == GAVL_STREAM_VIDEO) &&
@@ -879,22 +882,24 @@ static gavl_source_status_t next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
      avs->params->palctrl &&
      avs->params->palctrl->palette_changed
 #else
-     (pal_i = (uint32_t*)av_packet_get_side_data(&pkt,
+     (pal_i = (uint32_t*)av_packet_get_side_data(priv->pkt,
                                                  AV_PKT_DATA_PALETTE,
                                                  &pal_i_len))
 #endif
      )
     {
+    gavl_palette_t * palette;
     
 #if LIBAVCODEC_VERSION_MAJOR < 54
     pal_i = avs->params->palctrl->palette;
 #else
     pal_i_len /= 4;
 
-    p->pal = gavl_palette_create();
-    gavl_palette_alloc(p->pal, pal_i_len);
+    palette = gavl_packet_add_extradata(p, GAVL_PACKET_EXTRADATA_PALETTE);
     
-    pal = p->pal->entries;
+    gavl_palette_alloc(palette, pal_i_len);
+    
+    pal = palette->entries;
 #endif
     for(i = 0; i < pal_i_len; i++)
       {
@@ -911,11 +916,10 @@ static gavl_source_status_t next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
     avs->params->palctrl->palette_changed = 0;
 #endif
     }
-  if(pkt.flags&PKT_FLAG_KEY)
+  if(priv->pkt->flags&PKT_FLAG_KEY)
     PACKET_SET_KEYFRAME(p);
   bgav_stream_done_packet_write(s, p);
   
-  av_packet_unref(&pkt);
   
   return GAVL_SOURCE_OK;
   }

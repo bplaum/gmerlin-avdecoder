@@ -25,7 +25,7 @@
 #include <config.h>
 #include <avdec_private.h>
 #include <bsf.h>
-#include <bsf_private.h>
+// #include <bsf_private.h>
 // #include <utils.h>
 
 #define LOG_DOMAIN "bsf"
@@ -33,17 +33,20 @@
 typedef struct
   {
   uint32_t fourcc;
-  int (*init_func)(bgav_bsf_t*);
+  int (*init_func)(bgav_packet_filter_t*);
   } filter_t;
 
 static const filter_t filters[] =
   {
-    { BGAV_MK_FOURCC('a', 'v', 'c', '1'), bgav_bsf_init_avcC },
+    { BGAV_MK_FOURCC('a', 'v', 'c', '1'), bgav_packet_filter_init_avcC },
 #ifdef HAVE_AVCODEC
-    { BGAV_MK_FOURCC('A', 'D', 'T', 'S'), bgav_bsf_init_adts },
+    { BGAV_MK_FOURCC('A', 'D', 'T', 'S'), bgav_packet_filter_init_adts },
+    { BGAV_MK_FOURCC('A', 'A', 'C', 'P'), bgav_packet_filter_init_adts },
 #endif
+    { /* End */ }
   };
 
+#if 0
 void bgav_bsf_run(bgav_bsf_t * bsf, bgav_packet_t * in, bgav_packet_t * out)
   {
   /* Set packet fields now, so the filter has a chance
@@ -178,4 +181,61 @@ void bgav_bsf_destroy(bgav_bsf_t * bsf)
   
   free(bsf);
   }
+#endif
 
+
+bgav_packet_filter_t * bgav_packet_filter_create(uint32_t fourcc)
+  {
+  int idx = 0;
+  
+  bgav_packet_filter_t * ret;
+
+  while(filters[idx].fourcc)
+    {
+    if(fourcc == filters[idx].fourcc)
+      break;
+    idx++;
+    }
+
+  if(!filters[idx].fourcc)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "No packet filter found");
+    return NULL;
+    }
+  
+  ret = calloc(1, sizeof(*ret));
+
+  filters[idx].init_func(ret);
+  
+  return ret;
+  }
+
+void bgav_packet_filter_reset(bgav_packet_filter_t * f)
+  {
+  if(f->reset)
+    f->reset(f);
+
+  if(f->src)
+    gavl_packet_source_reset(f->src);
+  }
+
+gavl_packet_source_t *
+bgav_packet_filter_connect(bgav_packet_filter_t * f, gavl_packet_source_t * src)
+  {
+  f->prev = src;
+  
+  f->src = gavl_packet_source_create(f->source_func, f, f->src_flags,
+                                     gavl_packet_source_get_stream(f->prev));
+  return f->src;
+  }
+
+void bgav_packet_filter_destroy(bgav_packet_filter_t * f)
+  {
+  if(f->src)
+    gavl_packet_source_destroy(f->src);
+
+  if(f->cleanup)
+    f->cleanup(f);
+  free(f);
+  
+  }

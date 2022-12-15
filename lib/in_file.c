@@ -84,9 +84,9 @@ static int open_file(bgav_input_context_t * ctx, const char * url, char ** r)
   
   BGAV_FSEEK((FILE*)(ctx->priv), 0, SEEK_SET);
   
-  ctx->filename = gavl_strdup(url);
+  ctx->location = gavl_strdup(url);
   
-  bgav_md5_buffer(ctx->filename, strlen(ctx->filename),
+  bgav_md5_buffer(ctx->location, strlen(ctx->location),
                   md5sum);
   
   ctx->index_file = bgav_sprintf("%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
@@ -101,7 +101,9 @@ static int open_file(bgav_input_context_t * ctx, const char * url, char ** r)
 static int     read_file(bgav_input_context_t* ctx,
                          uint8_t * buffer, int len)
   {
-  return fread(buffer, 1, len, (FILE*)(ctx->priv)); 
+  int ret;
+  ret = fread(buffer, 1, len, (FILE*)ctx->priv); 
+  return ret;
   }
 
 static int64_t seek_byte_file(bgav_input_context_t * ctx,

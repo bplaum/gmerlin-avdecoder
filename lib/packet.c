@@ -35,7 +35,6 @@ void bgav_packet_free(bgav_packet_t * p)
   {
   gavl_buffer_free(&p->buf);
   
-  bgav_packet_free_palette(p);
   memset(p, 0, sizeof(*p));
   }
 
@@ -59,7 +58,7 @@ void bgav_packet_pad(bgav_packet_t * p)
   memset(p->buf.buf + p->buf.len, 0, GAVL_PACKET_PADDING);
   }
 
-
+#if 0
 void bgav_packet_dump(const bgav_packet_t * p)
   {
   bgav_dprintf("pos: %"PRId64", K: %d, ", p->position, !!PACKET_GET_KEYFRAME(p));
@@ -94,7 +93,7 @@ void bgav_packet_dump(const bgav_packet_t * p)
   if(p->flags & GAVL_PACKET_REF)
     bgav_dprintf(", ref");
 
-  if(p->flags & PACKET_FLAG_FIELD_PIC)
+  if(p->flags & GAVL_PACKET_FIELD_PIC)
     bgav_dprintf(", field-pic");
   
   if(p->timecode != GAVL_TIMECODE_UNDEFINED)
@@ -114,38 +113,13 @@ void bgav_packet_dump(const bgav_packet_t * p)
   bgav_dprintf("\n");
   //  gavl_hexdump(p->data, p->data_size < 16 ? p->data_size : 16, 16);
   }
+#endif
 
 void bgav_packet_dump_data(bgav_packet_t * p, int bytes)
   {
   if(bytes > p->buf.len)
     bytes = p->buf.len;
   gavl_hexdump(p->buf.buf, bytes, 16);
-  }
-
-
-void bgav_packet_swap_data(bgav_packet_t * p1, bgav_packet_t * p2)
-  {
-  gavl_buffer_t swp;
-
-  memcpy(&swp, &p1->buf, sizeof(swp));
-  memcpy(&p1->buf, &p2->buf, sizeof(swp));
-  memcpy(&p2->buf, &swp, sizeof(swp));
-  }
-
-void bgav_packet_reset(bgav_packet_t * p)
-  {
-  p->pts     = GAVL_TIME_UNDEFINED;
-  p->dts     = GAVL_TIME_UNDEFINED;
-  //  p->end_pts = GAVL_TIME_UNDEFINED;
-
-  gavl_buffer_reset(&p->buf);
-  
-  p->timecode = GAVL_TIMECODE_UNDEFINED;
-  p->flags = 0;
-  p->header_size = 0;
-  p->sequence_end_pos = 0;
-  p->duration = -1;
-  bgav_packet_free_palette(p);
   }
 
 void bgav_packet_copy_metadata(bgav_packet_t * dst,
@@ -166,36 +140,11 @@ void bgav_packet_copy(bgav_packet_t * dst,
   gavl_buffer_copy(&dst->buf, &src->buf);
   }
 
-
+#if 0
 void bgav_packet_source_copy(bgav_packet_source_t * dst,
                              const bgav_packet_source_t * src)
   {
   memcpy(dst, src, sizeof(*dst));
-  }
-
-#if 0
-void bgav_packet_alloc_palette(bgav_packet_t * p, int size)
-  {
-  p->palette = malloc(sizeof(*p->palette) * size);
-  p->palette_size = size;
-  }
-#endif
-
-void bgav_packet_free_palette(bgav_packet_t * p)
-  {
-  if(p->pal)
-    {
-    gavl_palette_destroy(p->pal);
-    p->pal = NULL;
-    }
-  }
-
-void bgav_packet_merge_field2(bgav_packet_t * p,
-                              const bgav_packet_t * field2)
-  {
-  bgav_packet_alloc(p, p->buf.len + field2->buf.len);
-  memcpy(p->buf.buf + p->buf.len, field2->buf.buf, field2->buf.len);
-  p->buf.len += field2->buf.len;
   }
 
 void bgav_packet_2_gavl(bgav_packet_t * src,
@@ -241,11 +190,4 @@ void bgav_packet_from_gavl(gavl_packet_t * src,
 
   gavl_rectangle_i_copy(&dst->src_rect, &src->src_rect);
   }
-
-void bgav_packet_save(bgav_packet_t * p, const char * filename)
-  {
-  gavl_packet_t gp;
-  gavl_packet_init(&gp);
-  bgav_packet_2_gavl(p, &gp);
-  gavl_packet_save(&gp, filename);
-  }
+#endif

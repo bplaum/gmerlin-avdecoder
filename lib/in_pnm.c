@@ -54,7 +54,7 @@ static int open_pnm(bgav_input_context_t * ctx, const char * url, char ** r)
   if(port < 0)
     port = 7070;
   
-  if((priv->fd = bgav_tcp_connect(ctx->opt, host, port)) == -1)
+  if((priv->fd = bgav_tcp_connect(&ctx->opt, host, port)) == -1)
     return 0;
 
   priv->s = pnm_connect(priv->fd, path);
@@ -69,7 +69,7 @@ static int open_pnm(bgav_input_context_t * ctx, const char * url, char ** r)
   if(path)
     free(path);
 
-  ctx->url = gavl_strdup(url);
+  ctx->location = gavl_strdup(url);
   
   return 1;
 

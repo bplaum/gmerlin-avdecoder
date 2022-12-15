@@ -71,7 +71,6 @@ typedef struct
   
   bgav_flac_frame_header_t first_fh;
   int have_first_fh;
-  int64_t pts;
   } flac_priv_t;
 
 
@@ -121,6 +120,7 @@ static int open_flac(bgav_demuxer_context_t * ctx)
         s->ci->codec_header.buf[1] = 'L';
         s->ci->codec_header.buf[2] = 'a';
         s->ci->codec_header.buf[3] = 'C';
+        s->fourcc = BGAV_MK_FOURCC('F', 'L', 'A', 'C');
         
         memcpy(s->ci->codec_header.buf + 4, header, 4);
         
@@ -140,7 +140,8 @@ static int open_flac(bgav_demuxer_context_t * ctx)
         
         if(ctx->opt->dump_headers)
           bgav_flac_streaminfo_dump(&priv->streaminfo);
-        bgav_flac_streaminfo_init_stream(&priv->streaminfo, s);
+        
+        bgav_flac_streaminfo_init_stream(&priv->streaminfo, s->info);
         
         if(priv->streaminfo.total_samples)
           s->stats.pts_end = priv->streaminfo.total_samples;
@@ -182,7 +183,7 @@ static int open_flac(bgav_demuxer_context_t * ctx)
           return 0;
 
         input_mem =
-          bgav_input_open_memory(comment_buffer, size, ctx->opt);
+          bgav_input_open_memory(comment_buffer, size);
 
         memset(&vc, 0, sizeof(vc));
 
@@ -262,12 +263,10 @@ static int open_flac(bgav_demuxer_context_t * ctx)
       }
 
     }
-  ctx->data_start = ctx->input->position;
+  ctx->tt->cur->data_start = ctx->input->position;
 
   if(ctx->input->total_bytes > 0)
     s->stats.total_bytes = ctx->input->total_bytes - ctx->input->position;
-  
-  ctx->flags |= BGAV_DEMUXER_HAS_DATA_START;
   
   bgav_track_set_format(ctx->tt->cur, GAVL_META_FORMAT_FLAC, "audio/flac");
   
@@ -280,7 +279,6 @@ static int open_flac(bgav_demuxer_context_t * ctx)
     gavl_dictionary_set_int(ctx->tt->cur->metadata, GAVL_META_SAMPLE_ACCURATE, 1);
     
     }
-  bgav_demuxer_init_cue(ctx);
   
   return 1;
     fail:
@@ -411,8 +409,7 @@ static gavl_source_status_t next_packet_flac(bgav_demuxer_context_t * ctx)
   //  p->pts = fh.sample_number;
   
   p->duration = priv->this_fh.blocksize;
-  p->pts = priv->pts;
-
+  
   //  fprintf(stderr, "Duration: %ld ", p->duration);
   
   if(priv->streaminfo.total_samples &&
@@ -426,7 +423,6 @@ static gavl_source_status_t next_packet_flac(bgav_demuxer_context_t * ctx)
 
   //  fprintf(stderr, "%ld\n", p->duration);
   
-  priv->pts += p->duration;
   p->buf.len = size;
   
   //  memcpy(&priv->fh, &fh, sizeof(fh));
@@ -470,12 +466,10 @@ static void seek_flac(bgav_demuxer_context_t * ctx, int64_t time, int scale)
   /* Seek to the point */
   
   bgav_input_seek(ctx->input,
-                  priv->seektable.entries[i].offset + ctx->data_start,
+                  priv->seektable.entries[i].offset + ctx->tt->cur->data_start,
                   SEEK_SET);
   
   STREAM_SET_SYNC(s, priv->seektable.entries[i].sample_number);
-  priv->pts = priv->seektable.entries[i].sample_number;
-
   priv->has_sync = 0;
   gavl_buffer_reset(&priv->buf);
   }
@@ -501,6 +495,7 @@ static void close_flac(bgav_demuxer_context_t * ctx)
   free(priv);
   }
 
+#if 0
 static void resync_flac(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
   {
   flac_priv_t * priv;
@@ -508,8 +503,8 @@ static void resync_flac(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
   priv = ctx->priv;
   priv->has_sync = 0;
   gavl_buffer_reset(&priv->buf);
-  priv->pts = STREAM_GET_SYNC(s);
   }
+#endif
 
 const bgav_demuxer_t bgav_demuxer_flac =
   {
@@ -518,7 +513,6 @@ const bgav_demuxer_t bgav_demuxer_flac =
     .next_packet = next_packet_flac,
     .select_track = select_track_flac,
     .seek =        seek_flac,
-    .resync        = resync_flac,
     .close =       close_flac
   };
 

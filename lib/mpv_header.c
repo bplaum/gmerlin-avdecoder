@@ -152,8 +152,7 @@ int bgav_mpv_get_start_code(const uint8_t * data, int get_ext)
   return 0;
   }
 
-int bgav_mpv_sequence_display_extension_parse(const bgav_options_t * opt,
-                                              bgav_mpv_sequence_display_extension_t * ret,
+int bgav_mpv_sequence_display_extension_parse(bgav_mpv_sequence_display_extension_t * ret,
                                               const uint8_t * buffer, int len)
   {
   int num = 4 + 4;
@@ -219,8 +218,7 @@ void bgav_mpv_get_framerate(int code, uint32_t * timescale, uint32_t * frame_dur
   *frame_duration = framerates[code].frame_duration;
   }
 
-int bgav_mpv_sequence_header_parse(const bgav_options_t * opt,
-                                   bgav_mpv_sequence_header_t * ret,
+int bgav_mpv_sequence_header_parse(bgav_mpv_sequence_header_t * ret,
                                    const uint8_t * buffer, int len)
   {
   int i;
@@ -265,8 +263,7 @@ int bgav_mpv_sequence_header_parse(const bgav_options_t * opt,
   }
 
 
-int bgav_mpv_sequence_extension_parse(const bgav_options_t * opt,
-                                      bgav_mpv_sequence_extension_t * ret,
+int bgav_mpv_sequence_extension_parse(bgav_mpv_sequence_extension_t * ret,
                                       const uint8_t * buffer, int len)
   {
   buffer += 4;
@@ -294,8 +291,7 @@ int bgav_mpv_sequence_extension_parse(const bgav_options_t * opt,
   return 1;
   }
 
-int bgav_mpv_picture_header_parse(const bgav_options_t * opt,
-                                  bgav_mpv_picture_header_t * ret,
+int bgav_mpv_picture_header_parse(bgav_mpv_picture_header_t * ret,
                                   const uint8_t * buffer, int len)
   {
   int type;
@@ -324,8 +320,7 @@ int bgav_mpv_picture_header_parse(const bgav_options_t * opt,
   return 2;
   }
 
-int bgav_mpv_picture_extension_parse(const bgav_options_t * opt,
-                                     bgav_mpv_picture_extension_t * ret,
+int bgav_mpv_picture_extension_parse(bgav_mpv_picture_extension_t * ret,
                                      const uint8_t * buffer, int len)
   {
   buffer += 4;
@@ -340,8 +335,7 @@ int bgav_mpv_picture_extension_parse(const bgav_options_t * opt,
   return 5;
   }
 
-int bgav_mpv_gop_header_parse(const bgav_options_t * opt,
-                              bgav_mpv_gop_header_t * ret,
+int bgav_mpv_gop_header_parse(bgav_mpv_gop_header_t * ret,
                               const uint8_t * buffer, int len)
   {
   buffer += 4;

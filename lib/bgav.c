@@ -83,7 +83,7 @@ int bgav_init(bgav_t * ret)
   const bgav_demuxer_t * demuxer = NULL;
   const bgav_redirector_t * redirector = NULL;
   
-  bgav_subtitle_reader_context_t * subreader, * subreaders;
+  //  bgav_subtitle_reader_context_t * subreader, * subreaders;
   
   /*
    *  If the input already has it's track table,
@@ -149,6 +149,9 @@ int bgav_init(bgav_t * ret)
       }
     if(!ret->demuxer)
       goto fail;
+    
+    // if(ret->tt->tracks[0].
+
     }
   else
     {
@@ -163,22 +166,6 @@ int bgav_init(bgav_t * ret)
     bgav_track_table_ref(ret->tt);
     bgav_track_table_remove_unsupported(ret->tt);
     bgav_track_table_merge_metadata(ret->tt, &ret->input->m);
-    
-    /* Check for subtitle file */
-    
-    if(ret->tt->cur && ret->opt.seek_subtitles &&
-       (ret->tt->cur->num_video_streams >= 1))
-      {
-      subreaders = bgav_subtitle_reader_open(ret->input);
-      
-      subreader = subreaders;
-      while(subreader)
-        {
-        bgav_track_attach_subtitle_reader(ret->tt->cur,
-                                          &ret->opt, subreader);
-        subreader = subreader->next;
-        }
-      }
     }
   
   if(!ret->input->tt)
@@ -191,6 +178,17 @@ int bgav_init(bgav_t * ret)
   
   if(is_redirector)
     return 1;
+
+  /* Let the demuxer get the track durations */
+  if(ret->demuxer && (ret->demuxer->flags & BGAV_DEMUXER_GET_DURATION) &&
+     (ret->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
+    {
+    for(i = 0; i < ret->tt->num_tracks; i++)
+      {
+      bgav_select_track(ret, i);
+      bgav_demuxer_get_duration(ret->demuxer);
+      }
+    }
   
   /* Add message streams */
   
@@ -209,36 +207,6 @@ int bgav_init(bgav_t * ret)
         gavl_dictionary_set_int(ret->tt->tracks[i]->metadata, GAVL_META_CAN_PAUSE, 1);
       }
     }
-
-  /* Get compression infos */
-#if 0
-  for(i = 0; i < ret->tt->num_tracks; i++)
-    {
-    bgav_stream_t * s;
-    
-    bgav_select_track(ret, i);
-    
-    for(j = 0; j < ret->tt->cur->num_audio_streams; j++)
-      {
-      s = bgav_track_get_audio_stream(ret->tt->cur, j);
-      bgav_get_audio_compression_info(ret, j, NULL);
-      gavl_stream_set_compression_info(s->info, s->ci);
-      }
-    for(j = 0; j < ret->tt->cur->num_video_streams; j++)
-      {
-      s = bgav_track_get_video_stream(ret->tt->cur, j);
-      bgav_get_video_compression_info(ret, j, NULL);
-      gavl_stream_set_compression_info(s->info, s->ci);
-      }
-    for(j = 0; j < ret->tt->cur->num_overlay_streams; j++)
-      {
-      s = bgav_track_get_overlay_stream(ret->tt->cur, j);
-      bgav_get_overlay_compression_info(ret, j, NULL);
-      gavl_stream_set_compression_info(s->info, s->ci);
-      }
-    
-    }
-#endif
   
   return 1;
     
@@ -246,7 +214,7 @@ int bgav_init(bgav_t * ret)
 
   if(!demuxer && !redirector)
     {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Cannot detect stream type %s %s", ret->input->url, ret->input->filename);
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Cannot detect stream type %s", ret->input->location);
     }
   
   if(ret->demuxer)
@@ -374,24 +342,6 @@ void bgav_stop(bgav_t * b)
   b->flags &= ~BGAV_FLAG_IS_RUNNING;
   }
 
-static void set_stream_demuxer(bgav_stream_t * s,
-                               bgav_demuxer_context_t * demuxer)
-  {
-  if(s->flags & STREAM_HAS_SUBREADER)
-    {
-    s->src.data = s->data.subtitle.subreader;
-    s->src.get_func = bgav_subtitle_reader_read_packet;
-    s->src.peek_func = bgav_subtitle_reader_peek_packet;
-    }
-  else
-    {
-    s->demuxer = demuxer;
-    s->src.data = s;
-    s->src.get_func = bgav_demuxer_get_packet_read;
-    s->src.peek_func = bgav_demuxer_peek_packet_read;
-    }
-
-  }
 
 static void set_stream_demuxers(bgav_track_t * t,
                                 bgav_demuxer_context_t * demuxer)
@@ -401,7 +351,7 @@ static void set_stream_demuxers(bgav_track_t * t,
      before we initialize the parsers/decoders */
   
   for(i = 0; i < t->num_streams; i++)
-    set_stream_demuxer(&t->streams[i], demuxer);
+    t->streams[i].demuxer = demuxer;
   }
 
 int bgav_select_track(bgav_t * b, int track)
@@ -409,15 +359,32 @@ int bgav_select_track(bgav_t * b, int track)
   int was_running = 0;
   int reset_input = 0;
   int64_t data_start = -1;
-  int i;
+
+  /* Close old playback */
+  if(b->flags & BGAV_FLAG_IS_RUNNING)
+    {
+    bgav_track_stop(b->tt->cur);
+    bgav_track_clear_eof_d(b->tt->cur);
+    b->flags &= ~BGAV_FLAG_IS_RUNNING;
+    was_running = 1;
+    }
   
   if((track < 0) || (track >= b->tt->num_tracks))
     return 0;
-
+  
+  bgav_track_table_select_track(b->tt, track);
+  set_stream_demuxers(b->tt->cur, b->demuxer);
+  
   /* Shortcut */
   if(!(b->flags & BGAV_FLAG_IS_RUNNING) && (track == b->tt->cur_idx))
-    return 1;
-  
+    {
+    /* Some demuxers need to do some initialialization */
+    if(b->demuxer && b->demuxer->demuxer->select_track)
+      b->demuxer->demuxer->select_track(b->demuxer, track);
+    
+    goto done;
+    }
+
   b->flags &= ~BGAV_FLAG_EOF;
 
   if(bgav_is_redirector(b))
@@ -429,20 +396,12 @@ int bgav_select_track(bgav_t * b, int track)
     return 1;
     }
   
-  if(b->flags & BGAV_FLAG_IS_RUNNING)
-    {
-    bgav_track_stop(b->tt->cur);
-    bgav_track_clear_eof_d(b->tt->cur);
-    b->flags &= ~BGAV_FLAG_IS_RUNNING;
-    was_running = 1;
-    }
   
   if(b->input->input->select_track)
     {
     /* Input switches track, recreate the demuxer */
 
     bgav_demuxer_stop(b->demuxer);
-    bgav_track_table_select_track(b->tt, track);
 
     /* Clear buffer */
     gavl_buffer_reset(&b->input->buf);
@@ -455,31 +414,7 @@ int bgav_select_track(bgav_t * b, int track)
 
   if(b->demuxer)
     {
-    if(b->demuxer->flags & BGAV_DEMUXER_HAS_DATA_START)
-      {
-      if(b->demuxer->data_start < b->input->position)
-        {
-        /* Some demuxers produce packets during initialization */
-        // bgav_track_clear(b->tt->cur);
-        
-        if(b->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
-          bgav_input_seek(b->input, b->demuxer->data_start, SEEK_SET);
-        else
-          {
-          if(was_running)
-            reset_input = 1;
-          
-          data_start = b->demuxer->data_start;
-          //        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-          //                 "Cannot reset track when on a nonseekable source");
-          //        return 0;
-          }
-        }
-      else if(b->demuxer->data_start > b->input->position)
-        bgav_input_skip(b->input, b->demuxer->data_start - b->input->position);
-      
-      }
-    else if(b->demuxer->si)
+    if(b->demuxer->si)
       {
       b->demuxer->si->current_position = 0;
       
@@ -495,6 +430,27 @@ int bgav_select_track(bgav_t * b, int track)
         }
       
       }
+
+    if(b->tt->cur->data_start < b->input->position)
+      {
+      /* Some demuxers produce packets during initialization */
+      // bgav_track_clear(b->tt->cur);
+        
+      if(b->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
+        bgav_input_seek(b->input, b->tt->cur->data_start, SEEK_SET);
+      else
+        {
+        if(was_running)
+          reset_input = 1;
+          
+        data_start = b->tt->cur->data_start;
+        //        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
+        //                 "Cannot reset track when on a nonseekable source");
+        //        return 0;
+        }
+      }
+    else if(b->tt->cur->data_start > b->input->position)
+      bgav_input_skip(b->input, b->tt->cur->data_start - b->input->position);
     
     // Enable this for inputs, which read sector based but have
     // no track selection
@@ -526,9 +482,6 @@ int bgav_select_track(bgav_t * b, int track)
       //      if(b->tt->cur)
       //        bgav_track_clear(b->tt->cur);
       
-      /* Demuxer switches track */
-      bgav_track_table_select_track(b->tt, track);
-      
       if(!b->demuxer->demuxer->select_track(b->demuxer, track))
         reset_input = 1;
       }
@@ -537,7 +490,6 @@ int bgav_select_track(bgav_t * b, int track)
       {
       /* Reset input. This will be done by closing and reopening the input */
       gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Reopening input due to track reset");
-      
       
       if(!bgav_input_reopen(b->input))
         return 0;
@@ -549,21 +501,10 @@ int bgav_select_track(bgav_t * b, int track)
       }
     }
   
-  /* If we have a file index for this track, switch to
-     file index mode */
-
-  if((b->tt->cur->flags & TRACK_HAS_FILE_INDEX) && !b->demuxer->si)
-    {
-    b->demuxer->demux_mode = DEMUX_MODE_FI;
-
-    /* Index positions are -1 by default for the superindex */
-    for(i = 0; i < b->tt->cur->num_streams; i++)
-      b->tt->cur->streams[i].index_position = 0;
-    }
   
   done:
 
-  set_stream_demuxers(b->tt->cur, b->demuxer);
+  //  set_stream_demuxers(b->tt->cur, b->demuxer);
   
   bgav_track_init_read(b->tt->cur);
   
