@@ -51,7 +51,7 @@ static int probe_m3u(bgav_input_context_t * input)
   /* Most likely, we get this via http, so we can check the mimetype */
   if(input->location)
     {
-    if(gavl_dictionary_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, NULL) && mimetype)
+    if(gavl_metadata_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, NULL) && mimetype)
       {
       if(strcasecmp(mimetype, "audio/x-pn-realaudio-plugin") &&
          strcasecmp(mimetype, "video/x-pn-realvideo-plugin") &&
@@ -522,40 +522,112 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
           }
         }
       }
-    else
+    else // Got URI
       {
       char * uri;
       char * hls_uri;
-      gavl_dictionary_t * src = NULL;
       const gavl_array_t * arr;
       const gavl_dictionary_t * dict;
 
       const char * stream_uri;
-      
-      
+
       uri = bgav_input_absolute_url(input, pos);
 
       if(hls)
         {
+        gavl_dictionary_t * variant;
+        gavl_dictionary_t * variant_m;
+        
+        if(!t)
+          t = append_track(tt);
+
         if(gavl_string_starts_with(uri, "https://"))
           hls_uri = gavl_sprintf("hlss://%s", uri + 8);
         else if(gavl_string_starts_with(uri, "http://"))
           hls_uri = gavl_sprintf("hls://%s", uri + 7);
         else
           hls_uri = gavl_strdup(uri);
-        
+
         gavl_dictionary_merge2(&http_vars, &http_vars_global);
         
         /* Append URI variables */
         hls_uri = gavl_url_append_http_vars(hls_uri, &http_vars);
         gavl_dictionary_reset(&http_vars);
         
-        /* Check for separate streams */
+        gavl_dictionary_merge2(t->metadata, &metadata);
+        gavl_dictionary_reset(&metadata);
+
+        variant = gavl_track_append_variant(t->info, NULL, hls_uri);
+
+        variant_m = gavl_track_get_metadata_nc(variant);
+        if(framerate != 0.0)
+          {
+          gavl_dictionary_set_float(variant_m, GAVL_META_FRAMERATE, framerate);
+          framerate = 0.0;
+          }
+
+        if(bitrate)
+          {
+          gavl_dictionary_set_int(variant_m, GAVL_META_BITRATE, bitrate);
+          bitrate = 0;
+          }
+        if(width)
+          {
+          gavl_dictionary_set_int(variant_m, GAVL_META_WIDTH, width);
+          width = 0;
+          }
+        if(height)
+          {
+          gavl_dictionary_set_int(variant_m, GAVL_META_HEIGHT, height);
+          height = 0;
+          }
+        
+        /* Check for separate audio streams */
         if(audio && (dict = gavl_dictionary_get_dictionary_nc(&ext_x_media, "AUDIO")) &&
-           (arr = gavl_dictionary_get_array(dict, audio)) &&
-           (arr->num_entries > 0) &&
-           (dict = gavl_value_get_dictionary(&arr->entries[0])) &&
-           (stream_uri = gavl_dictionary_get_string(dict, GAVL_META_URI)))
+           (arr = gavl_dictionary_get_array(dict, audio)))
+          {
+          /* Attach external audio streams */
+          gavl_dictionary_t * ext_stream;
+          gavl_dictionary_t * ext_m;
+          int i;
+          for(i = 0; i < arr->num_entries; i++)
+            {
+            if((dict = gavl_value_get_dictionary(&arr->entries[i])) &&
+               (stream_uri = gavl_dictionary_get_string(dict, GAVL_META_URI)))
+              {
+              ext_stream = gavl_track_append_external_stream(variant, GAVL_STREAM_AUDIO,
+                                                             NULL, stream_uri);
+              ext_m = gavl_stream_get_metadata_nc(ext_stream);
+              gavl_dictionary_set(ext_m, GAVL_META_LANGUAGE, gavl_dictionary_get(dict, GAVL_META_LANGUAGE));
+              gavl_dictionary_set(ext_m, GAVL_META_LABEL, gavl_dictionary_get(dict, GAVL_META_LABEL));
+              }
+            }
+          }
+
+        /* Check for separate subtitle streams */
+        if(subtitles && (dict = gavl_dictionary_get_dictionary_nc(&ext_x_media, "SUBTITLES")) &&
+           (arr = gavl_dictionary_get_array(dict, subtitles)))
+          {
+          /* Attach external subtitle streams */
+          gavl_dictionary_t * ext_stream;
+          gavl_dictionary_t * ext_m;
+          int i;
+          for(i = 0; i < arr->num_entries; i++)
+            {
+            if((dict = gavl_value_get_dictionary(&arr->entries[i])) &&
+               (stream_uri = gavl_dictionary_get_string(dict, GAVL_META_URI)))
+              {
+              ext_stream = gavl_track_append_external_stream(variant, GAVL_STREAM_TEXT,
+                                                             NULL, stream_uri);
+              ext_m = gavl_stream_get_metadata_nc(ext_stream);
+
+              gavl_dictionary_set(ext_m, GAVL_META_LANGUAGE, gavl_dictionary_get(dict, GAVL_META_LANGUAGE));
+              gavl_dictionary_set(ext_m, GAVL_META_LABEL, gavl_dictionary_get(dict, GAVL_META_LABEL));
+              }
+            }
+          }
+        
+#if 0             
           {
           int i;
 
@@ -583,27 +655,6 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
           m = gavl_dictionary_get_dictionary_create(edl_track, GAVL_META_METADATA);
           gavl_dictionary_set_string(m, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_LOCATION);
           
-          if(framerate != 0.0)
-            {
-            gavl_dictionary_set_float(src, GAVL_META_FRAMERATE, framerate);
-            framerate = 0.0;
-            }
-
-          if(bitrate)
-            {
-            gavl_dictionary_set_int(src, GAVL_META_BITRATE, bitrate);
-            bitrate = 0;
-            }
-          if(width)
-            {
-            gavl_dictionary_set_int(src, GAVL_META_WIDTH, width);
-            width = 0;
-            }
-          if(height)
-            {
-            gavl_dictionary_set_int(src, GAVL_META_HEIGHT, height);
-            height = 0;
-            }
           
           gavl_dictionary_merge2(m, &metadata);
           gavl_dictionary_reset(&metadata);
@@ -646,7 +697,6 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
               gavl_edl_segment_set_url(edl_segment, var);
             gavl_edl_segment_set(edl_segment, 0, 0, -1, -1, -1, -1);
             }
-#if 0 // TODO: Enable subtitles later
           if(subtitles && (dict = gavl_dictionary_get_dictionary_nc(&ext_x_media, "SUBTITLES")) &&
              (arr = gavl_dictionary_get_array(dict, subtitles)))
             {
@@ -687,7 +737,6 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
               gavl_edl_segment_set(edl_segment, 0, 0, -1, -1, -1, -1);
               }
             }
-#endif
           gavl_track_update_children(edl);
 
           //          t = NULL;
@@ -700,8 +749,10 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
           gavl_dictionary_merge2(t->metadata, &metadata);
           gavl_dictionary_reset(&metadata);
           
-          src = gavl_metadata_add_src(t->metadata, GAVL_META_SRC, NULL, hls_uri);
+          variant = gavl_track_append_variant(t->metadata, GAVL_META_SRC, NULL, hls_uri);
           }
+#endif
+      
         free(hls_uri);
         }
       else
@@ -718,15 +769,12 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
         
         gavl_dictionary_merge2(t->metadata, &metadata);
         gavl_dictionary_reset(&metadata);
-
-        if(gavl_dictionary_get_src(t->metadata, GAVL_META_SRC, 0, NULL, NULL) && (bitrate || width))
-          gavl_dictionary_set_int(t->metadata, GAVL_META_MULTIVARIANT, 1);
         
-        src = gavl_metadata_add_src(t->metadata, GAVL_META_SRC, NULL, tmp_string);
+        gavl_metadata_add_src(t->metadata, GAVL_META_SRC, NULL, tmp_string);
         free(tmp_string);
         }
       free(uri);
-
+#if 0
       if(src)
         {
         if(bitrate)
@@ -746,7 +794,8 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
           }
 
         }
-
+#endif
+      
       if(audio)
         {
         free(audio);
@@ -768,9 +817,6 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
   gavl_dictionary_free(&http_vars);
   gavl_array_free(&lines);
   
-  if(hls && t)
-    gavl_track_set_multivariant(t->info);
-
   gavl_buffer_free(&line_buf);
   
   return tt;

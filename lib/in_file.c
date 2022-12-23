@@ -72,7 +72,7 @@ static int open_file(bgav_input_context_t * ctx, const char * url, char ** r)
   ctx->priv = f;
 
   fstat(fileno(f), &st);
-  dict = gavl_dictionary_get_src_nc(&ctx->m, GAVL_META_SRC, 0);
+  dict = gavl_metadata_get_src_nc(&ctx->m, GAVL_META_SRC, 0);
 
   gavl_dictionary_set_long(dict, GAVL_META_MTIME, st.st_mtime);
   

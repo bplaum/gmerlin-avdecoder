@@ -326,6 +326,15 @@ void bgav_subtitle_stop(bgav_stream_t * s)
   s->data.subtitle.video.vsrc = NULL;
   }
 
+/* Generic seek function for subtitle readers */
+void bgav_subtitle_seek(bgav_demuxer_context_t * ctx, int64_t time, int scale)
+  {
+  bgav_stream_t * s = bgav_track_get_subtitle_stream(ctx->tt->cur, 0);
+  
+  bgav_input_seek(ctx->input, ctx->tt->cur->data_start, SEEK_SET);
+  bgav_subtitle_skipto(s, &time, scale);
+  }
+
 void bgav_subtitle_resync(bgav_stream_t * s)
   {
   /* Nothing to do here */
@@ -342,6 +351,25 @@ void bgav_subtitle_resync(bgav_stream_t * s)
 
 int bgav_subtitle_skipto(bgav_stream_t * s, int64_t * time, int scale)
   {
+  gavl_source_status_t st;
+  gavl_packet_t * p;
+  
+  /* Read packets util we have a current one */
+  while(1)
+    {
+    p = NULL;
+    if((st = bgav_stream_peek_packet_read(s, &p)) != GAVL_SOURCE_OK)
+      break;
+    if(gavl_time_unscale(s->timescale, p->pts + p->duration) <
+       gavl_time_unscale(scale, *time))
+      {
+      p = NULL;
+      bgav_stream_get_packet_read(s, &p);
+      bgav_stream_done_packet_read(s, p);
+      }
+    else
+      return 1;
+    }
   return 0;
   }
 

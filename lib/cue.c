@@ -25,15 +25,16 @@
 #include <ctype.h>
 #include <glob.h>
 
-
+#include <config.h>
 #include <avdec_private.h>
 #include <cue.h>
 
 
-
 #include <gavl/trackinfo.h>
 #include <gavl/metatags.h>
+#include <gavl/log.h>
 
+#define LOG_DOMAIN "cue"
 
 #define SAMPLES_PER_FRAME 588
 
@@ -394,7 +395,12 @@ gavl_dictionary_t * bgav_cue_get_edl(bgav_cue_t * cue,
   char * audio_file;
   int64_t total_samples;
   
-  audio_file = get_audio_file(filename);
+  if(!(audio_file = get_audio_file(filename)))
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Couldn't find audio file for cue: %s", filename);
+    return NULL;
+    }
+  
   total_samples = get_file_duration(audio_file);
   
   /* Create common metadata entries */

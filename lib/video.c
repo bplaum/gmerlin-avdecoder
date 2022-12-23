@@ -324,7 +324,7 @@ int bgav_video_init(bgav_stream_t * s)
   
   //  if((s->action == BGAV_STREAM_READRAW) &&
   //     (s->flags & STREAM_FILTER_PACKETS))
-  if(s->flags & STREAM_FILTER_PACKETS)
+  if((s->flags & STREAM_FILTER_PACKETS) && !s->pf)
     {
     gavl_stream_set_compression_info(s->info, s->ci);
     

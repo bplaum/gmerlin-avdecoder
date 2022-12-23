@@ -372,79 +372,10 @@ void bgav_track_init(bgav_track_t * t)
   }
 #endif
 
-typedef struct
-  {
-  int num_active_subtitle_streams;
 
-  bgav_track_t * t;
-  bgav_demuxer_context_t * demuxer;
-  } start_subtitle_t;
-
-static int start_subtitle(void * data, bgav_stream_t * s)
-  {
-  gavl_video_format_t * video_format;
-  bgav_stream_t * video_stream;
-  start_subtitle_t * ss = data;
-
-  if((s->type != GAVL_STREAM_TEXT) &&
-     (s->type != GAVL_STREAM_OVERLAY))
-    return 1;
-  
-  if(s->action == BGAV_STREAM_MUTE)
-    return 1;
-  ss->num_active_subtitle_streams++;
-  
-  if((video_stream = bgav_track_get_video_stream(s->track, 0)))
-    {
-    /* Check, if we must get the video format from the decoder */
-    video_format = video_stream->data.video.format;
-
-    if((video_stream->action == BGAV_STREAM_MUTE) &&
-       !(video_stream->flags & STREAM_STARTED))
-      {
-      /* Start the video decoder to get the format */
-      video_stream->action = BGAV_STREAM_DECODE;
-      video_stream->demuxer = ss->demuxer;
-      bgav_stream_start(video_stream);
-      bgav_stream_stop(video_stream);
-      video_stream->action = BGAV_STREAM_MUTE;
-      }
-    
-    if((!video_format->image_width || !video_format->image_height ||
-        !video_format->timescale) &&
-       (video_stream->action != BGAV_STREAM_PARSE))
-      {
-      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-               "Starting subtitle decoder failed (cannot get video format)");
-      return 0;
-      }
-    
-    /*
-     *  For text subtitles, copy the video format.
-     *  TODO: This shouldn't be necessary!!
-     */
-    
-    if(s->type == GAVL_STREAM_TEXT)
-      {
-      gavl_video_format_copy(s->data.subtitle.video.format,
-                             video_format);
-      }
-    
-    }
-  
-    
-  if(!bgav_stream_start(s))
-    {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-             "Starting subtitle decoder failed");
-    return 0;
-    }
-  return 1;
-  }
 
 int bgav_track_start(bgav_track_t * t, bgav_demuxer_context_t * demuxer)
   {
-  start_subtitle_t ss;
   int i;
   int num_active_audio_streams = 0;
   int num_active_video_streams = 0;
@@ -484,26 +415,28 @@ int bgav_track_start(bgav_track_t * t, bgav_demuxer_context_t * demuxer)
       }
     }
 
-  ss.demuxer = demuxer;
-  ss.t = t;
-  ss.num_active_subtitle_streams = 0;
-  
-  if(!bgav_streams_foreach(t->streams, t->num_streams, start_subtitle, &ss))
-    return 0;
-  
-  if((!num_active_audio_streams && !num_active_video_streams &&
-      ss.num_active_subtitle_streams))
+  for(i = 0; i < t->num_text_streams + t->num_overlay_streams; i++)
+    {
+    s = bgav_track_get_subtitle_stream(t, i);
+    if(s->action == BGAV_STREAM_MUTE)
+      continue;
+    
+    if(!bgav_stream_start(s))
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
+               "Starting subtitle decoder for stream %d failed", i+1);
+      //      gavl_dictionary_dump(s->info, 2);
+      bgav_stream_dump(s);
+      bgav_video_dump(s);
+      return 0;
+      }
+    }
+
+  if(!num_active_audio_streams && !num_active_video_streams)
     demuxer->flags |= BGAV_DEMUXER_PEEK_FORCES_READ;
   else
     demuxer->flags &= ~BGAV_DEMUXER_PEEK_FORCES_READ;
-
-  if(!num_active_audio_streams &&
-     !num_active_video_streams &&
-     (ss.num_active_subtitle_streams == 1))
-    {
-    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Detected subreader only mode");
-    demuxer->flags |= BGAV_DEMUXER_SUBREAD_ONLY;
-    }
+  
   return 1;
   }
 
@@ -1113,5 +1046,15 @@ void bgav_track_compute_info(bgav_track_t * t)
 
   //  fprintf(stderr, "Computed track info:\n");
   //  gavl_dictionary_dump(t->info, 2);
-  
+
+  }
+
+void bgav_track_export_infos(bgav_track_t * t)
+  {
+  int i;
+  for(i = 0; i < t->num_streams; i++)
+    {
+    gavl_dictionary_reset(t->streams[i].info_ext);
+    gavl_dictionary_copy(t->streams[i].info_ext, &t->streams[i].in_info);
+    }
   }

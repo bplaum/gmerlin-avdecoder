@@ -174,6 +174,7 @@ static gavl_source_status_t next_packet_srt(bgav_demuxer_context_t * ctx)
         // Terminator doesn't count for data size
         // p->data_size++;
         }
+      bgav_stream_done_packet_write(s, p);
       return GAVL_SOURCE_OK;
       }
     if(lines_read)
@@ -186,34 +187,45 @@ static gavl_source_status_t next_packet_srt(bgav_demuxer_context_t * ctx)
     bgav_packet_alloc(p, p->buf.len + srt->line_buf.len + 2);
     gavl_buffer_append(&p->buf, &srt->line_buf);
     }
-
-  bgav_stream_done_packet_write(s, p);
-  
-  return GAVL_SOURCE_OK;
+  /* Never get here */
+  return GAVL_SOURCE_EOF;
   }
 
 static int open_srt(bgav_demuxer_context_t * ctx)
   {
   bgav_stream_t * s;
 
+  srt_t * srt = calloc(1, sizeof(*srt));
+  ctx->priv = srt;
+    
   bgav_input_detect_charset(ctx->input);
   
   ctx->tt = bgav_track_table_create(1);
   s = bgav_track_add_text_stream(ctx->tt->cur, ctx->opt, ctx->input->charset);
   s->stream_id = STREAM_ID;
+  s->timescale = 1000;
+  srt->scale_num = 1;
+  srt->scale_den = 1;
+
+  if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
+    ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
   
   return 1;
   }
 
 static void close_srt(bgav_demuxer_context_t * ctx)
   {
-  
+  srt_t * srt = ctx->priv;
+
+  gavl_buffer_free(&srt->line_buf);
+  free(srt);
   }
   
 const bgav_demuxer_t bgav_demuxer_srt =
   {
     .probe =       probe_srt,
     .open =        open_srt,
+    .seek =        bgav_subtitle_seek,
     .next_packet = next_packet_srt,
     .close =       close_srt
   };

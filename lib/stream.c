@@ -228,12 +228,12 @@ read_packet_continuous(void * priv, bgav_packet_t ** ret)
         == GAVL_SOURCE_AGAIN)
     {
     bgav_demuxer_context_t * demuxer;
+
+    demuxer = s->demuxer;
     
-    if(s->flags & STREAM_DISCONT)
+    if((s->flags & STREAM_DISCONT) && !(s->demuxer->flags & BGAV_DEMUXER_PEEK_FORCES_READ))
       return st;
     
-    demuxer = s->demuxer;
-
     demuxer->request_stream = s;
     
     if(!bgav_demuxer_next_packet(demuxer))

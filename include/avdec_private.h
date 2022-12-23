@@ -639,6 +639,7 @@ struct bgav_track_s
 
 /* track.c */
 
+void bgav_track_export_infos(bgav_track_t * t);
 
 void bgav_track_set_format(bgav_track_t * track, const char * format, const char * mimetype);
 
@@ -784,6 +785,8 @@ void bgav_track_table_remove_unsupported(bgav_track_table_t * t);
 
 void bgav_track_table_compute_info(bgav_track_table_t * t);
 void bgav_track_table_create_message_streams(bgav_track_table_t * t, const bgav_options_t * opt);
+void bgav_track_table_export_infos(bgav_track_table_t * t);
+
 
 /* Options (shared between inputs, demuxers and decoders) */
 
@@ -1709,6 +1712,9 @@ void bgav_video_set_still(bgav_stream_t * stream);
 
 
 /* subtitle.c */
+
+void bgav_subtitle_seek(bgav_demuxer_context_t * ctx, int64_t time, int scale);
+
 
 void bgav_subtitle_dump(bgav_stream_t * s);
 

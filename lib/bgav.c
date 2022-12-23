@@ -272,8 +272,8 @@ int bgav_open(bgav_t * ret, const char * location)
     bgav_set_sample_accurate(ret);
   
   bgav_track_table_compute_info(ret->tt);
-  
-  
+  bgav_track_table_export_infos(ret->tt);
+    
   return 1;
   fail:
 
@@ -507,6 +507,9 @@ int bgav_select_track(bgav_t * b, int track)
   //  set_stream_demuxers(b->tt->cur, b->demuxer);
   
   bgav_track_init_read(b->tt->cur);
+  bgav_track_compute_info(b->tt->cur);
+
+
   
   return 1;
   }

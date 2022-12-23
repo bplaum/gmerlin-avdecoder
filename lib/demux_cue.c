@@ -50,7 +50,7 @@ static int probe_cue(bgav_input_context_t * input)
     return 0;
   
   /* Check for .cue or .CUE in the location  */
-  if(!gavl_dictionary_get_src(&input->m, GAVL_META_SRC, 0,
+  if(!gavl_metadata_get_src(&input->m, GAVL_META_SRC, 0,
                               NULL, &loc) ||
      !loc ||
      (!gavl_string_ends_with(loc, ".cue") &&
@@ -119,7 +119,7 @@ static int open_cue(bgav_demuxer_context_t * ctx)
 
   bgav_cue_t * cue = NULL;
 
-  if(!gavl_dictionary_get_src(&ctx->input->m, GAVL_META_SRC, 0, NULL, &loc))
+  if(!gavl_metadata_get_src(&ctx->input->m, GAVL_META_SRC, 0, NULL, &loc))
     goto fail;
   
   if(!(cue = bgav_cue_read(ctx->input)))

@@ -137,7 +137,7 @@ static int open_mmsh(bgav_input_context_t * ctx, const char * url, char ** r)
 
   var = bgav_http_header_get_var(header, "Content-Type");
   if(var)
-    gavl_dictionary_set_string(gavl_dictionary_get_src_nc(&ctx->m, GAVL_META_SRC, 0),
+    gavl_dictionary_set_string(gavl_metadata_get_src_nc(&ctx->m, GAVL_META_SRC, 0),
                                GAVL_META_MIMETYPE, var);
   
   ctx->url = gavl_strdup(url);

@@ -114,7 +114,7 @@ static void set_metadata(const gavl_dictionary_t * header, gavl_dictionary_t * m
 
   /* Get content type */
 
-  if((src = gavl_dictionary_get_src_nc(m, GAVL_META_SRC, 0)))
+  if((src = gavl_metadata_get_src_nc(m, GAVL_META_SRC, 0)))
     {
     var = gavl_dictionary_get_string_i(header, "Content-Type");
     if(var)

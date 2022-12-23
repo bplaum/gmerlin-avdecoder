@@ -301,7 +301,7 @@ static int probe_nsv(bgav_input_context_t * input)
   const char * mimetype; 
   /* Check for video/nsv */
 
-  if(gavl_dictionary_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, NULL) && mimetype &&
+  if(gavl_metadata_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, NULL) && mimetype &&
      !strcmp(mimetype, "video/nsv"))
     return 1;
 

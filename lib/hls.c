@@ -75,7 +75,7 @@ int bgav_hls_detect(bgav_input_context_t * ctx)
   char * probe_buffer = NULL;
   int result = 0;
 
-  if(!gavl_dictionary_get_src(&ctx->m, GAVL_META_SRC, 0, &var, NULL) || !var)
+  if(!gavl_metadata_get_src(&ctx->m, GAVL_META_SRC, 0, &var, NULL) || !var)
     goto end;
   
   if(strncasecmp(var, "application/x-mpegurl", 21) && 

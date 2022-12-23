@@ -87,6 +87,7 @@ extern const bgav_demuxer_t bgav_demuxer_rawaudio;
 extern const bgav_demuxer_t bgav_demuxer_image;
 extern const bgav_demuxer_t bgav_demuxer_cue;
 extern const bgav_demuxer_t bgav_demuxer_vtt;
+extern const bgav_demuxer_t bgav_demuxer_srt;
 
 #ifdef HAVE_VORBIS
 extern const bgav_demuxer_t bgav_demuxer_ogg2;
@@ -184,6 +185,7 @@ static const demuxer_t demuxers[] =
 
 static const demuxer_t sync_demuxers[] =
   {
+    { &bgav_demuxer_srt,       "SubRip subtitle" },
     { &bgav_demuxer_mpegts2,   "MPEG-2 transport stream" },
     //    { &bgav_demuxer_mpegts,    "MPEG-2 transport stream" },
     { &bgav_demuxer_mpegaudio, "MPEG Audio" },
@@ -230,7 +232,7 @@ const bgav_demuxer_t * bgav_demuxer_probe(bgav_input_context_t * input)
     }
 #endif
 
-  if(gavl_dictionary_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, NULL) && mimetype)
+  if(gavl_metadata_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, NULL) && mimetype)
     {
     for(i = 0; i < num_mimetypes; i++)
       {
