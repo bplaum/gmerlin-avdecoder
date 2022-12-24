@@ -931,12 +931,7 @@ static void seek_ffmpeg(bgav_demuxer_context_t * ctx, int64_t time, int scale)
 
   av_seek_frame(priv->avfc, -1,
                 gavl_time_rescale(scale, AV_TIME_BASE, time), 0);
-  
-  while(!bgav_track_has_sync(ctx->tt->cur))
-    {
-    if(!next_packet_ffmpeg(ctx))
-      break;
-    }
+
   }
 
 const bgav_demuxer_t bgav_demuxer_ffmpeg =

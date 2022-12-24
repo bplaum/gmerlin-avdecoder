@@ -87,7 +87,6 @@ typedef struct
 
   int need_audio_extradata;
   int need_video_extradata;
-  int resync;
   } flv_priv_t;
 
 static int probe_flv(bgav_input_context_t * input)
@@ -839,17 +838,6 @@ static void seek_flv(bgav_demuxer_context_t * ctx, int64_t time, int scale)
   file_pos = (int64_t)(filepositions->data.array.elements[i].data.number)-4;
   bgav_input_seek(ctx->input, file_pos, SEEK_SET);
 
-  /* Resync */
-
-  priv->resync = 1;
-  
-  while(1)
-    {
-    if(!next_packet_flv(ctx) ||
-       bgav_track_has_sync(ctx->tt->cur))
-      break;
-    }
-  priv->resync = 0;
   }
      
 

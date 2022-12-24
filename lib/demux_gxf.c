@@ -636,16 +636,7 @@ static void seek_gxf(bgav_demuxer_context_t * ctx, int64_t time,
 
   priv->do_sync = 1;
   priv->sync_field = field_index;
-
   
-  while(!bgav_track_has_sync(ctx->tt->cur))
-    {
-    if(!next_packet_gxf(ctx))
-      break;
-    }
-  
-  //  if(bgav_track_has_sync(ctx->tt->cur))
-    
   priv->do_sync = 0;
   }
 

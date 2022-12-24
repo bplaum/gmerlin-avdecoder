@@ -174,7 +174,6 @@ typedef struct
   /* Actions for next_packet */
   
   int find_streams;
-  int do_sync;
 
   int have_pts; /* Whether PTS are present at all */
   
@@ -818,7 +817,6 @@ static void find_streams(bgav_demuxer_context_t * ctx)
   
   priv = ctx->priv;
   priv->find_streams = 1;
-  priv->do_sync = 1;
   priv->have_pts = 0;
   
   if(!(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
@@ -835,7 +833,6 @@ static void find_streams(bgav_demuxer_context_t * ctx)
       }
     }
   priv->find_streams = 0;
-  priv->do_sync = 0;
   
   if(input_save)
     {
@@ -896,28 +893,6 @@ static void get_duration(bgav_demuxer_context_t * ctx)
   }
 
 
-static int do_sync(bgav_demuxer_context_t * ctx)
-  {
-  mpegps_priv_t * priv;
-  priv = ctx->priv;
-  priv->do_sync = 1;
-
-  fprintf(stderr, "do sync...\n");
-
-  while(!bgav_track_has_sync(ctx->tt->cur))
-    {
-    if(!next_packet_mpegps(ctx))
-      {
-      //      fprintf(stderr, "do sync: EOF\n");
-      priv->do_sync = 0;
-      return 0;
-      }
-    }
-  fprintf(stderr, "do sync done\n");
-  
-  priv->do_sync = 0;
-  return 1;
-  }
 
 /* Check for cdxa file, return 0 if there isn't one */
 
@@ -1114,6 +1089,7 @@ static int open_mpegps(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
+#if 0
 static void seek_normal(bgav_demuxer_context_t * ctx, int64_t time,
                         int scale)
   {
@@ -1156,6 +1132,7 @@ static void seek_normal(bgav_demuxer_context_t * ctx, int64_t time,
       }
     }
   }
+#endif
 
 static void seek_sector(bgav_demuxer_context_t * ctx, gavl_time_t time,
                         int scale)
@@ -1179,7 +1156,8 @@ static void seek_sector(bgav_demuxer_context_t * ctx, gavl_time_t time,
     {
     priv->goto_sector(ctx, sector);
     
-    if(do_sync(ctx))
+    //    if(do_sync(ctx))
+    if(1)
       break;
     else
       {
@@ -1200,12 +1178,12 @@ static void seek_mpegps(bgav_demuxer_context_t * ctx, int64_t time, int scale)
   if(ctx->input->input->seek_time)
     {
     ctx->input->input->seek_time(ctx->input, time, scale);
-    do_sync(ctx);
+    //    do_sync(ctx);
     }
   else if(priv->sector_size)
     seek_sector(ctx, time, scale);
-  else
-    seek_normal(ctx, time, scale);
+  //  else
+  //    seek_normal(ctx, time, scale);
   }
 
 static void close_mpegps(bgav_demuxer_context_t * ctx)

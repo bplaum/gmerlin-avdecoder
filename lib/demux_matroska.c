@@ -791,7 +791,6 @@ static int open_matroska(bgav_demuxer_context_t * ctx)
         break;
       case MKV_ID_Cluster:
         done = 1;
-        ctx->tt->cur->data_start = pos;
         break;
       case MKV_ID_Chapters:
         bgav_input_skip(ctx->input, head_len);
@@ -817,6 +816,7 @@ static int open_matroska(bgav_demuxer_context_t * ctx)
 
   /* Create track table */
   ctx->tt = bgav_track_table_create(1);
+  ctx->tt->cur->data_start = pos;
   
   for(i = 0; i < p->num_tracks; i++)
     {
@@ -1375,14 +1375,6 @@ seek_matroska(bgav_demuxer_context_t * ctx, int64_t time, int scale)
                   priv->cues.points[i].tracks[0].CueClusterPosition +
                   priv->segment_start, SEEK_SET);
 
-  /* Resync */
-
-  priv->do_sync = 1;
-  
-  while(!bgav_track_has_sync(ctx->tt->cur))
-    next_packet_matroska(ctx);
-
-  priv->do_sync = 0;
   }
 
 
