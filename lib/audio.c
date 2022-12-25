@@ -311,17 +311,14 @@ void bgav_audio_dump(bgav_stream_t * s)
 
 void bgav_audio_resync(bgav_stream_t * s)
   {
+  gavl_packet_t * p = NULL;
+  
   if(s->data.audio.frame)
     s->data.audio.frame->valid_samples = 0;
+
+  if(bgav_stream_peek_packet_read(s, &p) != GAVL_SOURCE_EOF)
+    s->out_time = p->pts;
   
-  if(s->out_time == GAVL_TIME_UNDEFINED)
-    {
-    s->out_time =
-      gavl_time_rescale(s->timescale,
-                        s->data.audio.format->samplerate,
-                        STREAM_GET_SYNC(s));
-    }
-    
   if(s->data.audio.decoder &&
      s->data.audio.decoder->resync)
     s->data.audio.decoder->resync(s);
@@ -352,8 +349,11 @@ int bgav_audio_skipto(bgav_stream_t * s, int64_t * t, int scale)
              s->out_time, skip_time, num_samples);
     return 1;
     }
+
+  fprintf(stderr, "Skipto... %"PRId64, num_samples);
   
   gavl_audio_source_skip(s->data.audio.source, num_samples);
+  fprintf(stderr, "done\n");
   return 1;
   }
 

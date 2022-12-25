@@ -1035,7 +1035,8 @@ static void setup_packet(mkv_t * m, bgav_stream_t * s,
   p->position = m->cluster_pos;
   t = s->priv;
 
-  p->pes_pts = pts;
+  if(!index)
+    p->pes_pts = pts;
   
   if(t->frame_samples && !(s->flags & STREAM_PARSE_FRAME))
     {
@@ -1043,13 +1044,23 @@ static void setup_packet(mkv_t * m, bgav_stream_t * s,
     }
   else if(!index)
     {
-    //    if(s->type == GAVF_STREAM_VIDEO)
-    //      fprintf(stderr, "Video PTS: %"PRId64"\n", pts);
-    p->pts = pts;
+    if((s->type == GAVL_STREAM_VIDEO) ||
+       (s->type == GAVL_STREAM_TEXT))
+      {
+      //      fprintf(stderr, "Video PTS: %"PRId64"\n", pts);
+      p->pts = pts;
+      }
+    
     if(keyframe)
       PACKET_SET_KEYFRAME(p);
     }
-
+  
+#if 0
+  if(s->type == GAVL_STREAM_TEXT)
+    {
+    fprintf(stderr, "TEXT PTS: %"PRId64"\n", p->pes_pts);
+    }
+#endif
   //  fprintf(stderr, "setup_packet 1: %"PRId64"\n", p->pts);
   }
 

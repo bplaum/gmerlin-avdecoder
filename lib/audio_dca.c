@@ -50,33 +50,6 @@ typedef struct
 
 #define MAX_FRAME_SIZE 3840
 
-/*
- *  Parse header and read data bytes for that frame
- *  (also does resync)
- */
-
-#if 0
-static int do_resync(bgav_stream_t * s, int * flags,
-                     int * sample_rate, int * bit_rate, int * frame_length)
-  {
-  int dummy;
-  dts_priv * priv;
-  priv = s->data.audio.decoder->priv;
-
-  while(1)
-    {
-    if(!get_data(s, 14))
-      return 0;
-    if((*frame_length = dts_syncinfo(priv->state, priv->buffer,
-                                     flags, sample_rate, bit_rate, &dummy)))
-      {
-      return 1;
-      }
-    done_data(s, 1);
-    }
-  return 0;
-  }
-#endif
 
 static void resync_dts(bgav_stream_t * s)
   {
@@ -145,8 +118,10 @@ static gavl_source_status_t decode_frame_dts(bgav_stream_t * s)
       gavl_dictionary_set_string(s->m, GAVL_META_FORMAT,
                         "DTS");
       }
-    
+
+    //    fprintf(stderr, "dts_frame...");
     dts_frame(priv->state, priv->packet->buf.buf, &flags, &level, 0.0);
+    //    fprintf(stderr, "done\n");
     
     if(!s->opt->audio_dynrange)
       dts_dynrng(priv->state, NULL, NULL);

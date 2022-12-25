@@ -789,19 +789,25 @@ void bgav_track_mute(bgav_track_t * t)
   bgav_track_foreach(t, mute_stream, NULL);
   }
 
-static int check_sync_time(bgav_stream_t * s, int64_t * t, int scale)
+static int check_sync_time(bgav_stream_t * s, int64_t * t)
   {
   int64_t tt;
   gavl_packet_t * p = NULL;
+
+  int scale = 0;
   
   if((s->action == BGAV_STREAM_MUTE) ||
      (s->flags & STREAM_DISCONT))
     return 1;
-
+  
   if(bgav_stream_peek_packet_read(s, &p) != GAVL_SOURCE_OK)
     return 0;
-      
-  tt = gavl_time_rescale(s->timescale, scale, p->pts);
+
+  if(!gavl_dictionary_get_int(s->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, &scale) ||
+     (scale <= 0))
+    return 1;
+  
+  tt = gavl_time_unscale(scale, p->pts);
   if(tt > *t)
     *t = tt;
   
@@ -818,16 +824,16 @@ int64_t bgav_track_sync_time(bgav_track_t * t, int scale)
     {
     s = bgav_track_get_audio_stream(t, i);
 
-    if(!check_sync_time(s, &ret, scale))
+    if(!check_sync_time(s, &ret))
       return GAVL_TIME_UNDEFINED;
     }
   for(i = 0; i < t->num_video_streams; i++)
     {
     s = bgav_track_get_video_stream(t, i);
-    if(!check_sync_time(s, &ret, scale))
+    if(!check_sync_time(s, &ret))
       return GAVL_TIME_UNDEFINED;
     }
-  return ret;
+  return gavl_time_scale(scale, ret);
   }
 
 static int check_out_time(bgav_stream_t * s, int64_t * t, int scale,

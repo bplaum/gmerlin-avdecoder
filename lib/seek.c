@@ -207,6 +207,8 @@ static void seek_once(bgav_t * b, int64_t * time, int scale)
 
   bgav_track_clear(track);
   b->demuxer->demuxer->seek(b->demuxer, *time, scale);
+  /* Re-sync decoders */
+
   bgav_track_resync(track);
   sync_time = bgav_track_sync_time(track, scale);
 

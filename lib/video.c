@@ -583,7 +583,6 @@ int bgav_video_skipto(bgav_stream_t * s, int64_t * time, int scale)
   bgav_packet_t * p; 
   gavl_source_status_t st;
   
-  int result;
   int64_t time_scaled;
   
   time_scaled =
@@ -594,7 +593,8 @@ int bgav_video_skipto(bgav_stream_t * s, int64_t * time, int scale)
     /* Nothing to do */
     return 1;
     }
-  else if(s->out_time > time_scaled)
+
+  if(s->out_time > time_scaled)
     {
     char tmp_string1[128];
     char tmp_string2[128];
@@ -610,7 +610,7 @@ int bgav_video_skipto(bgav_stream_t * s, int64_t * time, int scale)
     }
   
   /* Easy case: Intra only streams */
-  else if(!(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
+  if(!(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
     {
     while(1)
       {
@@ -632,38 +632,39 @@ int bgav_video_skipto(bgav_stream_t * s, int64_t * time, int scale)
     }
   
   if(s->data.video.decoder->skipto)
+    return s->data.video.decoder->skipto(s, time_scaled);
+  
+  while(1)
     {
-    if(!s->data.video.decoder->skipto(s, time_scaled))
-      return 0;
-    }
-  else
-    {
-    while(1)
+    gavl_video_frame_t * f;
+
+    f = NULL;
+      
+    if(gavl_video_source_read_frame(s->data.video.vsrc, &f) != GAVL_SOURCE_OK)
       {
-      p = NULL;
-      if(bgav_stream_peek_packet_read(s, &p) != GAVL_SOURCE_OK)
+      s->out_time = GAVL_TIME_UNDEFINED;
+      return 0;
+      }
+    if(f->duration <= 0)
+      {
+      if(f->timestamp >= time_scaled)
         {
-        s->out_time = GAVL_TIME_UNDEFINED;
-        return 0;
+        s->out_time = f->timestamp;
+        goto end;
         }
-      
-      //      fprintf(stderr, "Peek packet: %ld %ld %ld\n",
-      //              p->pts, p->duration, time_scaled);
-      
-      if(p->pts + p->duration > time_scaled)
+      }
+    else
+      {
+      if(f->timestamp + f->duration >= time_scaled)
         {
-        s->out_time = p->pts;
-        return 1;
-        }
-      result = bgav_video_decode(s, NULL);
-      if(!result)
-        {
-        s->out_time = GAVL_TIME_UNDEFINED;
-        return 0;
+        s->out_time = f->timestamp + f->duration;
+        goto end;
         }
       }
     }
 
+  end:
+  
   *time = gavl_time_rescale(s->data.video.format->timescale, scale, s->out_time);
 
   //  fprintf(stderr, "video resync %"PRId64"\n", s->out_time);
