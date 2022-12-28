@@ -1058,6 +1058,29 @@ void bgav_id3v2_2_metadata(bgav_id3v2_tag_t * t, gavl_dictionary_t*m)
     }
   }
 
+int64_t bgav_id3v2_get_pts(bgav_id3v2_tag_t * t)
+  {
+  bgav_id3v2_frame_t * frame;
+
+  /* Start PTS */
+  if((frame = bgav_id3v2_find_frame(t, start_pts_tags)))
+    {
+    
+    // fprintf(stderr, "Got PRIV tag:\n");
+    // gavl_hexdump(frame->data, frame->header.data_size, 16);
+
+    if((frame->header.data_size == 53) &&
+       !memcmp("com.apple.streaming.transportStreamTimestamp", frame->data, 45))
+      {
+      int64_t pts;
+      uint8_t * ptr = frame->data+45;
+      pts = GAVL_PTR_2_64BE(ptr);
+      return pts;
+      }
+    }
+  return GAVL_TIME_UNDEFINED;
+  }
+
 void bgav_id3v2_destroy(bgav_id3v2_tag_t * t)
   {
   int i;

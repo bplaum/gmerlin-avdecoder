@@ -210,6 +210,9 @@ static void init_mpeg(bgav_stream_t * s)
     bgav_stream_set_extradata(s,
                               track->CodecPrivate,
                               track->CodecPrivateLen);
+
+  /* This should get the pixel aspect ratio right */
+  bgav_stream_set_parse_frame(s);
   }
 
 static void init_vpx(bgav_stream_t * s)
@@ -481,13 +484,7 @@ static int init_audio(bgav_demuxer_context_t * ctx,
     fmt->num_channels = a->Channels;
   if(a->BitDepth > 0)
     s->data.audio.bits_per_sample = a->BitDepth;
-
-  if(track->frame_samples)
-    {
-    s->timescale = fmt->samplerate;
-    s->index_mode = INDEX_MODE_SIMPLE;
-    }
-
+  
   if(track->frame_samples || (s->flags & STREAM_PARSE_FRAME))
     s->index_mode = INDEX_MODE_SIMPLE;
   else
@@ -505,11 +502,16 @@ static int init_video(bgav_demuxer_context_t * ctx,
   mkv_t * m = ctx->priv;
   
   s = bgav_track_add_video_stream(ctx->tt->cur, ctx->opt);
+  
   init_stream_common(m, s, track, video_codecs, 0);
-
+  
   fmt = s->data.video.format;
   v = &track->video;
-  
+
+  /*
+   *  We override the data from the codec header
+   *  (parsed during the call to init_stream_common()
+   */
   if(v->PixelWidth)
     fmt->image_width = v->PixelWidth;
   if(v->PixelHeight)
@@ -517,18 +519,20 @@ static int init_video(bgav_demuxer_context_t * ctx,
 
   fmt->pixel_width = 1;
   fmt->pixel_height = 1;
+
+  /* Non-Square pixels */
   
   if(v->DisplayWidth && v->DisplayHeight &&
      ((v->DisplayWidth != v->PixelWidth) ||
       (v->DisplayHeight != v->PixelHeight)))
     {
-    if(v->PixelHeight == v->DisplayHeight)
-      {
-      fmt->pixel_width  = v->DisplayWidth;
-      fmt->pixel_height = v->PixelWidth;
-      }
-
+    int w = v->DisplayWidth * v->PixelHeight;
+    int h = v->DisplayHeight * v->PixelWidth;
+    gavl_simplify_rational(&w, &h);
+    fmt->pixel_width  = w;
+    fmt->pixel_height = h;
     }
+
   
   fmt->frame_width = fmt->image_width;
   fmt->frame_height = fmt->image_height;
@@ -536,7 +540,6 @@ static int init_video(bgav_demuxer_context_t * ctx,
   fmt->framerate_mode = GAVL_FRAMERATE_VARIABLE;
   
   s->flags |= STREAM_NO_DURATIONS;
-  
   return 1;
   }
 
@@ -1047,9 +1050,11 @@ static void setup_packet(mkv_t * m, bgav_stream_t * s,
     if((s->type == GAVL_STREAM_VIDEO) ||
        (s->type == GAVL_STREAM_TEXT))
       {
-      //      fprintf(stderr, "Video PTS: %"PRId64"\n", pts);
       p->pts = pts;
       }
+
+    //    if(s->type == GAVL_STREAM_VIDEO)
+    //      fprintf(stderr, "Video PTS: %"PRId64"\n", pts);
     
     if(keyframe)
       PACKET_SET_KEYFRAME(p);

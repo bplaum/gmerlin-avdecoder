@@ -907,6 +907,7 @@ int bgav_demuxer_get_duration(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
+#if 0
 void bgav_demuxer_parse_track(bgav_demuxer_context_t * ctx)
   {
   int type_mask = GAVL_STREAM_AUDIO | GAVL_STREAM_VIDEO | GAVL_STREAM_TEXT | GAVL_STREAM_OVERLAY;
@@ -922,3 +923,4 @@ void bgav_demuxer_parse_track(bgav_demuxer_context_t * ctx)
   parse_end(ctx, type_mask);
   
   }
+#endif

@@ -82,6 +82,15 @@ static gavl_source_status_t next_packet_srt(bgav_demuxer_context_t * ctx)
   srt = ctx->priv;
 
   s = bgav_track_find_stream(ctx, STREAM_ID);
+
+  /* Detect post seek */
+  if(ctx->input->position == ctx->tt->cur->data_start)
+    {
+    //    fprintf(stderr, "SRT: Resetting time\n");
+    srt->time_offset = 0;
+    srt->scale_num = 1;
+    srt->scale_den = 1;
+    }
   
   /* Read lines */
   while(1)

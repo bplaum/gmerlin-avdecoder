@@ -89,9 +89,6 @@ static int open_adts(bgav_demuxer_context_t * ctx)
   uint8_t buf[ADTS_HEADER_LEN];
   bgav_adts_header_t adts;
 
-  int64_t pts_start_num = 0;
-  int     pts_start_den = 0;
-  
   
   priv = calloc(1, sizeof(*priv));
   ctx->priv = priv;
@@ -189,14 +186,11 @@ static int open_adts(bgav_demuxer_context_t * ctx)
     priv->block_samples = 1024;
   
   s->data.audio.format->samplerate = adts.samplerate;
-  s->timescale = adts.samplerate; // Timescale will be the same even if the samplerate changes
 
-  if(gavl_dictionary_get_int(&ctx->input->m, META_START_PTS_DEN, &pts_start_den) &&
-     (pts_start_den > 0) &&
-     gavl_dictionary_get_long(&ctx->input->m, META_START_PTS_NUM, &pts_start_num))
-    {
-    gavl_stream_set_start_pts(s->info, pts_start_num, pts_start_den);
-    }
+  if(ctx->input->id3_pts != GAVL_TIME_UNDEFINED)
+    s->timescale = 90000; // Timescale will be the same even if the samplerate changes
+  else
+    s->timescale = adts.samplerate; // Timescale will be the same even if the samplerate changes
   
   //  adts_header_dump(&adts);
 
@@ -209,7 +203,6 @@ static int open_adts(bgav_demuxer_context_t * ctx)
   //  fprintf(stderr, "adts_open\n");
   //  gavl_dictionary_dump(ctx->tt->cur->info, 2);
 
-  
   return 1;
   
   fail:
@@ -236,6 +229,12 @@ static gavl_source_status_t next_packet_adts(bgav_demuxer_context_t * ctx)
 
   
   p = bgav_stream_get_packet_write(s);
+
+  if(ctx->input->id3_pts != GAVL_TIME_UNDEFINED)
+    {
+    p->pes_pts = ctx->input->id3_pts;
+    ctx->input->id3_pts = GAVL_TIME_UNDEFINED;
+    }
   
   p->duration = priv->block_samples * adts.num_blocks;
   p->position = ctx->input->position;
@@ -256,17 +255,11 @@ static gavl_source_status_t next_packet_adts(bgav_demuxer_context_t * ctx)
 
 static int select_track_adts(bgav_demuxer_context_t * ctx, int track)
   {
+#if 0
   int64_t pts_start_num = 0;
   int     pts_start_den = 0;
   bgav_stream_t * s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
-  
-  if(gavl_dictionary_get_int(&ctx->input->m, META_START_PTS_DEN, &pts_start_den) &&
-     (pts_start_den > 0) &&
-     gavl_dictionary_get_long(&ctx->input->m, META_START_PTS_NUM, &pts_start_num))
-    {
-    STREAM_SET_SYNC(s, gavl_time_rescale(pts_start_den, s->timescale, pts_start_num));
-    gavl_stream_set_start_pts(s->info, pts_start_num, pts_start_den);
-    }
+#endif
   return 1;
   }
 

@@ -976,6 +976,9 @@ struct bgav_input_context_s
   bgav_yml_node_t * yml;
   
   bgav_t * b;
+
+  /* Set by the HLS input, read by the adts demuxer */
+  int64_t id3_pts;
   };
 
 /* input.c */
@@ -1138,8 +1141,6 @@ typedef struct
 bgav_superindex_t * bgav_superindex_create(int size);
 void bgav_superindex_destroy(bgav_superindex_t *);
 
-void bgav_superindex_set_sbr(bgav_superindex_t * si,
-                             bgav_stream_t * s);
 
 void bgav_superindex_add_packet(bgav_superindex_t * idx,
                                 bgav_stream_t * s,

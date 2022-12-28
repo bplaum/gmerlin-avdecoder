@@ -317,7 +317,11 @@ void bgav_audio_resync(bgav_stream_t * s)
     s->data.audio.frame->valid_samples = 0;
 
   if(bgav_stream_peek_packet_read(s, &p) != GAVL_SOURCE_EOF)
+    {
     s->out_time = p->pts;
+    if(s->ci->flags & GAVL_COMPRESSION_SBR)
+      s->out_time *= 2;
+    }
   
   if(s->data.audio.decoder &&
      s->data.audio.decoder->resync)
@@ -349,11 +353,10 @@ int bgav_audio_skipto(bgav_stream_t * s, int64_t * t, int scale)
              s->out_time, skip_time, num_samples);
     return 1;
     }
-
-  fprintf(stderr, "Skipto... %"PRId64, num_samples);
   
+  //  fprintf(stderr, "bgav_audio_skipto... %"PRId64"...", num_samples);
   gavl_audio_source_skip(s->data.audio.source, num_samples);
-  fprintf(stderr, "done\n");
+  //  fprintf(stderr, "done\n");
   return 1;
   }
 
@@ -570,6 +573,7 @@ void bgav_stream_set_sbr(bgav_stream_t * s)
   {
   s->ci->flags |= GAVL_COMPRESSION_SBR;
 
+#if 0
   if(s->stats.pts_start != GAVL_TIME_UNDEFINED)
     s->stats.pts_start *= 2;
 
@@ -581,7 +585,7 @@ void bgav_stream_set_sbr(bgav_stream_t * s)
 
   if(s->stats.duration_max != GAVL_TIME_UNDEFINED)
     s->stats.duration_max *= 2;
-
+#endif
   
   }
 

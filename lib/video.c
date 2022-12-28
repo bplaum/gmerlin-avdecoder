@@ -340,8 +340,8 @@ int bgav_video_init(bgav_stream_t * s)
   gavl_dictionary_copy(s->info_ext, gavl_packet_source_get_stream(s->psrc));
   gavl_stream_get_compression_info(s->info_ext, &s->ci_out);
   s->ci = &s->ci_out;
-    
-  //  fprintf(stderr, "Got stream info:\n");
+  
+  //  fprintf(stderr, "Got video stream info:\n");
   //  gavl_dictionary_dump(s->info_ext, 2);
     
   //  fprintf(stderr, "Got codec header:\n");
@@ -496,12 +496,6 @@ void bgav_video_dump(bgav_stream_t * s)
 
 void bgav_video_stop(bgav_stream_t * s)
   {
-  if(s->pf)
-    {
-    bgav_packet_filter_destroy(s->pf);
-    s->pf = NULL;
-    }
-  
   if(s->data.video.vsrc_priv)
     {
     gavl_video_source_destroy(s->data.video.vsrc_priv);

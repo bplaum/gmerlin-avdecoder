@@ -431,8 +431,8 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
     return;
     }
   
-  fprintf(stderr, "bgav_seek_scaled: %f\n",
-          gavl_time_to_seconds(gavl_time_unscale(scale, *time)));
+  //  fprintf(stderr, "bgav_seek_scaled: %f\n",
+  //          gavl_time_to_seconds(gavl_time_unscale(scale, *time)));
   
   /* Clear EOF */
 

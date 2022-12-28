@@ -80,7 +80,7 @@ static int handle_cmd(void * data, gavl_msg_t * msg)
           int64_t time = gavl_msg_get_arg_long(msg, 0);
           int scale = gavl_msg_get_arg_int(msg, 1);
           
-          fprintf(stderr, "GAVL_CMD_SRC_SEEK\n");
+          //    fprintf(stderr, "GAVL_CMD_SRC_SEEK\n");
           
           /* Seek */
           bgav_seek_scaled(avdec->dec, &time, scale);
@@ -216,8 +216,11 @@ static int bg_avdec_start(void * priv)
   avdec_priv * avdec = priv;
   bg_media_source_stream_t * st;
 
-  num = gavl_track_get_num_streams_all(avdec->src.track);
-
+  if(!avdec->src.track)
+    num = 0;
+  else
+    num = gavl_track_get_num_streams_all(avdec->src.track);
+  
   if(!num) // Redirector
     return 1;
   

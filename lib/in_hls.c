@@ -375,6 +375,8 @@ static int handle_id3(bgav_input_context_t * ctx)
   if((id3 = bgav_id3v2_read(mem)))
     {
     //    bgav_id3v2_dump(id3);
+    ctx->id3_pts = bgav_id3v2_get_pts(id3);
+    
     bgav_id3v2_2_metadata(id3, &ctx->m);
     bgav_id3v2_destroy(id3);
 #if 0

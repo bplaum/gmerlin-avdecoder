@@ -1122,7 +1122,7 @@ bgav_input_context_t * bgav_input_create(bgav_t * b, const bgav_options_t * opt)
   ret = calloc(1, sizeof(*ret));
   
   ret->b = b;
-
+  ret->id3_pts = GAVL_TIME_UNDEFINED;
   if(b)
     bgav_options_copy(&ret->opt, &b->opt);
   else if(opt)

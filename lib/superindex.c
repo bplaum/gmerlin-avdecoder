@@ -54,29 +54,6 @@ void bgav_superindex_set_size(bgav_superindex_t * ret, int size)
   ret->num_entries = size;
   }
 
-void bgav_superindex_set_sbr(bgav_superindex_t * si, bgav_stream_t * s)
-  {
-  int i;
-  
-  s->timescale *= 2;
-
-  if(s->stats.pts_start != GAVL_TIME_UNDEFINED)
-    s->stats.pts_start *= 2;
-
-  if(s->stats.pts_end != GAVL_TIME_UNDEFINED)
-    s->stats.pts_end *= 2;
-
-  s->data.audio.format->samplerate *= 2;
-  
-  for(i = 0; i < si->num_entries; i++)
-    {
-    if(si->entries[i].stream_id != s->stream_id)
-      continue;
-    
-    si->entries[i].pts      *= 2;
-    si->entries[i].duration *= 2;
-    }
-  }
 
 void bgav_superindex_destroy(bgav_superindex_t * idx)
   {

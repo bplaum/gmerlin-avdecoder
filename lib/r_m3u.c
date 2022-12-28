@@ -118,6 +118,19 @@ static char * strip_spaces(char * str)
   return str;
   }
 
+static char * make_hls_uri(const char * uri)
+  {
+  char * ret;
+  if(gavl_string_starts_with_i(uri, "https://"))
+    ret = gavl_sprintf("hlss://%s", uri + 8);
+  else if(gavl_string_starts_with_i(uri, "http://"))
+    ret = gavl_sprintf("hls://%s", uri + 7);
+  else
+    ret = gavl_strdup(uri);
+  
+  return ret;
+  }
+
 static bgav_track_t * append_track(bgav_track_table_t * tt)
   {
   bgav_track_t * ret = bgav_track_table_append_track(tt);
@@ -302,12 +315,7 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
           if(!t)
             t = append_track(tt);
 
-          if(gavl_string_starts_with(input->location, "https://"))
-            hls_uri = gavl_sprintf("hlss://%s", input->location + 8);
-          else if(gavl_string_starts_with(input->location, "http://"))
-            hls_uri = gavl_sprintf("hls://%s", input->location + 7);
-          else
-            hls_uri = gavl_strdup(input->location);
+          hls_uri = make_hls_uri(input->location);
 
           gavl_dictionary_merge2(&http_vars, &http_vars_global);
           hls_uri = gavl_url_append_http_vars(hls_uri, &http_vars);
@@ -541,13 +549,8 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
         if(!t)
           t = append_track(tt);
 
-        if(gavl_string_starts_with(uri, "https://"))
-          hls_uri = gavl_sprintf("hlss://%s", uri + 8);
-        else if(gavl_string_starts_with(uri, "http://"))
-          hls_uri = gavl_sprintf("hls://%s", uri + 7);
-        else
-          hls_uri = gavl_strdup(uri);
-
+        hls_uri = make_hls_uri(uri);
+        
         gavl_dictionary_merge2(&http_vars, &http_vars_global);
         
         /* Append URI variables */
@@ -558,7 +561,8 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
         gavl_dictionary_reset(&metadata);
 
         variant = gavl_track_append_variant(t->info, NULL, hls_uri);
-
+        free(hls_uri);
+        
         variant_m = gavl_track_get_metadata_nc(variant);
         if(framerate != 0.0)
           {
@@ -595,15 +599,18 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
             if((dict = gavl_value_get_dictionary(&arr->entries[i])) &&
                (stream_uri = gavl_dictionary_get_string(dict, GAVL_META_URI)))
               {
+              hls_uri = make_hls_uri(stream_uri);
+              
               ext_stream = gavl_track_append_external_stream(variant, GAVL_STREAM_AUDIO,
-                                                             NULL, stream_uri);
+                                                             NULL, hls_uri);
               ext_m = gavl_stream_get_metadata_nc(ext_stream);
               gavl_dictionary_set(ext_m, GAVL_META_LANGUAGE, gavl_dictionary_get(dict, GAVL_META_LANGUAGE));
               gavl_dictionary_set(ext_m, GAVL_META_LABEL, gavl_dictionary_get(dict, GAVL_META_LABEL));
+              free(hls_uri);
               }
             }
           }
-
+#if 0
         /* Check for separate subtitle streams */
         if(subtitles && (dict = gavl_dictionary_get_dictionary_nc(&ext_x_media, "SUBTITLES")) &&
            (arr = gavl_dictionary_get_array(dict, subtitles)))
@@ -617,143 +624,19 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
             if((dict = gavl_value_get_dictionary(&arr->entries[i])) &&
                (stream_uri = gavl_dictionary_get_string(dict, GAVL_META_URI)))
               {
+              hls_uri = make_hls_uri(stream_uri);
+
               ext_stream = gavl_track_append_external_stream(variant, GAVL_STREAM_TEXT,
-                                                             NULL, stream_uri);
+                                                             NULL, hls_uri);
               ext_m = gavl_stream_get_metadata_nc(ext_stream);
 
               gavl_dictionary_set(ext_m, GAVL_META_LANGUAGE, gavl_dictionary_get(dict, GAVL_META_LANGUAGE));
               gavl_dictionary_set(ext_m, GAVL_META_LABEL, gavl_dictionary_get(dict, GAVL_META_LABEL));
+              free(hls_uri);
               }
             }
-          }
-        
-#if 0             
-          {
-          int i;
-
-          gavl_dictionary_t * edl;
-          gavl_dictionary_t * edl_track;
-          gavl_dictionary_t * edl_stream;
-          gavl_dictionary_t * edl_segment;
-          gavl_dictionary_t * src;
-          gavl_dictionary_t * m;
-          const char * var;
-          const gavl_dictionary_t * s;
-          
-          //          fprintf(stderr, "Detected separate streams\n");
-
-          if(!t)
-            t = append_track(tt);
-
-          m = gavl_dictionary_get_dictionary_create(t->info, GAVL_META_METADATA);
-          
-          src = gavl_metadata_add_src(m, GAVL_META_SRC, NULL, NULL);
-          
-          edl = gavl_edl_create(src);
-          
-          edl_track = gavl_append_track(edl, NULL);
-          m = gavl_dictionary_get_dictionary_create(edl_track, GAVL_META_METADATA);
-          gavl_dictionary_set_string(m, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_LOCATION);
-          
-          
-          gavl_dictionary_merge2(m, &metadata);
-          gavl_dictionary_reset(&metadata);
-          
-          edl_stream = gavl_track_append_video_stream(edl_track);
-          edl_segment = gavl_edl_add_segment(edl_stream);
-          gavl_edl_segment_set_url(edl_segment, hls_uri);
-          gavl_edl_segment_set(edl_segment, 0, 0, -1, -1, -1, -1);
-          
-          for(i = 0; i < arr->num_entries; i++)
-            {
-            if(!(s = gavl_value_get_dictionary(&arr->entries[i])))
-              continue;
-            
-            edl_stream = gavl_track_append_audio_stream(edl_track);
-            m = gavl_dictionary_get_dictionary_create(edl_stream, GAVL_META_METADATA);
-
-            gavl_dictionary_set(m, GAVL_META_LANGUAGE, gavl_dictionary_get(s, GAVL_META_LANGUAGE));
-            gavl_dictionary_set(m, GAVL_META_LABEL, gavl_dictionary_get(s, GAVL_META_LABEL));
-            
-            edl_segment = gavl_edl_add_segment(edl_stream);
-            
-            var = gavl_dictionary_get_string(s, GAVL_META_URI);
-            
-            if(gavl_string_starts_with(var, "https://"))
-              {
-              char * tmp_string;
-              tmp_string = gavl_sprintf("hlss://%s", var + 8);
-              gavl_edl_segment_set_url(edl_segment, tmp_string);
-              free(tmp_string);
-              }
-            else if(gavl_string_starts_with(var, "http://"))
-              {
-              char * tmp_string;
-              tmp_string = gavl_sprintf("hls://%s", var + 8);
-              gavl_edl_segment_set_url(edl_segment, tmp_string);
-              free(tmp_string);
-              }
-            else
-              gavl_edl_segment_set_url(edl_segment, var);
-            gavl_edl_segment_set(edl_segment, 0, 0, -1, -1, -1, -1);
-            }
-          if(subtitles && (dict = gavl_dictionary_get_dictionary_nc(&ext_x_media, "SUBTITLES")) &&
-             (arr = gavl_dictionary_get_array(dict, subtitles)))
-            {
-            
-            for(i = 0; i < arr->num_entries; i++)
-              {
-              if(!(s = gavl_value_get_dictionary(&arr->entries[i])))
-                continue;
-
-              
-              edl_stream = gavl_track_append_text_stream(edl_track);
-              edl_segment = gavl_edl_add_segment(edl_stream);
-
-              m = gavl_dictionary_get_dictionary_create(edl_stream, GAVL_META_METADATA);
-              
-              gavl_dictionary_set(m, GAVL_META_LANGUAGE, gavl_dictionary_get(s, GAVL_META_LANGUAGE));
-              gavl_dictionary_set(m, GAVL_META_LABEL, gavl_dictionary_get(s, GAVL_META_LABEL));
-              
-              var = gavl_dictionary_get_string(s, GAVL_META_URI);
-              
-              if(gavl_string_starts_with(var, "https://"))
-                {
-                char * tmp_string;
-                tmp_string = gavl_sprintf("hlss://%s", var + 8);
-                gavl_edl_segment_set_url(edl_segment, tmp_string);
-                free(tmp_string);
-                }
-              else if(gavl_string_starts_with(var, "http://"))
-                {
-                char * tmp_string;
-                tmp_string = gavl_sprintf("hls://%s", var + 8);
-                gavl_edl_segment_set_url(edl_segment, tmp_string);
-                free(tmp_string);
-                }
-              else
-                gavl_edl_segment_set_url(edl_segment, var);
-              
-              gavl_edl_segment_set(edl_segment, 0, 0, -1, -1, -1, -1);
-              }
-            }
-          gavl_track_update_children(edl);
-
-          //          t = NULL;
-          }
-        else
-          {
-          if(!t)
-            t = append_track(tt);
-
-          gavl_dictionary_merge2(t->metadata, &metadata);
-          gavl_dictionary_reset(&metadata);
-          
-          variant = gavl_track_append_variant(t->metadata, GAVL_META_SRC, NULL, hls_uri);
           }
 #endif
-      
-        free(hls_uri);
         }
       else
         {

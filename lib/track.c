@@ -252,7 +252,6 @@ static bgav_stream_t * add_overlay_stream(bgav_track_t * t,
  
   ret->flags |= STREAM_DISCONT;
   ret->src_flags |= GAVL_SOURCE_SRC_DISCONTINUOUS;
-  bgav_stream_create_packet_buffer(ret);
 
   ret->type = GAVL_STREAM_OVERLAY;
   ret->track = t;
@@ -264,6 +263,8 @@ static bgav_stream_t * add_overlay_stream(bgav_track_t * t,
 
   ret->data.subtitle.video.format = gavl_stream_get_video_format_nc(ret->info);
   ret->m = gavl_stream_get_metadata_nc(ret->info);
+  
+  bgav_stream_create_packet_buffer(ret);
 
   return ret;
   }
@@ -1014,7 +1015,11 @@ void bgav_track_compute_info(bgav_track_t * t)
       s->timescale = s->data.audio.format->samplerate;
     
     gavl_dictionary_set_int(s->m, GAVL_META_STREAM_PACKET_TIMESCALE, s->timescale);
-    gavl_dictionary_set_int(s->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, s->data.audio.format->samplerate);
+
+    if(s->ci->flags & GAVL_COMPRESSION_SBR)
+      gavl_dictionary_set_int(s->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, s->data.audio.format->samplerate/2);
+    else
+      gavl_dictionary_set_int(s->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, s->data.audio.format->samplerate);
     }
   for(i = 0; i < t->num_video_streams; i++)
     {

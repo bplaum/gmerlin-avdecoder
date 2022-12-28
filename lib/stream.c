@@ -309,6 +309,14 @@ void bgav_stream_free(bgav_stream_t * s)
   if(s->timecode_table)
     bgav_timecode_table_destroy(s->timecode_table);
 
+  if(s->parser)
+    bgav_packet_parser_destroy(s->parser);
+  if(s->pf)
+    bgav_packet_filter_destroy(s->pf);
+
+  if(s->psrc_priv)
+    gavl_packet_source_destroy(s->psrc_priv);
+  
   gavl_compression_info_free(&s->ci_orig);
   }
 
@@ -423,7 +431,7 @@ void bgav_stream_done_packet_write(bgav_stream_t * s, bgav_packet_t * p)
     {
     if((s->data.video.format->frame_duration) &&
        (s->data.video.format->framerate_mode == GAVL_FRAMERATE_CONSTANT) &&
-       (p->duration > 0))
+       (p->duration <= 0))
       p->duration = s->data.video.format->frame_duration;
 
     if(s->data.video.pal && !s->data.video.pal_sent)
