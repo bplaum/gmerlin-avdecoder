@@ -248,10 +248,13 @@ static int init_track(bgav_demuxer_context_t * ctx, bgav_track_t * t)
   
   t->data_start = ctx->input->position;
   
-  /* Set parse flags */
-
   for(i = 0; i < t->num_streams; i++)
     {
+    /* Merge metadata */
+    sp =  t->streams[i].priv;
+    gavl_dictionary_merge2(t->metadata, &sp->m);
+    
+    /* Set parse flags */
     switch(t->streams[i].fourcc)
       {
       case FOURCC_VORBIS:
@@ -334,7 +337,7 @@ static int open_ogg(bgav_demuxer_context_t * ctx)
   if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
     {
     int64_t position = ctx->input->position;
-
+    
         
     bgav_input_seek(ctx->input, -MAX_PAGE_BYTES, SEEK_END);
     if(post_seek_resync_ogg(ctx))
@@ -769,38 +772,7 @@ static void parse_vorbis_comment(bgav_stream_t * s, uint8_t * data,
 static int stream_append_header_packet(bgav_stream_t * s, const gavl_buffer_t * buf)
   {
   ogg_stream_t * p = s->priv;
-
-  /* Set parse flags */
-#if 0
-  if(p->header_packets_read >= p->header_packets_needed)
-    {
-    /* If the last header packet is read and before the first
-       media packet is processed, we need to */
-    
-    if(p->header_packets_read == p->header_packets_needed)
-      {
-      for(i = 0; i < t->num_streams; i++)
-        {
-        switch(t->streams[i].fourcc)
-          {
-          case FOURCC_VORBIS:
-          case FOURCC_FLAC:
-          case FOURCC_FLAC_NEW:
-          case FOURCC_OPUS:
-          case FOURCC_SPEEX:
-          case FOURCC_THEORA:
-            bgav_stream_set_parse_frame(&t->streams[i]);
-            break;
-          case FOURCC_DIRAC:
-          case FOURCC_OGM_VIDEO:
-          case FOURCC_OGM_TEXT:
-            break;
-          }
-        }
-      }
-    }
-#endif
-
+  
   p->header_packets_read++;
   
   switch(p->fourcc)

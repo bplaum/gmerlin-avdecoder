@@ -1052,7 +1052,7 @@ static int setup_track(bgav_demuxer_context_t * ctx, bgav_track_t * track,
         }
       }
     }
-
+  
   if(!(ctx->flags & BGAV_DEMUXER_HAS_DATA_START))
     {
     ctx->tt->cur->data_start += header_bytes;
