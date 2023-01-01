@@ -47,8 +47,6 @@
 
 #define BGAV_VORBIS BGAV_MK_FOURCC('V','B','I','S')
 
-#define META_START_PTS_DEN "pts_start_den"
-#define META_START_PTS_NUM "pts_start_num"
 
 // typedef struct bgav_edl_dec_s bgav_edl_dec_t;
 
@@ -910,7 +908,7 @@ struct bgav_input_s
 
   /* Non-Blocking API */
   int (*can_read)(bgav_input_context_t*, int timeout);
-  int  (*read_noblock)(bgav_input_context_t*, uint8_t * buffer, int len);
+  int  (*read_nonblock)(bgav_input_context_t*, uint8_t * buffer, int len);
   };
 
 // #define BGAV_INPUT_DO_BUFFER      (1<<0)
@@ -977,8 +975,8 @@ struct bgav_input_context_s
   
   bgav_t * b;
 
-  /* Set by the HLS input, read by the adts demuxer */
-  int64_t id3_pts;
+  /* Set by the HLS input, read by the adts and webvtt demuxers */
+  int64_t input_pts;
   };
 
 /* input.c */

@@ -26,7 +26,9 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#define STREAM_ID 0
+#define STREAM_ID 1
+
+#define DO_BLOCK 0
 
 #define LOG_DOMAIN "vtt"
 
@@ -34,11 +36,10 @@ typedef struct
   {
   gavl_time_t time_offset;
 
-  char * buf;
-  uint32_t buf_alloc;
+  gavl_buffer_t buf;
+  int got_cr;
   } vtt_t;
 
-#define STREAM_ID 0
 
 static const char * webvtt_signatures[] =
   {
@@ -49,7 +50,7 @@ static const char * webvtt_signatures[] =
 
 #define MAX_SIG_LEN 9
 
-static int is_vtt_sig(const char * str)
+static int is_vtt_sig(const void * str)
   {
   int idx = 0;
 
@@ -65,6 +66,7 @@ static int is_vtt_sig(const char * str)
 static int probe_vtt(bgav_input_context_t * input)
   {
   uint8_t data[MAX_SIG_LEN+1];
+
   if(bgav_input_get_data(input, data, MAX_SIG_LEN) < MAX_SIG_LEN)
     return 0;
   data[MAX_SIG_LEN] = '\0';
@@ -130,51 +132,199 @@ static int parse_time(const char * str_start, gavl_time_t * start, gavl_time_t *
 
 #define ALLOC_SIZE 128
 
-static void add_char(char ** buffer, uint32_t * buffer_alloc,
-                     int pos, char c)
+static void add_char(gavl_buffer_t * buf, uint8_t c)
   {
-  if(pos + 1 > *buffer_alloc)
-    {
-    while(pos + 1 > *buffer_alloc)
-      (*buffer_alloc) += ALLOC_SIZE;
-    *buffer = realloc(*buffer, *buffer_alloc);
-    }
-  (*buffer)[pos] = c;
+  gavl_buffer_append_data(buf, &c, 1);
   }
 
-static int read_line(bgav_demuxer_context_t * ctx)
+static void flush_line(bgav_demuxer_context_t * ctx)
   {
-  int pos = 0;
+  vtt_t * priv = ctx->priv;
+  gavl_buffer_reset(&priv->buf);
+  priv->got_cr = 0;
+  }
+
+static int read_line(bgav_demuxer_context_t * ctx, int block)
+  {
   char c;
   vtt_t * priv = ctx->priv;
-
+  
   while(1)
     {
-    if(!bgav_input_read_data(ctx->input, (uint8_t*)(&c), 1))
+    if(block)
       {
-      //      return 0;
-      add_char(&priv->buf, &priv->buf_alloc, pos, '\0');
-      return !!pos;
-      break;
+      if(!bgav_input_read_data(ctx->input, (uint8_t*)(&c), 1))
+        {
+        //      return 0;
+        add_char(&priv->buf, '\0');
+        return !!priv->buf.len;
+        break;
+        }
       }
-
-    else if(c == '\r')
+    else
       {
-      if(bgav_input_get_data(ctx->input, (uint8_t*)(&c), 1) && (c == '\n'))
-        bgav_input_read_data(ctx->input, (uint8_t*)(&c), 1);
-      add_char(&priv->buf, &priv->buf_alloc, pos, '\0');
+      /* TODO: Handle EOF */
+      if(!bgav_input_read_nonblock(ctx->input, (uint8_t*)(&c), 1))
+        return 0;
+      }
+    
+    if(c == '\r')
+      {
+      priv->got_cr = 1;
+      add_char(&priv->buf, '\0');
       return 1;
       }
     else if(c == '\n')
       {
-      add_char(&priv->buf, &priv->buf_alloc, pos, '\0');
-      return 1;
+      if(!priv->got_cr)
+        {
+        add_char(&priv->buf, '\0');
+        return 1;
+        }
+      else
+        priv->got_cr = 0;
       }
     else
       {
-      add_char(&priv->buf, &priv->buf_alloc, pos, c);
+      add_char(&priv->buf, c);
+      }
+    }
+  
+  }
+
+static const struct
+  {
+  const char * vtt_name;
+  const char * pango_name;
+  }
+colors[] =
+  {
+    { "white",   "#FFFFFF" },
+    { "lime",    "#00FF00" },
+    { "green",   "#00FF00" },
+    { "cyan",    "#00FFFF" },
+    { "red",     "#FF0000" },
+    { "yellow",  "#FFFF00" },
+    { "magenta", "#FF00FF" },
+    { "blue",    "#0000FF" },
+    { "black",   "#000000" },
+    { /* End */            },
+  };
+
+static const char * get_color(const char * c)
+  {
+  int i = 0;
+
+  while(colors[i].vtt_name)
+    {
+    if(!strcmp(c, colors[i].vtt_name))
+      return colors[i].pango_name;
+    i++;
+    }
+  return NULL;
+  }
+
+static void append_payload_line(gavl_packet_t * p, gavl_buffer_t * buf)
+  {
+  char * pos = (char*)buf->buf;
+  char * end = (char*)(buf->buf + buf->len);
+  
+  while(pos < end)
+    {
+    if(*pos == '<')
+      {
+      // Class
+      if(gavl_string_starts_with((char*)pos, "<c."))
+        {
+        int idx;
+        char * tag;
+        char ** classes;
+        char * tmp_string;
+        
+        const char * fg = NULL;
+        const char * bg = NULL;
+        const char * tag_end;
+        const char * col = NULL;
+
+        pos+=3;
+        tag_end = strchr(pos, '>');
+        
+        tag = gavl_strndup(pos, tag_end);
+        classes = gavl_strbreak(tag, '.');
+
+        idx = 0;
+        while(classes[idx])
+          {
+          if(gavl_string_starts_with(classes[idx], "bg_"))
+            {
+            if((col = get_color(classes[idx] + 3)))
+              bg = col;
+            }
+          else
+            {
+            if((col = get_color(classes[idx])))
+              fg = col;
+            }
+          idx++;
+          }
+        gavl_buffer_append_data(&p->buf, (const uint8_t*)"<span", 5);
+        
+        if(fg)
+          {
+          tmp_string = gavl_sprintf(" foreground=\"%s\"", fg);
+          gavl_buffer_append_data(&p->buf, (const uint8_t*)tmp_string, strlen(tmp_string));
+          free(tmp_string);
+          }
+        if(bg)
+          {
+          tmp_string = gavl_sprintf(" background=\"%s\"", bg);
+          gavl_buffer_append_data(&p->buf, (const uint8_t*)tmp_string, strlen(tmp_string));
+          free(tmp_string);
+          }
+        gavl_buffer_append_data(&p->buf, (const uint8_t*)">", 1);
+        
+        gavl_strbreak_free(classes);
+        free(tag);
+        
+        pos = tag_end + 1;
+        }
+      else if(gavl_string_starts_with((char*)pos, "</c>"))
+        {
+        gavl_buffer_append_data(&p->buf, (const uint8_t*)"</span>", 7);
+        pos+=4;
+        }
+      else if(gavl_string_starts_with((char*)pos, "<b>") ||
+         gavl_string_starts_with((char*)pos, "<i>") ||
+         gavl_string_starts_with((char*)pos, "<u>"))
+        {
+        gavl_buffer_append_data(&p->buf, (const uint8_t*)pos, 3);
+        pos+=3;
+        }
+      else if(gavl_string_starts_with((char*)pos, "</b>") ||
+              gavl_string_starts_with((char*)pos, "</i>") ||
+              gavl_string_starts_with((char*)pos, "</u>"))
+        {
+        gavl_buffer_append_data(&p->buf, (const uint8_t*)pos, 4);
+        pos+=4;
+        }
+      /* Escape unknown tags */
+      else
+        {
+        gavl_buffer_append_data(&p->buf, (const uint8_t*)"&lt;", 4);
+        pos++;
+        }
+      }
+    else if(*pos == '>')
+      {
+      gavl_buffer_append_data(&p->buf, (const uint8_t*)"&gt;", 4);
       pos++;
       }
+    else
+      {
+      gavl_buffer_append_data(&p->buf, (const uint8_t*)pos, 1);
+      pos++;
+      }
+    
     }
   
   }
@@ -186,6 +336,7 @@ static gavl_source_status_t next_packet_vtt(bgav_demuxer_context_t * ctx)
   gavl_time_t start = GAVL_TIME_UNDEFINED;
   gavl_time_t end = GAVL_TIME_UNDEFINED;
   vtt_t * priv = ctx->priv;
+  //  fprintf(stderr, "next_packet_vtt...");
   
   s = bgav_track_find_stream(ctx, STREAM_ID);
   
@@ -194,30 +345,54 @@ static gavl_source_status_t next_packet_vtt(bgav_demuxer_context_t * ctx)
   
   while(1)
     {
-    if(!read_line(ctx))
-      return GAVL_SOURCE_EOF;
-
-    gavl_strtrim(priv->buf);
-    if(priv->buf[0] == '\0')
-      continue;
-
-    fprintf(stderr, "Got line: %s\n", priv->buf);
+    if(!read_line(ctx, DO_BLOCK))
+      {
+      //      fprintf(stderr, "got no line\n");
+      return GAVL_SOURCE_AGAIN; // Non-Block
+      }
+    /* TODO: Detect EOF and errors */
     
-    if(is_vtt_sig(priv->buf))
-      continue;
+    //      return GAVL_SOURCE_EOF;
 
-    else if(gavl_string_starts_with(priv->buf, "X-TIMESTAMP-MAP="))
+    fprintf(stderr, "Got line: %s\n", (char*)priv->buf.buf);
+    
+    gavl_strtrim((char*)priv->buf.buf);
+    if(priv->buf.buf[0] == '\0')
+      {
+      /* Termination */
+      if(s->packet)
+        {
+        PACKET_SET_KEYFRAME(s->packet);
+        bgav_stream_done_packet_write(s, s->packet);
+        s->packet = NULL;
+
+        flush_line(ctx);
+        return GAVL_SOURCE_OK;
+        }
+      else
+        {
+        flush_line(ctx);
+        continue;
+        }
+      }
+    
+    if(is_vtt_sig(priv->buf.buf))
+      {
+      flush_line(ctx);
+      continue;
+      }
+    else if(gavl_string_starts_with((char*)priv->buf.buf, "X-TIMESTAMP-MAP="))
       {
       const char * pos;
       int64_t mpeg_time = GAVL_TIME_UNDEFINED;
       gavl_time_t vtt_time = GAVL_TIME_UNDEFINED;
 
-      if((pos = strstr(priv->buf, "MPEGTS:")))
+      if((pos = strstr((char*)priv->buf.buf, "MPEGTS:")))
         {
         mpeg_time = strtoll(pos + strlen("MPEGTS:"), NULL, 10);
         mpeg_time = gavl_time_unscale(90000, mpeg_time);
         }
-      if((pos = strstr(priv->buf, "LOCAL:")))
+      if((pos = strstr((char*)priv->buf.buf, "LOCAL:")))
         gavl_time_parse(pos + strlen("LOCAL:"), &vtt_time);
 
       if((mpeg_time != GAVL_TIME_UNDEFINED) &&
@@ -227,60 +402,30 @@ static gavl_source_status_t next_packet_vtt(bgav_demuxer_context_t * ctx)
         priv->time_offset = mpeg_time - vtt_time;
         }
       }
-    else if((result = parse_time(priv->buf, &start, &end)))
+    else if((result = parse_time((char*)priv->buf.buf, &start, &end)))
       {
-      bgav_packet_t * p;
+      /* TODO: Parse what comes after the times */
+      
       start += priv->time_offset;
       end += priv->time_offset;
-
-      p = bgav_stream_get_packet_write(s);
-      p->pts = start;
-      p->duration = end - start;
-
-      /* TODO: Parse what comes after the times */
-
-      /* Read payload */
-      while(1)
-        {
-        int len ;
-        if(!read_line(ctx))
-          return GAVL_SOURCE_EOF;
-        
-        gavl_strtrim(priv->buf);
-        if(priv->buf[0] == '\0')
-          break;
-
-        len = strlen(priv->buf);
-        
-        if(p->buf.len)
-          {
-          bgav_packet_alloc(p, p->buf.len + len + 1);
-          p->buf.buf[p->buf.len] = '\n';
-          p->buf.len++;
-          memcpy(p->buf.buf + p->buf.len, priv->buf, len);
-          p->buf.len += len;
-          }
-        else
-          {
-          bgav_packet_alloc(p, p->buf.len + len);
-          memcpy(p->buf.buf + p->buf.len, priv->buf, len);
-          p->buf.len += len;
-          }
-        }
-
-      if(!p->buf.len)
-        return GAVL_SOURCE_EOF;
       
-      PACKET_SET_KEYFRAME(p);
-      bgav_stream_done_packet_write(s, p);
+      s->packet           = bgav_stream_get_packet_write(s);
+      s->packet->pts      = start;
+      s->packet->duration = end - start;
+      }
+    else if(s->packet) /* Payload */
+      {
+      if(s->packet->buf.len)
+        gavl_buffer_append_data(&s->packet->buf, (uint8_t*)"\n", 1);
+
+      append_payload_line(s->packet, &priv->buf);
       
-      return GAVL_SOURCE_OK;
       }
     else
       {
-      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Unknown line: %s", priv->buf);
+      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Unknown line: %s", (char*)priv->buf.buf);
       }
-    
+    flush_line(ctx);
     }
   return GAVL_SOURCE_EOF;
   }
@@ -288,9 +433,7 @@ static gavl_source_status_t next_packet_vtt(bgav_demuxer_context_t * ctx)
 static void close_vtt(bgav_demuxer_context_t * ctx)
   {
   vtt_t * priv = ctx->priv;
-
-  if(priv->buf)
-    free(priv->buf);
+  gavl_buffer_free(&priv->buf);
   free(priv);
   }
 

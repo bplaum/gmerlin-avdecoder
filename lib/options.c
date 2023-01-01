@@ -445,6 +445,9 @@ void bgav_signal_restart(bgav_t * b, int reason)
   {
   bgav_stream_t * s;
 
+  if(!b->tt)
+    return;
+  
   if((s = bgav_track_get_msg_stream_by_id(b->tt->cur, GAVL_META_STREAM_ID_MSG_PROGRAM)) &&
      s->data.msg.msg_callback)
     {

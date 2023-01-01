@@ -27,7 +27,7 @@
 #include <avdec_private.h>
 
 
-#define PROBE_LEN 512
+#define PROBE_LEN 32
 
 #define YML_REGEXP "<\\?xml( *[^=]+ *= *[\"'][^\"']*[\"'])* *\\?>|<[:alnum:]+[^ ]*( *[^=]+ *= *[\"'][^\"']*[\"'])* */? *>"
 

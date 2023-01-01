@@ -222,6 +222,7 @@ static gavl_source_status_t
 read_packet_continuous(void * priv, bgav_packet_t ** ret)
   {
   gavl_source_status_t st;
+  gavl_source_status_t st1;
   bgav_stream_t * s = priv;
 
   while((st = gavl_packet_source_read_packet(gavl_packet_buffer_get_source(s->pbuffer), ret))
@@ -235,18 +236,12 @@ read_packet_continuous(void * priv, bgav_packet_t ** ret)
       return st;
     
     demuxer->request_stream = s;
-    
-    if(!bgav_demuxer_next_packet(demuxer))
-      {
-      /*
-       * If the demuxer reaches EOF, the buffers will be flushed and some more packets will
-       * be emitted
-       */
-      demuxer->request_stream = NULL;
-      continue;
-      }
-    
+
+    st1 = bgav_demuxer_next_packet(demuxer);
     demuxer->request_stream = NULL;
+    
+    if(st1 == GAVL_SOURCE_AGAIN)
+      break; // Return for now
     }
   
   return st;
@@ -278,7 +273,6 @@ void bgav_stream_init(bgav_stream_t * stream, const bgav_options_t * opt)
   /* the ci pointer might be changed by a bitstream filter */
   stream->ci = &stream->ci_orig;
   
-  /* Better to have everything zero for a while */
   gavl_stream_stats_init(&stream->stats);
   }
 

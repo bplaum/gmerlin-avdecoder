@@ -1038,6 +1038,7 @@ void bgav_id3v2_2_metadata(bgav_id3v2_tag_t * t, gavl_dictionary_t*m)
                                      frame->picture->data_size);
     }
 
+#if 0  
   /* Start PTS */
   if((frame = bgav_id3v2_find_frame(t, start_pts_tags)))
     {
@@ -1056,6 +1057,7 @@ void bgav_id3v2_2_metadata(bgav_id3v2_tag_t * t, gavl_dictionary_t*m)
       gavl_dictionary_set_long(m, META_START_PTS_NUM, pts);
       }
     }
+#endif
   }
 
 int64_t bgav_id3v2_get_pts(bgav_id3v2_tag_t * t)

@@ -374,15 +374,22 @@ static int handle_id3(bgav_input_context_t * ctx)
 
   if((id3 = bgav_id3v2_read(mem)))
     {
+    int64_t pts;
+    
     //    bgav_id3v2_dump(id3);
-    ctx->id3_pts = bgav_id3v2_get_pts(id3);
+    pts = bgav_id3v2_get_pts(id3);
+
+    if(pts != GAVL_TIME_UNDEFINED)
+      ctx->input_pts = pts;
+    
+#if 0
+    fprintf(stderr, "Got ID3V2 %"PRId64"\n", ctx->input_pts);
+    bgav_id3v2_dump(id3);
+#endif
+
     
     bgav_id3v2_2_metadata(id3, &ctx->m);
     bgav_id3v2_destroy(id3);
-#if 0
-    fprintf(stderr, "Got ID3V2\n");
-    gavl_dictionary_dump(&ctx->m, 2);
-#endif
     }
   
   bgav_input_close(mem);
@@ -598,7 +605,8 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
       if(idx < 0)
         gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Lost sync: Position before m3u8 segments %d", -idx);
       else // Probably just wait a bit?
-        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Lost sync: Position after m3u8 segments %d", idx - (p->segments.num_entries - 1));
+        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Lost sync: Position after m3u8 segments %d",
+                 idx - (p->segments.num_entries - 1));
       p->end_of_sequence = 1;
       return -1;
       }
@@ -742,6 +750,8 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   int i;
   int ret = 0;
   char * url;
+  gavl_dictionary_t * src;
+
   hls_priv_t * priv = calloc(1, sizeof(*priv));
 
   //  fprintf(stderr, "Open HLS: %s\n", url1);
@@ -805,6 +815,13 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   if((priv->window_end == GAVL_TIME_UNDEFINED) ||
      (priv->window_start == GAVL_TIME_UNDEFINED))
     ctx->flags &= ~BGAV_INPUT_CAN_SEEK_TIME;
+
+  if((src = gavl_metadata_get_src_nc(&ctx->m, GAVL_META_SRC, 0)))
+    {
+    const gavl_dictionary_t * resp = gavl_http_client_get_response(priv->ts_io);
+    gavl_dictionary_set_string(src, GAVL_META_MIMETYPE,
+                               gavl_dictionary_get_string_i(resp, "Content-Type"));
+    }
   
   ret = 1;
   fail:
@@ -817,8 +834,16 @@ static void seek_time_hls(bgav_input_context_t * ctx, int64_t t1, int scale)
   
   }
 
-static int read_hls(bgav_input_context_t* ctx,
-                    uint8_t * buffer, int len)
+static int can_read_hls(bgav_input_context_t * ctx, int timeout)
+  {
+  hls_priv_t * p = ctx->priv;
+  if(p->io)
+    return gavf_io_can_read(p->io, timeout);
+  else
+    return 0;
+  }
+
+static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int block)
   {
   int bytes_read = 0;
   int result;
@@ -829,8 +854,16 @@ static int read_hls(bgav_input_context_t* ctx,
   
   while(bytes_read < len)
     {
-    result = gavf_io_read_data(p->io, buffer + bytes_read, len - bytes_read);
-
+    if(!block)
+      {
+      if(!gavf_io_can_read(p->io, 0))
+        return bytes_read;
+      
+      result = gavf_io_read_data_nonblock(p->io, buffer + bytes_read, len - bytes_read);
+      }
+    else
+      result = gavf_io_read_data(p->io, buffer + bytes_read, len - bytes_read);
+    
     if(result < 0)
       gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Read error");
     
@@ -847,12 +880,23 @@ static int read_hls(bgav_input_context_t* ctx,
       if(open_next_async(ctx, 0) < 0)
         gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Opening next segment failed");
       }
+
+    bytes_read += result;
+    
     if(result < len - bytes_read)
       {
       if(gavf_io_got_error(p->io))
         {
+        fprintf(stderr, "Got I/O error\n");
         bgav_signal_restart(ctx->b, GAVL_MSG_SRC_RESTART_ERROR);
         return bytes_read;
+        }
+      else if(!block)
+        {
+        if(gavf_io_got_eof(p->io) && (p->next_state == NEXT_STATE_DONE))
+          init_segment_io(ctx);
+        else
+          return bytes_read;
         }
       else
         {
@@ -885,16 +929,20 @@ static int read_hls(bgav_input_context_t* ctx,
         init_segment_io(ctx);
         }
       }
-
-    bytes_read += result;
     }
-  /*
-  if(bytes_read < len)
-    {
-    }
-  */
-  
   return bytes_read;
+  }
+
+static int read_hls(bgav_input_context_t* ctx,
+                    uint8_t * buffer, int len)
+  {
+  return do_read_hls(ctx, buffer, len, 1);
+  }
+
+static int read_nonblock_hls(bgav_input_context_t* ctx,
+                            uint8_t * buffer, int len)
+  {
+  return do_read_hls(ctx, buffer, len, 0);
   }
 
 static void close_hls(bgav_input_context_t * ctx)
@@ -930,10 +978,11 @@ static void close_hls(bgav_input_context_t * ctx)
 
 const bgav_input_t bgav_input_hls =
   {
-    .name =          "hls",
-    .open =          open_hls,
-    .read =          read_hls,
-    .close =         close_hls,
-    .seek_time =     seek_time_hls,
+    .name          = "hls",
+    .open          = open_hls,
+    .read          = read_hls,
+    .read_nonblock = read_nonblock_hls,
+    .can_read      = can_read_hls,
+    .close         = close_hls,
+    .seek_time     = seek_time_hls,
   };
-

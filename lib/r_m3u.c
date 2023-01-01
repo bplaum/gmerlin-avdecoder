@@ -610,7 +610,6 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
               }
             }
           }
-#if 0
         /* Check for separate subtitle streams */
         if(subtitles && (dict = gavl_dictionary_get_dictionary_nc(&ext_x_media, "SUBTITLES")) &&
            (arr = gavl_dictionary_get_array(dict, subtitles)))
@@ -636,7 +635,6 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
               }
             }
           }
-#endif
         }
       else
         {
@@ -657,27 +655,6 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
         free(tmp_string);
         }
       free(uri);
-#if 0
-      if(src)
-        {
-        if(bitrate)
-          {
-          gavl_dictionary_set_int(src, GAVL_META_BITRATE, bitrate);
-          bitrate = 0;
-          }
-        if(width)
-          {
-          gavl_dictionary_set_int(src, GAVL_META_WIDTH, width);
-          width = 0;
-          }
-        if(height)
-          {
-          gavl_dictionary_set_int(src, GAVL_META_HEIGHT, height);
-          height = 0;
-          }
-
-        }
-#endif
       
       if(audio)
         {

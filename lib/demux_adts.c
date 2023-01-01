@@ -187,7 +187,7 @@ static int open_adts(bgav_demuxer_context_t * ctx)
   
   s->data.audio.format->samplerate = adts.samplerate;
 
-  if(ctx->input->id3_pts != GAVL_TIME_UNDEFINED)
+  if(ctx->input->input_pts != GAVL_TIME_UNDEFINED)
     s->timescale = 90000; // Timescale will be the same even if the samplerate changes
   else
     s->timescale = adts.samplerate; // Timescale will be the same even if the samplerate changes
@@ -230,10 +230,10 @@ static gavl_source_status_t next_packet_adts(bgav_demuxer_context_t * ctx)
   
   p = bgav_stream_get_packet_write(s);
 
-  if(ctx->input->id3_pts != GAVL_TIME_UNDEFINED)
+  if(ctx->input->input_pts != GAVL_TIME_UNDEFINED)
     {
-    p->pes_pts = ctx->input->id3_pts;
-    ctx->input->id3_pts = GAVL_TIME_UNDEFINED;
+    p->pes_pts = ctx->input->input_pts;
+    ctx->input->input_pts = GAVL_TIME_UNDEFINED;
     }
   
   p->duration = priv->block_samples * adts.num_blocks;

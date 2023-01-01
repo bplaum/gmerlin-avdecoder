@@ -193,9 +193,9 @@ static int input_read_data(bgav_input_context_t * ctx, uint8_t * buffer, int len
 
   if(len > bytes_read)
     {
-    if(!block && ctx->input->read_noblock)
+    if(!block && ctx->input->read_nonblock)
       result =
-        ctx->input->read_noblock(ctx, buffer + bytes_read, len - bytes_read);
+        ctx->input->read_nonblock(ctx, buffer + bytes_read, len - bytes_read);
     else
       result =
         ctx->input->read(ctx, buffer + bytes_read, len - bytes_read);
@@ -1122,7 +1122,7 @@ bgav_input_context_t * bgav_input_create(bgav_t * b, const bgav_options_t * opt)
   ret = calloc(1, sizeof(*ret));
   
   ret->b = b;
-  ret->id3_pts = GAVL_TIME_UNDEFINED;
+  ret->input_pts = GAVL_TIME_UNDEFINED;
   if(b)
     bgav_options_copy(&ret->opt, &b->opt);
   else if(opt)

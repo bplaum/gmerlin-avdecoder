@@ -118,6 +118,7 @@ typedef struct
 
 static const demuxer_t demuxers[] =
   {
+    { &bgav_demuxer_vtt,       "WEBVTT" },
     { &bgav_demuxer_asf,       "ASF/WMV/WMA" },
     { &bgav_demuxer_adif,      "ADIF" },
     { &bgav_demuxer_avi,       "AVI" },
@@ -180,7 +181,6 @@ static const demuxer_t demuxers[] =
     { &bgav_demuxer_image, "Image" },
     { &bgav_demuxer_p2xml, "P2 xml" },
     { &bgav_demuxer_rawaudio, "Raw audio" },
-    { &bgav_demuxer_vtt, "WEBVTT" },
   };
 
 static const demuxer_t sync_demuxers[] =
@@ -232,6 +232,9 @@ const bgav_demuxer_t * bgav_demuxer_probe(bgav_input_context_t * input)
     }
 #endif
 
+  //  fprintf(stderr, "bgav_demuxer_probe\n");
+  //  gavl_dictionary_dump(&input->m, 2);
+  
   if(gavl_metadata_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, NULL) && mimetype)
     {
     for(i = 0; i < num_mimetypes; i++)
@@ -659,7 +662,7 @@ gavl_source_status_t bgav_demuxer_next_packet(bgav_demuxer_context_t * demuxer)
     case DEMUX_MODE_STREAM:
       ret = demuxer->demuxer->next_packet(demuxer);
       
-      if(!ret)
+      if(ret == GAVL_SOURCE_EOF)
         {
         /* Some demuxers have packets stored in the streams,
            we flush them here */
