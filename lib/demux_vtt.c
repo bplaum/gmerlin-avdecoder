@@ -135,6 +135,9 @@ static int parse_time(const char * str_start, gavl_time_t * start, gavl_time_t *
 static void add_char(gavl_buffer_t * buf, uint8_t c)
   {
   gavl_buffer_append_data(buf, &c, 1);
+  /* Ugly hack but should be quite robust */
+  if(c == '\0')
+    buf->len--;
   }
 
 static void flush_line(bgav_demuxer_context_t * ctx)
@@ -353,10 +356,10 @@ static gavl_source_status_t next_packet_vtt(bgav_demuxer_context_t * ctx)
     /* TODO: Detect EOF and errors */
     
     //      return GAVL_SOURCE_EOF;
-
-    fprintf(stderr, "Got line: %s\n", (char*)priv->buf.buf);
-    
+    //    fprintf(stderr, "Got line: %s\n", (char*)priv->buf.buf);
     gavl_strtrim((char*)priv->buf.buf);
+    priv->buf.len = strlen((char*)priv->buf.buf);
+    
     if(priv->buf.buf[0] == '\0')
       {
       /* Termination */
