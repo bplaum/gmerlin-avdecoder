@@ -887,7 +887,7 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
       {
       if(gavf_io_got_error(p->io))
         {
-        fprintf(stderr, "Got I/O error\n");
+        gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Got I/O error from underlying stream");
         bgav_signal_restart(ctx->b, GAVL_MSG_SRC_RESTART_ERROR);
         return bytes_read;
         }
