@@ -1123,6 +1123,7 @@ bgav_input_context_t * bgav_input_create(bgav_t * b, const bgav_options_t * opt)
   
   ret->b = b;
   ret->input_pts = GAVL_TIME_UNDEFINED;
+  ret->clock_time = GAVL_TIME_UNDEFINED;
   if(b)
     bgav_options_copy(&ret->opt, &b->opt);
   else if(opt)

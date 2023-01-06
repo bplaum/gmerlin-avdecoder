@@ -188,7 +188,13 @@ static int open_adts(bgav_demuxer_context_t * ctx)
   s->data.audio.format->samplerate = adts.samplerate;
 
   if(ctx->input->input_pts != GAVL_TIME_UNDEFINED)
-    s->timescale = 90000; // Timescale will be the same even if the samplerate changes
+    {
+    s->timescale = 90000;
+    
+    if(ctx->input->clock_time != GAVL_TIME_UNDEFINED)
+      bgav_demuxer_set_clock_time(ctx, ctx->input->input_pts, 90000, ctx->input->clock_time);
+    
+    }
   else
     s->timescale = adts.samplerate; // Timescale will be the same even if the samplerate changes
   

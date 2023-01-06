@@ -53,6 +53,7 @@
 #define NEXT_STATE_DONE            7
 #define NEXT_STATE_LOST_SYNC       8
 
+#define END_OF_SEQUENCE (1<<0)
 
 typedef struct
   {
@@ -85,8 +86,8 @@ typedef struct
   gavl_dictionary_t http_vars;
 
   int next_state;
-  int end_of_sequence;
-
+  int flags;
+  
   
   } hls_priv_t;
 
@@ -244,7 +245,8 @@ static int parse_m3u8(bgav_input_context_t * ctx)
       /* Time in ISO-8601 format */
       // #EXT-X-PROGRAM-DATE-TIME:2022-04-26T21:15:13Z
       
-      if(!gavl_time_parse_iso8601(lines[idx] + strlen("#EXT-X-PROGRAM-DATE-TIME:") , &segment_start_time_abs))
+      if(!gavl_time_parse_iso8601(lines[idx] + strlen("#EXT-X-PROGRAM-DATE-TIME:") ,
+                                  &segment_start_time_abs))
         segment_start_time_abs = GAVL_TIME_UNDEFINED;
       }
     else if(gavl_string_starts_with(lines[idx], "#EXTINF:"))
@@ -375,18 +377,16 @@ static int handle_id3(bgav_input_context_t * ctx)
   if((id3 = bgav_id3v2_read(mem)))
     {
     int64_t pts;
-    
-    //    bgav_id3v2_dump(id3);
-    pts = bgav_id3v2_get_pts(id3);
 
-    if(pts != GAVL_TIME_UNDEFINED)
+    if((pts = bgav_id3v2_get_pts(id3)) != GAVL_TIME_UNDEFINED)
       ctx->input_pts = pts;
     
+    if((pts = bgav_id3v2_get_clock_time(id3)) != GAVL_TIME_UNDEFINED)
+      ctx->clock_time = pts;
 #if 0
     fprintf(stderr, "Got ID3V2 %"PRId64"\n", ctx->input_pts);
     bgav_id3v2_dump(id3);
 #endif
-
     
     bgav_id3v2_2_metadata(id3, &ctx->m);
     bgav_id3v2_destroy(id3);
@@ -514,8 +514,7 @@ static void init_seek_window(bgav_input_context_t * ctx)
         p->window_end += segment_duration;
       
       if((i==idx) && gavl_dictionary_get_long(d, SEGMENT_START_TIME_ABS, &start_time_abs))
-        gavl_dictionary_set_long(&ctx->m, GAVL_STATE_SRC_SEEK_WINDOW_ABSOLUTE, start_time_abs);
-      
+        ctx->clock_time = start_time_abs;
       }
     }
 
@@ -607,7 +606,7 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
       else // Probably just wait a bit?
         gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Lost sync: Position after m3u8 segments %d",
                  idx - (p->segments.num_entries - 1));
-      p->end_of_sequence = 1;
+      p->flags |= END_OF_SEQUENCE;
       return -1;
       }
       
@@ -875,7 +874,7 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
 #endif
     //    fprintf(stderr, "read_hls 1 %d\n", len - bytes_read);
 
-    if((p->next_state != NEXT_STATE_DONE) && !p->end_of_sequence)
+    if((p->next_state != NEXT_STATE_DONE) && !(p->flags & END_OF_SEQUENCE))
       {
       if(open_next_async(ctx, 0) < 0)
         gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Opening next segment failed");
@@ -902,8 +901,8 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
         {
         int i;
         int result1;
-
-        if(p->end_of_sequence)
+        
+        if(p->flags & END_OF_SEQUENCE)
           return bytes_read;
         
         //  fprintf(stderr, "Opening next segment: %d %d %d\n", result, len, bytes_read);

@@ -857,6 +857,12 @@ static const uint32_t start_pts_tags[] =
     0x00,
   };
 
+static const uint32_t clock_time_tags[] =
+  {
+    BGAV_MK_FOURCC('P', 'R', 'I', 'V'),
+    0x00,
+  };
+
 static char * get_comment(const bgav_options_t * opt,
                           bgav_id3v2_frame_t* frame)
   {
@@ -1081,6 +1087,35 @@ int64_t bgav_id3v2_get_pts(bgav_id3v2_tag_t * t)
       }
     }
   return GAVL_TIME_UNDEFINED;
+  }
+
+int64_t bgav_id3v2_get_clock_time(bgav_id3v2_tag_t * t)
+  {
+  bgav_id3v2_frame_t * frame;
+
+  /* Start PTS */
+  if((frame = bgav_id3v2_find_frame(t, clock_time_tags)))
+    {
+    
+    // fprintf(stderr, "Got PRIV tag:\n");
+    // gavl_hexdump(frame->data, frame->header.data_size, 16);
+
+    if((frame->header.data_size == 60) &&
+       !memcmp("com.elementaltechnologies.timestamp.utc", frame->data, 40))
+      {
+      int64_t pts;
+      char * tmp_string = gavl_strndup((char*)(frame->data+40), (char*)(frame->data+60));
+
+      if(!gavl_time_parse_iso8601(tmp_string, &pts))
+        pts = GAVL_TIME_UNDEFINED;
+      
+      free(tmp_string);
+      
+      return pts;
+      }
+    }
+  return GAVL_TIME_UNDEFINED;
+  
   }
 
 void bgav_id3v2_destroy(bgav_id3v2_tag_t * t)

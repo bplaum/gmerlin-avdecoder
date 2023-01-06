@@ -977,6 +977,13 @@ struct bgav_input_context_s
 
   /* Set by the HLS input, read by the adts and webvtt demuxers */
   int64_t input_pts;
+
+  /*
+   *  Set by the HLS input, converted to metadata
+   *  by the mpegts and adts demultiplexers
+   */
+  
+  int64_t clock_time;
   };
 
 /* input.c */
@@ -1345,6 +1352,7 @@ struct bgav_demuxer_s
 /* Use generic code to get the duration */
 #define BGAV_DEMUXER_GET_DURATION          (1<<11)
 
+#define BGAV_DEMUXER_HAS_CLOCK_TIME        (1<<12)
 
 
 #define INDEX_MODE_NONE   0 /* Default: No sample accuracy */
@@ -1429,6 +1437,9 @@ void bgav_demuxer_destroy(bgav_demuxer_context_t * demuxer);
  */
 
 int bgav_demuxer_get_duration(bgav_demuxer_context_t * ctx);
+
+void bgav_demuxer_set_clock_time(bgav_demuxer_context_t * ctx,
+                                 int64_t pts, int scale, gavl_time_t clock_time);
 
 /* Generic get/peek functions */
 

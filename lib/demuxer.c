@@ -910,6 +910,21 @@ int bgav_demuxer_get_duration(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
+void bgav_demuxer_set_clock_time(bgav_demuxer_context_t * ctx,
+                                 int64_t pts, int scale, gavl_time_t clock_time)
+  {
+  if(ctx->flags & BGAV_DEMUXER_HAS_CLOCK_TIME ||
+     !ctx->tt ||
+     !ctx->tt->cur)
+    return;
+  
+  gavl_track_set_clock_time_map(ctx->tt->cur->info, pts, scale, clock_time);
+  
+  ctx->flags |= BGAV_DEMUXER_HAS_CLOCK_TIME;
+  
+
+  }
+
 #if 0
 void bgav_demuxer_parse_track(bgav_demuxer_context_t * ctx)
   {

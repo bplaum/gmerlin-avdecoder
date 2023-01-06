@@ -229,8 +229,8 @@ static const char * get_color(const char * c)
 
 static void append_payload_line(gavl_packet_t * p, gavl_buffer_t * buf)
   {
-  char * pos = (char*)buf->buf;
-  char * end = (char*)(buf->buf + buf->len);
+  const char * pos = (const char*)buf->buf;
+  const char * end = (const char*)(buf->buf + buf->len);
   
   while(pos < end)
     {

@@ -73,6 +73,8 @@ bgav_ape_tag_t * bgav_ape_tag_read(bgav_input_context_t * input, int tag_size);
 
 void bgav_ape_tag_2_metadata(bgav_ape_tag_t * tag, bgav_metadata_t * m);
 int64_t bgav_id3v2_get_pts(bgav_id3v2_tag_t * t);
+int64_t bgav_id3v2_get_clock_time(bgav_id3v2_tag_t * t);
+
 
 void bgav_ape_tag_destroy(bgav_ape_tag_t * tag);
 
