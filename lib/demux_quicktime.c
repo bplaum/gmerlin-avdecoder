@@ -1817,6 +1817,20 @@ static void set_stream_edl(qt_priv_t * priv, bgav_stream_t * s,
 
   gavl_dictionary_set_int(gavl_stream_get_metadata_nc(es),
                           GAVL_META_STREAM_SAMPLE_TIMESCALE, mdhd_ts);
+
+  if(!elst->num_entries)
+    {
+    seg = gavl_edl_add_segment(es);
+
+    gavl_edl_segment_set(seg,
+                         0,
+                         0,
+                         mdhd_ts,
+                         0,
+                         0,
+                         sp->trak->mdia.mdhd.duration);
+    }
+  
   
   for(i = 0; i < elst->num_entries; i++)
     {
