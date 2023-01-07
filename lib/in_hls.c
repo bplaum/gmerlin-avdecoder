@@ -571,6 +571,9 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
         p->seq_cur = p->seq_start;
       else
         p->seq_cur = p->seq_start + p->segments.num_entries - 2;
+
+      gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Initializing sequence number: %"PRId64, p->seq_cur);
+      
       init_seek_window(ctx);
       }
 
