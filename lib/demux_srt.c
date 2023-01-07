@@ -54,6 +54,10 @@ static int probe_srt(bgav_input_context_t * input)
   if(bgav_input_get_data(input, test_data, PROBE_LEN) < PROBE_LEN)
     return 0;
 
+  if(input->location && gavl_string_ends_with_i(input->location, ".srt") &&
+     (test_data[0] == 0xFF) && (test_data[1] == 0xFE))
+    return 1;
+  
   if(memchr(test_data, '\n', PROBE_LEN) &&
      (gavl_string_starts_with((char*)test_data, "@OFF=") ||
       gavl_string_starts_with((char*)test_data, "@SCALE=") ||
@@ -210,7 +214,9 @@ static int open_srt(bgav_demuxer_context_t * ctx)
   bgav_input_detect_charset(ctx->input);
   
   ctx->tt = bgav_track_table_create(1);
-  s = bgav_track_add_text_stream(ctx->tt->cur, ctx->opt, ctx->input->charset);
+  
+  /* We output UTF-8 already */
+  s = bgav_track_add_text_stream(ctx->tt->cur, ctx->opt, BGAV_UTF8);
   s->stream_id = STREAM_ID;
   s->timescale = 1000;
   srt->scale_num = 1;

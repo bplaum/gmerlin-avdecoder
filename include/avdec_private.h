@@ -937,11 +937,11 @@ struct bgav_input_context_s
   bgav_demuxer_context_t * demuxer;
   
   char * location;
-  //  char * filename;
-  //  char * url;
-  
+
   /* For reading textfiles */
   char * charset;
+  int char_width; // Bytes per character
+  
   bgav_charset_converter_t * cnv;
   
   /* For multiple track support */

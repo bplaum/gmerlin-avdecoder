@@ -135,11 +135,26 @@ int bgav_input_read_convert_line(bgav_input_context_t * input,
     
     if(!input->cnv)
       input->cnv = bgav_charset_converter_create(input->charset, BGAV_UTF8);
-
+    
     gavl_buffer_init(&line_buf);
     
-    if(!bgav_input_read_line(input, &line_buf))
-      return 0;
+    if(!strcmp(input->charset, "UTF-16LE"))
+      {
+      if(!read_line_utf16(input, bgav_input_read_16_le,
+                          &line_buf))
+        return 0;
+      }
+    else if(!strcmp(input->charset, "UTF-16BE"))
+      {
+      if(!read_line_utf16(input, bgav_input_read_16_be,
+                          &line_buf))
+        return 0;
+      }
+    else
+      {
+      if(!bgav_input_read_line(input, &line_buf))
+        return 0;
+      }
     
     bgav_convert_string_realloc(input->cnv,
                                 (char*)line_buf.buf,
