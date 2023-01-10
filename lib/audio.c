@@ -174,9 +174,11 @@ int bgav_audio_start(bgav_stream_t * s)
     /* might need to (re)set this here */
     s->out_time = s->stats.pts_start;
 
+    if(s->ci->flags & GAVL_COMPRESSION_SBR)
+      s->out_time *= 2;
     
-    if(!s->timescale)
-      s->timescale = s->data.audio.format->samplerate;
+    //    if(!s->timescale)
+    //      s->timescale = s->data.audio.format->samplerate;
 
     //    s->out_time -= s->data.audio.pre_skip;
     }

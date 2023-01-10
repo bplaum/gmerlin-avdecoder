@@ -53,8 +53,6 @@ int bgav_stream_start(bgav_stream_t * stream)
       break;
     }
 
-  gavl_stream_set_stats(stream->info_ext, &stream->stats);
-  
   if(result)
     stream->flags |= STREAM_STARTED;
   return result;

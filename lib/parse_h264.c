@@ -32,7 +32,7 @@
 
 
 // #define DUMP_AVCHD_SEI
-// #define DUMP_SEI
+#define DUMP_SEI
 
 #define LOG_DOMAIN "parse_h264"
 

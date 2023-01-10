@@ -1067,5 +1067,7 @@ void bgav_track_export_infos(bgav_track_t * t)
     {
     gavl_dictionary_reset(t->streams[i].info_ext);
     gavl_dictionary_copy(t->streams[i].info_ext, &t->streams[i].in_info);
+    gavl_stream_set_stats(t->streams[i].info_ext, &t->streams[i].stats);
+    gavl_stream_set_compression_info(t->streams[i].info_ext, t->streams[i].ci);
     }
   }

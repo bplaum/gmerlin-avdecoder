@@ -526,7 +526,8 @@ int bgav_start(bgav_t * b)
     }
   
   bgav_track_compute_info(b->tt->cur);
-
+  bgav_track_export_infos(b->tt->cur);
+  
   b->flags |= BGAV_FLAG_IS_RUNNING;
   
   return 1;

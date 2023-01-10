@@ -143,6 +143,7 @@ static int init_format(bgav_stream_t * s, int samples_per_frame)
     gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Detected SBR");
     //    gavl_stream_stats_dump(&s->stats, 2);
     bgav_stream_set_sbr(s);
+    s->data.audio.format->samples_per_frame = 2048;
     }
   
   /* These come from the codec */

@@ -242,8 +242,6 @@ static gavl_sink_status_t sink_put_func_full(void * priv, gavl_packet_t * pkt)
       /* Get new packet */
       gavl_packet_t * pkt = gavl_packet_sink_get_packet(p->next);
       gavl_buffer_append_data_pad(&pkt->buf, p->buf.buf, p->buf.pos, GAVL_PACKET_PADDING);
-      if(!do_parse_frame(p, pkt))
-        return GAVL_SINK_ERROR;
       
       /* Set pts */
       if(p->packets[0].pts != GAVL_TIME_UNDEFINED)
@@ -255,6 +253,10 @@ static gavl_sink_status_t sink_put_func_full(void * priv, gavl_packet_t * pkt)
         p->packets[0].pts = GAVL_TIME_UNDEFINED;
         p->packets[0].position = -1;
         }
+
+      /* Parse frame (must be done *after* pes_pts is set) */
+      if(!do_parse_frame(p, pkt))
+        return GAVL_SINK_ERROR;
       
       if(gavl_packet_sink_put_packet(p->next, pkt) != GAVL_SINK_OK)
         return GAVL_SINK_ERROR;

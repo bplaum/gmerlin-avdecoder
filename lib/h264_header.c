@@ -369,9 +369,28 @@ static void vui_dump(bgav_h264_vui_t * vui)
 static void skip_scaling_list(bgav_bitstream_t * b, int num)
   {
   int i, dummy;
+
+#if 0
+  int next_scale = 8;
+  int last_scale = 8;
+#endif
   
   for(i = 0; i < num; i++)
+    {
+#if 0
+    if(next_scale != 0)
+      {
+      int delta_scale;
+      
+      bgav_bitstream_get_golomb_se(b, &delta_scale);
+      next_scale = ( last_scale + delta_scale + 256 ) % 256;
+      }
+    dummy = ( next_scale == 0 ) ? last_scale : next_scale;
+    last_scale = dummy;
+#else
     bgav_bitstream_get_golomb_se(b, &dummy);
+#endif
+    }
   }
 
 int bgav_h264_sps_parse(bgav_h264_sps_t * sps,
@@ -380,8 +399,8 @@ int bgav_h264_sps_parse(bgav_h264_sps_t * sps,
   int i;
   bgav_bitstream_t b;
   int dummy;
-  //  fprintf(stderr, "Parsing SPS %d bytes\n", len);
-  // gavl_hexdump(buffer, len, 16);
+  fprintf(stderr, "Parsing SPS %d bytes\n", len);
+  gavl_hexdump(buffer, len, 16);
 
   bgav_bitstream_init(&b, buffer, len);
 
@@ -598,6 +617,13 @@ void bgav_h264_sps_get_image_size(bgav_h264_sps_t * sps,
   format->frame_height = ((height + 15)/16)*16;
   
   get_pixel_size(&sps->vui, &format->pixel_width, &format->pixel_height);
+
+  fprintf(stderr, "bgav_h264_sps_get_image_size\n");
+  bgav_h264_sps_dump(sps);
+  fprintf(stderr, "--\n");
+  gavl_video_format_dump(format);
+  fprintf(stderr, "--\n");
+
   }
 
 int bgav_h264_decode_sei_message_header(const uint8_t * data, int len,
