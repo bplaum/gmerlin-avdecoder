@@ -149,8 +149,8 @@ static gavl_source_status_t source_func_adts(void * priv, gavl_packet_t ** p)
       gavl_compression_info_t ci;
       gavl_compression_info_init(&ci);
       
-      gavl_dprintf("Got extradata %d bytes\n", extradata_size);
-      gavl_hexdump(extradata, extradata_size, 16);
+      //      gavl_dprintf("Got extradata %d bytes\n", extradata_size);
+      //      gavl_hexdump(extradata, extradata_size, 16);
       
       gavl_stream_get_compression_info(s, &ci);
       gavl_buffer_append_data_pad(&ci.codec_header, extradata, extradata_size, GAVL_PACKET_PADDING);

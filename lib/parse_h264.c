@@ -32,7 +32,7 @@
 
 
 // #define DUMP_AVCHD_SEI
-#define DUMP_SEI
+// #define DUMP_SEI
 
 #define LOG_DOMAIN "parse_h264"
 
@@ -637,8 +637,9 @@ static int parse_frame_h264(bgav_packet_parser_t * parser, bgav_packet_t * p)
           nal_end = get_nal_end(p, ptr);
           get_rbsp(parser, ptr, nal_end - ptr);
           
-          bgav_h264_sps_parse(&priv->sps,
-                              priv->rbsp, priv->rbsp_len);
+          if(!bgav_h264_sps_parse(&priv->sps,
+                                  priv->rbsp, priv->rbsp_len))
+            return 0;
           //          bgav_h264_sps_dump(&priv->sps);
 
           handle_sps(parser);
@@ -850,8 +851,9 @@ static int parse_avc_extradata(bgav_packet_parser_t * parser)
   
   get_rbsp(parser, ptr, nal_len - 1);
   
-  bgav_h264_sps_parse(&priv->sps,
-                      priv->rbsp, priv->rbsp_len);
+  if(!bgav_h264_sps_parse(&priv->sps,
+                          priv->rbsp, priv->rbsp_len))
+    return 0;
 
   priv->flags |= (FLAG_HAVE_SPS|FLAG_HAVE_PPS);
 

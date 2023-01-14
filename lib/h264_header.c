@@ -28,6 +28,9 @@
 
 #include <bitstream.h>
 
+#include <gavl/log.h>
+#define LOG_DOMAIN "h264"
+
 static const struct
   {
   int pixel_width;
@@ -366,25 +369,35 @@ static void vui_dump(bgav_h264_vui_t * vui)
     }
   }
 
+// Taken from the standard and libavcodec/
+
 static void skip_scaling_list(bgav_bitstream_t * b, int num)
   {
   int i, dummy;
 
-#if 0
+#if 1
   int next_scale = 8;
   int last_scale = 8;
 #endif
   
   for(i = 0; i < num; i++)
     {
-#if 0
-    if(next_scale != 0)
+#if 1
+    if(next_scale)
       {
       int delta_scale;
-      
-      bgav_bitstream_get_golomb_se(b, &delta_scale);
-      next_scale = ( last_scale + delta_scale + 256 ) % 256;
+      if(!bgav_bitstream_get_golomb_se(b, &delta_scale))
+        {
+        //        fprintf(stderr, "EOF: %d\n", i);
+        return;
+        }
+      //      fprintf(stderr, "Delta scale: %d\n", delta_scale);
+
+      next_scale = ( last_scale + delta_scale) & 0xff;
       }
+    if(!i && !next_scale)
+      break;
+    
     dummy = ( next_scale == 0 ) ? last_scale : next_scale;
     last_scale = dummy;
 #else
@@ -399,8 +412,8 @@ int bgav_h264_sps_parse(bgav_h264_sps_t * sps,
   int i;
   bgav_bitstream_t b;
   int dummy;
-  fprintf(stderr, "Parsing SPS %d bytes\n", len);
-  gavl_hexdump(buffer, len, 16);
+  //  fprintf(stderr, "Parsing SPS %d bytes\n", len);
+  //  gavl_hexdump(buffer, len, 16);
 
   bgav_bitstream_init(&b, buffer, len);
 
@@ -432,12 +445,21 @@ int bgav_h264_sps_parse(bgav_h264_sps_t * sps,
 
     bgav_bitstream_get(&b, &sps->qpprime_y_zero_transform_bypass_flag, 1);
     bgav_bitstream_get(&b, &sps->seq_scaling_matrix_present_flag, 1);
-
+    
     if(sps->seq_scaling_matrix_present_flag)
       {
-      for(i = 0; i < ((sps->chroma_format_idc != 3 ) ? 8 : 12 ); i++)
+      int imax = 8;
+      if(sps->chroma_format_idc == 3)
+        imax = 12;
+      
+      for(i = 0; i < imax; i++)
         {
-        bgav_bitstream_get(&b, &dummy, 1);
+        if(!bgav_bitstream_get(&b, &dummy, 1))
+          {
+          gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "EOF while skipping SPS scaling list %d", i);
+          return 0;
+          }
+
         if(dummy)
           {
           if(i < 6)
@@ -618,12 +640,13 @@ void bgav_h264_sps_get_image_size(bgav_h264_sps_t * sps,
   
   get_pixel_size(&sps->vui, &format->pixel_width, &format->pixel_height);
 
+#if 0  
   fprintf(stderr, "bgav_h264_sps_get_image_size\n");
   bgav_h264_sps_dump(sps);
   fprintf(stderr, "--\n");
   gavl_video_format_dump(format);
   fprintf(stderr, "--\n");
-
+#endif
   }
 
 int bgav_h264_decode_sei_message_header(const uint8_t * data, int len,

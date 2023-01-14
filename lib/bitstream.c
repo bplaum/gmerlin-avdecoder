@@ -48,13 +48,7 @@ void bgav_bitstream_init(bgav_bitstream_t * b, const uint8_t * pos,
   {
   b->pos = pos;
   b->end = pos + len;
-#ifdef OLD_BITSTREAM
-  b->c = *pos;
-  b->pos++;
-  b->bit_cache = 8;
-#else
   fill_cache(b);
-#endif
   }
 
 int bgav_bitstream_get_long(bgav_bitstream_t * b, int64_t * ret1,  int bits)
@@ -69,13 +63,7 @@ int bgav_bitstream_get_long(bgav_bitstream_t * b, int64_t * ret1,  int bits)
       {
       if(b->pos >= b->end)
         return 0;
-#ifdef OLD_BITSTREAM
-      b->c = *b->pos;
-      b->pos++;
-      b->bit_cache = 8;
-#else
       fill_cache(b);
-#endif
       }
     bits_to_copy = bits - bits_read;
     if(bits_to_copy > b->bit_cache)
@@ -142,7 +130,7 @@ int bgav_bitstream_skip(bgav_bitstream_t * b, int bits)
 int bgav_bitstream_get_golomb_ue(bgav_bitstream_t * b, int * ret)
   {
   int bits, num = 0;
-  while(1)
+  while(num < 31)
     {
     if(!bgav_bitstream_get(b, &bits, 1))
       return 0;
@@ -151,13 +139,18 @@ int bgav_bitstream_get_golomb_ue(bgav_bitstream_t * b, int * ret)
     else
       num++;
     }
+    
   /* The variable codeNum is then assigned as follows:
      codeNum = 2^leadingZeroBits - 1 + read_bits( leadingZeroBits ) */
   
   if(!bgav_bitstream_get(b, &bits, num))
     return 0;
   
-  *ret = (1 << num) - 1 + bits;
+  *ret = ((1 << num) | bits) - 1;
+  
+  //  if(*ret < 0)
+  //    fprintf("Warning: %d\n", *ret);
+
   return 1;
   }
 
@@ -168,7 +161,7 @@ int bgav_bitstream_get_golomb_se(bgav_bitstream_t * b, int * ret)
     return 0;
 
   if(ret1 & 1)
-    *ret = ret1>>1;
+    *ret = (ret1+1)>>1;
   else
     *ret = -(ret1>>1);
   return 1;
