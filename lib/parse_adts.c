@@ -57,39 +57,11 @@ static int parse_frame_adts(bgav_packet_parser_t * parser, gavl_packet_t * p)
     return 0;
 
   if(!(parser->parser_flags & PARSER_HAS_HEADER))
-    {
     bgav_adts_header_get_format(&h, parser->afmt);
-    //    fprintf(stderr, "ADTS blocks per frame: %d\n", h.num_blocks);
-    }
+  
   p->duration = parser->afmt->samples_per_frame * h.num_blocks;
   return 1;
   }
-
-#if 0
-static int parse_adts(bgav_audio_parser_t * parser)
-  {
-  int i;
-  bgav_adts_header_t h;
-  
-  for(i = 0; i < parser->buf.len - HEADER_BYTES; i++)
-    {
-    if(bgav_adts_header_read(parser->buf.buf + i, &h))
-      {
-      if(!parser->have_format)
-        {
-        bgav_adts_header_get_format(&h, parser->s->data.audio.format);
-        parser->have_format = 1;
-        return PARSER_HAVE_FORMAT;
-        }
-      bgav_audio_parser_set_frame(parser,
-                                  i, h.frame_bytes,
-                                  parser->s->data.audio.format->samples_per_frame * h.num_blocks);
-      return PARSER_HAVE_FRAME;
-      }
-    }
-  return PARSER_NEED_DATA;
-  }
-#endif
 
 void bgav_packet_parser_init_adts(bgav_packet_parser_t * parser)
   {
