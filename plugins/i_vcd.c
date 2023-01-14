@@ -45,9 +45,13 @@
 
 static int open_vcd(void * priv, const char * location)
   {
+  const char * pos;
   bgav_options_t * opt;
   avdec_priv * avdec = priv;
-
+  
+  if((pos = strstr(location, "://")))
+    location = pos + 3;
+  
   avdec->dec = bgav_create();
   opt = bgav_get_options(avdec->dec);
   

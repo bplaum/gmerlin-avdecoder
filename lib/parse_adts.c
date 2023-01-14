@@ -59,7 +59,7 @@ static int parse_frame_adts(bgav_packet_parser_t * parser, gavl_packet_t * p)
   if(!(parser->parser_flags & PARSER_HAS_HEADER))
     {
     bgav_adts_header_get_format(&h, parser->afmt);
-    fprintf(stderr, "ADTS blocks per frame: %d\n", h.num_blocks);
+    //    fprintf(stderr, "ADTS blocks per frame: %d\n", h.num_blocks);
     }
   p->duration = parser->afmt->samples_per_frame * h.num_blocks;
   return 1;
