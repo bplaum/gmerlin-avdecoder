@@ -1330,12 +1330,7 @@ static gavl_source_status_t next_packet_matroska(bgav_demuxer_context_t * ctx)
       }
 
     /* Check whether to exit */
-    if(ctx->next_packet_pos)
-      {
-      if(ctx->input->position >= ctx->next_packet_pos)
-        break;
-      }
-    else if(num_blocks)
+    if(num_blocks)
       break;
     }
   return GAVL_SOURCE_OK;

@@ -128,8 +128,6 @@ typedef struct
   /* Taken from video format */
   int timescale;
   int frame_duration;
-  int do_sync;
-  int64_t sync_field;
   } gxf_priv_t;
 
 static const uint8_t startcode[] =
@@ -362,7 +360,7 @@ static int get_next_startcode(bgav_demuxer_context_t * ctx,
     if(peek_packet_header(ctx->input, &type, &length) &&
        (type == PKT_MEDIA))
       break;
-    bgav_input_seek(ctx->input, 1, SEEK_CUR);
+    bgav_input_skip(ctx->input, 1);
     }
   read_packet_header(ctx->input, &type, &length);
   read_media_header(ctx->input, h);
@@ -516,7 +514,7 @@ static int open_gxf(bgav_demuxer_context_t * ctx)
         return 0;
       priv->last_field = mh.field_nr;
       bgav_input_seek(ctx->input, last_pos, SEEK_SET);
-      ctx->flags |= (BGAV_DEMUXER_CAN_SEEK | BGAV_DEMUXER_SEEK_ITERATIVE);
+      ctx->flags |= (BGAV_DEMUXER_CAN_SEEK);
       }
 
     if(priv->last_field > priv->first_field)
@@ -563,28 +561,12 @@ static gavl_source_status_t next_packet_gxf(bgav_demuxer_context_t * ctx)
       }
     else
       {
-      //      if(s->type == GAVF_STREAM_VIDEO)
-      //        dump_media_header(&mh);
-      if(priv->do_sync)
-        {
-        if(mh.field_nr - priv->first_field < priv->sync_field)
-          {
-          bgav_input_skip(ctx->input, length);
-          return GAVL_SOURCE_OK;
-          }
-        else if(!STREAM_HAS_SYNC(s))
-          {
-          STREAM_SET_SYNC(s, (mh.field_nr - priv->first_field) / priv->num_fields *
-                          priv->frame_duration);
-          }
-        }
-      
       p = bgav_stream_get_packet_write(s);
       bgav_packet_alloc(p,length);
       
       p->pts = (mh.field_nr - priv->first_field) / priv->num_fields *
             priv->frame_duration ;
-
+      
       p->position = position;
       
       if(bgav_input_read_data(ctx->input, p->buf.buf, length) < length)
@@ -609,6 +591,7 @@ static gavl_source_status_t next_packet_gxf(bgav_demuxer_context_t * ctx)
   return GAVL_SOURCE_OK;
   }
 
+#if 0
 static void seek_gxf(bgav_demuxer_context_t * ctx, int64_t time,
                      int scale)
   {
@@ -634,10 +617,15 @@ static void seek_gxf(bgav_demuxer_context_t * ctx, int64_t time,
   if(!get_next_startcode(ctx, &mh))
     return;
 
-  priv->do_sync = 1;
-  priv->sync_field = field_index;
-  
-  priv->do_sync = 0;
+  }
+#endif
+
+static int post_seek_resync_gxf(bgav_demuxer_context_t * ctx)
+  {
+  media_header_t mh;
+  if(!get_next_startcode(ctx, &mh))
+    return 0;
+  return 1;
   }
 
 static void close_gxf(bgav_demuxer_context_t * ctx)
@@ -650,9 +638,9 @@ static void close_gxf(bgav_demuxer_context_t * ctx)
 
 const bgav_demuxer_t bgav_demuxer_gxf =
   {
-    .probe =       probe_gxf,
-    .open =        open_gxf,
-    .next_packet = next_packet_gxf,
-    .seek =        seek_gxf,
-    .close =       close_gxf
+    .probe            = probe_gxf,
+    .open             = open_gxf,
+    .next_packet      = next_packet_gxf,
+    .post_seek_resync = post_seek_resync_gxf,
+    .close            = close_gxf
   };

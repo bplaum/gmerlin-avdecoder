@@ -891,11 +891,11 @@ struct bgav_input_s
 
   int    (*select_track)(bgav_input_context_t*, int);
 
-  /* Alternate API: Sector based read and seek access */
-
-  int (*read_sector)(bgav_input_context_t*,uint8_t* buffer);
-  int64_t (*seek_sector)(bgav_input_context_t*, int64_t sector);
-
+  /* Alternate API: Block based read and seek access */
+  
+  int (*read_block)(bgav_input_context_t*);
+  int (*seek_block)(bgav_input_context_t*, int64_t block);
+  
   /* Time based seek function for media, which are not stored
      stricktly linear. Time is changed to the actual seeked time */
   void (*seek_time)(bgav_input_context_t*, int64_t time, int scale);
@@ -955,13 +955,19 @@ struct bgav_input_context_s
   int flags;
 
   /* For sector based access */
-
+#if 0
   int sector_size;
   int sector_size_raw;
   int sector_header_size;
   int64_t total_sectors;
   int64_t sector_position;
+#endif
 
+  /* Set by read_block() */
+  int block_size;
+  const uint8_t * block;
+  const uint8_t * block_ptr;
+  
   bgav_options_t opt;
   
   // Stream ID, which will be used for syncing (for DVB)
@@ -1058,7 +1064,6 @@ int bgav_utf8_validate(const uint8_t * str, const uint8_t * end);
 int bgav_input_read_convert_line(bgav_input_context_t*,
                                  gavl_buffer_t * ret);
 
-int bgav_input_read_sector(bgav_input_context_t*, uint8_t*);
 
 BGAV_PUBLIC int bgav_input_open(bgav_input_context_t *, const char * url);
 
@@ -1085,9 +1090,6 @@ void bgav_input_seek(bgav_input_context_t * ctx,
                      int whence);
 
 
-
-void bgav_input_seek_sector(bgav_input_context_t * ctx,
-                            int64_t sector);
 
 
 // void bgav_input_buffer(bgav_input_context_t * ctx);
@@ -1332,7 +1334,6 @@ struct bgav_demuxer_s
 /* Demuxer flags */
 
 #define BGAV_DEMUXER_CAN_SEEK             (1<<0)
-#define BGAV_DEMUXER_SEEK_ITERATIVE       (1<<1) /* If 1, perform iterative seeking */
 #define BGAV_DEMUXER_PEEK_FORCES_READ     (1<<2) /* This is set if only subtitle streams are read */
 #define BGAV_DEMUXER_SI_SEEKING           (1<<3) /* Demuxer is seeking */
 #define BGAV_DEMUXER_SI_PRIVATE_FUNCS     (1<<4) /* We have a suprindex but use private seek/demux funcs */
@@ -1401,15 +1402,6 @@ struct bgav_demuxer_context_s
    *  seek() functions will be used
    */
   bgav_superindex_t * si;
-  
-
-  /* Data size for simple formats */
-// int64_t data_size;
-    
-  /* Used by MPEG style fileindex for catching
-     packets, inside which no frame starts */
-  
-  int64_t next_packet_pos;
   
   bgav_t * b;
   };

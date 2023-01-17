@@ -93,10 +93,7 @@ static gavl_source_status_t next_packet_mpegvideo(bgav_demuxer_context_t * ctx)
   /* Sample accurate: Read data and output as many
      packets as available */
   
-  if(ctx->next_packet_pos)
-    bytes_to_read = ctx->next_packet_pos - ctx->input->position;
-  else
-    bytes_to_read = BUFFER_LEN;
+  bytes_to_read = BUFFER_LEN;
   
   p = bgav_stream_get_packet_write(s);
 

@@ -204,6 +204,8 @@ mimetypes[] =
     { &bgav_demuxer_adts,      "audio/aacp" },
     { &bgav_demuxer_adts,      "audio/aac" },
     { &bgav_demuxer_vtt,       "text/vtt" },
+    { &bgav_demuxer_mpegps,    "video/MP1S" },
+    { &bgav_demuxer_mpegps,    "video/MP2P" },
   };
 
 static const int num_demuxers = sizeof(demuxers)/sizeof(demuxers[0]);
@@ -456,7 +458,7 @@ static void check_interleave(bgav_demuxer_context_t * ctx)
 
 int bgav_demuxer_start(bgav_demuxer_context_t * ctx)
   {
-  if(!ctx->demuxer->open(ctx))
+  if(!ctx->demuxer || !ctx->demuxer->open(ctx))
     return 0;
   
   if(ctx->si)

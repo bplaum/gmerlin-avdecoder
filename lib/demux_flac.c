@@ -349,62 +349,41 @@ static gavl_source_status_t next_packet_flac(bgav_demuxer_context_t * ctx)
   if(!s)
     return GAVL_SOURCE_EOF;
 
-  if(ctx->next_packet_pos)
+  if(!priv->has_sync)
     {
-    size = ctx->next_packet_pos - ctx->input->position;
-    if(ctx->input->position + size > ctx->input->total_bytes)
-      size = ctx->input->total_bytes - ctx->input->position;
-    }
-  else
-    {
-    if(!priv->has_sync)
-      {
-      pos = find_next_header(ctx, 0, &next_fh);
-      if(pos < 0)
-        return GAVL_SOURCE_EOF;
-
-      if(pos > 0)
-        gavl_buffer_flush(&priv->buf, pos);
-
-      memcpy(&priv->this_fh, &next_fh, sizeof(next_fh));
-    
-      priv->has_sync = 1;
-      }
-  
-    /* Get next header */
-    pos = find_next_header(ctx, BGAV_FLAC_FRAMEHEADER_MIN, &next_fh);
-
-    //  if(pos < 0)
-    //  fprintf(stderr, "pos < 0!!\n");
-  
-    if(pos < 0) // EOF
-      size = priv->buf.len;
-    else
-      size = pos;
-
-    if((pos < 0) && !size)
+    pos = find_next_header(ctx, 0, &next_fh);
+    if(pos < 0)
       return GAVL_SOURCE_EOF;
+
+    if(pos > 0)
+      gavl_buffer_flush(&priv->buf, pos);
+
+    memcpy(&priv->this_fh, &next_fh, sizeof(next_fh));
+    
+    priv->has_sync = 1;
     }
+  
+  /* Get next header */
+  pos = find_next_header(ctx, BGAV_FLAC_FRAMEHEADER_MIN, &next_fh);
+
+  //  if(pos < 0)
+  //  fprintf(stderr, "pos < 0!!\n");
+  
+  if(pos < 0) // EOF
+    size = priv->buf.len;
+  else
+    size = pos;
+
+  if((pos < 0) && !size)
+    return GAVL_SOURCE_EOF;
   
   p = bgav_stream_get_packet_write(s);
   bgav_packet_alloc(p, size);
 
-  if(ctx->next_packet_pos)
-    {
-    if(bgav_input_read_data(ctx->input, p->buf.buf, size) < size)
-      return GAVL_SOURCE_EOF;
-    p->position = ctx->input->position - size;
-
-    if(!bgav_flac_frame_header_read(p->buf.buf, size,
-                                    &priv->streaminfo, &priv->this_fh))
-      return GAVL_SOURCE_EOF;
-    }
-  else
-    {
-    memcpy(p->buf.buf, priv->buf.buf, size);
-    p->position = ctx->input->position - priv->buf.len;
-    gavl_buffer_flush(&priv->buf, size);
-    }
+  memcpy(p->buf.buf, priv->buf.buf, size);
+  p->position = ctx->input->position - priv->buf.len;
+  gavl_buffer_flush(&priv->buf, size);
+  
   
   //  p->pts = fh.sample_number;
   
@@ -431,12 +410,9 @@ static gavl_source_status_t next_packet_flac(bgav_demuxer_context_t * ctx)
   
   bgav_stream_done_packet_write(s, p);
 
-  if(!ctx->next_packet_pos)
-    {
-    /* Save frame header for later use */
-    memcpy(&priv->this_fh, &next_fh, sizeof(next_fh));
-    }
-  
+  /* Save frame header for later use */
+  memcpy(&priv->this_fh, &next_fh, sizeof(next_fh));
+    
   return GAVL_SOURCE_OK;
   }
 

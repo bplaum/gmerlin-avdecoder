@@ -19,11 +19,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
-#include <avdec_private.h>
 #include <stdio.h>
 
 #define LOG_DOMAIN "vcd"
 
+#include <config.h>
 #ifdef HAVE_CDIO
 
 #include <ctype.h>
@@ -34,11 +34,17 @@
 #include <cdio/device.h>
 #include <cdio/cd_types.h>
 
+#include <avdec_private.h>
+#include <pes_header.h>
+
 #define SECTOR_ACCESS
 
 extern bgav_demuxer_t bgav_demuxer_mpegps;
 
-#define SECTOR_SIZE 2324
+#define SECTOR_SIZE     2324
+#define SECTOR_SIZE_RAW 2352
+#define HEADER_SIZE     8
+
 
 #define TRACK_OTHER 0
 #define TRACK_VCD   1
@@ -50,10 +56,13 @@ typedef struct
   CdIo_t * cdio;
 
   int current_track;
-  int next_sector; /* Next sector to be read */
-  int last_sector; /* Sector currently in buffer */
+
+  //  int next_sector; /* Next sector to be read */
+  int current_sector;
+  
   int num_tracks; 
   int num_vcd_tracks; 
+  uint8_t * sector_buffer;
   
   struct
     {
@@ -70,19 +79,11 @@ static int select_track_vcd(bgav_input_context_t * ctx, int track)
   {
   vcd_priv * priv;
   priv = ctx->priv;
-
-
+  
   priv->current_track = track+1;
-  priv->next_sector = priv->tracks[priv->current_track].start_sector;
-  priv->last_sector = -1;
-  ctx->position = 0;
-  ctx->total_bytes = SECTOR_SIZE *
-    (priv->tracks[priv->current_track].end_sector -
-     priv->tracks[priv->current_track].start_sector + 1);
-
-  ctx->total_sectors = priv->tracks[priv->current_track].end_sector -
-    priv->tracks[priv->current_track].start_sector + 1;
-  ctx->sector_position = 0;
+  priv->current_sector = -1;
+  ctx->position = priv->tracks[priv->current_track].start_sector * SECTOR_SIZE;
+  
   return 1;
   }
 
@@ -168,15 +169,61 @@ static int read_toc(vcd_priv * priv, char ** iso_label)
   return 1;
   }
 
+#if 0
+static int64_t read_scr(bgav_input_context_t * ctx, int sector)
+  {
+  vcd_priv * priv;
+  int64_t ret = GAVL_TIME_UNDEFINED;
+  uint8_t buf[SECTOR_SIZE_RAW];
+  uint8_t * ptr;
+  bgav_input_context_t * in_mem;
+  bgav_pack_header_t     pack_header;
+  uint32_t header;
+  
+  priv = ctx->priv;
+
+  memset(&pack_header, 0, sizeof(pack_header));
+  
+  if(cdio_read_mode2_sector(priv->cdio, buf, sector, true) !=0)
+    {
+    //    fprintf(stderr, "failed (internal error)\n");
+    return GAVL_TIME_UNDEFINED;
+    }
+
+  ptr = &buf[HEADER_SIZE];
+
+  header = GAVL_PTR_2_32BE(ptr);
+  if(header != START_CODE_PACK_HEADER)
+    {
+    fprintf(stderr, "No pack header in sector %d\n", sector);
+    gavl_hexdump(ptr, 16, 16);
+    return GAVL_TIME_UNDEFINED;
+    }
+  in_mem = bgav_input_open_memory(ptr, SECTOR_SIZE);
+
+  gavl_hexdump(&buf[HEADER_SIZE], 16, 16);
+  
+  if(bgav_pack_header_read(in_mem, &pack_header))
+    ret = pack_header.scr;
+  
+  bgav_input_destroy(in_mem);
+  return ret;
+  }
+#endif
+
 static void toc_2_tt(bgav_input_context_t * ctx, char * disk_name)
   {
   int index;
-  bgav_stream_t * stream;
+  bgav_stream_t * as;
+  bgav_stream_t * vs;
   bgav_track_t * track;
   gavl_dictionary_t * m;
+  gavl_dictionary_t * src;
   int i;
   vcd_priv * priv;
 
+  gavl_time_t duration;
+  
   const char * format = NULL;
   const char * mimetype = NULL;
 
@@ -190,28 +237,37 @@ static void toc_2_tt(bgav_input_context_t * ctx, char * disk_name)
   index = 0;
   for(i = 1; i < priv->num_tracks; i++)
     {
+    duration = GAVL_TIME_UNDEFINED;
+    
     if(priv->tracks[i].mode == TRACK_OTHER)
       continue;
     
     track = ctx->tt->tracks[index];
 
+    track->data_start = priv->tracks[i].start_sector   * SECTOR_SIZE;
+    track->data_end   = (priv->tracks[i].end_sector+1) * SECTOR_SIZE;
+    ctx->total_bytes = track->data_end;
+    
     m = track->metadata;
     
-    stream =  bgav_track_add_audio_stream(track, &ctx->opt);
-    stream->fourcc = BGAV_MK_FOURCC('.', 'm', 'p', '2');
-    stream->stream_id = 0xc0;
-    stream->timescale = 90000;
+    as =  bgav_track_add_audio_stream(track, &ctx->opt);
+    as->fourcc = BGAV_MK_FOURCC('.', 'm', 'p', '2');
+    as->stream_id = 0xc0;
+    as->timescale = 90000;
         
-    stream =  bgav_track_add_video_stream(track, &ctx->opt);
-    stream->fourcc = BGAV_MK_FOURCC('m', 'p', 'g', 'v');
-    stream->stream_id = 0xe0;
-    stream->timescale = 90000;
+    vs =  bgav_track_add_video_stream(track, &ctx->opt);
+    vs->fourcc = BGAV_MK_FOURCC('m', 'p', 'g', 'v');
+    vs->stream_id = 0xe0;
+    vs->timescale = 90000;
+    
     if(priv->tracks[i].mode == TRACK_SVCD)
       {
       gavl_dictionary_set_string_nocopy(track->metadata, GAVL_META_LABEL,
                               bgav_sprintf("SVCD Track %d", i));
       format = "MPEG-2";
-      mimetype = "video/MP2P";
+
+      if(!mimetype)
+        mimetype = "video/MP2P";
       }
     else if(priv->tracks[i].mode == TRACK_CVD)
       {
@@ -219,34 +275,50 @@ static void toc_2_tt(bgav_input_context_t * ctx, char * disk_name)
                               bgav_sprintf("CVD Track %d", i));
 
       format = "MPEG-2";
-      mimetype = "video/MP2P";
+      
+      if(!mimetype)
+        mimetype = "video/MP2P";
       }
     else
       {
       gavl_dictionary_set_string_nocopy(track->metadata, GAVL_META_LABEL,
                                         bgav_sprintf("VCD Track %d", i));
       format = "MPEG-1";
-      mimetype = "video/MP1S";
+      if(!mimetype)
+        mimetype = "video/MP1S";
+
+      /* VCD timing is the same as Audio CD timing */
+      duration = gavl_time_unscale(75, (track->data_end - track->data_start) / SECTOR_SIZE);
+      //      fprintf(stderr, "Got VCD duration\n");
       }
     
     gavl_dictionary_set_string(track->metadata, GAVL_META_MEDIA_CLASS,
                                GAVL_META_MEDIA_CLASS_VIDEO_DISK_TRACK);
     
     bgav_track_set_format(track, format, mimetype);
-    
     index++;
+
+    if(duration != GAVL_TIME_UNDEFINED)
+      gavl_track_set_duration(track->info, duration);
     }
+
+  if(mimetype && (src = gavl_metadata_get_src_nc(&ctx->m, GAVL_META_SRC, 0)))
+    gavl_dictionary_set_string(src, GAVL_META_MIMETYPE, mimetype);
+
+  //  fprintf(stderr, "Got track table");
+  //  gavl_dictionary_dump(&ctx->tt->info, 2);
+
+  
   }
 
 static int open_vcd(bgav_input_context_t * ctx, const char * url, char ** r)
   {
   driver_return_code_t err;
-  int i;
   vcd_priv * priv;
   const char * pos;
   char * disk_name = NULL;
   //  bgav_find_devices_vcd();
-    
+
   priv = calloc(1, sizeof(*priv));
   
   ctx->priv = priv;
@@ -291,79 +363,79 @@ static int open_vcd(bgav_input_context_t * ctx, const char * url, char ** r)
              "read_toc failed for %s", url);
     return 0;
     }
+
   toc_2_tt(ctx, disk_name);
-
-
-
-  /* Set up sector stuff */
-
-#ifdef SECTOR_ACCESS
-  ctx->sector_size        = 2324;
-  ctx->sector_size_raw    = 2352;
-  ctx->sector_header_size = 8;
-#endif
   
-  /* Create demuxer */
+  ctx->block_size = SECTOR_SIZE;
   
-  ctx->demuxer = bgav_demuxer_create(ctx->b, &bgav_demuxer_mpegps, ctx);
-  ctx->demuxer->tt = ctx->tt;
-
-  /* Now, loop through all tracks and let the demuxer find the durations */
-
-  for(i = 0; i < ctx->tt->num_tracks; i++)
-    {
-    select_track_vcd(ctx, i);
-    bgav_track_table_select_track(ctx->tt, i);
-    bgav_demuxer_start(ctx->demuxer);
-    bgav_demuxer_stop(ctx->demuxer);
-    }
   ctx->flags |= BGAV_INPUT_CAN_PAUSE;
   return 1;
   }
 
-static int read_sector(bgav_input_context_t * ctx, uint8_t * data)
+static int read_block(bgav_input_context_t * ctx)
   {
   vcd_priv * priv;
   priv = ctx->priv;
 
+  if(!priv->sector_buffer)
+    priv->sector_buffer = malloc(SECTOR_SIZE_RAW);
+  
   //  do
   //    {
 
   //  fprintf(stderr, "Read vcd sector %d...", priv->next_sector);
 
-  if(priv->next_sector > priv->tracks[priv->current_track].end_sector)
+  if(priv->current_sector < 0)
+    priv->current_sector = priv->tracks[priv->current_track].start_sector;
+  else
+    priv->current_sector++;
+  
+  if(priv->current_sector > priv->tracks[priv->current_track].end_sector)
     {
     //    fprintf(stderr, "failed (end of track)\n");
     
     return 0;
     }
-  if(cdio_read_mode2_sector(priv->cdio, data, priv->next_sector, true)!=0)
+  if(cdio_read_mode2_sector(priv->cdio, priv->sector_buffer, priv->current_sector, true)!=0)
     {
     //    fprintf(stderr, "failed (internal error)\n");
     return 0;
     }
-  priv->next_sector++;
-
-  priv->last_sector = priv->next_sector - 1;
-
-  //  fprintf(stderr, "Read vcd sector done\n");
   
+  //  fprintf(stderr, "Read vcd sector done\n");
+
+  ctx->block = priv->sector_buffer + HEADER_SIZE;
+  
+  //  fprintf(stderr, "Read vcd sector %d\n", priv->current_sector);
+  //  gavl_hexdump(ctx->block, 16, 16);
   
   //  gavl_hexdump(data, 16, 16);
   return 1;
   }
 
-static int64_t seek_sector_vcd(bgav_input_context_t * ctx,
-                               int64_t sector)
+static int seek_block_vcd(bgav_input_context_t * ctx,
+                          int64_t sector)
   {
   vcd_priv * priv;
   priv = ctx->priv;
 
-  priv->next_sector = sector + priv->tracks[priv->current_track].start_sector;
-  return priv->next_sector;
+  if(priv->current_sector == sector)
+    return 1;
+  
+  if((sector < 0) && (sector * SECTOR_SIZE >= (ctx->total_bytes)))
+    return 0;
+  
+  priv->current_sector = sector;
+  if(cdio_read_mode2_sector(priv->cdio, priv->sector_buffer, priv->current_sector, true)!=0)
+    {
+    //    fprintf(stderr, "failed (internal error)\n");
+    return 0;
+    }
+  ctx->block = priv->sector_buffer + HEADER_SIZE;
+  return 1;
   }
 
-static void    close_vcd(bgav_input_context_t * ctx)
+static void close_vcd(bgav_input_context_t * ctx)
   {
   vcd_priv * priv;
   priv = ctx->priv;
@@ -371,6 +443,9 @@ static void    close_vcd(bgav_input_context_t * ctx)
     cdio_destroy(priv->cdio);
   if(priv->tracks)
     free(priv->tracks);
+  if(priv->sector_buffer)
+    free(priv->sector_buffer);
+
   free(priv);
   return;
   }
@@ -379,8 +454,8 @@ const bgav_input_t bgav_input_vcd =
   {
     .name =          "vcd",
     .open =          open_vcd,
-    .read_sector =   read_sector,
-    .seek_sector =   seek_sector_vcd,
+    .read_block =    read_block,
+    .seek_block =    seek_block_vcd,
     .close =         close_vcd,
     .select_track =  select_track_vcd,
   };

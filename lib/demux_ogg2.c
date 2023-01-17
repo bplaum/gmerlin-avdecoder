@@ -360,6 +360,8 @@ static int open_ogg(bgav_demuxer_context_t * ctx)
         }
       }
     bgav_input_seek(ctx->input, position, SEEK_SET);
+    ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
+
     }
   ctx->flags |= BGAV_DEMUXER_GET_DURATION;
   
@@ -436,8 +438,8 @@ static gavl_source_status_t next_packet_ogg(bgav_demuxer_context_t * ctx)
     if(!(page.header_type_flags & BGAV_OGG_HEADER_TYPE_CONTINUED) &&
        s->packet)
       {
-      fprintf(stderr, "Discarding packert from last page: %d bytes\n", s->packet->buf.len);
-
+      fprintf(stderr, "Discarding packet from last page: %d bytes\n", s->packet->buf.len);
+      
       gavl_buffer_reset(&s->packet->buf);
       s->packet->position = page.position;
 

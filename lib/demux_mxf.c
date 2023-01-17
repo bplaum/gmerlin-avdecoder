@@ -248,24 +248,7 @@ static int process_packet_frame_wrapped(bgav_demuxer_context_t * ctx)
 
 static int next_packet_frame_wrapped(bgav_demuxer_context_t * ctx, bgav_stream_t * dummy)
   {
-  if(ctx->next_packet_pos)
-    {
-    int ret = 0;
-    while(1)
-      {
-      if(!process_packet_frame_wrapped(ctx))
-        return ret;
-      else
-        ret = 1;
-      if(ctx->input->position >= ctx->next_packet_pos)
-        return ret;
-      }
-    }
-  else
-    {
-    return process_packet_frame_wrapped(ctx);
-    }
-  return 0;
+  return process_packet_frame_wrapped(ctx);
   }
 
 

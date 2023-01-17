@@ -315,8 +315,8 @@ typedef struct
   uint8_t * packet_buffer;
   int64_t data_size;
 
-  uint32_t first_timestamp;
-  int need_first_timestamp;
+  //  uint32_t first_timestamp;
+  //  int need_first_timestamp;
   
   struct
     {
@@ -518,8 +518,6 @@ static int open_asf(bgav_demuxer_context_t * ctx)
   /* Now the file header should come */
   asf = calloc(1, sizeof(*asf));
 
-  asf->need_first_timestamp = 1;
-  
   ctx->priv = asf;
   while(1) /* Read all GUIDs until the data comes */
     {
@@ -604,7 +602,7 @@ static int open_asf(bgav_demuxer_context_t * ctx)
            type_specific_size)
           goto fail;
         bgav_WAVEFORMAT_read(&wf, buf, type_specific_size);
-        //        bgav_WAVEFORMAT_dump(&wf);
+        bgav_WAVEFORMAT_dump(&wf);
         bgav_WAVEFORMAT_get_format(&wf, bgav_as);
         bgav_WAVEFORMAT_free(&wf);
         
@@ -750,8 +748,8 @@ static int open_asf(bgav_demuxer_context_t * ctx)
     free(buf);
   
   if((ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE) && asf->hdr.packets_count)
-    ctx->flags |= (BGAV_DEMUXER_CAN_SEEK | BGAV_DEMUXER_SEEK_ITERATIVE);
-
+    ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
+  
   bgav_track_set_format(ctx->tt->cur, "ASF", "application/x-mplayer2");
   
   return 1;
@@ -988,7 +986,7 @@ static void add_packet(bgav_demuxer_context_t * ctx,
   {
   bgav_stream_t * s;
   asf_audio_stream_t * as;
-  asf_t * asf = ctx->priv;
+  //  asf_t * asf = ctx->priv;
 
   s = bgav_track_find_stream(ctx, id);
   
@@ -1044,15 +1042,6 @@ static void add_packet(bgav_demuxer_context_t * ctx,
   s->packet = bgav_stream_get_packet_write(s);
   bgav_packet_alloc(s->packet, len);
   
-  if(asf->need_first_timestamp)
-    {
-    asf->first_timestamp = time;
-    asf->need_first_timestamp = 0;
-    }
-  if(time > asf->first_timestamp)
-    time -= asf->first_timestamp;
-  else
-    time = 0;
 
   if(s->type == GAVL_STREAM_AUDIO)
     s->packet->pes_pts = time;
@@ -1139,6 +1128,7 @@ static gavl_source_status_t next_packet_asf(bgav_demuxer_context_t * ctx)
   return GAVL_SOURCE_OK;
   }
 
+#if 0
 static void seek_asf(bgav_demuxer_context_t * ctx, int64_t time, int scale)
   {
   int64_t filepos;
@@ -1156,7 +1146,26 @@ static void seek_asf(bgav_demuxer_context_t * ctx, int64_t time, int scale)
   bgav_input_seek(ctx->input, filepos, SEEK_SET);
   
   }
+#endif
 
+static int post_seek_resync_asf(bgav_demuxer_context_t * ctx)
+  {
+  int rest;
+  asf_t * asf = ctx->priv;
+  int64_t pos = ctx->input->position;
+  
+  if(pos < ctx->tt->cur->data_start)
+    pos = ctx->tt->cur->data_start;
+
+  if((rest = (pos - ctx->tt->cur->data_start) % ctx->packet_size))
+    pos -= rest;
+  
+  asf->packets_read = (pos - ctx->tt->cur->data_start) / ctx->packet_size;
+  
+  if(pos != ctx->input->position)
+    bgav_input_seek(ctx->input, pos, SEEK_SET);
+  return 1;
+  }
 
 static void close_asf(bgav_demuxer_context_t * ctx)
   {
@@ -1181,10 +1190,11 @@ static int select_track_asf(bgav_demuxer_context_t * ctx, int track)
 
 const bgav_demuxer_t bgav_demuxer_asf =
   {
-    .probe =          probe_asf,
-    .open =           open_asf,
-    .select_track =   select_track_asf,
-    .next_packet =    next_packet_asf,
-    .seek =           seek_asf,
-    .close =          close_asf
+    .probe            =  probe_asf,
+    .open             =  open_asf,
+    .select_track     =  select_track_asf,
+    .next_packet      =  next_packet_asf,
+    //    .seek             =  seek_asf,
+    .post_seek_resync =  post_seek_resync_asf,
+    .close            =  close_asf
   };

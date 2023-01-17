@@ -66,11 +66,29 @@ int bgav_resume(bgav_t * bgav)
 
 
 static bgav_demuxer_context_t *
-create_demuxer(bgav_t * b, const bgav_demuxer_t * demuxer)
+create_demuxer(bgav_t * b)
   {
-  bgav_demuxer_context_t * ret;
+  bgav_demuxer_context_t * ret = NULL;
+  const bgav_demuxer_t * demuxer;
   
-  ret = bgav_demuxer_create(b, demuxer, NULL);
+  if((demuxer = bgav_demuxer_probe(b->input)))
+    ret = bgav_demuxer_create(b, demuxer, NULL);
+
+  else
+    return NULL;
+  
+  if(b->input->tt)
+    {
+    ret->tt = b->input->tt;
+    bgav_track_table_ref(ret->tt);
+    }
+  
+  if(!bgav_demuxer_start(ret))
+    {
+    bgav_demuxer_destroy(ret);
+    ret = NULL;
+    }
+  
   return ret;
   }
 
@@ -80,7 +98,6 @@ int bgav_init(bgav_t * ret)
   {
   int i;
   int is_redirector = 0;
-  const bgav_demuxer_t * demuxer = NULL;
   const bgav_redirector_t * redirector = NULL;
   
   //  bgav_subtitle_reader_context_t * subreader, * subreaders;
@@ -133,23 +150,15 @@ int bgav_init(bgav_t * ret)
     if(bgav_id3v2_probe(ret->input))
       ret->input->id3v2 = bgav_id3v2_read(ret->input);
     
-    demuxer = bgav_demuxer_probe(ret->input);
-    
-    if(demuxer)
-      {
-      ret->demuxer = create_demuxer(ret, demuxer);
-      if(!bgav_demuxer_start(ret->demuxer))
-        goto fail;
-      
-      if(bgav_is_redirector(ret))
-        {
-        bgav_track_table_merge_metadata(ret->tt, &ret->input->m);
-        goto done;
-        }
-      }
-    if(!ret->demuxer)
+    if(!(ret->demuxer = create_demuxer(ret)))
       goto fail;
     
+    if(bgav_is_redirector(ret))
+      {
+      bgav_track_table_merge_metadata(ret->tt, &ret->input->m);
+      goto done;
+      }
+      
     // if(ret->tt->tracks[0].
 
     }
@@ -212,7 +221,7 @@ int bgav_init(bgav_t * ret)
     
   fail:
 
-  if(!demuxer && !redirector)
+  if(!ret->demuxer && !redirector)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Cannot detect stream type %s", ret->input->location);
     }
@@ -260,7 +269,7 @@ int bgav_open(bgav_t * ret, const char * location)
   ret->location = gavl_strdup(location);
 
   if(ret->demuxer &&
-     (ret->demuxer->flags & BGAV_DEMUXER_SEEK_ITERATIVE) &&
+     ret->demuxer->demuxer->post_seek_resync &&
      (ret->input->flags & BGAV_INPUT_SEEK_SLOW))
     ret->demuxer->flags &= ~BGAV_DEMUXER_CAN_SEEK;
   
@@ -371,12 +380,13 @@ int bgav_select_track(bgav_t * b, int track)
   
   if((track < 0) || (track >= b->tt->num_tracks))
     return 0;
-  
+
   bgav_track_table_select_track(b->tt, track);
   set_stream_demuxers(b->tt->cur, b->demuxer);
   
   /* Shortcut */
-  if(!(b->flags & BGAV_FLAG_IS_RUNNING) && (track == b->tt->cur_idx))
+  if(!b->input->input->select_track &&
+     !(b->flags & BGAV_FLAG_IS_RUNNING) && (track == b->tt->cur_idx))
     {
     /* Some demuxers need to do some initialialization */
     if(b->demuxer && b->demuxer->demuxer->select_track)
@@ -401,14 +411,23 @@ int bgav_select_track(bgav_t * b, int track)
     {
     /* Input switches track, recreate the demuxer */
 
-    bgav_demuxer_stop(b->demuxer);
-
+    if(b->demuxer)
+      {
+      bgav_demuxer_stop(b->demuxer);
+      bgav_demuxer_destroy(b->demuxer);
+      }
+    
     /* Clear buffer */
     gavl_buffer_reset(&b->input->buf);
     
     if(!b->input->input->select_track(b->input, track))
       return 0;
-    bgav_demuxer_start(b->demuxer);
+
+    if(!(b->demuxer = create_demuxer(b)))
+      return 0;
+
+    set_stream_demuxers(b->tt->cur, b->demuxer);
+    
     goto done;
     }
 

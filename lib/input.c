@@ -38,6 +38,42 @@
 
 #undef HAVE_LINUXDVB
 
+static int do_read(bgav_input_context_t * ctx, uint8_t * buffer, int len)
+  {
+  if(ctx->input->read)
+    {
+    return ctx->input->read(ctx, buffer, len);
+    }
+  else if(ctx->input->read_block)
+    {
+    int bytes_read = 0;
+    int bytes_to_copy;
+    
+    while(bytes_read < len)
+      {
+      if(!ctx->block_ptr || (ctx->block_ptr - ctx->block >= ctx->block_size))
+        {
+        if(!ctx->input->read_block(ctx))
+          return bytes_read;
+        ctx->block_ptr = ctx->block;
+        }
+
+      bytes_to_copy = len - bytes_read;
+
+      if(bytes_to_copy > ctx->block_size - (int)(ctx->block_ptr - ctx->block))
+        bytes_to_copy = ctx->block_size - (int)(ctx->block_ptr - ctx->block);
+      
+      memcpy(buffer + bytes_read, ctx->block_ptr, bytes_to_copy);
+      ctx->block_ptr += bytes_to_copy;
+      bytes_read += bytes_to_copy;
+      }
+    return bytes_read;
+    }
+  else // Never get here
+    return 0;
+    
+  }
+
 static void add_char_16(gavl_buffer_t * buf,
                         uint16_t c)
   {
@@ -212,9 +248,8 @@ static int input_read_data(bgav_input_context_t * ctx, uint8_t * buffer, int len
       result =
         ctx->input->read_nonblock(ctx, buffer + bytes_read, len - bytes_read);
     else
-      result =
-        ctx->input->read(ctx, buffer + bytes_read, len - bytes_read);
-
+      result = do_read(ctx, buffer + bytes_read, len - bytes_read);
+    
     if(result < 0)
       result = 0;
     
@@ -230,6 +265,7 @@ int bgav_input_read_data(bgav_input_context_t * ctx, uint8_t * buffer, int len)
   {
   return input_read_data(ctx, buffer, len, 1);
   }
+
 
 void bgav_input_ensure_buffer_size(bgav_input_context_t * ctx, int len)
   {
@@ -251,9 +287,8 @@ void bgav_input_ensure_buffer_size(bgav_input_context_t * ctx, int len)
     {
     gavl_buffer_alloc(&ctx->buf, len);
     
-    result =
-      ctx->input->read(ctx, ctx->buf.buf + ctx->buf.len,
-                      len - ctx->buf.len);
+    result = do_read(ctx, ctx->buf.buf + ctx->buf.len,
+                     len - ctx->buf.len);
     if(result < 0)
       result = 0;
     ctx->buf.len += result;
@@ -1070,8 +1105,15 @@ void bgav_input_seek(bgav_input_context_t * ctx,
       ctx->position = ctx->total_bytes + position;
       break;
     }
-  ctx->input->seek_byte(ctx, position, whence);
 
+  if(ctx->input->seek_byte)
+    ctx->input->seek_byte(ctx, position, whence);
+  else if(ctx->input->seek_block)
+    {
+    if(!ctx->input->seek_block(ctx, ctx->position / ctx->block_size))
+      return;
+    ctx->block_ptr = ctx->block + (ctx->position % ctx->block_size);
+    }
   gavl_buffer_reset(&ctx->buf);
   }
 
@@ -1086,49 +1128,7 @@ int bgav_input_read_string_pascal(bgav_input_context_t * ctx,
   return 1;
   }
 
-#if 0
-void bgav_input_buffer(bgav_input_context_t * ctx)
-  {
-  int bytes_to_read;
-  int result;
-  
-  if(!(ctx->flags & BGAV_INPUT_DO_BUFFER))
-    return;
-  
-  while(ctx->buffer_size < ctx->buffer_alloc)
-    {
-    bytes_to_read = ctx->buffer_alloc / 20;
-    if(bytes_to_read > ctx->buffer_alloc - ctx->buffer_size)
-      bytes_to_read = ctx->buffer_alloc - ctx->buffer_size;
-    result = ctx->input->read(ctx, ctx->buffer + ctx->buffer_size, bytes_to_read);
 
-    if(result < bytes_to_read)
-      return;
-
-    ctx->buffer_size += result;
-    
-    if(ctx->opt->buffer_callback)
-      {
-      ctx->opt->buffer_callback(ctx->opt->buffer_callback_data,
-                                (float)ctx->buffer_size / (float)ctx->buffer_alloc);
-      }
-    }
-  }
-#endif
-
-int bgav_input_read_sector(bgav_input_context_t * ctx, uint8_t * buf)
-  {
-  if(!ctx->input->read_sector)
-    return 0;
-  return ctx->input->read_sector(ctx, buf);
-  }
-
-void bgav_input_seek_sector(bgav_input_context_t * ctx,
-                            int64_t sector)
-  {
-  if(ctx->input->seek_sector)
-    ctx->input->seek_sector(ctx, sector);
-  }
 
 bgav_input_context_t * bgav_input_create(bgav_t * b, const bgav_options_t * opt)
   {

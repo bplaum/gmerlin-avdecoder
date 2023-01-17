@@ -326,7 +326,7 @@ static int open_mpegts(bgav_demuxer_context_t * ctx)
   gavl_buffer_alloc(&priv->buf, priv->packet_size);
   priv->pes_parser = bgav_input_open_memory(NULL, 0);
   
-  if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_TIME)
+  if(ctx->input->flags & (BGAV_INPUT_CAN_SEEK_BYTE | BGAV_INPUT_CAN_SEEK_TIME))
     ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
   
   ctx->flags |= BGAV_DEMUXER_GET_DURATION;

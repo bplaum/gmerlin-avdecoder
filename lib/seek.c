@@ -223,6 +223,172 @@ static void seek_once(bgav_t * b, int64_t * time, int scale)
   //  return sync_time;
   }
 
+typedef struct
+  {
+  double percentage;
+  int64_t sync_time;
+  } seek_tab_t;
+
+static int64_t seek_test(bgav_t * b, int64_t filepos, int scale)
+  {
+  bgav_track_clear(b->tt->cur);
+  bgav_input_seek(b->input, filepos, SEEK_SET);
+
+  if(!b->demuxer->demuxer->post_seek_resync(b->demuxer))
+    return GAVL_TIME_UNDEFINED; // EOF
+
+  return bgav_track_sync_time(b->tt->cur, scale);
+  }
+
+/* Time can have an arbitrary scale but the zero point must be the same
+   as the stream native timestamps */
+
+static int64_t position_from_percentage(bgav_t * b,
+                                        int64_t total_bytes,
+                                        double percentage)
+  {
+  int64_t position;
+  position = b->tt->cur->data_start + (int64_t)(percentage * (double)total_bytes);
+  if(position > b->tt->cur->data_start + total_bytes)
+    position = b->tt->cur->data_start + total_bytes;
+
+  if(b->input->block_size)
+    {
+    int rest = position % b->input->block_size;
+    position -= rest;
+    }
+  return position;
+  }
+
+static void seek_generic(bgav_t * b, int64_t * time, int scale)
+  {
+  int i;
+  double duration_sec;
+  int64_t position;
+  int64_t sync_time;
+  seek_tab_t tab[2];
+  int64_t total_bytes;
+  double percentage;
+  double target_percentage;
+  double test_percentage;
+  
+  if(b->tt->cur->data_end > 0)
+    total_bytes = b->tt->cur->data_end - b->tt->cur->data_start;
+  else
+    total_bytes = b->input->total_bytes - b->tt->cur->data_start;
+  
+  tab[0].sync_time = GAVL_TIME_UNDEFINED;
+  tab[0].percentage  = 0.0;
+  tab[1].sync_time = GAVL_TIME_UNDEFINED;
+  tab[1].percentage  = 0.0;
+
+  duration_sec = gavl_time_to_seconds(gavl_track_get_duration(b->tt->cur->info));
+  
+  target_percentage =  
+    gavl_time_to_seconds(gavl_time_unscale(scale, *time) -
+                         gavl_track_get_display_time_offset(b->tt->cur->info)) /
+    duration_sec;
+
+  percentage = target_percentage;
+  
+  for(i = 0; i < 6; i++)
+    {
+    position = position_from_percentage(b, total_bytes, percentage);
+    sync_time = seek_test(b, position, scale);
+    if(sync_time == GAVL_TIME_UNDEFINED)
+      break;
+    
+    test_percentage = gavl_time_to_seconds(gavl_time_unscale(scale, sync_time) -
+                                           gavl_track_get_display_time_offset(b->tt->cur->info)) /
+      duration_sec;
+    
+    /* Lower boundary */
+    
+    if(sync_time < *time)
+      {
+      tab[0].percentage = percentage;
+      tab[0].sync_time = sync_time;
+
+      /* Return if we are less than 1 second before the seek point */
+      if(gavl_time_unscale(scale, *time - sync_time) <= GAVL_TIME_SCALE)
+        break;
+      
+      /* New percentage */
+      if(tab[1].sync_time == GAVL_TIME_UNDEFINED)
+        {
+        
+        /* Search for upper boundary */
+        percentage += 2.0 * (target_percentage - test_percentage) + 0.01;
+        if(percentage > 1.0)
+          percentage = 1.0;
+        }
+      else
+        {
+        /* Do a stupid bisection search */
+        percentage = 0.5 * (tab[0].percentage + tab[1].percentage);
+        }
+      }
+    /* Direct hit (unlikely) */
+    else if(sync_time == *time)
+      break;
+    /* Upper boundary */
+    else
+      {
+      tab[1].percentage = percentage;
+      tab[1].sync_time = sync_time;
+      
+      /* New percentage */
+      if(tab[0].sync_time == GAVL_TIME_UNDEFINED)
+        {
+        /* Search for lower boundary */
+        percentage -= 2.0 * (test_percentage - target_percentage) - 0.01;
+        if(percentage < 0.0)
+          percentage = 0.0;
+        
+        }
+      else
+        {
+        /* Do a stupid bisection search */
+        percentage = 0.5 * (tab[0].percentage + tab[1].percentage);
+        }
+      }
+    }
+
+  if(tab[0].sync_time == GAVL_TIME_UNDEFINED)
+    {
+    /* Upper boundary */
+    if(tab[1].sync_time != sync_time)
+      {
+      /* Final seek */
+      position = position_from_percentage(b, total_bytes, tab[1].percentage);
+      sync_time = seek_test(b, position, scale);
+      }
+    
+    }
+  else
+    {
+    /* Lower boundary */
+    if(tab[0].sync_time != sync_time)
+      {
+      /* Final seek */
+      position = position_from_percentage(b, total_bytes, tab[0].percentage);
+      sync_time = seek_test(b, position, scale);
+      }
+    }
+  
+  fprintf(stderr, "Seek generic: Iterations: %d, goal: %"PRId64", reached: %"PRId64" diff: %"PRId64"\n",
+          i, *time, sync_time, *time - sync_time);
+
+  bgav_track_resync(b->tt->cur);
+
+  if(*time > sync_time)
+    skip_to(b, b->tt->cur, time, scale);
+  
+  //  position = 
+  
+  }
+
+#if 0
 static void seek_iterative(bgav_t * b, int64_t * time, int scale)
   {
   int num_seek = 0;
@@ -397,27 +563,6 @@ static void seek_iterative(bgav_t * b, int64_t * time, int scale)
   bgav_dprintf("Seeks: %d, resyncs: %d\n", num_seek, num_resync);
 #endif  
   }
-
-#if 0
-typedef struct
-  {
-  int64_t time;
-  int scale;
-  } seek_subreader_t;
-
-static int seek_subreader(void * data, bgav_stream_t * s)
-  {
-  seek_subreader_t * d = data;
-
-  if((s->flags & STREAM_HAS_SUBREADER) &&
-     (s->action != BGAV_STREAM_MUTE))
-    {
-    /* Clear EOF state */
-    s->flags &= ~(STREAM_EOF_C|STREAM_EOF_D);
-    bgav_subtitle_reader_seek(s, d->time, d->scale);
-    }
-  return 1;
-  }
 #endif
 
 void
@@ -456,11 +601,11 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
     seek_sa(b, time, scale);    
     }
   /* Seek once */
-  else if(!(b->demuxer->flags & BGAV_DEMUXER_SEEK_ITERATIVE))
+  else if(b->demuxer->demuxer->seek)
     seek_once(b, time, scale);
   /* Seek iterative */
-  else
-    seek_iterative(b, time, scale);
+  else if(b->demuxer->demuxer->post_seek_resync)
+    seek_generic(b, time, scale);
   }
 
 void
