@@ -263,70 +263,56 @@ static int64_t position_from_percentage(bgav_t * b,
 static void seek_generic(bgav_t * b, int64_t * time, int scale)
   {
   int i;
-  double duration_sec;
+  
+  gavl_time_t start_time;
+  gavl_time_t end_time;
+  
   int64_t position;
   int64_t sync_time;
+  
   seek_tab_t tab[2];
   int64_t total_bytes;
   double percentage;
-  double target_percentage;
-  double test_percentage;
+  int num_seeks = 0;
+  int64_t offset = gavl_time_scale(scale, GAVL_TIME_SCALE);
   
   if(b->tt->cur->data_end > 0)
     total_bytes = b->tt->cur->data_end - b->tt->cur->data_start;
   else
     total_bytes = b->input->total_bytes - b->tt->cur->data_start;
+
+  start_time = gavl_track_get_display_time_offset(b->tt->cur->info);
+  end_time = start_time + gavl_track_get_duration(b->tt->cur->info);
   
-  tab[0].sync_time = GAVL_TIME_UNDEFINED;
+  tab[0].sync_time = gavl_time_scale(scale, start_time);
   tab[0].percentage  = 0.0;
-  tab[1].sync_time = GAVL_TIME_UNDEFINED;
-  tab[1].percentage  = 0.0;
-
-  duration_sec = gavl_time_to_seconds(gavl_track_get_duration(b->tt->cur->info));
-  
-  target_percentage =  
-    gavl_time_to_seconds(gavl_time_unscale(scale, *time) -
-                         gavl_track_get_display_time_offset(b->tt->cur->info)) /
-    duration_sec;
-
-  percentage = target_percentage;
+  tab[1].sync_time = gavl_time_scale(scale, end_time);
+  tab[1].percentage  = 1.0;
   
   for(i = 0; i < 6; i++)
     {
+    /* Bisection search */
+    percentage = tab[0].percentage +
+      (tab[1].percentage - tab[0].percentage) *
+      (double)(*time - tab[0].sync_time - offset) / (double)(tab[1].sync_time - tab[0].sync_time);
+    
+    if(percentage < tab[0].percentage)
+      percentage = tab[0].percentage;
+    
     position = position_from_percentage(b, total_bytes, percentage);
     sync_time = seek_test(b, position, scale);
+    num_seeks++;
     if(sync_time == GAVL_TIME_UNDEFINED)
       break;
     
-    test_percentage = gavl_time_to_seconds(gavl_time_unscale(scale, sync_time) -
-                                           gavl_track_get_display_time_offset(b->tt->cur->info)) /
-      duration_sec;
-    
-    /* Lower boundary */
-    
     if(sync_time < *time)
       {
-      tab[0].percentage = percentage;
-      tab[0].sync_time = sync_time;
-
       /* Return if we are less than 1 second before the seek point */
       if(gavl_time_unscale(scale, *time - sync_time) <= GAVL_TIME_SCALE)
         break;
       
-      /* New percentage */
-      if(tab[1].sync_time == GAVL_TIME_UNDEFINED)
-        {
-        
-        /* Search for upper boundary */
-        percentage += 2.0 * (target_percentage - test_percentage) + 0.01;
-        if(percentage > 1.0)
-          percentage = 1.0;
-        }
-      else
-        {
-        /* Do a stupid bisection search */
-        percentage = 0.5 * (tab[0].percentage + tab[1].percentage);
-        }
+      tab[0].percentage = percentage;
+      tab[0].sync_time = sync_time;
       }
     /* Direct hit (unlikely) */
     else if(sync_time == *time)
@@ -336,234 +322,28 @@ static void seek_generic(bgav_t * b, int64_t * time, int scale)
       {
       tab[1].percentage = percentage;
       tab[1].sync_time = sync_time;
-      
-      /* New percentage */
-      if(tab[0].sync_time == GAVL_TIME_UNDEFINED)
-        {
-        /* Search for lower boundary */
-        percentage -= 2.0 * (test_percentage - target_percentage) - 0.01;
-        if(percentage < 0.0)
-          percentage = 0.0;
-        
-        }
-      else
-        {
-        /* Do a stupid bisection search */
-        percentage = 0.5 * (tab[0].percentage + tab[1].percentage);
-        }
       }
     }
 
-  if(tab[0].sync_time == GAVL_TIME_UNDEFINED)
+  if(sync_time == tab[1].sync_time)
     {
-    /* Upper boundary */
-    if(tab[1].sync_time != sync_time)
-      {
-      /* Final seek */
-      position = position_from_percentage(b, total_bytes, tab[1].percentage);
-      sync_time = seek_test(b, position, scale);
-      }
-    
-    }
-  else
-    {
-    /* Lower boundary */
-    if(tab[0].sync_time != sync_time)
-      {
-      /* Final seek */
-      position = position_from_percentage(b, total_bytes, tab[0].percentage);
-      sync_time = seek_test(b, position, scale);
-      }
+    /* Go to lower boundary instead */
+    position = position_from_percentage(b, total_bytes, tab[0].percentage);
+    sync_time = seek_test(b, position, scale);
+    num_seeks++;
     }
   
-  fprintf(stderr, "Seek generic: Iterations: %d, goal: %"PRId64", reached: %"PRId64" diff: %"PRId64"\n",
-          i, *time, sync_time, *time - sync_time);
-
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Seek generic: Seeks: %d, goal: %"PRId64", reached: %"PRId64" diff: %"PRId64,
+           num_seeks, *time, sync_time, *time - sync_time);
+  
   bgav_track_resync(b->tt->cur);
 
   if(*time > sync_time)
     skip_to(b, b->tt->cur, time, scale);
-  
-  //  position = 
-  
-  }
-
-#if 0
-static void seek_iterative(bgav_t * b, int64_t * time, int scale)
-  {
-  int num_seek = 0;
-  int num_resync = 0;
-  bgav_track_t * track = b->tt->cur;
-  
-  int64_t seek_time;
-  int64_t sync_time;
-  int64_t out_time           = GAVL_TIME_UNDEFINED;
-  
-  int64_t seek_time_lower    = GAVL_TIME_UNDEFINED;
-
-  int64_t sync_time_upper    = GAVL_TIME_UNDEFINED;
-  int64_t sync_time_lower    = GAVL_TIME_UNDEFINED;
-
-  int64_t out_time_lower    = GAVL_TIME_UNDEFINED;
-  
-  int64_t one_second = gavl_time_scale(scale, GAVL_TIME_SCALE);
-  int final_seek = 0;
-  
-  seek_time = *time;
-#ifdef DUMP_ITERATIVE
-  bgav_dprintf("****** Seek iterative %"PRId64", %d ***********\n",
-               *time, scale);
-#endif
-  while(1)
-    {
-#ifdef DUMP_ITERATIVE
-    bgav_dprintf("Seek time: %"PRId64"\n", seek_time);
-#endif
-    bgav_track_clear(track);
-    b->demuxer->demuxer->seek(b->demuxer, seek_time, scale);
-    num_seek++;
-    
-    sync_time = bgav_track_sync_time(track, scale);
-
-    if(sync_time == GAVL_TIME_UNDEFINED)
-      {
-      b->flags |= BGAV_FLAG_EOF;
-      return;
-      }
-    
-#ifdef DUMP_ITERATIVE
-    bgav_dprintf("Sync time: %"PRId64"\n", sync_time);
-#endif    
-    // diff_time = *time - sync_time;
-
-    if(sync_time > *time) /* Sync time too late */
-      {
-      /* Exit if we are already at position zero */
-      if(seek_time == 0)
-        {
-        bgav_track_resync(track);
-        num_resync++;
-        break;
-        }
-      
-#ifdef DUMP_ITERATIVE
-      //      fprintf(stderr, "Sync time too late\n");
-#endif
-      if((sync_time_upper == GAVL_TIME_UNDEFINED) ||
-         (sync_time_upper > sync_time))
-        {
-        //        seek_time_upper = seek_time;
-        sync_time_upper = sync_time;
-        }
-      /* If we were too early before, exit here */
-      if(sync_time_lower != GAVL_TIME_UNDEFINED)
-        {
-        seek_time = seek_time_lower;
-        out_time = out_time_lower;
-        final_seek = 1;
-        break;
-        }
-#if 0
-      /* If we cannot go before the target time, exit as well */
-      if((sync_time_lower == GAVL_TIME_UNDEFINED) &&
-         (sync_time == sync_time_upper))
-        {
-        bgav_track_resync(track);
-        num_resync++;
-        break;
-        }
-#endif
-      /* Go backward */
-      seek_time -= ((3*(sync_time - *time))/2 + one_second);
-      if(seek_time < 0)
-        seek_time = 0;
-      continue;
-      }
-    /* Sync time too early, but already been there: Exit */
-    else if((sync_time_lower != GAVL_TIME_UNDEFINED) &&
-            (sync_time == sync_time_lower))
-      {
-      bgav_track_resync(track);
-      num_resync++;
-      break;
-      }
-    else /* Sync time too early, get out time */
-      {
-      bgav_track_resync(track);
-      num_resync++;
-
-      out_time = bgav_track_out_time(track, scale);
-
-#ifdef DUMP_ITERATIVE
-      bgav_dprintf("Out time: %"PRId64"\n", out_time);
-#endif
-      if(out_time > *time) /* Out time too late */
-        {
-#ifdef DUMP_ITERATIVE
-        bgav_dprintf("Out time too late\n");
-#endif
-        seek_time -= ((3*(out_time - *time))/2 + one_second);
-        continue;
-        }
-      else if(out_time < *time)
-        {
-#ifdef DUMP_ITERATIVE
-        bgav_dprintf("Out time too early\n");
-#endif
-        /* If difference is less than half a second, exit here */
-        if(*time - out_time < one_second / 2)
-          break;
-        
-        /* Remember position and go a bit forward */
-        if((out_time_lower == GAVL_TIME_UNDEFINED) ||
-           (out_time_lower < out_time))
-          {
-          seek_time_lower = seek_time;
-          out_time_lower  = out_time;
-          sync_time_lower = sync_time;
-          
-          seek_time += (*time - out_time)/2;
-          continue;
-          }
-        /* Have been better before */
-        else if(out_time <= out_time_lower)
-          {
-          seek_time = seek_time_lower;
-          out_time = out_time_lower;
-          final_seek = 1;
-          break;
-          }
-        }
-      else
-        break;
-      }
-    }
-
-  if(final_seek)
-    {
-    bgav_track_clear(track);
-#ifdef DUMP_ITERATIVE
-    bgav_dprintf("Final seek %"PRId64"\n", seek_time);
-#endif
-    b->demuxer->demuxer->seek(b->demuxer, seek_time, scale);
-    num_seek++;
-    bgav_track_resync(track);
-    num_resync++;
-    }
-
-  if(*time > out_time)
-    skip_to(b, track, time, scale);
   else
-    {
-    skip_to(b, track, &out_time, scale);
-    *time = out_time;
-    }
-
-#ifdef DUMP_ITERATIVE
-  bgav_dprintf("Seeks: %d, resyncs: %d\n", num_seek, num_resync);
-#endif  
+    *time = sync_time;
+  
   }
-#endif
 
 void
 bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)

@@ -231,6 +231,8 @@ static void append_payload_line(gavl_packet_t * p, gavl_buffer_t * buf)
   {
   const char * pos = (const char*)buf->buf;
   const char * end = (const char*)(buf->buf + buf->len);
+
+  //  fprintf(stderr, "Append payload line: %s\n", pos);
   
   while(pos < end)
     {
@@ -366,6 +368,10 @@ static gavl_source_status_t next_packet_vtt(bgav_demuxer_context_t * ctx)
       if(s->packet)
         {
         PACKET_SET_KEYFRAME(s->packet);
+        
+        fprintf(stderr, "Got packet\n");
+        gavl_packet_dump(s->packet);
+        
         bgav_stream_done_packet_write(s, s->packet);
         s->packet = NULL;
 
