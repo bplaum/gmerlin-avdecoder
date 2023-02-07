@@ -97,10 +97,6 @@ typedef struct
   codec_info_t * info;
   gavl_video_frame_t * gavl_frame;
     
-  /* Pixelformat */
-  int do_convert;
-  enum AVPixelFormat dst_format;
-
   /* Real video ugliness */
 
   uint32_t rv_extradata[2+AV_INPUT_BUFFER_PADDING_SIZE/4];
@@ -147,14 +143,6 @@ typedef struct
 
   AVBufferRef * devctx;
 
-#ifdef HAVE_EGL_EGLEXT_BRCM_H
-  void * eglimage;
-  GLuint egltexture;
-
-  EGLImageKHR (*eglCreateImage) (EGLDisplay dpy, EGLContext ctx, EGLenum target, EGLClientBuffer buffer, const EGLint *attrib_list);
-  EGLBoolean (*eglDestroyImage) (EGLDisplay dpy, EGLImageKHR image);
-
-#endif
 
 #ifdef COUNT_PACKETS
   int packet_count_o;
@@ -164,6 +152,8 @@ typedef struct
 #ifdef COUNT_FRAMES
   int frame_count;
 #endif
+  
+  gavl_dsp_context_t * dsp;
   
   } ffmpeg_video_priv;
 
@@ -522,7 +512,12 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
       
       }
     else
+      {
+      char errbuf[128];
+      av_strerror(result, errbuf, 128);
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Got decoder error: %s\n", errbuf);
       return GAVL_SOURCE_EOF;
+      }
     }
   
 #ifdef DUMP_DECODE
@@ -739,7 +734,7 @@ static int init_ffmpeg(bgav_stream_t * s)
   priv->ctx->codec_id = codec->id;
 
   /* Threads (disabled for VAAPI) */
-  //  priv->ctx->thread_count = s->opt->threads;
+  priv->ctx->thread_count = gavl_num_cpus();
   
 #ifdef HAVE_LIBVA
   if(s->opt->vaapi && vaapi_supported(codec) && init_vaapi(s))
@@ -877,7 +872,9 @@ static int init_ffmpeg(bgav_stream_t * s)
   /* Handle unsupported colormodels */
   if(s->data.video.format->pixelformat == GAVL_PIXELFORMAT_NONE)
     {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Unsupported pixelformat %d", priv->ctx->pix_fmt);
+    const AVPixFmtDescriptor * d = av_pix_fmt_desc_get(priv->ctx->pix_fmt);
+    
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Unsupported pixelformat %s", d->name);
     return 0;
     }
 
@@ -972,24 +969,6 @@ static void close_ffmpeg(bgav_stream_t * s)
     gavl_video_frame_destroy(priv->dst_field);
     }
 
-#ifdef HAVE_EGL_EGLEXT_BRCM_H
-
-  if(priv->egltexture)
-    {
-    gavl_hw_egl_set_current(priv->hwctx, NULL);
-  
-    glDeleteTextures(1, &priv->egltexture);
-  
-    gavl_hw_egl_unset_current(priv->hwctx);
-    }
-
-  if(priv->eglimage)
-    {
-    priv->eglDestroyImage(gavl_hw_ctx_egl_get_egl_display(priv->hwctx), priv->eglimage);
-    priv->eglimage = EGL_NO_IMAGE_KHR;
-    }
-
-#endif
   
   if(priv->hwctx)
     gavl_hw_ctx_destroy(priv->hwctx);
@@ -1002,6 +981,9 @@ static void close_ffmpeg(bgav_stream_t * s)
   
   if(priv->extradata)
     free(priv->extradata);
+
+  if(priv->dsp)
+    gavl_dsp_context_destroy(priv->dsp);
   
 
   free(priv);
@@ -1634,6 +1616,18 @@ static codec_info_t codec_infos[] =
       BGAV_MK_FOURCC('m','x','5','n'), // IMX NTSC 50 MBps
       0x00 },
     },
+    {
+      "Ffmpeg ProRes decoder", "ProRes", AV_CODEC_ID_PRORES,
+      (uint32_t[]){
+        BGAV_MK_FOURCC('a', 'p', 'c', 'h'),
+        BGAV_MK_FOURCC('a', 'p', 'c', 'n'),
+        BGAV_MK_FOURCC('a', 'p', 'c', 's'),
+        BGAV_MK_FOURCC('a', 'p', 'c', 'o'),
+        BGAV_MK_FOURCC('a', 'p', '4', 'h'),
+        BGAV_MK_FOURCC('a', 'p', '4', 'x'),
+        0x00 },
+    },
+    
   };
 
 #define NUM_CODECS sizeof(codec_infos)/sizeof(codec_infos[0])
@@ -1691,7 +1685,7 @@ void bgav_init_video_decoders_ffmpeg(bgav_options_t * opt)
   }
 
 static void pal8_to_rgb24(gavl_video_frame_t * dst, AVFrame * src,
-                          int width, int height, int flip_y)
+                          int width, int height)
   {
   int i, j;
   uint32_t pixel;
@@ -1707,16 +1701,8 @@ static void pal8_to_rgb24(gavl_video_frame_t * dst, AVFrame * src,
     
   palette = (uint32_t*)(src->data[1]);
   
-  if(flip_y)
-    {
-    dst_save = dst->planes[0] + (height - 1) * dst->strides[0];
-    dst_stride = - dst->strides[0];
-    }
-  else
-    {
-    dst_save = dst->planes[0];
-    dst_stride = dst->strides[0];
-    }
+  dst_save = dst->planes[0];
+  dst_stride = dst->strides[0];
   
   src_save = src->data[0];
   for(i = 0; i < height; i++)
@@ -1741,7 +1727,7 @@ static void pal8_to_rgb24(gavl_video_frame_t * dst, AVFrame * src,
   }
 
 static void pal8_to_rgba32(gavl_video_frame_t * dst, AVFrame * src,
-                           int width, int height, int flip_y)
+                           int width, int height)
   {
   int i, j;
   uint32_t pixel;
@@ -1757,16 +1743,8 @@ static void pal8_to_rgba32(gavl_video_frame_t * dst, AVFrame * src,
     
   palette = (uint32_t*)(src->data[1]);
   
-  if(flip_y)
-    {
-    dst_save = dst->planes[0] + (height - 1) * dst->strides[0];
-    dst_stride = - dst->strides[0];
-    }
-  else
-    {
-    dst_save = dst->planes[0];
-    dst_stride = dst->strides[0];
-    }
+  dst_save = dst->planes[0];
+  dst_stride = dst->strides[0];
   
   src_save = src->data[0];
   for(i = 0; i < height; i++)
@@ -1792,7 +1770,7 @@ static void pal8_to_rgba32(gavl_video_frame_t * dst, AVFrame * src,
   }
 
 static void yuva420_to_yuva32(gavl_video_frame_t * dst, AVFrame * src,
-                              int width, int height, int flip_y)
+                              int width, int height)
   {
   int i, j;
   uint8_t * dst_ptr;
@@ -1812,16 +1790,8 @@ static void yuva420_to_yuva32(gavl_video_frame_t * dst, AVFrame * src,
 
   int dst_stride;
   
-  if(flip_y)
-    {
-    dst_save = dst->planes[0] + (height - 1) * dst->strides[0];
-    dst_stride = - dst->strides[0];
-    }
-  else
-    {
-    dst_save = dst->planes[0];
-    dst_stride = dst->strides[0];
-    }
+  dst_save = dst->planes[0];
+  dst_stride = dst->strides[0];
   
   src_save_y = src->data[0];
   src_save_u = src->data[1];
@@ -1908,7 +1878,7 @@ static void yuva420_to_yuva32(gavl_video_frame_t * dst, AVFrame * src,
 /* Real stupid rgba format conversion */
 
 static void rgba32_to_rgba32(gavl_video_frame_t * dst, AVFrame * src,
-                             int width, int height, int flip_y)
+                             int width, int height)
   {
   int i, j;
   uint32_t r, g, b, a;
@@ -1919,16 +1889,8 @@ static void rgba32_to_rgba32(gavl_video_frame_t * dst, AVFrame * src,
   uint32_t * src_ptr;
   uint8_t  * src_save;
 
-  if(flip_y)
-    {
-    dst_save = dst->planes[0] + (height - 1) * dst->strides[0];
-    dst_stride = - dst->strides[0];
-    }
-  else
-    {
-    dst_save = dst->planes[0];
-    dst_stride = dst->strides[0];
-    }
+  dst_save = dst->planes[0];
+  dst_stride = dst->strides[0];
     
   src_save = src->data[0];
   for(i = 0; i < height; i++)
@@ -1984,6 +1946,16 @@ static const struct
 
     { AV_PIX_FMT_YUVA420P,      GAVL_YUVA_32 },
     { AV_PIX_FMT_VAAPI,         GAVL_YUV_420_P },  ///< Planar YUV 4:2:0 (1 Cr & Cb sample per 2x2 Y samples)
+    /* Higher accuracy */
+    { AV_PIX_FMT_YUV422P10,     GAVL_YUV_422_P_16 },
+    { AV_PIX_FMT_YUV422P12,     GAVL_YUV_422_P_16 },
+    { AV_PIX_FMT_YUV422P14,     GAVL_YUV_422_P_16 },
+    { AV_PIX_FMT_YUV422P16,     GAVL_YUV_422_P_16 },
+    { AV_PIX_FMT_YUV444P10,     GAVL_YUV_444_P_16 },
+    { AV_PIX_FMT_YUV444P12,     GAVL_YUV_444_P_16 },
+    { AV_PIX_FMT_YUV444P14,     GAVL_YUV_444_P_16 },
+    { AV_PIX_FMT_YUV444P16,     GAVL_YUV_444_P_16 },
+    
     { AV_PIX_FMT_NB, GAVL_PIXELFORMAT_NONE },
 
 
@@ -2103,11 +2075,11 @@ static void put_frame_palette(bgav_stream_t * s, gavl_video_frame_t * f)
   if(s->data.video.format->pixelformat == GAVL_RGBA_32)
     pal8_to_rgba32(f, priv->frame,
                    s->data.video.format->image_width,
-                   s->data.video.format->image_height, !!(priv->flags & FLIP_Y));
+                   s->data.video.format->image_height);
   else
     pal8_to_rgb24(f, priv->frame,
                   s->data.video.format->image_width,
-                  s->data.video.format->image_height, !!(priv->flags & FLIP_Y));
+                  s->data.video.format->image_height);
   }
 
 
@@ -2116,7 +2088,7 @@ static void put_frame_rgba32(bgav_stream_t * s, gavl_video_frame_t * f)
   ffmpeg_video_priv * priv = s->decoder_priv;
   rgba32_to_rgba32(f, priv->frame,
                    s->data.video.format->image_width,
-                   s->data.video.format->image_height, !!(priv->flags & FLIP_Y));
+                   s->data.video.format->image_height);
   }
 
 static void put_frame_yuva420(bgav_stream_t * s, gavl_video_frame_t * f)
@@ -2124,7 +2096,7 @@ static void put_frame_yuva420(bgav_stream_t * s, gavl_video_frame_t * f)
   ffmpeg_video_priv * priv = s->decoder_priv;
   yuva420_to_yuva32(f, priv->frame,
                     s->data.video.format->image_width,
-                    s->data.video.format->image_height, !!(priv->flags & FLIP_Y));
+                    s->data.video.format->image_height);
   }
 
 
@@ -2181,21 +2153,32 @@ static void put_frame_swapfields(bgav_stream_t * s, gavl_video_frame_t * f)
   
   }
 
-
-#ifdef HAVE_EGL_EGLEXT_BRCM_H
-
-static const int egl_attributes[] =
+static void put_frame_yuvp10_nocopy(bgav_stream_t * s, gavl_video_frame_t * f)
   {
-    EGL_RED_SIZE,   8,
-    EGL_GREEN_SIZE, 8,
-    EGL_BLUE_SIZE,  8,
-    EGL_ALPHA_SIZE, 8,
-    EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-    EGL_NONE
-  };
+  ffmpeg_video_priv * priv = s->decoder_priv;
+  if(!priv->dsp)
+    priv->dsp = gavl_dsp_context_create();
 
-#endif
+  gavl_dsp_video_frame_shift_bits(priv->dsp, s->vframe, s->data.video.format, 6);
+  }
 
+static void put_frame_yuvp12_nocopy(bgav_stream_t * s, gavl_video_frame_t * f)
+  {
+  ffmpeg_video_priv * priv = s->decoder_priv;
+  if(!priv->dsp)
+    priv->dsp = gavl_dsp_context_create();
+
+  gavl_dsp_video_frame_shift_bits(priv->dsp, s->vframe, s->data.video.format, 4);
+  }
+
+static void put_frame_yuvp14_nocopy(bgav_stream_t * s, gavl_video_frame_t * f)
+  {
+  ffmpeg_video_priv * priv = s->decoder_priv;
+  if(!priv->dsp)
+    priv->dsp = gavl_dsp_context_create();
+
+  gavl_dsp_video_frame_shift_bits(priv->dsp, s->vframe, s->data.video.format, 2);
+  }
 
 /* Copy/flip internal frame to output */
 static void init_put_frame(bgav_stream_t * s)
@@ -2203,36 +2186,58 @@ static void init_put_frame(bgav_stream_t * s)
   
   ffmpeg_video_priv * priv;
   priv = s->decoder_priv;
-  if(priv->ctx->pix_fmt == AV_PIX_FMT_PAL8)
-    priv->put_frame = put_frame_palette;
+
+  switch(priv->ctx->pix_fmt)
+    {
+    case AV_PIX_FMT_PAL8:
+      priv->put_frame = put_frame_palette;
+      break;
 #ifdef HAVE_LIBVA
-  else if(priv->ctx->pix_fmt == AV_PIX_FMT_VAAPI)
-    {
-    priv->put_frame = put_frame_vaapi;
-
-    s->data.video.format->hwctx = priv->hwctx;
-    s->src_flags |= GAVL_SOURCE_SRC_ALLOC;
-
-    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Using VAAPI");
-    }
+    case AV_PIX_FMT_VAAPI:
+      priv->put_frame = put_frame_vaapi;
+      s->data.video.format->hwctx = priv->hwctx;
+      s->src_flags |= GAVL_SOURCE_SRC_ALLOC;
+      gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Using VAAPI");
+      break;
 #endif
-  else if(priv->ctx->pix_fmt == AV_PIX_FMT_RGB32)
-    priv->put_frame = put_frame_rgba32;
-  else if(priv->ctx->pix_fmt == AV_PIX_FMT_YUVA420P)
-    priv->put_frame = put_frame_yuva420;
-  else if(!priv->do_convert)
-    {
-    if(priv->flags & FLIP_Y)
-      priv->put_frame = put_frame_flip;
-    else if(priv->flags & SWAP_FIELDS_OUT)
-      priv->put_frame = put_frame_swapfields;
-    else
-      priv->put_frame = NULL;
-    }
-  else
-    {
-    // TODO: Enable postprocessing for non-gavl pixelformats
-    // (but not as long as it makes no sense)
+    case AV_PIX_FMT_RGB32:
+      priv->put_frame = put_frame_rgba32;
+      break;
+    case AV_PIX_FMT_YUVA420P:
+      priv->put_frame = put_frame_yuva420;
+      break;
+    case AV_PIX_FMT_YUV422P10:
+    case AV_PIX_FMT_YUV444P10:
+      if(!(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
+        {
+        priv->put_frame = put_frame_yuvp10_nocopy;
+        s->vframe = priv->gavl_frame;
+        }
+      break;
+    case AV_PIX_FMT_YUV422P12:
+    case AV_PIX_FMT_YUV444P12:
+      if(!(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
+        {
+        priv->put_frame = put_frame_yuvp12_nocopy;
+        s->vframe = priv->gavl_frame;
+        }
+      break;
+    case AV_PIX_FMT_YUV422P14:
+    case AV_PIX_FMT_YUV444P14:
+      if(!(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
+        {
+        priv->put_frame = put_frame_yuvp14_nocopy;
+        s->vframe = priv->gavl_frame;
+        }
+      break;
+    default:
+      if(priv->flags & FLIP_Y)
+        priv->put_frame = put_frame_flip;
+      else if(priv->flags & SWAP_FIELDS_OUT)
+        priv->put_frame = put_frame_swapfields;
+      else
+        priv->put_frame = NULL;
+      break;
     }
   }
 

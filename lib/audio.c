@@ -92,6 +92,7 @@ static gavl_source_status_t get_frame(void * sp, gavl_audio_frame_t ** frame)
 
 int bgav_audio_init(bgav_stream_t * s)
   {
+  bgav_set_audio_compression_info(s);
   
   if((s->flags & STREAM_FILTER_PACKETS) && !s->pf)
     {
@@ -103,8 +104,13 @@ int bgav_audio_init(bgav_stream_t * s)
 
   gavl_dictionary_reset(s->info_ext);
   gavl_dictionary_copy(s->info_ext, gavl_packet_source_get_stream(s->psrc));
-  gavl_stream_get_compression_info(s->info_ext, &s->ci_out);
-  s->ci = &s->ci_out;
+
+  gavl_compression_info_free(s->ci);
+  gavl_compression_info_init(s->ci);
+  gavl_stream_get_compression_info(s->info_ext, s->ci);
+
+  //  fprintf(stderr, "Audio initialized:\n");
+  //  gavl_dictionary_dump(s->info_ext, 2);
   
   if(s->stats.pts_start == GAVL_TIME_UNDEFINED)
     {
@@ -138,7 +144,6 @@ int bgav_audio_init(bgav_stream_t * s)
     gavl_dictionary_set_int(s->m, GAVL_META_AUDIO_BITS ,
                             s->data.audio.bits_per_sample);
 
-  bgav_set_audio_compression_info(s);
   return 1;
   }
 

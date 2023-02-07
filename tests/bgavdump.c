@@ -36,6 +36,8 @@
 #include <termios.h> /* Ask passwords */
 #endif
 
+#undef HAVE_DVDREAD
+
 // #define TRACK 6
 
 /* Callback based reading: We do a simple stdio mapping here */
@@ -346,6 +348,7 @@ int main(int argc, char ** argv)
       return -1;
       }
     }
+#if 0
   else if(!strncmp(argv[argc-1], "dvd://", 6))
     {
     if(!bgav_open_dvd(file, argv[argc-1] + 6))
@@ -355,7 +358,6 @@ int main(int argc, char ** argv)
       return -1;
       }
     }
-#if 0
   else if(!strncmp(argv[argc-1], "dvb://", 6))
     {
     if(!bgav_open_dvb(file, argv[argc-1] + 6))

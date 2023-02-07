@@ -284,6 +284,9 @@ static const uint8_t mxf_preface_key[] =
 static const uint8_t mxf_closed_body_partition_key[] =
   {  0x06, 0x0e, 0x2b, 0x34, 0x02, 0x05, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, 0x01, 0x03, 0x04, 0x00 };
 
+static const uint8_t mxf_open_body_partition_key[] =
+  {  0x06, 0x0E, 0x2B, 0x34, 0x02, 0x05, 0x01, 0x01, 0x0D, 0x01, 0x02, 0x01, 0x01, 0x03, 0x03, 0x00 };
+
 /* Descriptors */
 
 static const uint8_t mxf_descriptor_multiple_key[] =
@@ -425,12 +428,13 @@ typedef struct
   mxf_ul_t ul;
   uint32_t fourcc;
   mxf_wrapping_type_t wrapping_type;
+  int compression_flags; // only GAVL_COMPRESSION_HAS_P_FRAMES
   } codec_entry_t;
 
 static const codec_entry_t mxf_video_codec_uls[] =
   {
     /* PictureEssenceCoding */
-    { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x03,0x04,0x01,0x02,0x02,0x01,0x01,0x11,0x00 }, BGAV_MK_FOURCC('m', 'p', 'g', 'v')}, /* MP@ML Long GoP */
+    { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x03,0x04,0x01,0x02,0x02,0x01,0x01,0x11,0x00 }, BGAV_MK_FOURCC('m', 'p', 'g', 'v'), WRAP_UNKNOWN, GAVL_COMPRESSION_HAS_P_FRAMES }, /* MP@ML Long GoP */
 
     /* SMPTE D-10 (MPEG-2) */
     { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x01,0x04,0x01,0x02,0x02,0x01,0x02,0x01,0x01 }, BGAV_MK_FOURCC('m', 'x', '5', 'p'), WRAP_FRAME }, /* D-10 50Mbps PAL */
@@ -440,7 +444,7 @@ static const codec_entry_t mxf_video_codec_uls[] =
     { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x01,0x04,0x01,0x02,0x02,0x01,0x02,0x01,0x05 }, BGAV_MK_FOURCC('m', 'x', '3', 'p'), WRAP_FRAME }, /* D-10 30Mbps PAL */
     { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x01,0x04,0x01,0x02,0x02,0x01,0x02,0x01,0x06 }, BGAV_MK_FOURCC('m', 'x', '3', 'n'), WRAP_FRAME }, /* D-10 30Mbps NTSC */
 
-    { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x03,0x04,0x01,0x02,0x02,0x01,0x03,0x03,0x00 }, BGAV_MK_FOURCC('m', 'p', 'g', 'v') }, /* MP@HL Long GoP */
+    { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x03,0x04,0x01,0x02,0x02,0x01,0x03,0x03,0x00 }, BGAV_MK_FOURCC('m', 'p', 'g', 'v'), WRAP_UNKNOWN, GAVL_COMPRESSION_HAS_P_FRAMES }, /* MP@HL Long GoP */
     { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x03,0x04,0x01,0x02,0x02,0x01,0x04,0x02,0x00 }, BGAV_MK_FOURCC('m', 'p', 'v', '2') }, /* 422P@HL I-Frame */
 
     { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x03,0x04,0x01,0x02,0x02,0x01,0x20,0x02,0x01 }, BGAV_MK_FOURCC('m', 'p', '4', 'v'), WRAP_FRAME }, /* XDCAM proxy_pal030926.mxf */
@@ -461,6 +465,13 @@ static const codec_entry_t mxf_video_codec_uls[] =
     { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x01,0x04,0x01,0x02,0x02,0x02,0x01,0x02,0x00 }, BGAV_MK_FOURCC('D', 'V', ' ', ' ') }, /* DV25 IEC PAL */
     // { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x07,0x04,0x01,0x02,0x02,0x03,0x01,0x01,0x00 }, 14, CODEC_ID_JPEG2000 }, /* JPEG2000 Codestream */
     // { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x01,0x04,0x01,0x02,0x01,0x7F,0x00,0x00,0x00 }, 13, CODEC_ID_RAWVIDEO }, /* Uncompressed */
+
+    { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x0d,0x04,0x01,0x02,0x02,0x03,0x06,0x01,0x00 }, BGAV_MK_FOURCC('a', 'p', 'c', 'o'), WRAP_FRAME }, // FF_PROFILE_PRORES_PROXY
+    { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x0d,0x04,0x01,0x02,0x02,0x03,0x06,0x02,0x00 }, BGAV_MK_FOURCC('a', 'p', 'c', 's'), WRAP_FRAME }, // FF_PROFILE_PRORES_LT
+    { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x0d,0x04,0x01,0x02,0x02,0x03,0x06,0x03,0x00 }, BGAV_MK_FOURCC('a', 'p', 'c', 'n'), WRAP_FRAME }, // FF_PROFILE_PRORES_STANDARD
+    { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x0d,0x04,0x01,0x02,0x02,0x03,0x06,0x04,0x00 }, BGAV_MK_FOURCC('a', 'p', 'c', 'h'), WRAP_FRAME }, // FF_PROFILE_PRORES_HQ
+    { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x0d,0x04,0x01,0x02,0x02,0x03,0x06,0x05,0x00 }, BGAV_MK_FOURCC('a', 'p', '4', 'h'), WRAP_FRAME }, // FF_PROFILE_PRORES_4444
+    { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x0d,0x04,0x01,0x02,0x02,0x03,0x06,0x06,0x00 }, BGAV_MK_FOURCC('a', 'p', '4', 'x'), WRAP_FRAME }, // FF_PROFILE_PRORES_XQ
     {  },
   };
 
@@ -483,7 +494,7 @@ static const codec_entry_t mxf_audio_codec_uls[] = {
 
 static const codec_entry_t  mxf_picture_essence_container_uls[] = {
   /* MPEG-ES Frame wrapped */
-  { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x02,0x0D,0x01,0x03,0x01,0x02,0x04,0x60,0x01 }, BGAV_MK_FOURCC('m','p','g','v'), WRAP_FRAME },
+  { { 0x06,0x0E,0x2B,0x34,0x04,0x01,0x01,0x02,0x0D,0x01,0x03,0x01,0x02,0x04,0x60,0x01 }, BGAV_MK_FOURCC('m','p','g','v'), WRAP_FRAME, GAVL_COMPRESSION_HAS_P_FRAMES },
 
   { { 0x06,0x0e,0x2b,0x34,0x04,0x01,0x01,0x01,0x0d,0x01,0x03,0x01,0x02,0x02,0x61,0x01 }, BGAV_MK_FOURCC('D','V',' ',' '), WRAP_FRAME },
   { { 0x06,0x0e,0x2b,0x34,0x04,0x01,0x01,0x01,0x0d,0x01,0x03,0x01,0x02,0x02,0x61,0x02 }, BGAV_MK_FOURCC('D','V',' ',' '), WRAP_CLIP },
@@ -1059,9 +1070,19 @@ static int bgav_mxf_package_finalize_descriptors(mxf_file_t * file, mxf_package_
           ce = match_codec(mxf_video_codec_uls, d->essence_codec_ul);
           if(ce)
             {
-            d->fourcc = ce->fourcc;
-            d->wrapping_type = ce->wrapping_type;
+            d->fourcc            = ce->fourcc;
+            d->wrapping_type     = ce->wrapping_type;
+            d->compression_flags = ce->compression_flags;
             }
+          else
+            {
+#ifdef DUMP_UNKNOWN
+            bgav_dprintf("Unknown video codec: ");
+            dump_ul_nb(d->essence_codec_ul);
+            bgav_dprintf("\n");
+#endif
+            }
+          
           }
         break;
       case GAVL_STREAM_NONE:
@@ -2138,7 +2159,7 @@ void bgav_mxf_index_table_segment_free(mxf_index_table_segment_t * idx)
 
 /* File */
 
-static int resolve_refs(mxf_file_t * file, partition_t * ret, const bgav_options_t * opt)
+static int resolve_refs(mxf_file_t * file, partition_t * ret)
   {
   int i;
 
@@ -2278,7 +2299,7 @@ static int get_max_segments_p(mxf_metadata_t * m)
   return ret;
   }
 
-static int get_max_segments(partition_t * ret, const bgav_options_t * opt)
+static int get_max_segments(partition_t * ret)
   {
   mxf_content_storage_t * cs;
   int i;
@@ -2341,29 +2362,29 @@ uint32_t bgav_mxf_get_video_fourcc(mxf_descriptor_t * d)
 
   }
 
-static int bgav_mxf_finalize_header(mxf_file_t * ret, const bgav_options_t * opt)
+static int bgav_mxf_finalize_header(mxf_file_t * ret)
   {
-  if(!resolve_refs(ret, &ret->header, opt))
+  if(!resolve_refs(ret, &ret->header))
     return 0;
   
   if(!ret->header.preface || !((mxf_preface_t*)(ret->header.preface))->content_storage)
     return 0;
 
-  get_max_segments(&ret->header, opt);
+  get_max_segments(&ret->header);
   
   return 1;
   }
 
-static int bgav_mxf_finalize_body(mxf_file_t * ret, const bgav_options_t * opt)
+static int bgav_mxf_finalize_body(mxf_file_t * ret)
   {
   int i;
   
   for(i = 0; i < ret->num_body_partitions; i++)
     {
-    if(!resolve_refs(ret, &ret->body_partitions[i], opt))
+    if(!resolve_refs(ret, &ret->body_partitions[i]))
       return 0;
 
-    get_max_segments(&ret->body_partitions[i], opt);
+    get_max_segments(&ret->body_partitions[i]);
     }
   return 1;
   }
@@ -2429,8 +2450,9 @@ static int read_partition(bgav_input_context_t * input,
 
   if(!p->p.header_byte_count)
     return 1;
-  
-  //  bgav_mxf_partition_dump(0, &p->p);
+
+  //  if(input->opt.dump_headers)
+  //    bgav_mxf_partition_dump(0, &p->p);
   
   header_start_pos = 0;
 
@@ -2627,7 +2649,7 @@ int bgav_mxf_file_read(bgav_input_context_t * input,
   if(!read_partition(input, &ret->header, &klv, pos))
     return 0;
 
-  if(!bgav_mxf_finalize_header(ret, &input->opt))
+  if(!bgav_mxf_finalize_header(ret))
     {
     return 0;
     }
@@ -2655,12 +2677,13 @@ int bgav_mxf_file_read(bgav_input_context_t * input,
       {
       update_source_track(ret, &klv);
 #ifdef DUMP_ESSENCE
-      bgav_dprintf("Essence element for track %02x %02x %02x %02x (%ld bytes)\n",
+      bgav_dprintf("Essence element for track %02x %02x %02x %02x (%"PRId64" bytes)\n",
                    klv.key[12], klv.key[13], klv.key[14], klv.key[15], klv.length);
 #endif
       bgav_input_skip(input, klv.length);
       }
-    else if(UL_MATCH(klv.key, mxf_closed_body_partition_key))
+    else if(UL_MATCH(klv.key, mxf_closed_body_partition_key) ||
+            UL_MATCH(klv.key, mxf_open_body_partition_key))
       {
       //      bgav_dprintf("Got body partition\n");
       
@@ -2689,7 +2712,7 @@ int bgav_mxf_file_read(bgav_input_context_t * input,
       }
     }
 
-  if(!bgav_mxf_finalize_body(ret, &input->opt))
+  if(!bgav_mxf_finalize_body(ret))
     {
     return 0;
     }

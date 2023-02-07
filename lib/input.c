@@ -674,6 +674,8 @@ int bgav_input_get_double_64_le(bgav_input_context_t * ctx, double * ret)
   return 1;
   }
 
+#undef HAVE_DVDREAD
+
 
 /* Open input */
 
@@ -724,7 +726,7 @@ void bgav_inputs_dump()
   bgav_dprintf( "<li>%s\n", bgav_input_vcd.name);
 
 #ifdef HAVE_DVDREAD
-  bgav_dprintf( "<li>%s\n", bgav_input_dvd.name);
+  //  bgav_dprintf( "<li>%s\n", bgav_input_dvd.name);
 #endif
 
 #endif // HAVE_CDIO

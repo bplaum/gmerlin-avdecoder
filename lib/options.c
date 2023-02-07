@@ -187,7 +187,7 @@ void bgav_options_set_shrink(bgav_options_t* opt,
 void bgav_options_set_vdpau(bgav_options_t* opt,
                             int vdpau)
   {
-  opt->vdpau = vdpau;
+  /* NOOP */
   }
 
 void bgav_options_set_vaapi(bgav_options_t* opt,
@@ -198,7 +198,7 @@ void bgav_options_set_vaapi(bgav_options_t* opt,
 
 void bgav_options_set_threads(bgav_options_t * opt, int threads)
   {
-  opt->threads = threads;
+  /* NOOP */
   }
 
 void bgav_options_set_dump_headers(bgav_options_t* opt,
@@ -239,8 +239,6 @@ void bgav_options_set_defaults(bgav_options_t * b)
   b->audio_dynrange = 1;
   b->cache_time = 500;
   b->cache_size = 20;
-  b->vdpau = 1;
-  b->threads = 1;
 
   b->vaapi = 1;
 
@@ -316,9 +314,7 @@ void bgav_options_copy(bgav_options_t * dst, const bgav_options_t * src)
   CP_INT(dv_datetime);
   CP_INT(shrink);
 
-  CP_INT(vdpau);
   CP_INT(vaapi);
-  CP_INT(threads);
   CP_INT(dump_headers);
   CP_INT(dump_indices);
   CP_INT(dump_packets);

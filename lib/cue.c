@@ -541,7 +541,11 @@ gavl_dictionary_t * bgav_cue_get_edl(bgav_cue_t * cue,
   
   gavl_dictionary_free(&m);
   
-  gavl_edl_finalize(ret);
+  if(!gavl_edl_finalize(ret))
+    {
+    gavl_dictionary_destroy(ret);
+    ret = NULL;
+    }
   
   if(audio_file)
     free(audio_file);

@@ -39,16 +39,10 @@ static void build_edl_mxf(bgav_demuxer_context_t * ctx);
 /* TODO: Find a better way */
 static int probe_mxf(bgav_input_context_t * input)
   {
-  char * pos;
-  if(input->location)
-    {
-    pos = strrchr(input->location, '.');
-    if(!pos)
-      return 0;
-    if(!strcasecmp(pos, ".mxf"))
-      return 1;
-    }
-  return 0;
+  if(input->location && gavl_string_ends_with_i(input->location, ".mxf"))
+    return 1;
+  else
+    return 0;
   }
 
 typedef struct
@@ -163,7 +157,7 @@ static int process_packet_frame_wrapped(bgav_demuxer_context_t * ctx)
   priv = ctx->priv;
   position = ctx->input->position;
 
-  if(position > ((partition_t*)(ctx->tt->cur->priv))->end_pos)
+  if(position > ((partition_t*)ctx->tt->cur->priv)->end_pos)
     return 0;
   
   if(!bgav_mxf_klv_read(ctx->input, &klv))
@@ -263,7 +257,7 @@ static void init_stream_common(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
   sp = calloc(1, sizeof(*priv));
   s->priv = sp;
   s->fourcc = fourcc;
-
+  
   sp->track_id = st->track_id;
   
   /* Detect wrap mode */
@@ -275,7 +269,7 @@ static void init_stream_common(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
 #if 0  
   /* Hack: This makes P2 audio files clip wrapped */
   if(!sd->clip_wrapped &&
-     (((mxf_preface_t*)(priv->mxf.header.preface))->operational_pattern == MXF_OP_ATOM) &&
+     (((mxf_preface_t*)priv->mxf.header.preface)->operational_pattern == MXF_OP_ATOM) &&
      sp->frame_size &&
      (sp->frame_size < st->max_packet_size) &&
      (st->num_packets == 1) && (s->type == GAVL_STREAM_AUDIO))
@@ -353,8 +347,8 @@ static void init_timecode_track(bgav_stream_t * vs, mxf_track_t * timecode_track
   mxf_sequence_t * seq;
   mxf_timecode_component_t * tc;
   
-  seq = (mxf_sequence_t *)(timecode_track->sequence);
-  tc = (mxf_timecode_component_t *)(seq->structural_components[0]);
+  seq = (mxf_sequence_t *)timecode_track->sequence;
+  tc = (mxf_timecode_component_t *)seq->structural_components[0];
 
   /* Timecode format */
   vs->data.video.format->timecode_format.int_framerate =
@@ -376,6 +370,9 @@ static void init_video_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
                               uint32_t fourcc)
   {
   init_stream_common(ctx, s, st, sd, fourcc);
+
+  if(!(sd->compression_flags & GAVL_COMPRESSION_HAS_P_FRAMES))
+    s->ci->flags &= ~GAVL_COMPRESSION_HAS_P_FRAMES;
   
   if((s->fourcc == BGAV_MK_FOURCC('m','p','g','v')) ||
      (s->fourcc == BGAV_MK_FOURCC('m','x','5','p')) ||
@@ -430,7 +427,7 @@ handle_source_track_simple(bgav_demuxer_context_t * ctx,
   
   priv = ctx->priv;
   
-  ss = (mxf_sequence_t*)(t->sequence);
+  ss = (mxf_sequence_t*)t->sequence;
   
   if(!ss)
     return;
@@ -499,7 +496,7 @@ static int get_body_sid(mxf_file_t * f, mxf_package_t * p, uint32_t * ret)
   mxf_essence_container_data_t * ec;
   mxf_content_storage_t * cs;
   
-  cs = (mxf_content_storage_t*)(((mxf_preface_t*)(f->header.preface))->content_storage);
+  cs = (mxf_content_storage_t*)(((mxf_preface_t*)f->header.preface)->content_storage);
   
   for(i = 0; i < cs->num_essence_container_data_refs; i++)
     {
@@ -556,7 +553,7 @@ static int init_simple(bgav_demuxer_context_t * ctx)
     {
     if(priv->mxf.header.metadata[i]->type == MXF_TYPE_SOURCE_PACKAGE)
       {
-      sp = (mxf_package_t*)(priv->mxf.header.metadata[i]);
+      sp = (mxf_package_t*)priv->mxf.header.metadata[i];
 
       ctx->tt->tracks[index]->priv = get_body_partition(&priv->mxf, sp);
       
@@ -699,7 +696,7 @@ static void reset_streams(bgav_stream_t * streams, int num)
 
 static int select_track_mxf(bgav_demuxer_context_t * ctx, int track)
   {
-  bgav_input_seek(ctx->input, ((partition_t*)(ctx->tt->cur->priv))->start_pos, SEEK_SET);
+  bgav_input_seek(ctx->input, ((partition_t*)ctx->tt->cur->priv)->start_pos, SEEK_SET);
 
   reset_streams(ctx->tt->cur->streams, ctx->tt->cur->num_streams);
   
@@ -766,7 +763,7 @@ static int get_source_stream(bgav_track_table_t * tt,
   mxf_content_storage_t * cs;
   int found;
 
-  cs = (mxf_content_storage_t*)(((mxf_preface_t*)(f->header.preface))->content_storage);
+  cs = (mxf_content_storage_t*)(((mxf_preface_t*)f->header.preface)->content_storage);
   found = 0;
   *track_index = 0;
   
@@ -811,7 +808,7 @@ static void handle_material_track(bgav_demuxer_context_t * ctx, mxf_package_t * 
   if(!mt)
     return;
   
-  ss = (mxf_sequence_t*)(mt->sequence);
+  ss = (mxf_sequence_t*)mt->sequence;
   
   if(!ss)
     return;
@@ -855,7 +852,7 @@ static void handle_material_track(bgav_demuxer_context_t * ctx, mxf_package_t * 
     
     for(i = 0; i < ss->num_structural_component_refs; i++)
       {
-      sc = (mxf_source_clip_t*)(ss->structural_components[i]);
+      sc = (mxf_source_clip_t*)ss->structural_components[i];
       
       /*  */
       
@@ -905,7 +902,7 @@ static void build_edl_mxf(bgav_demuxer_context_t * ctx)
     if(priv->mxf.header.metadata[i]->type == MXF_TYPE_MATERIAL_PACKAGE)
       {
       t = gavl_append_track(edl, NULL);
-      sp = (mxf_package_t*)(priv->mxf.header.metadata[i]);
+      sp = (mxf_package_t*)priv->mxf.header.metadata[i];
       
       /* Loop over tracks */
       for(j = 0; j < sp->num_track_refs; j++)
@@ -914,5 +911,9 @@ static void build_edl_mxf(bgav_demuxer_context_t * ctx)
         }
       }
     }
-  
+
+  if(!gavl_edl_finalize(edl))
+    {
+    gavl_dictionary_set(&ctx->tt->info, GAVL_META_EDL, NULL);
+    }
   }

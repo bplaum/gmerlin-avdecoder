@@ -219,12 +219,15 @@ struct  mxf_descriptor_s
   /* MPEG-4 extradata (in the future maybe others too) */
   uint8_t *ext_data;
   int ext_size;
-
+  
   /* Secondary */
   mxf_metadata_t ** subdescriptors;
   
   mxf_wrapping_type_t wrapping_type;
   uint32_t            fourcc;
+  
+  int compression_flags;
+
   };
 
 void bgav_mxf_descriptor_dump(int indent, mxf_descriptor_t * d);

@@ -311,6 +311,8 @@ static gavl_source_status_t read_video_copy(void * sp,
 
 int bgav_video_init(bgav_stream_t * s)
   {
+  bgav_set_video_compression_info(s);
+  
   if(!s->timescale && s->data.video.format->timescale)
     s->timescale = s->data.video.format->timescale;
 
@@ -338,15 +340,10 @@ int bgav_video_init(bgav_stream_t * s)
   
   gavl_dictionary_reset(s->info_ext);
   gavl_dictionary_copy(s->info_ext, gavl_packet_source_get_stream(s->psrc));
-  gavl_stream_get_compression_info(s->info_ext, &s->ci_out);
-  s->ci = &s->ci_out;
-  
-  //  fprintf(stderr, "Got video stream info:\n");
-  //  gavl_dictionary_dump(s->info_ext, 2);
-    
-  //  fprintf(stderr, "Got codec header:\n");
-  //  gavl_hexdump(s->ci->codec_header.buf,
-  //               s->ci->codec_header.len, 16);
+
+  gavl_compression_info_free(s->ci);
+  gavl_compression_info_init(s->ci);
+  gavl_stream_get_compression_info(s->info_ext, s->ci);
   
   if(s->stats.pts_start == GAVL_TIME_UNDEFINED)
     {
@@ -434,7 +431,6 @@ int bgav_video_start(bgav_stream_t * s)
                                    s->data.video.format);
 
       s->data.video.vsrc = s->data.video.vsrc_priv;
-      
       }
     
     }

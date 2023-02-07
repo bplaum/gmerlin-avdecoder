@@ -20,7 +20,6 @@ include/xing.h
 include/ptscache.h
 include/bitstream.h
 include/adts_header.h
-include/language_table.h
 include/videoparser_priv.h
 include/dirac_header.h
 include/bsf_private.h
@@ -40,6 +39,7 @@ include/dvb_channels.h
 include/opus_header.h
 include/md5.h
 include/packettimer.h
+include/ogg_header.h
 include/sdp.h
 include/flac_header.h
 include/h264_header.h
@@ -61,6 +61,7 @@ tests/bgavsave.c
 tests/ymltest.c
 tests/vcdtest.c
 tests/indextest.c
+tests/count_frames.c
 tests/rtsptest.c
 tests/seektest.c
 tests/count_samples.c
@@ -120,6 +121,7 @@ lib/r_rtsptext.c
 lib/cavs_header.c
 lib/qt_language.c
 lib/mms.c
+lib/demux_ogg2.c
 lib/subtitle.c
 lib/yml.c
 lib/in_file.c
@@ -204,7 +206,6 @@ lib/demux_dsicin.c
 lib/qt_stsd.c
 lib/qt_moof.c
 lib/demux_8svx.c
-lib/video_libmpeg2.c
 lib/demux_flac.c
 lib/in_rtsp.c
 lib/qt_chan.c
@@ -217,14 +218,17 @@ lib/chapterlist.c
 lib/qt_stbl.c
 lib/qt_stss.c
 lib/video_y4m.c
+lib/parse_theora.c
 lib/demux_adts.c
 lib/dirac_header.c
 lib/adts_header.c
 lib/demux_vivo.c
+lib/demux_vtt.c
 lib/httpheader.c
 lib/video_qtraw.c
 lib/demux_cue.c
 lib/bytebuffer.c
+lib/demux_srt.c
 lib/video_gavf.c
 lib/md5.c
 lib/r_pls.c
@@ -239,7 +243,6 @@ lib/video_yuv.c
 lib/codecs.c
 lib/sampleseek.c
 lib/matroska.c
-lib/demux_gavf.c
 lib/tracktable.c
 lib/demux_wav.c
 lib/in_mmsh.c
@@ -279,6 +282,7 @@ lib/tcp.c
 lib/demux_mpegvideo.c
 lib/demux_ffmpeg.c
 lib/demux_au.c
+lib/parser.c
 lib/qt_edts.c
 lib/qt_mdhd.c
 lib/demux_ogg.c
@@ -289,6 +293,7 @@ lib/qt_wave.c
 lib/bsf_avcc.c
 lib/audio_vorbis.c
 lib/demux_dxa.c
+lib/in_sub.c
 lib/demux_rawaudio.c
 lib/rtcp.c
 lib/qt_useratoms.c
@@ -340,10 +345,10 @@ lib/parse_mpegaudio.c
 lib/parse_vp8.c
 lib/device.c
 lib/r_m3u.c
+lib/ogg_header.c
 lib/qt_elst.c
 lib/rtsp.c
 lib/qt_trun.c
-lib/aac_frame.c
 lib/in_pnm.c
 lib/audio_dca.c
 lib/parse_a52.c
@@ -363,6 +368,7 @@ lib/demux_mpegaudio.c
 lib/qt_atom.c
 lib/demux_voc.c
 lib/demux_mxf.c
+lib/demux_mpegts2.c
 lib/log.c
 plugins/options.h
 plugins/i_avdec.c

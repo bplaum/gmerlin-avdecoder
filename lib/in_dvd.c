@@ -807,9 +807,6 @@ static int open_dvd(bgav_input_context_t * ctx, const char * url, char ** r)
   /* We must set this here, because we don't initialize the demuxer here */
   ctx->demuxer->flags |= BGAV_DEMUXER_CAN_SEEK;
   
-  ctx->sector_size        = 2048;
-  ctx->sector_size_raw    = 2048;
-  ctx->sector_header_size = 0;
   ctx->flags |= BGAV_INPUT_CAN_PAUSE;
   
   return 1;

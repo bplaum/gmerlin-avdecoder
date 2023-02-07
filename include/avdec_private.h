@@ -456,7 +456,6 @@ struct bgav_stream_s
   /* Compression info (the ci-pointer might be changed by a bitstream filter) */
   gavl_compression_info_t * ci;
   gavl_compression_info_t ci_orig;
-  gavl_compression_info_t ci_out;
   
   /* If this is set, we will pass this to the
      source */
@@ -835,10 +834,7 @@ struct bgav_options_s
   
   int shrink;
 
-  int vdpau;
   int vaapi;
-
-  int threads;
 
   int log_level;
 
