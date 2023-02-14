@@ -396,7 +396,7 @@ static gavl_source_status_t get_packet(bgav_stream_t * s)
     /* Early EOF detection */
     if(!p)
       {
-      fprintf(stderr, "Flushing decoder\n");
+      //   fprintf(stderr, "Flushing decoder\n");
       avcodec_send_packet(priv->ctx, NULL);
       priv->flags |= FLUSH_EOF;
       return GAVL_SOURCE_EOF;
@@ -490,11 +490,7 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
   while(1)
     {
     result = avcodec_receive_frame(priv->ctx, priv->frame);
-    if(priv->flags & FLUSH_EOF)
-      {
-      fprintf(stderr, "Receive_frame: %d\n", result);
-      }
-
+    
     if(!result)
       {
       /* Got frame */
@@ -509,7 +505,11 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
       /* Nothing we can do right now */
       if(st == GAVL_SOURCE_AGAIN)
         return st;
-      
+      }
+    else if(result == AVERROR_EOF)
+      {
+      st = GAVL_SOURCE_EOF;
+      break;
       }
     else
       {

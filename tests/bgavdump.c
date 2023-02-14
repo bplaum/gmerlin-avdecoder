@@ -1,4 +1,4 @@
-/*****************************************************************
+/****************************************************************
  * gmerlin-avdecoder - a general purpose multimedia decoding library
  *
  * Copyright (c) 2001 - 2012 Members of the Gmerlin project
@@ -36,9 +36,7 @@
 #include <termios.h> /* Ask passwords */
 #endif
 
-#undef HAVE_DVDREAD
-
-// #define TRACK 6
+#define TRACK 12
 
 /* Callback based reading: We do a simple stdio mapping here */
 
@@ -174,6 +172,8 @@ static void print_usage()
   fprintf(stderr, "-dp              Dump packets\n");
   fprintf(stderr, "-L               List all demultiplexers and codecs\n");
   fprintf(stderr, "-follow          Follow redirections (e.g. in m3u files)\n");
+  fprintf(stderr, "-t <num>         Dump track <num> (default: Dump all)\n");
+
   }
 
 static void list_all()
@@ -185,32 +185,13 @@ static void list_all()
   //  bgav_subreaders_dump();
   }
 
-int main(int argc, char ** argv)
+static void dump_track(bgav_t * file, int track)
   {
-  FILE * cb_file = NULL;
-
-  
-  int i, j;
   int num_audio_streams;
   int num_video_streams;
   int num_text_streams;
   int num_overlay_streams;
-  // int num_urls;
-  int num_tracks;
-  int track;
-  int arg_index;
-  char * sub_text = NULL;
-  int sub_text_alloc = 0;
-  gavl_time_t sub_time;
-  gavl_time_t sub_duration;
-  
-  bgav_t * file;
 
-  const gavl_dictionary_t * edl;
-
-  bgav_options_t * opt;
-  gavl_overlay_t * ovl;
-  
   gavl_audio_frame_t * af;
   gavl_video_frame_t * vf;
   const gavl_audio_format_t * audio_format;
@@ -220,7 +201,297 @@ int main(int argc, char ** argv)
 
   gavl_audio_source_t * asrc;
   gavl_video_source_t * vsrc;
+
+  int i, j;
+  char * sub_text = NULL;
+  int sub_text_alloc = 0;
+  gavl_time_t sub_time;
+  gavl_time_t sub_duration;
+  gavl_video_frame_t * ovl;
   
+  bgav_select_track(file, track);
+  if(sample_accurate && !bgav_can_seek_sample(file))
+    {
+    fprintf(stderr, "Sample accurate access not possible for track %d\n", track+1);
+    return;
+    }
+  fprintf(stderr, "===================================\n");
+  fprintf(stderr, "============ Track %3d ============\n", track+1);
+  fprintf(stderr, "===================================\n");
+    
+  num_audio_streams = bgav_num_audio_streams(file, track);
+  num_video_streams = bgav_num_video_streams(file, track);
+  num_text_streams = bgav_num_text_streams(file, track);
+  num_overlay_streams = bgav_num_overlay_streams(file, track);
+    
+  if(do_audio)
+    {
+    for(i = 0; i < num_audio_streams; i++)
+      {
+      if(dump_ci)
+        {
+        if(bgav_get_audio_compression_info(file, i, &ci))
+          {
+          fprintf(stderr, "Audio stream %d ", i+1);
+          gavl_compression_info_dump(&ci);
+          gavl_compression_info_free(&ci);
+          audio_format = bgav_get_audio_format(file, i);
+          fprintf(stderr, "Format (exported when reading compressed)\n");
+          gavl_audio_format_dump(audio_format);
+          }
+        else
+          fprintf(stderr, "Audio stream %d cannot output compressed packets\n",
+                  i+1);
+        }
+      bgav_set_audio_stream(file, i, BGAV_STREAM_DECODE);
+      }
+    }
+  if(do_video)
+    {
+    for(i = 0; i < num_video_streams; i++)
+      {
+      if(dump_ci)
+        {
+        if(bgav_get_video_compression_info(file, i, &ci))
+          {
+          fprintf(stderr, "Video stream %d ", i+1);
+          gavl_compression_info_dump(&ci);
+          gavl_compression_info_free(&ci);
+          video_format = bgav_get_video_format(file, i);
+          fprintf(stderr, "Format (exported when reading compressed)\n");
+          gavl_video_format_dump(video_format);
+          }
+        else
+          fprintf(stderr, "Video stream %d cannot output compressed packets\n",
+                  i+1);
+        }
+      bgav_set_video_stream(file, i, BGAV_STREAM_DECODE);
+      }
+    }
+  for(i = 0; i < num_text_streams; i++)
+    {
+    bgav_set_text_stream(file, i, BGAV_STREAM_DECODE);
+    }
+  for(i = 0; i < num_overlay_streams; i++)
+    {
+    bgav_set_overlay_stream(file, i, BGAV_STREAM_DECODE);
+
+    if(dump_ci)
+      {
+      if(bgav_get_overlay_compression_info(file, i, &ci))
+        {
+        fprintf(stderr, "Subtitle stream %d ", i+1);
+        gavl_compression_info_dump(&ci);
+        gavl_compression_info_free(&ci);
+        video_format = bgav_get_overlay_format(file, i);
+        fprintf(stderr, "Format (exported when reading compressed)\n");
+        gavl_video_format_dump(video_format);
+        }
+      else
+        fprintf(stderr, "Subtitle stream %d cannot output compressed packets\n",
+                i+1);
+      }
+
+    }
+
+
+  fprintf(stderr, "Starting decoders...\n");
+  if(!bgav_start(file))
+    {
+    fprintf(stderr, "Starting decoders failed\n");
+#ifndef TRACK  
+    continue;
+#else
+    return;
+#endif
+    }
+  else
+    fprintf(stderr, "Starting decoders done\n");
+
+  if(global_seek >= 0)
+    {
+    if(bgav_can_seek(file))
+      {
+      fprintf(stderr, "Doing global seek to %"PRId64"...\n", global_seek);
+      bgav_seek(file, &global_seek);
+      fprintf(stderr, "Time after seek: %"PRId64"\n", global_seek);
+      }
+    else
+      {
+      fprintf(stderr, "Global seek requested for non-seekable file\n");
+      return;
+      }
+    }
+    
+  fprintf(stderr, "Dumping file contents...\n");
+  bgav_dump(file);
+  fprintf(stderr, "End of file contents\n");
+
+  /* Try to get some frames from each stream */
+  if(do_audio)
+    {
+    for(i = 0; i < num_audio_streams; i++)
+      {
+      if(!(asrc = bgav_get_audio_source(file, i)))
+        break;
+        
+      gavl_audio_source_set_dst(asrc, 0, NULL);
+        
+      audio_format = bgav_get_audio_format(file, i);
+      // af = gavl_audio_frame_create(audio_format);
+      if(sample_accurate && (audio_seek >= 0))
+        bgav_seek_audio(file, i, audio_seek);
+
+      for(j = 0; j < frames_to_read; j++)
+        {
+        fprintf(stderr, "Reading frame from audio stream %d...", i+1);
+          
+        af = NULL;
+        if(gavl_audio_source_read_frame(asrc, &af) == GAVL_SOURCE_OK)
+          fprintf(stderr, "Done, timestamp: %"PRId64" [%"PRId64"], Samples: %d\n",
+                  af->timestamp, gavl_time_unscale(audio_format->samplerate, af->timestamp), af->valid_samples);
+        else
+          {
+          fprintf(stderr, "Failed\n");
+          break;
+          }
+        }
+      }
+    }
+
+  if(do_video)
+    {
+    for(i = 0; i < num_video_streams; i++)
+      {
+      video_format = bgav_get_video_format(file, i);
+#if 1
+      if(!(vsrc = bgav_get_video_source(file, i)))
+        break;
+        
+      gavl_video_source_set_dst(vsrc, 0, NULL);
+        
+      if(sample_accurate)
+        {
+        if(video_seek >= 0)
+          bgav_seek_video(file, i, video_seek);
+        }
+      for(j = 0; j < frames_to_read; j++)
+        {
+        fprintf(stderr, "Reading frame from video stream %d...", i+1);
+        vf = NULL;
+        if(gavl_video_source_read_frame(vsrc, &vf) == GAVL_SOURCE_OK)
+          {
+          fprintf(stderr, "Done, timestamp: %"PRId64" [%"PRId64"]", vf->timestamp, gavl_time_unscale(video_format->timescale, vf->timestamp));
+
+          if(vf->duration > 0)
+            fprintf(stderr, ", Duration: %"PRId64, vf->duration);
+          else
+            fprintf(stderr, ", Duration: Unknown");
+
+          if(gavl_interlace_mode_is_mixed(video_format->interlace_mode))
+            {
+            fprintf(stderr, ", IL: ");
+            switch(vf->interlace_mode)
+              {
+              case GAVL_INTERLACE_TOP_FIRST:
+                fprintf(stderr, "T");
+                break;
+              case GAVL_INTERLACE_BOTTOM_FIRST:
+                fprintf(stderr, "B");
+                break;
+              case GAVL_INTERLACE_NONE:
+                fprintf(stderr, "P");
+                break;
+              default:
+                fprintf(stderr, "?");
+                break;
+                  
+              }
+            }
+            
+          if(vf->timecode != GAVL_TIMECODE_UNDEFINED)
+            {
+            fprintf(stderr, ", Timecode: ");
+            gavl_timecode_dump(&video_format->timecode_format,
+                               vf->timecode);
+            }
+          fprintf(stderr, "\n");
+  
+          // fprintf(stderr, "First 16 bytes of first plane follow\n");
+          // bgav_hexdump(vf->planes[0] + vf->strides[0] * 20, 16, 16);
+          }
+        else
+          {
+          fprintf(stderr, "Failed\n");
+          break;
+          }
+        }
+#endif
+      }
+    }
+
+  for(i = 0; i < num_text_streams; i++)
+    {
+    int timescale = bgav_get_text_timescale(file, i);
+        
+    fprintf(stderr, "Reading text subtitle from stream %d...", i+1);
+        
+    if(bgav_read_subtitle_text(file, &sub_text, &sub_text_alloc,
+                               &sub_time, &sub_duration, i + num_overlay_streams))
+      {
+      fprintf(stderr, "Done\nstart: %f, duration: %f\n%s\n",
+              gavl_time_to_seconds(gavl_time_unscale(timescale,
+                                                     sub_time)),
+              gavl_time_to_seconds(gavl_time_unscale(timescale, sub_duration)),
+              sub_text);
+      }
+    else
+      fprintf(stderr, "Failed\n");
+    }
+    
+  for(i = 0; i < num_overlay_streams; i++)
+    {
+    video_format = bgav_get_overlay_format(file, i);
+      
+    fprintf(stderr, "Reading overlay subtitle from stream %d...", i+1);
+    ovl = gavl_video_frame_create(video_format);
+    if(bgav_read_subtitle_overlay(file, ovl, i))
+      {
+      fprintf(stderr, "Done\nsrc_rect: ");
+      gavl_rectangle_i_dump(&ovl->src_rect);
+      fprintf(stderr, "\ndst_coords: %d,%d\n", ovl->dst_x, ovl->dst_y);
+      fprintf(stderr, "Time: %" PRId64 " -> %" PRId64 "\n",
+              ovl->timestamp,
+              ovl->timestamp+ovl->duration);
+      }
+    else
+      {
+      fprintf(stderr, "Failed\n");
+      }
+    gavl_video_frame_destroy(ovl);
+    }
+
+  if(sub_text)
+    free(sub_text);
+  
+  }
+
+int main(int argc, char ** argv)
+  {
+  FILE * cb_file = NULL;
+
+  
+  int i;
+  int num_tracks;
+  int track = -1;
+  int arg_index;
+  
+  bgav_t * file;
+
+  const gavl_dictionary_t * edl;
+
+  bgav_options_t * opt;
+
   setlocale(LC_MESSAGES, "");
   setlocale(LC_CTYPE, "");
   
@@ -283,6 +554,11 @@ int main(int argc, char ** argv)
     else if(!strcmp(argv[arg_index], "-seek"))
       {
       global_seek = strtoll(argv[arg_index+1], NULL, 10);
+      arg_index+=2;
+      }
+    else if(!strcmp(argv[arg_index], "-t"))
+      {
+      track = atoi(argv[arg_index+1]);
       arg_index+=2;
       }
     else if(!strcmp(argv[arg_index], "-ci"))
@@ -446,275 +722,19 @@ int main(int argc, char ** argv)
     }
   num_tracks = bgav_num_tracks(file);
 
-#ifdef TRACK  
-  track = TRACK;
-#else
-  for(track = 0; track < num_tracks; track++)
+  if(track < 0)
     {
-#endif
-    bgav_select_track(file, track);
-    if(sample_accurate && !bgav_can_seek_sample(file))
-      {
-      fprintf(stderr, "Sample accurate access not possible for track %d\n", track+1);
-      return -1;
-      }
-    fprintf(stderr, "===================================\n");
-    fprintf(stderr, "============ Track %3d ============\n", track+1);
-    fprintf(stderr, "===================================\n");
-    
-    num_audio_streams = bgav_num_audio_streams(file, track);
-    num_video_streams = bgav_num_video_streams(file, track);
-    num_text_streams = bgav_num_text_streams(file, track);
-    num_overlay_streams = bgav_num_overlay_streams(file, track);
-    
-    if(do_audio)
-      {
-      for(i = 0; i < num_audio_streams; i++)
-        {
-        if(dump_ci)
-          {
-          if(bgav_get_audio_compression_info(file, i, &ci))
-            {
-            fprintf(stderr, "Audio stream %d ", i+1);
-            gavl_compression_info_dump(&ci);
-            gavl_compression_info_free(&ci);
-            audio_format = bgav_get_audio_format(file, i);
-            fprintf(stderr, "Format (exported when reading compressed)\n");
-            gavl_audio_format_dump(audio_format);
-            }
-          else
-            fprintf(stderr, "Audio stream %d cannot output compressed packets\n",
-                    i+1);
-          }
-        bgav_set_audio_stream(file, i, BGAV_STREAM_DECODE);
-        }
-      }
-    if(do_video)
-      {
-      for(i = 0; i < num_video_streams; i++)
-        {
-        if(dump_ci)
-          {
-          if(bgav_get_video_compression_info(file, i, &ci))
-            {
-            fprintf(stderr, "Video stream %d ", i+1);
-            gavl_compression_info_dump(&ci);
-            gavl_compression_info_free(&ci);
-            video_format = bgav_get_video_format(file, i);
-            fprintf(stderr, "Format (exported when reading compressed)\n");
-            gavl_video_format_dump(video_format);
-            }
-          else
-            fprintf(stderr, "Video stream %d cannot output compressed packets\n",
-                    i+1);
-          }
-        bgav_set_video_stream(file, i, BGAV_STREAM_DECODE);
-        }
-      }
-    for(i = 0; i < num_text_streams; i++)
-      {
-      bgav_set_text_stream(file, i, BGAV_STREAM_DECODE);
-      }
-    for(i = 0; i < num_overlay_streams; i++)
-      {
-      bgav_set_overlay_stream(file, i, BGAV_STREAM_DECODE);
-
-      if(dump_ci)
-        {
-        if(bgav_get_overlay_compression_info(file, i, &ci))
-          {
-          fprintf(stderr, "Subtitle stream %d ", i+1);
-          gavl_compression_info_dump(&ci);
-          gavl_compression_info_free(&ci);
-          video_format = bgav_get_overlay_format(file, i);
-          fprintf(stderr, "Format (exported when reading compressed)\n");
-          gavl_video_format_dump(video_format);
-          }
-        else
-          fprintf(stderr, "Subtitle stream %d cannot output compressed packets\n",
-                  i+1);
-        }
-
-      }
-
-
-    fprintf(stderr, "Starting decoders...\n");
-    if(!bgav_start(file))
-      {
-      fprintf(stderr, "Starting decoders failed\n");
-#ifndef TRACK  
-      continue;
-#else
-      return -1;
-#endif
-      }
-    else
-      fprintf(stderr, "Starting decoders done\n");
-
-    if(global_seek >= 0)
-      {
-      if(bgav_can_seek(file))
-        {
-        fprintf(stderr, "Doing global seek to %"PRId64"...\n", global_seek);
-        bgav_seek(file, &global_seek);
-        fprintf(stderr, "Time after seek: %"PRId64"\n", global_seek);
-        }
-      else
-        {
-        fprintf(stderr, "Global seek requested for non-seekable file\n");
-        return -1;
-        }
-      }
-    
-    fprintf(stderr, "Dumping file contents...\n");
-    bgav_dump(file);
-    fprintf(stderr, "End of file contents\n");
-
-    /* Try to get some frames from each stream */
-    if(do_audio)
-      {
-      for(i = 0; i < num_audio_streams; i++)
-        {
-        asrc = bgav_get_audio_source(file, i);
-        gavl_audio_source_set_dst(asrc, 0, NULL);
-        
-        audio_format = bgav_get_audio_format(file, i);
-        // af = gavl_audio_frame_create(audio_format);
-        if(sample_accurate && (audio_seek >= 0))
-          bgav_seek_audio(file, i, audio_seek);
-
-        for(j = 0; j < frames_to_read; j++)
-          {
-          fprintf(stderr, "Reading frame from audio stream %d...", i+1);
-          
-          af = NULL;
-          if(gavl_audio_source_read_frame(asrc, &af) == GAVL_SOURCE_OK)
-            fprintf(stderr, "Done, timestamp: %"PRId64" [%"PRId64"], Samples: %d\n",
-                    af->timestamp, gavl_time_unscale(audio_format->samplerate, af->timestamp), af->valid_samples);
-          else
-            {
-            fprintf(stderr, "Failed\n");
-            break;
-            }
-          }
-        }
-      }
-
-    if(do_video)
-      {
-      for(i = 0; i < num_video_streams; i++)
-        {
-        video_format = bgav_get_video_format(file, i);
-#if 1
-        vsrc = bgav_get_video_source(file, i);
-        gavl_video_source_set_dst(vsrc, 0, NULL);
-        
-        if(sample_accurate)
-          {
-          if(video_seek >= 0)
-            bgav_seek_video(file, i, video_seek);
-          }
-        for(j = 0; j < frames_to_read; j++)
-          {
-          fprintf(stderr, "Reading frame from video stream %d...", i+1);
-          vf = NULL;
-          if(gavl_video_source_read_frame(vsrc, &vf) == GAVL_SOURCE_OK)
-            {
-            fprintf(stderr, "Done, timestamp: %"PRId64" [%"PRId64"]", vf->timestamp, gavl_time_unscale(video_format->timescale, vf->timestamp));
-
-            if(vf->duration > 0)
-              fprintf(stderr, ", Duration: %"PRId64, vf->duration);
-            else
-              fprintf(stderr, ", Duration: Unknown");
-
-            if(gavl_interlace_mode_is_mixed(video_format->interlace_mode))
-              {
-              fprintf(stderr, ", IL: ");
-              switch(vf->interlace_mode)
-                {
-                case GAVL_INTERLACE_TOP_FIRST:
-                  fprintf(stderr, "T");
-                  break;
-                case GAVL_INTERLACE_BOTTOM_FIRST:
-                  fprintf(stderr, "B");
-                  break;
-                case GAVL_INTERLACE_NONE:
-                  fprintf(stderr, "P");
-                  break;
-                default:
-                  fprintf(stderr, "?");
-                  break;
-                  
-                }
-              }
-            
-            if(vf->timecode != GAVL_TIMECODE_UNDEFINED)
-              {
-              fprintf(stderr, ", Timecode: ");
-              gavl_timecode_dump(&video_format->timecode_format,
-                                 vf->timecode);
-              }
-            fprintf(stderr, "\n");
-  
-            // fprintf(stderr, "First 16 bytes of first plane follow\n");
-            // bgav_hexdump(vf->planes[0] + vf->strides[0] * 20, 16, 16);
-            }
-          else
-            {
-            fprintf(stderr, "Failed\n");
-            break;
-            }
-          }
-#endif
-        }
-      }
-
-    for(i = 0; i < num_text_streams; i++)
-      {
-      int timescale = bgav_get_text_timescale(file, i);
-        
-      fprintf(stderr, "Reading text subtitle from stream %d...", i+1);
-        
-      if(bgav_read_subtitle_text(file, &sub_text, &sub_text_alloc,
-                                 &sub_time, &sub_duration, i + num_overlay_streams))
-        {
-        fprintf(stderr, "Done\nstart: %f, duration: %f\n%s\n",
-                gavl_time_to_seconds(gavl_time_unscale(timescale,
-                                                       sub_time)),
-                gavl_time_to_seconds(gavl_time_unscale(timescale, sub_duration)),
-                sub_text);
-        }
-      else
-        fprintf(stderr, "Failed\n");
-      }
-    
-    for(i = 0; i < num_overlay_streams; i++)
-      {
-      video_format = bgav_get_overlay_format(file, i);
-      
-      fprintf(stderr, "Reading overlay subtitle from stream %d...", i+1);
-      ovl = gavl_video_frame_create(video_format);
-      if(bgav_read_subtitle_overlay(file, ovl, i))
-        {
-        fprintf(stderr, "Done\nsrc_rect: ");
-        gavl_rectangle_i_dump(&ovl->src_rect);
-        fprintf(stderr, "\ndst_coords: %d,%d\n", ovl->dst_x, ovl->dst_y);
-        fprintf(stderr, "Time: %" PRId64 " -> %" PRId64 "\n",
-                ovl->timestamp,
-                ovl->timestamp+ovl->duration);
-        }
-      else
-        {
-        fprintf(stderr, "Failed\n");
-        }
-      gavl_video_frame_destroy(ovl);
-      }
-#ifndef TRACK
+    for(i = 0; i < num_tracks; i++)
+      dump_track(file, i);
     }
-#endif
-  if(sub_text)
-    free(sub_text);
-    
+  else
+    {
+    if((track >= 0) && (track < num_tracks))
+      dump_track(file, track);
+    else
+      fprintf(stderr, "No such track %d\n", track);
+    }
+  
   bgav_close(file);
 
   if(cb_file)

@@ -47,76 +47,33 @@
 
 #define BGAV_VORBIS BGAV_MK_FOURCC('V','B','I','S')
 
-
-// typedef struct bgav_edl_dec_s bgav_edl_dec_t;
-
 typedef struct bgav_demuxer_s         bgav_demuxer_t;
 typedef struct bgav_demuxer_context_s bgav_demuxer_context_t;
 
 typedef struct bgav_redirector_s         bgav_redirector_t;
 
-// typedef struct bgav_packet_s          bgav_packet_t;
 #define bgav_packet_t gavl_packet_t
 
 typedef struct bgav_file_index_s      bgav_file_index_t;
-// typedef struct bgav_video_parser_s    bgav_video_parser_t;
-// typedef struct bgav_audio_parser_s    bgav_audio_parser_t;
 typedef struct bgav_packet_parser_s   bgav_packet_parser_t;
-
-// typedef struct bgav_bsf_s             bgav_bsf_t;
 
 typedef struct bgav_input_s                    bgav_input_t;
 typedef struct bgav_input_context_s            bgav_input_context_t;
 typedef struct bgav_audio_decoder_s            bgav_audio_decoder_t;
 typedef struct bgav_video_decoder_s            bgav_video_decoder_t;
-// typedef struct bgav_subtitle_overlay_decoder_s bgav_subtitle_overlay_decoder_t;
-//typedef struct bgav_subtitle_reader_s bgav_subtitle_reader_t;
-//typedef struct bgav_subtitle_reader_context_s bgav_subtitle_reader_context_t;
 typedef struct bgav_subtitle_converter_s bgav_subtitle_converter_t;
-
-// typedef struct bgav_subtitle_overlay_decoder_context_s
-// bgav_subtitle_overlay_decoder_context_t;
-
 typedef struct bgav_stream_s   bgav_stream_t;
-
-// typedef struct bgav_packet_buffer_s   bgav_packet_buffer_t;
 
 typedef struct bgav_charset_converter_s bgav_charset_converter_t;
 
 typedef struct bgav_track_s bgav_track_t;
 
 typedef struct bgav_timecode_table_s bgav_timecode_table_t;
-// typedef struct bgav_keyframe_table_s bgav_keyframe_table_t;
-
-// typedef struct bgav_packet_pool_s bgav_packet_pool_t;
-
-// typedef struct bgav_video_format_tracker_s bgav_video_format_tracker_t;
 
 #include <id3.h>
 #include <yml.h>
 #include <packettimer.h>
 #include <frametype.h>
-
-#if 0
-/* subsequent calls of read() or peek() will return the next packet */
-typedef gavl_source_status_t
-(*bgav_get_packet_callback)(void * data, bgav_packet_t ** ret);
-
-/* Subsequent calls of read() or peek() will return the same packet */
-typedef gavl_source_status_t
-(*bgav_peek_packet_callback)(void * data, bgav_packet_t ** ret, int force);
-
-typedef struct
-  {
-  bgav_peek_packet_callback peek_func; /* Peek for a packet */
-  bgav_get_packet_callback  get_func;  /* Get a packet */
-  void * data;                         /* Private data for callbacks */
-  } bgav_packet_source_t;
-
-void bgav_packet_source_copy(bgav_packet_source_t * dst,
-                             const bgav_packet_source_t * src);
-
-#endif
 
 /* Decoder structures */
 
@@ -227,25 +184,6 @@ void bgav_packet_copy_metadata(bgav_packet_t * dst,
 void bgav_packet_copy(bgav_packet_t * dst,
                       const bgav_packet_t * src);
 
-#if 0
-void bgav_packet_2_gavl(bgav_packet_t * src,
-                        gavl_packet_t * dst);
-
-void bgav_packet_from_gavl(gavl_packet_t * src,
-                           bgav_packet_t * dst);
-#endif
-
-/* packetpool.c */
-#if 0
-bgav_packet_pool_t * bgav_packet_pool_create();
-
-bgav_packet_t * bgav_packet_pool_get(bgav_packet_pool_t *);
-void bgav_packet_pool_put(bgav_packet_pool_t * pp,
-                          bgav_packet_t * p);
-
-void bgav_packet_pool_destroy(bgav_packet_pool_t*);
-#endif
-
 /* Stream structure */ 
 
 #define BGAV_ENDIANESS_NONE   0 // Unspecified
@@ -321,14 +259,6 @@ typedef struct
   /* Palette */
   int pal_sent;
   gavl_palette_t * pal;
-#if 0  
-  struct
-    {
-    bgav_palette_entry_t * entries;
-    int size;
-    int sent;
-    } pal;
-#endif
   
   gavl_video_source_t * vsrc;
   gavl_video_source_t * vsrc_priv;
@@ -687,13 +617,6 @@ bgav_track_add_text_stream(bgav_track_t * t, const bgav_options_t * opt,
 bgav_stream_t *
 bgav_track_add_overlay_stream(bgav_track_t * t, const bgav_options_t * opt);
 
-#if 0
-bgav_stream_t *
-bgav_track_attach_subtitle_reader(bgav_track_t * t,
-                                  const bgav_options_t * opt,
-                                  bgav_subtitle_reader_context_t * r);
-#endif
-
 bgav_stream_t *
 bgav_track_find_stream(bgav_demuxer_context_t * t, int stream_id);
 
@@ -701,6 +624,9 @@ bgav_stream_t * bgav_track_get_subtitle_stream(bgav_track_t * t, int index);
 
 int bgav_track_foreach(bgav_track_t * t,
                      int (*action)(void * priv, bgav_stream_t * s), void * priv);
+
+const gavl_dictionary_t * bgav_track_get_priv(const bgav_track_t * t);
+gavl_dictionary_t * bgav_track_get_priv_nc(bgav_track_t * t);
 
 void bgav_track_compute_info(bgav_track_t * t);
 

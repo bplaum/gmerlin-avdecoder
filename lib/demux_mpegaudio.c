@@ -75,9 +75,6 @@ static int probe_mpegaudio(bgav_input_context_t * input)
   bgav_mpa_header_t h1, h2;
   uint8_t probe_data[BGAV_MPA_MAX_FRAME_BYTES+4];
   
-  /* Check for ALBW file */
-  //  if(input->id3v2 && bgav_albw_probe(input))
-  //    return 1;
 
   /* Check for audio header */
   if(!get_header(input, &h1))
@@ -256,15 +253,6 @@ static int open_mpegaudio(bgav_demuxer_context_t * ctx)
     
     bgav_id3v2_2_metadata(ctx->input->id3v2, &metadata_v2);
 
-#if 0    
-    /* Check for ALBW, but only on a seekable source! */
-    if((ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE) &&
-       bgav_albw_probe(ctx->input))
-      {
-      //      priv->albw = bgav_albw_read(ctx->input);
-      //      bgav_albw_dump(priv->albw);
-      }
-#endif
     }
   
   if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
@@ -420,8 +408,6 @@ static void close_mpegaudio(bgav_demuxer_context_t * ctx)
   
   gavl_dictionary_free(&priv->metadata);
   
-  //  if(priv->albw)
-  //    bgav_albw_destroy(priv->albw);
   free(priv);
   }
 

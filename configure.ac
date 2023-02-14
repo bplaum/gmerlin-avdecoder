@@ -326,10 +326,10 @@ GMERLIN_CHECK_LIBPNG
 
 
 dnl
-dnl DVDREAD
+dnl DVDNAV
 dnl
 
-GMERLIN_CHECK_DVDREAD
+GMERLIN_CHECK_DVDNAV
 
 dnl
 dnl FLAC
@@ -649,6 +649,15 @@ elif test "x$test_opus" = "xfalse"; then
 echo "Disabled"
 else
 echo "Missing (Go to http://www.opus-codec.org)"
+fi
+
+echo -n "libdvdnav:              "
+if test "x$have_dvdnav" = "xtrue"; then
+echo "Found (CFLAGS=$DVDNAV_CFLAGS LIBS=$DVDNAV_LIBS)"
+elif test "x$test_dvdnav" = "xfalse"; then
+echo "Disabled"
+else
+echo "Missing (Go to http://www.videolan.org)"
 fi
 
 

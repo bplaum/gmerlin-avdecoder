@@ -1071,3 +1071,15 @@ void bgav_track_export_infos(bgav_track_t * t)
     gavl_stream_set_compression_info(t->streams[i].info_ext, t->streams[i].ci);
     }
   }
+
+static const char * track_priv = "$avdec";
+
+const gavl_dictionary_t * bgav_track_get_priv(const bgav_track_t * t)
+  {
+  return gavl_dictionary_get_dictionary(t->info, track_priv);
+  }
+
+gavl_dictionary_t * bgav_track_get_priv_nc(bgav_track_t * t)
+  {
+  return gavl_dictionary_get_dictionary_create(t->info, track_priv);
+  }

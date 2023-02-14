@@ -11,8 +11,8 @@ LIBS_save=$LIBS
 dnl Look for header
 found_header="false"
 
-CFLAGS="$CFLAGS $GMERLIN_DEP_CFLAGS $AVFORMAT_CFLAGS"
-LIBS="$LIBS $GMERLIN_DEP_LIBS"
+CFLAGS="$CFLAGS $AVFORMAT_CFLAGS"
+LIBS="$LIBS"
 
 AC_TRY_COMPILE([
 #include <libavformat/avformat.h>],[], [found_header="true";AVFORMAT_HEADER="<libavformat/avformat.h>" ],)

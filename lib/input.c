@@ -674,8 +674,6 @@ int bgav_input_get_double_64_le(bgav_input_context_t * ctx, double * ret)
   return 1;
   }
 
-#undef HAVE_DVDREAD
-
 
 /* Open input */
 
@@ -693,10 +691,9 @@ extern const bgav_input_t bgav_input_hls;
 extern const bgav_input_t bgav_input_vcd;
 #endif // HAVE_CDIO
 
-#ifdef HAVE_DVDREAD
+#ifdef HAVE_DVDNAV
 extern const bgav_input_t bgav_input_dvd;
 #endif
-
 
 #ifdef HAVE_LINUXDVB
 extern const bgav_input_t bgav_input_dvb;
@@ -745,7 +742,7 @@ void bgav_inputs_dump()
 #define DVD_PATH "/video_ts/video_ts.ifo"
 #define DVD_PATH_LEN strlen(DVD_PATH)
 
-#ifdef HAVE_DVDREAD
+#ifdef HAVE_DVDNAV
 static int is_dvd_iso(const char * path)
   {
 #ifdef HAVE_LIBUDF
@@ -840,6 +837,10 @@ static int input_open(bgav_input_context_t * ctx,
     else if(!strcmp(protocol, "smb"))
       ctx->input = &bgav_input_smb;
 #endif
+#ifdef HAVE_DVDNAV
+    else if(!strcmp(protocol, "dvd"))
+      ctx->input = &bgav_input_dvd;
+#endif
     else
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
@@ -849,7 +850,7 @@ static int input_open(bgav_input_context_t * ctx,
     }
   else
     {
-    /* Check vcd image */
+    /* Check dvd image */
       
 #ifdef HAVE_DVDREAD
     if(strlen(url) >= DVD_PATH_LEN)
@@ -1241,4 +1242,80 @@ int bgav_input_can_read(bgav_input_context_t * ctx, int milliseconds)
 int bgav_input_read_nonblock(bgav_input_context_t * ctx, uint8_t * data, int len)
   {
   return input_read_data(ctx, data, len, 0);
+  }
+
+/* Legacy functions */
+
+static int open_legacy(bgav_t * bgav, const char * location, const char * prefix)
+  {
+  if(!gavl_string_starts_with(location, "prefix"))
+    {
+    int ret;
+    char * real_location = gavl_sprintf("%s%s", prefix, location);
+    ret = bgav_open(bgav, real_location);
+    free(real_location);
+    return ret;
+    }
+  else
+    return bgav_open(bgav, location);
+  }
+
+int bgav_open_vcd(bgav_t * bgav, const char * location)
+  {
+  return open_legacy(bgav, location, "vcd://");
+  }
+
+int bgav_open_dvd(bgav_t * bgav, const char * location)
+  {
+  return open_legacy(bgav, location, "vcd://");
+
+  }
+
+int bgav_open_dvb(bgav_t * bgav, const char * location)
+  {
+  return open_legacy(bgav, location, "dvb://");
+
+  }
+
+int bgav_check_device_dvd(const char * device, char ** name)
+  {
+  gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Called deprecated disabled function bgav_check_device_dvd");
+  return 0;
+  }
+
+bgav_device_info_t * bgav_find_devices_dvd()
+  {
+  gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Called deprecated disabled function bgav_find_devices_dvd");
+  return NULL;
+  }
+
+int bgav_check_device_vcd(const char * device, char ** name)
+  {
+  gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Called deprecated disabled function bgav_check_device_vcd");
+  return 0;
+
+  }
+
+bgav_device_info_t * bgav_find_devices_vcd()
+  {
+  gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Called deprecated disabled function bgav_find_devices_vcd");
+  return NULL;
+  }
+
+int bgav_check_device_dvb(const char * device, char ** name)
+  {
+  gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Called deprecated disabled function bgav_check_device_dvb");
+  return 0;
+  }
+
+bgav_device_info_t * bgav_find_devices_dvb()
+  {
+  gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Called deprecated disabled function bgav_find_devices_dvb");
+  return NULL;
+  }
+
+int bgav_eject_disc(const char * device)
+  {
+  gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Called deprecated disabled function bgav_eject_disc");
+  return 0;
   }

@@ -365,6 +365,7 @@ lib/audio_gavl.c
 lib/qt_frma.c
 lib/qt_esds.c
 lib/demux_mpegaudio.c
+lib/in_dvdnav.c
 lib/qt_atom.c
 lib/demux_voc.c
 lib/demux_mxf.c

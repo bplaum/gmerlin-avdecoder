@@ -484,7 +484,7 @@ static int setup_track(bgav_input_context_t * ctx,
     s->timescale = 90000;
     
     audio_attr = &dvd->vts_ifo->vtsi_mat->vts_audio_attr[i];
-
+    
     switch(audio_attr->audio_format)
       {
       case 0:

@@ -175,36 +175,6 @@ fi
 ])
 
 dnl
-dnl Check for mmal (Raspberry pi)
-dnl
-
-AC_DEFUN([GMERLIN_CHECK_MMAL],[
-
-have_mmal="false"
-
-pkg_config_path_save=$PKG_CONFIG_PATH
-
-export PKG_CONFIG_PATH="/opt/vc/lib/pkgconfig:$PKG_CONFIG_PATH"
-
-AH_TEMPLATE([HAVE_MMAL], [Do we have MMAL?])
-
-PKG_CHECK_MODULES(MMAL, mmal, have_mmal="true", have_mmal="false")
-
-AC_SUBST(MMAL_LIBS)
-AC_SUBST(MMAL_CFLAGS)
-
-AM_CONDITIONAL(HAVE_MMAL, test x$have_mmal = xtrue)
-
-if test "x$have_mmal" = "xtrue"; then
-AC_DEFINE([HAVE_MMAL])
-fi
-
-export PKG_CONFIG_PATH="$pkg_config_path_save"
-
-	     
-])
-
-dnl
 dnl Check for speex
 dnl
 
@@ -243,39 +213,39 @@ fi
 ])
 
 dnl
-dnl Check for mjpegtools
+dnl Check for libdvdnav
 dnl
 
-AC_DEFUN([GMERLIN_CHECK_MJPEGTOOLS],[
+AC_DEFUN([GMERLIN_CHECK_DVDNAV],[
 
-AH_TEMPLATE([HAVE_MJPEGTOOLS],
-            [Do we have mjpegtools installed?])
+AH_TEMPLATE([HAVE_DVDNAV],
+            [Do we have libdvdnav installed?])
 
-have_mjpegtools="false"
+have_speex="false"
 
-MJPEGTOOLS_REQUIRED="1.9.0"
+DVDNAV_REQUIRED="6.0.0"
 
-AC_ARG_ENABLE(mjpegtools,
-[AC_HELP_STRING([--disable-mjpegtools],[Disable mjpegtools (default: autodetect)])],
+AC_ARG_ENABLE(speex,
+[AC_HELP_STRING([--disable-dvdnav],[Disable libdvdnav (default: autodetect)])],
 [case "${enableval}" in
-   yes) test_mjpegtools=true ;;
-   no)  test_mjpegtools=false ;;
-esac],[test_mjpegtools=true])
+   yes) test_dvdnav=true ;;
+   no)  test_dvdnav=false ;;
+esac],[test_dvdnav=true])
 
-if test x$test_mjpegtools = xtrue; then
+if test x$test_dvdnav = xtrue; then
 
-PKG_CHECK_MODULES(MJPEGTOOLS, mjpegtools >= $MJPEGTOOLS_REQUIRED, have_mjpegtools="true", have_mjpegtools="false")
+PKG_CHECK_MODULES(DVDNAV, dvdnav >= $DVDNAV_REQUIRED, have_dvdnav="true", have_dvdnav="false")
 
 fi
 
-AC_SUBST(MJPEGTOOLS_REQUIRED)
-AC_SUBST(MJPEGTOOLS_LIBS)
-AC_SUBST(MJPEGTOOLS_CFLAGS)
+AC_SUBST(DVDNAV_REQUIRED)
+AC_SUBST(DVDNAV_LIBS)
+AC_SUBST(DVDNAV_CFLAGS)
 
-AM_CONDITIONAL(HAVE_MJPEGTOOLS, test x$have_mjpegtools = xtrue)
+AM_CONDITIONAL(HAVE_DVDNAV, test x$have_dvdnav = xtrue)
 
-if test "x$have_mjpegtools" = "xtrue"; then
-AC_DEFINE([HAVE_MJPEGTOOLS])
+if test "x$have_dvdnav" = "xtrue"; then
+AC_DEFINE([HAVE_DVDNAV])
 fi
 
 ])
@@ -513,8 +483,8 @@ if test x$test_openjpeg = xtrue; then
 OLD_CFLAGS=$CFLAGS
 OLD_LIBS=$LIBS
 
-LIBS="$GMERLIN_DEP_LIBS $LIBS -lopenjpeg -lm"
-CFLAGS="$CFLAGS $GMERLIN_DEP_CFLAGS"
+LIBS="-lopenjpeg -lm"
+CFLAGS=""
    
 AC_MSG_CHECKING(for openjpeg)
 AC_TRY_LINK([#include <openjpeg.h>],
@@ -689,8 +659,8 @@ OLD_CFLAGS=$CFLAGS
 OLD_LIBS=$LIBS
 
 if test "x$FAAD2_PREFIX" = "x"; then 
-CFLAGS="$GMERLIN_DEP_CFLAGS"
-LIBS="$GMERLIN_DEP_LIBS -lfaad -lm"
+CFLAGS=""
+LIBS="-lfaad -lm"
 else
 CFLAGS="-I$FAAD2_PREFIX/include"
 LIBS="-L$FAAD2_PREFIX/lib -lfaad -lm"
@@ -763,8 +733,8 @@ if test x$test_dvdread = xtrue; then
 OLD_CFLAGS=$CFLAGS
 OLD_LIBS=$LIBS
 
-CFLAGS="$GMERLIN_DEP_CFLAGS"
-LIBS="$GMERLIN_DEP_LIBS -ldvdread"
+CFLAGS=""
+LIBS="-ldvdread"
 
 AC_MSG_CHECKING(for libdvdread >= 0.9.5)
 
@@ -807,6 +777,8 @@ fi
 
 ])
 
+
+
 dnl
 dnl FLAC
 dnl
@@ -832,8 +804,8 @@ AC_MSG_CHECKING(for flac)
 OLD_CFLAGS=$CFLAGS
 OLD_LIBS=$LIBS
 
-CFLAGS="$GMERLIN_DEP_CFLAGS"
-LIBS="$GMERLIN_DEP_LIBS -lFLAC -lm"
+CFLAGS=""
+LIBS="-lFLAC -lm"
 
   AC_TRY_RUN([
     #include <FLAC/stream_decoder.h>
@@ -926,8 +898,8 @@ if test x$test_musepack = xtrue; then
 OLD_CFLAGS=$CFLAGS
 OLD_LIBS=$LIBS
 
-LIBS="$GMERLIN_DEP_LIBS -lmpcdec"
-CFLAGS="$GMERLIN_DEP_CFLAGS"
+LIBS="-lmpcdec"
+CFLAGS=""
 
 AH_TEMPLATE([HAVE_MUSEPACK], [Enable Musepack])
 AC_MSG_CHECKING(for libmpcdec)
@@ -989,8 +961,8 @@ if test x$test_mad = xtrue; then
 OLD_CFLAGS=$CFLAGS
 OLD_LIBS=$LIBS
    
-LIBS="$GMERLIN_DEP_LIBS -lmad"
-CFLAGS="$GMERLIN_DEP_CFLAGS"
+LIBS="-lmad"
+CFLAGS=""
 
 AC_MSG_CHECKING(for libmad 0.15.x)
 
@@ -1064,8 +1036,8 @@ if test x$test_liba52 = xtrue; then
 OLD_CFLAGS=$CFLAGS
 OLD_LIBS=$LIBS
    
-LIBS="$GMERLIN_DEP_LIBS -la52 -lm"
-CFLAGS="$GMERLIN_DEP_CFLAGS"
+LIBS="-la52 -lm"
+CFLAGS=""
 LIBA52_REQUIRED="0.7.4"
 AC_MSG_CHECKING([for liba52])
 
@@ -1205,7 +1177,7 @@ dnl Check for old dts.h header
 dnl
 
 OLD_CPPFLAGS=$CPPFLAGS
-CPPFLAGS="$CFLAGS $GMERLIN_DEP_CFLAGS $DCA_CFLAGS"
+CPPFLAGS="$CFLAGS $DCA_CFLAGS"
 AC_CHECK_HEADERS([dts.h])
 CPPFLAGS=$OLD_CPPFLAGS
 
@@ -1304,7 +1276,7 @@ else
 LIBS="$GMERLIN_DEP_LIBS -lmp3lame -lm"
 fi
 
-CFLAGS="$GMERLIN_DEP_CFLAGS"
+CFLAGS=""
 
 
 AH_TEMPLATE([HAVE_LAME], [Enable lame])
@@ -1386,8 +1358,8 @@ OLD_LIBS=$LIBS
 
 AH_TEMPLATE([HAVE_FAAC], [Enable faac])
 
-LIBS="$GMERLIN_DEP_LIBS -lfaac -lm"
-CFLAGS="$GMERLIN_DEP_CFLAGS"
+LIBS=" -lfaac -lm"
+CFLAGS=""
 
 AC_MSG_CHECKING(for faac)
 AC_TRY_RUN([

@@ -9,7 +9,7 @@ if HAVE_CDIO
 cdio_modules = i_vcd.la
 cdio_cflags = @CDIO_CFLAGS@
 
-if HAVE_DVDREAD
+if HAVE_DVDNAV
 dvdread_modules = i_dvd.la
 else
 dvdread_modules =

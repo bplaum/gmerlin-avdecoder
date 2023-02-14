@@ -1437,18 +1437,6 @@ bgav_input_context_t * bgav_input_open_dvb(const char * device,
   return NULL;
   }
 
-int bgav_open_dvb(bgav_t * b, const char * device)
-  {
-  bgav_codecs_init(&b->opt);
-  b->input = bgav_input_open_dvb(device, b);
-  if(!b->input)
-    return 0;
-  if(!bgav_init(b))
-    goto fail;
-  return 1;
-  fail:
-  return 0;
-  }
 
 int bgav_check_device_dvb(const char * device, char ** name)
   {

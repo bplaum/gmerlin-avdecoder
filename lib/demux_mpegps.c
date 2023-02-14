@@ -921,7 +921,7 @@ static int open_mpegps(bgav_demuxer_context_t * ctx)
   {
   mpegps_priv_t * priv;
   int need_streams = 0;
-  int i, j;
+  int j;
   bgav_stream_t * s;
   char * format;
   const char * mimetype;
@@ -1004,29 +1004,27 @@ static int open_mpegps(bgav_demuxer_context_t * ctx)
   
   /* Set the parser flags for all streams */
 
-  for(i = 0; i < ctx->tt->num_tracks; i++)
+  for(j = 0; j < ctx->tt->cur->num_audio_streams; j++)
     {
-    for(j = 0; j < ctx->tt->tracks[i]->num_audio_streams; j++)
-      {
-      s = bgav_track_get_audio_stream(ctx->tt->tracks[i], j);
+    s = bgav_track_get_audio_stream(ctx->tt->cur, j);
       
-      if(s->fourcc != BGAV_MK_FOURCC('L', 'P', 'C', 'M'))
-        bgav_stream_set_parse_full(s);
-      
-      }
-    for(j = 0; j < ctx->tt->tracks[i]->num_video_streams; j++)
-      {
-      s = bgav_track_get_video_stream(ctx->tt->tracks[i], j);
-
+    if(s->fourcc != BGAV_MK_FOURCC('L', 'P', 'C', 'M'))
       bgav_stream_set_parse_full(s);
       
-      }
-    for(j = 0; j < ctx->tt->tracks[i]->num_overlay_streams; j++)
-      {
-      s = bgav_track_get_overlay_stream(ctx->tt->tracks[i], j);
-      bgav_stream_set_parse_full(s);
-      }
     }
+  for(j = 0; j < ctx->tt->cur->num_video_streams; j++)
+    {
+    s = bgav_track_get_video_stream(ctx->tt->cur, j);
+
+    bgav_stream_set_parse_full(s);
+      
+    }
+  for(j = 0; j < ctx->tt->cur->num_overlay_streams; j++)
+    {
+    s = bgav_track_get_overlay_stream(ctx->tt->cur, j);
+    bgav_stream_set_parse_full(s);
+    }
+    
   ctx->index_mode = INDEX_MODE_MIXED;
 
   return 1;

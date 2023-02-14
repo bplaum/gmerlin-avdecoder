@@ -145,12 +145,17 @@ static void create_parser(bgav_stream_t * s)
 
 void bgav_stream_set_parse_full(bgav_stream_t * s)
   {
+  if(s->parser)
+    return 0;
+  
   s->flags |= STREAM_PARSE_FULL;
   create_parser(s);
   }
 
 void bgav_stream_set_parse_frame(bgav_stream_t * s)
   {
+  if(s->parser)
+    return 0;
   s->flags |= STREAM_PARSE_FRAME;
   create_parser(s);
   }

@@ -153,12 +153,14 @@ cdio_cflags =
 cdio_libs =
 endif
 
-if HAVE_DVDREAD
-dvdread_cflags  = @DVDREAD_CFLAGS@
-dvdread_libs    = @DVDREAD_LIBS@
+if HAVE_DVDNAV
+dvd_sources  = in_dvdnav.c
+dvd_cflags  = @DVDNAV_CFLAGS@
+dvd_libs    = @DVDNAV_LIBS@
 else
-dvdread_cflags  =
-dvdread_libs    =
+dvd_sources  = 
+dvd_cflags  =
+dvd_libs    =
 endif
 
 if HAVE_SAMBA
@@ -236,6 +238,7 @@ $(dvdread_libs) \
 $(flac_libs) \
 $(mad_libs) \
 $(dca_libs) \
+$(dvd_libs) \
 $(musepack_libs) \
 $(avformat_libs) \
 $(a52_libs) \
@@ -267,6 +270,7 @@ $(tiff_cflags) \
 $(flac_cflags) \
 $(a52_cflags) \
 $(dca_cflags) \
+$(dvd_cflags) \
 $(musepack_cflags) \
 $(avformat_cflags) \
 $(avcodec_cflags) \
@@ -301,6 +305,7 @@ $(dvb_sources) \
 $(vaapi_sources) \
 $(v4l_sources) \
 $(gsm_sources) \
+$(dvd_sources) \
 RTjpeg.c \
 a52_header.c \
 adts_header.c \

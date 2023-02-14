@@ -95,9 +95,17 @@ static int extract_header(bgav_packet_parser_t * parser, bgav_packet_t * p,
     
     if(priv->sh.mpeg2)
       {
-      parser->vfmt->timescale *= (priv->sh.ext.timescale_ext+1) * 2;
-      parser->vfmt->frame_duration *= (priv->sh.ext.frame_duration_ext+1) * 2;
-      parser->vfmt->framerate_mode = GAVL_FRAMERATE_VARIABLE;
+      if(parser->vfmt->framerate_mode == GAVL_FRAMERATE_STILL)
+        {
+        parser->vfmt->timescale = 90000;
+        parser->vfmt->frame_duration = 0;
+        }
+      else
+        {
+        parser->vfmt->timescale *= (priv->sh.ext.timescale_ext+1) * 2;
+        parser->vfmt->frame_duration *= (priv->sh.ext.frame_duration_ext+1) * 2;
+        parser->vfmt->framerate_mode = GAVL_FRAMERATE_VARIABLE;
+        }
       }
     }
 

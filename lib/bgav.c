@@ -110,9 +110,9 @@ int bgav_init(bgav_t * ret)
     {
     ret->tt = ret->input->tt;
     bgav_track_table_ref(ret->tt);
-
+    
     ret->demuxer = ret->input->demuxer;
-
+    
     if(ret->demuxer)
       {
       ret->demuxer->tt = ret->input->tt;
