@@ -148,9 +148,11 @@ endif
 if HAVE_CDIO
 cdio_cflags =  @CDIO_CFLAGS@
 cdio_libs =    @CDIO_LIBS@ @LIBUDF_LIBS@
+cdio_sources = in_vcd.c
 else
 cdio_cflags =
 cdio_libs =
+cdio_sources = 
 endif
 
 if HAVE_DVDNAV
@@ -306,6 +308,7 @@ $(vaapi_sources) \
 $(v4l_sources) \
 $(gsm_sources) \
 $(dvd_sources) \
+$(cdio_sources) \
 RTjpeg.c \
 a52_header.c \
 adts_header.c \
@@ -402,7 +405,6 @@ in_http.c \
 in_memory.c \
 in_mms.c \
 in_pnm.c \
-in_vcd.c \
 input.c \
 languages.c \
 matroska.c \
