@@ -46,20 +46,6 @@ static int open_dvb(void * priv, const char * location)
   return 1;
   }
 
-static bg_device_info_t * find_devices_dvb()
-  {
-  bg_device_info_t * ret;
-  bgav_device_info_t * dev;
-  dev = bgav_find_devices_dvb();
-  ret = bg_avdec_get_devices(dev);
-  bgav_device_info_destroy(dev);
-  return ret;
-  }
-
-static int check_device_dvb(const char * device, char ** name)
-  {
-  return bgav_check_device_dvb(device, name);
-  }
 
 static const bg_parameter_info_t parameters[] =
   {
@@ -113,8 +99,6 @@ const bg_input_plugin_t the_plugin =
       .destroy =       bg_avdec_destroy,
       .get_parameters = get_parameters_dvb,
       .set_parameter =  bg_avdec_set_parameter,
-      .find_devices = find_devices_dvb,
-      .check_device = check_device_dvb,
       .get_controllable = bg_avdec_get_controllable,
     },
     .get_protocols = get_protocols,

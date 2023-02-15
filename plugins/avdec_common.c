@@ -368,22 +368,6 @@ gavl_frame_table_t * bg_avdec_get_frame_table(void * priv, int stream)
   }
 
 
-bg_device_info_t * bg_avdec_get_devices(bgav_device_info_t * info)
-  {
-  int i = 0;
-  bg_device_info_t * ret = NULL;
-  if(!info)
-    return ret;
-  
-  while(info[i].device)
-    {
-    ret = bg_device_info_append(ret,
-                                info[i].device,
-                                info[i].name);
-    i++;
-    }
-  return ret;
-  }
 
 const char * bg_avdec_get_disc_name(void * priv)
   {

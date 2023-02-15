@@ -62,20 +62,6 @@ static int open_vcd(void * priv, const char * location)
   return 1;
   }
 
-static bg_device_info_t * find_devices_vcd()
-  {
-  bg_device_info_t * ret;
-  bgav_device_info_t * dev;
-  dev = bgav_find_devices_vcd();
-  ret = bg_avdec_get_devices(dev);
-  bgav_device_info_destroy(dev);
-  return ret;
-  }
-
-static int check_device_vcd(const char * device, char ** name)
-  {
-  return bgav_check_device_vcd(device, name);
-  }
 
 static char const * const protocols = "vcd";
 
@@ -99,8 +85,6 @@ const bg_input_plugin_t the_plugin =
       .destroy =       bg_avdec_destroy,
       //      .get_parameters = get_parameters_vcd,
       //      .set_parameter =  bg_avdec_set_parameter
-      .find_devices = find_devices_vcd,
-      .check_device = check_device_vcd,
       .get_controllable = bg_avdec_get_controllable,
     },
     .get_protocols = get_protocols,

@@ -93,6 +93,4 @@ int bg_avdec_get_video_compression_info(void * priv, int stream,
 int bg_avdec_read_audio_packet(void * priv, int stream, gavl_packet_t * p);
 
 
-bg_device_info_t * bg_avdec_get_devices(bgav_device_info_t *);
-
 #include "options.h"
