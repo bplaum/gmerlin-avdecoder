@@ -182,15 +182,15 @@ static int open_dvd(bgav_input_context_t * ctx, const char * url, char ** r)
       {
       fprintf(stderr, "  Chapter time %d: %"PRId64" (%f)\n", j+1, times[j], (double)times[j] / 90000.0);
       }
-
+#if 0
     /* Ignore titles < 10 sec */
     if(duration < (uint64_t)10*90000)
       {
       free(times);
       continue;
       }
-    
-    for(j = 0; j < num_angles; j++)
+#endif
+    for(j = 1; j <= num_angles; j++)
       {
       bgav_stream_t * s;
       int k;
@@ -205,7 +205,8 @@ static int open_dvd(bgav_input_context_t * ctx, const char * url, char ** r)
       
       /* Select track and angle and start vm */
       dvdnav_title_play(priv->d, i);
-      dvdnav_angle_change(priv->d, j);
+      if(dvdnav_angle_change(priv->d, j) != DVDNAV_STATUS_OK)
+        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Invalid angle: %d\n", j);
       
       done = 0;
       
@@ -243,9 +244,9 @@ static int open_dvd(bgav_input_context_t * ctx, const char * url, char ** r)
       gavl_dictionary_set_int(dict, META_ANGLE, j);
       
       if(num_angles > 1)
-        label = gavl_sprintf("Title %d angle %d", i+1, j+1);
+        label = gavl_sprintf("Title %d angle %d", i, j);
       else
-        label = gavl_sprintf("Title %d", i+1);
+        label = gavl_sprintf("Title %d", i);
 
       gavl_dictionary_set_string_nocopy(new_track->metadata, GAVL_META_LABEL, label);
       gavl_dictionary_set_long(new_track->metadata, GAVL_META_APPROX_DURATION, gavl_time_unscale(90000, duration));
@@ -274,10 +275,12 @@ static int open_dvd(bgav_input_context_t * ctx, const char * url, char ** r)
       s->timescale = 90000;
       
       k = 0;
-      while((lang = dvdnav_audio_stream_to_lang(priv->d, k)) != 0xffff)
+      while(dvdnav_audio_stream_format(priv->d, k) != 0xffff)
         {
         audio_attr_t attr;
         const char * audio_codec;
+        
+        lang = dvdnav_audio_stream_to_lang(priv->d, k);
         
         /* It seems that dvdnav_get_audio_logical_stream() does the opposite of what
            the name suggests */

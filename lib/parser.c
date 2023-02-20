@@ -162,8 +162,8 @@ static int do_parse_frame(bgav_packet_parser_t * p, gavl_packet_t * pkt)
   if(PACKET_GET_CODING_TYPE(pkt) == BGAV_CODING_TYPE_I)
     PACKET_SET_KEYFRAME(pkt);
 
-  fprintf(stderr, "Parsed frame\n");
-  gavl_packet_dump(pkt);
+  //  fprintf(stderr, "Parsed frame\n");
+  //  gavl_packet_dump(pkt);
   
   return 1;
   }
