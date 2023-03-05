@@ -146,7 +146,7 @@ static void create_parser(bgav_stream_t * s)
 void bgav_stream_set_parse_full(bgav_stream_t * s)
   {
   if(s->parser)
-    return 0;
+    return;
   
   s->flags |= STREAM_PARSE_FULL;
   create_parser(s);
@@ -155,7 +155,7 @@ void bgav_stream_set_parse_full(bgav_stream_t * s)
 void bgav_stream_set_parse_frame(bgav_stream_t * s)
   {
   if(s->parser)
-    return 0;
+    return;
   s->flags |= STREAM_PARSE_FRAME;
   create_parser(s);
   }
@@ -623,9 +623,6 @@ gavl_sink_status_t bgav_stream_put_packet_parse(void * priv, gavl_packet_t * p)
   {
   bgav_stream_t * s = priv;
   gavl_stream_stats_update(&s->stats, p);
-  gavl_seek_index_append(&s->index, p, s->ci->flags);
-
-  
-  
+  gavl_seek_index_append_packet(&s->index, p, s->ci->flags);
   return GAVL_SINK_OK;
   }

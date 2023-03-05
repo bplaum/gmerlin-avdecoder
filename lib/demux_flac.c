@@ -272,13 +272,19 @@ static int open_flac(bgav_demuxer_context_t * ctx)
   
   ctx->index_mode = INDEX_MODE_SIMPLE;
   
-  if(priv->seektable.num_entries && (ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
+  if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
     {
-    ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
-
-    gavl_dictionary_set_int(ctx->tt->cur->metadata, GAVL_META_SAMPLE_ACCURATE, 1);
+    if(priv->seektable.num_entries)
+      {
+      /* TODO: Convert seek index to gavl_seek_index_t */
+      ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
+      }
+    else
+      ctx->flags |= BGAV_DEMUXER_BUILD_SEEK_INDEX;
     
+    gavl_dictionary_set_int(ctx->tt->cur->metadata, GAVL_META_SAMPLE_ACCURATE, 1);
     }
+  
   
   return 1;
     fail:
