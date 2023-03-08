@@ -369,8 +369,8 @@ static gavl_source_status_t next_packet_vtt(bgav_demuxer_context_t * ctx)
         {
         PACKET_SET_KEYFRAME(s->packet);
         
-        fprintf(stderr, "Got packet\n");
-        gavl_packet_dump(s->packet);
+        //        fprintf(stderr, "Got packet\n");
+        //        gavl_packet_dump(s->packet);
         
         bgav_stream_done_packet_write(s, s->packet);
         s->packet = NULL;
