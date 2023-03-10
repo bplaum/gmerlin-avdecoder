@@ -39,8 +39,8 @@ typedef struct
   uint32_t buffer_alloc;
   uint32_t Width;
   uint32_t Height;
-  uint16 SampleSperPixel;
-  uint16 Orientation;
+  uint16_t SampleSperPixel;
+  uint16_t Orientation;
   uint32_t * raster;
   bgav_packet_t * packet;
   } tiff_t;
@@ -190,7 +190,7 @@ static int read_image_tiff(bgav_stream_t * s, gavl_video_frame_t * frame)
     p->raster =
       (uint32_t*)_TIFFmalloc(p->Height * p->Width * sizeof(uint32_t));
   
-  if(!TIFFReadRGBAImage(p->tiff, p->Width, p->Height, (uint32*)p->raster, 0))
+  if(!TIFFReadRGBAImage(p->tiff, p->Width, p->Height, (uint32_t*)p->raster, 0))
     return 0;
 
   if(p->SampleSperPixel ==4)

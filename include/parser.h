@@ -24,68 +24,6 @@
 
 #include <gavl/connectors.h>
 
-#define PARSER_NEED_DATA      0
-
-#define PARSER_HAVE_FORMAT    1 /* Audio parsers */
-
-#define PARSER_HAVE_PACKET    2
-#define PARSER_EOF            3
-#define PARSER_ERROR          4
-
-
-#define PARSER_PRIV           5 /* Offset for internally used codes */
-
-/* Video parser */
-#if 0
-bgav_video_parser_t *
-bgav_video_parser_create(bgav_stream_t * s);
-
-int bgav_video_parser_supported(uint32_t fourcc);
-
-void bgav_video_parser_destroy(bgav_video_parser_t *);
-
-/* Either in_pts or out_pts can (should) be undefined */
-void bgav_video_parser_reset(bgav_video_parser_t *,
-                             int64_t in_pts, int64_t out_pts);
-
-void bgav_video_parser_add_packet(bgav_video_parser_t * parser,
-                                  bgav_packet_t * p);
-
-// const uint8_t * bgav_video_parser_get_header(bgav_video_parser_t * parser,
-//                                              int * len);
-
-// int bgav_video_parser_set_header(bgav_video_parser_t * parser,
-//                                  const uint8_t * header, int len);
-
-void bgav_video_parser_get_packet(bgav_video_parser_t * parser,
-                                  bgav_packet_t * p);
-
-/* New push based API */
-gavl_packet_sink_t * bgav_video_parser_connect(bgav_video_parser_t * parser,
-                                               gavl_packet_sink_t * next);
-
-
-// int bgav_video_parser_max_ref_frames(bgav_video_parser_t * parser);
-
-
-
-/* Audio parser */
-
-int bgav_audio_parser_supported(uint32_t fourcc);
-
-bgav_audio_parser_t * bgav_audio_parser_create(bgav_stream_t * s);
-
-// int bgav_audio_parser_set_header(bgav_audio_parser_t * parser,
-//                                 const uint8_t * header, int len);
-
-void bgav_audio_parser_destroy(bgav_audio_parser_t *);
-
-void bgav_audio_parser_reset(bgav_audio_parser_t *,
-                             int64_t in_pts, int64_t out_pts);
-
-#endif
-
-
 /* Packet parser */
 
 #define PARSER_HAS_SYNC   (1<<0)

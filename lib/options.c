@@ -101,7 +101,7 @@ void bgav_options_set_http_proxy_pass(bgav_options_t*b, const char * h)
 
 void bgav_options_set_http_shoutcast_metadata(bgav_options_t*b, int m)
   {
-  b->http_shoutcast_metadata = m;
+  
   }
 
 void bgav_options_set_ftp_anonymous_password(bgav_options_t*b, const char * h)
@@ -285,9 +285,6 @@ void bgav_options_copy(bgav_options_t * dst, const bgav_options_t * src)
   CP_INT(rtp_try_tcp);
   CP_INT(rtp_port_base);
   
-  /* http options */
-  CP_INT(http_shoutcast_metadata);
-
   /* ftp options */
     
   CP_STR(ftp_anonymous_password);

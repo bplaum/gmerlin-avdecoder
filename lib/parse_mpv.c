@@ -253,7 +253,7 @@ static int parse_frame_mpeg12(bgav_packet_parser_t * parser, bgav_packet_t * p)
           p->duration = parser->vfmt->frame_duration;
           
         if(!len)
-          return PARSER_ERROR;
+          return 0;
 
         PACKET_SET_CODING_TYPE(p, ph.coding_type);
         
@@ -276,7 +276,7 @@ static int parse_frame_mpeg12(bgav_packet_parser_t * parser, bgav_packet_t * p)
       case MPEG_CODE_PICTURE_EXT:
         len = bgav_mpv_picture_extension_parse(&pe, start, end - start);
         if(!len)
-          return PARSER_ERROR;
+          return 0;
 
         /* Set interlacing stuff */
         switch(pe.picture_structure)
@@ -334,7 +334,7 @@ static int parse_frame_mpeg12(bgav_packet_parser_t * parser, bgav_packet_t * p)
         len = bgav_mpv_gop_header_parse(&gh, start, end - start);
         
         if(!len)
-          return PARSER_ERROR;
+          return 0;
         
         start += len;
 

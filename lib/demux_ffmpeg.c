@@ -635,14 +635,6 @@ static void init_video_stream(bgav_demuxer_context_t * ctx,
     
   s->container_bitrate = params->bit_rate;
   s->stream_id = index;
-#if 0
-  if(params->palctrl)
-    {
-    s->priv = calloc(AVPALETTE_COUNT, sizeof(bgav_palette_entry_t));
-    s->data.video.palette = s->priv;
-    s->data.video.palette_size = AVPALETTE_COUNT;
-    }
-#endif
   }
 
 static int open_ffmpeg(bgav_demuxer_context_t * ctx)
@@ -842,12 +834,10 @@ static gavl_source_status_t next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
   int i_tmp;
   uint32_t * pal_i;
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 130, 100)
-  size_t pal_i_len;
-#elif LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(54, 0, 0)
+#if FF_API_BUFFER_SIZE_T
   int pal_i_len;
 #else
-  const int pal_i_len = AVPALETTE_COUNT;
+  size_t pal_i_len;
 #endif
   
   priv = ctx->priv;

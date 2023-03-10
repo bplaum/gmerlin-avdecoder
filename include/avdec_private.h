@@ -734,8 +734,6 @@ struct bgav_options_s
   int rtp_port_base;
   int rtp_try_tcp; /* try TCP before falling back to UDP */
   
-  int http_shoutcast_metadata;
-
   /* ftp options */
     
   char * ftp_anonymous_password;
@@ -1892,30 +1890,6 @@ void bgav_dca_flags_2_channel_setup(int flags, gavl_audio_format_t * format);
 
 /* videoparser.c */
 int bgav_video_is_divx4(uint32_t fourcc);
-
-
-#if 0
-/* New gavlized packet handling */
-
-typedef int (*bgav_find_frame_end_func)(gavl_buffer_t * buf, int * state);
-
-
-typedef struct
-  {
-  gavl_packet_sink_t * sink;
-  gavl_packet_sink_t * dst;
-
-  gavl_buffer_t buf; // For finding the frame boundary
-
-  
-  
-  } bgav_packet_parser_t;
-
-bgav_packet_parser_t * bgav_packet_parser_create(const gavl_dictionary_t * stream_info,
-                                                 gavl_packet_sink_t * sink);
-
-void bgav_packet_parser_destroy(bgav_packet_parser_t *);
-#endif
 
 /* Global locking around avcodec_[open|close]()
    Defined in video_ffmpeg.c, used from audio_ffmpeg.c as well

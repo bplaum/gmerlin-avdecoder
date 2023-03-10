@@ -121,7 +121,7 @@ static int parse_frame_dirac(bgav_packet_parser_t * parser,
           
           if(!bgav_dirac_sequence_header_parse(&priv->sh,
                                                start, end - start))
-            return PARSER_ERROR;
+            return 0;
           //          bgav_dirac_sequence_header_dump(&priv->sh);
           priv->have_sh = 1;
           // ret = PARSER_CONTINUE;

@@ -28,11 +28,13 @@
 #include <hls.h>
 #include <gavl/http.h>
 
-#define NUM_REDIRECTIONS 5
-
 #define LOG_DOMAIN "in_http"
 
 /* Generic http input module */
+
+/* Streams with a content-length smaller than this will be
+   downloaded at once and buffered */
+#define MAX_DOWNLOAD_SIZE (100*1024*1024)
 
 typedef struct
   {
@@ -43,17 +45,15 @@ typedef struct
   
   bgav_charset_converter_t * charset_cnv;
   int64_t bytes_read;
+
+  gavl_buffer_t buffer;
   
   } http_priv;
 
 static void create_header(gavl_dictionary_t * ret, const bgav_options_t * opt)
   {
   gavl_dictionary_set_string(ret, "User-Agent", PACKAGE"/"VERSION);
-  //  gavl_dictionary_set_string(ret, "Accept", "*");
-  
-  if(opt->http_shoutcast_metadata)
-    gavl_dictionary_set_string(ret, "Icy-MetaData", "1");
-
+  gavl_dictionary_set_string(ret, "Icy-MetaData", "1");
   gavl_dictionary_set_string(ret, "GetContentFeatures.DLNA.ORG", "1");
   }
 
@@ -218,8 +218,7 @@ static int open_http(bgav_input_context_t * ctx, const char * url1, char ** r)
 
   if(!gavl_http_client_open(p->io, "GET", url1))
     goto fail;
-
-
+  
   res = gavl_http_client_get_response(p->io);
 
   ctx->total_bytes = gavf_io_total_bytes(p->io);
