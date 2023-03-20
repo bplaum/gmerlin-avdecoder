@@ -469,6 +469,11 @@ int bgav_flac_frame_header_read(const uint8_t * ptr, int size,
     //    fprintf(stderr, "CRC mismatch\n");
     return 0;
     }
+
+  if((ret->samplesize != si->bits_per_sample) ||
+     (ret->num_channels != si->num_channels) ||
+     (ret->samplerate != si->samplerate))
+    return 0;
   
   return 1;
   }

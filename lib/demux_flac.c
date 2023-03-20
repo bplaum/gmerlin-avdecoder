@@ -64,15 +64,25 @@ typedef struct
   bgav_flac_streaminfo_t streaminfo;
   bgav_flac_seektable_t seektable;
   
-  gavl_buffer_t buf;
-  int64_t next_header;
-  int has_sync;
+  //  gavl_buffer_t buf;
+  //  int64_t next_header;
+  //  int has_sync;
   bgav_flac_frame_header_t this_fh;
   
-  bgav_flac_frame_header_t first_fh;
-  int have_first_fh;
   } flac_priv_t;
 
+static void import_seek_table(bgav_flac_seektable_t * tab,
+                              bgav_stream_t * s,
+                              int64_t offset)
+  {
+  int i;
+  for(i = 0; i < tab->num_entries; i++)
+    {
+    gavl_seek_index_append_pos_pts(&s->index, 
+                                   tab->entries[i].offset + offset,
+                                   tab->entries[i].sample_number);
+    }
+  }
 
 static int open_flac(bgav_demuxer_context_t * ctx)
   {
@@ -121,11 +131,13 @@ static int open_flac(bgav_demuxer_context_t * ctx)
         s->ci->codec_header.buf[2] = 'a';
         s->ci->codec_header.buf[3] = 'C';
         s->fourcc = BGAV_MK_FOURCC('F', 'L', 'A', 'C');
+        s->stream_id = BGAV_DEMUXER_STREAM_ID_RAW;
         
         memcpy(s->ci->codec_header.buf + 4, header, 4);
         
         /* We tell the decoder, that this is the last metadata packet */
         s->ci->codec_header.buf[4] |= 0x80;
+        s->flags |= STREAM_RAW_PACKETS;
         
         if(bgav_input_read_data(ctx->input, s->ci->codec_header.buf + 8,
                                 BGAV_FLAC_STREAMINFO_SIZE) < 
@@ -144,8 +156,10 @@ static int open_flac(bgav_demuxer_context_t * ctx)
         bgav_flac_streaminfo_init_stream(&priv->streaminfo, s->info);
         
         if(priv->streaminfo.total_samples)
+          {
+          s->stats.pts_start = 0;
           s->stats.pts_end = priv->streaminfo.total_samples;
-
+          }
         if(priv->streaminfo.min_framesize > 0)
           s->stats.size_min = priv->streaminfo.min_framesize;
 
@@ -276,193 +290,22 @@ static int open_flac(bgav_demuxer_context_t * ctx)
     {
     if(priv->seektable.num_entries)
       {
-      /* TODO: Convert seek index to gavl_seek_index_t */
-      ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
+      import_seek_table(&priv->seektable, s, ctx->input->position);
+      ctx->flags |= BGAV_DEMUXER_HAS_SEEK_INDEX;
       }
     else
       ctx->flags |= BGAV_DEMUXER_BUILD_SEEK_INDEX;
-    
+
+    ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
     gavl_dictionary_set_int(ctx->tt->cur->metadata, GAVL_META_SAMPLE_ACCURATE, 1);
     }
-  
+
+  s->flags |= STREAM_RAW_PACKETS;
+  bgav_stream_set_parse_full(s);
   
   return 1;
     fail:
   return 0;
-  }
-
-#define BYTES_TO_READ 1024
-#define SYNC_SIZE (1024*1024)
-
-static int find_next_header(bgav_demuxer_context_t * ctx,
-                            int start,
-                            bgav_flac_frame_header_t * h)
-  {
-  int i;
-  flac_priv_t * priv = ctx->priv;
-
-  if(priv->buf.len < BGAV_FLAC_FRAMEHEADER_MIN)
-    {
-    if(!bgav_bytebuffer_append_read(&priv->buf, ctx->input, BYTES_TO_READ, 0))
-      return -1;
-    }
-  
-  while(1)
-    {
-    for(i = start; i < priv->buf.len - BGAV_FLAC_FRAMEHEADER_MAX; i++)
-      {
-      if(bgav_flac_frame_header_read(priv->buf.buf + i, priv->buf.len - i,
-                                     &priv->streaminfo, h))
-        {
-        if(!priv->have_first_fh)
-          {
-          memcpy(&priv->first_fh, h, sizeof(*h));
-          priv->have_first_fh = 1;
-          return i;
-          }
-        else if(!priv->has_sync) // Assume we seeked correctly
-          return i;
-        else if(bgav_flac_check_crc(priv->buf.buf, i))
-          return i;
-        //        else
-        //          fprintf(stderr, "crc mismatch\n");
-        }
-      }
-    
-    if(priv->buf.len > SYNC_SIZE)
-      return -1;
-
-    start = priv->buf.len - BGAV_FLAC_FRAMEHEADER_MAX;
-    
-    if(!bgav_bytebuffer_append_read(&priv->buf, ctx->input, BYTES_TO_READ, 0))
-      return -1;
-    
-    }
-  return -1;
-  }
-
-static gavl_source_status_t next_packet_flac(bgav_demuxer_context_t * ctx)
-  {
-  int pos, size;
-  bgav_stream_t * s;
-  bgav_packet_t * p;
-  bgav_flac_frame_header_t next_fh;
-  
-  flac_priv_t * priv = ctx->priv;
-  
-  s = bgav_track_find_stream(ctx, 0);
-
-  if(!s)
-    return GAVL_SOURCE_EOF;
-
-  if(!priv->has_sync)
-    {
-    pos = find_next_header(ctx, 0, &next_fh);
-    if(pos < 0)
-      return GAVL_SOURCE_EOF;
-
-    if(pos > 0)
-      gavl_buffer_flush(&priv->buf, pos);
-
-    memcpy(&priv->this_fh, &next_fh, sizeof(next_fh));
-    
-    priv->has_sync = 1;
-    }
-  
-  /* Get next header */
-  pos = find_next_header(ctx, BGAV_FLAC_FRAMEHEADER_MIN, &next_fh);
-
-  //  if(pos < 0)
-  //  fprintf(stderr, "pos < 0!!\n");
-  
-  if(pos < 0) // EOF
-    size = priv->buf.len;
-  else
-    size = pos;
-
-  if((pos < 0) && !size)
-    return GAVL_SOURCE_EOF;
-  
-  p = bgav_stream_get_packet_write(s);
-  bgav_packet_alloc(p, size);
-
-  memcpy(p->buf.buf, priv->buf.buf, size);
-  p->position = ctx->input->position - priv->buf.len;
-  gavl_buffer_flush(&priv->buf, size);
-  
-  
-  //  p->pts = fh.sample_number;
-  
-  p->duration = priv->this_fh.blocksize;
-  
-  //  fprintf(stderr, "Duration: %ld ", p->duration);
-  
-  if(priv->streaminfo.total_samples &&
-     (p->pts < priv->streaminfo.total_samples) &&
-     (p->pts + p->duration > priv->streaminfo.total_samples))
-    {
-    p->duration = priv->streaminfo.total_samples - p->pts;
-    }
-  // fprintf(stderr, "Packet pts %ld sn: %ld dur: %ld pos: %ld\n",
-  // p->pts, priv->this_fh.sample_number, p->duration, p->position);
-
-  //  fprintf(stderr, "%ld\n", p->duration);
-  
-  p->buf.len = size;
-  
-  //  memcpy(&priv->fh, &fh, sizeof(fh));
-
-//  bgav_packet_dump(p);
-  
-  bgav_stream_done_packet_write(s, p);
-
-  /* Save frame header for later use */
-  memcpy(&priv->this_fh, &next_fh, sizeof(next_fh));
-    
-  return GAVL_SOURCE_OK;
-  }
-
-static void seek_flac(bgav_demuxer_context_t * ctx, int64_t time, int scale)
-  {
-  int i;
-  flac_priv_t * priv;
-  int64_t sample_pos;
-  bgav_stream_t * s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
-  
-  priv = ctx->priv;
-  
-  sample_pos = gavl_time_rescale(scale,
-                                 priv->streaminfo.samplerate,
-                                 time);
-  
-  for(i = 0; i < priv->seektable.num_entries - 1; i++)
-    {
-    if((priv->seektable.entries[i].sample_number <= sample_pos) &&
-       (priv->seektable.entries[i+1].sample_number >= sample_pos))
-      break;
-    }
-  
-  if(priv->seektable.entries[i+1].sample_number == sample_pos)
-    i++;
-  
-  /* Seek to the point */
-  
-  bgav_input_seek(ctx->input,
-                  priv->seektable.entries[i].offset + ctx->tt->cur->data_start,
-                  SEEK_SET);
-  
-  STREAM_SET_SYNC(s, priv->seektable.entries[i].sample_number);
-  priv->has_sync = 0;
-  gavl_buffer_reset(&priv->buf);
-  }
-
-static int select_track_flac(bgav_demuxer_context_t * ctx, int track)
-  {
-  flac_priv_t * priv;
-  priv = ctx->priv;
-  priv->has_sync = 0;
-  gavl_buffer_reset(&priv->buf);
-  return 1;
   }
 
 static void close_flac(bgav_demuxer_context_t * ctx)
@@ -472,29 +315,17 @@ static void close_flac(bgav_demuxer_context_t * ctx)
 
   bgav_flac_seektable_free(&priv->seektable);
 
-  gavl_buffer_free(&priv->buf);
+  //  gavl_buffer_free(&priv->buf);
 
   free(priv);
   }
 
-#if 0
-static void resync_flac(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
-  {
-  flac_priv_t * priv;
-  
-  priv = ctx->priv;
-  priv->has_sync = 0;
-  gavl_buffer_reset(&priv->buf);
-  }
-#endif
 
 const bgav_demuxer_t bgav_demuxer_flac =
   {
     .probe =       probe_flac,
     .open =        open_flac,
-    .next_packet = next_packet_flac,
-    .select_track = select_track_flac,
-    .seek =        seek_flac,
+    .next_packet = bgav_demuxer_next_packet_raw,
     .close =       close_flac
   };
 

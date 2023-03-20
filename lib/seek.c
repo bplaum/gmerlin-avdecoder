@@ -345,6 +345,100 @@ static void seek_generic(bgav_t * b, int64_t * time, int scale)
   
   }
 
+static void build_seek_index(bgav_t * b)
+  {
+  int i;
+  gavl_packet_t * p;
+  bgav_stream_t * s;
+
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Building seek index");
+  
+  bgav_track_clear(b->tt->cur);
+  bgav_input_seek(b->input, b->tt->cur->data_start, SEEK_SET);
+  bgav_track_resync(b->tt->cur);
+
+  /* TODO: This gets a bit more complicated when we build seek indices for files with more than one A/V stream */
+  for(i = 0; i < b->tt->cur->num_streams; i++)
+    {
+    s = &b->tt->cur->streams[i];
+    if((s->type == GAVL_STREAM_AUDIO) || (s->type == GAVL_STREAM_VIDEO))
+      break;
+    }
+  
+  while(1)
+    {
+    p = NULL;
+    if(bgav_stream_get_packet_read(s, &p) != GAVL_SOURCE_OK)
+      break;
+    gavl_seek_index_append_packet(&s->index, p, s->ci->flags);
+    }
+  b->demuxer->flags |= BGAV_DEMUXER_HAS_SEEK_INDEX;
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Built seek index: %d entries", s->index.num_entries);
+  gavl_seek_index_dump(&s->index);
+  
+  }
+
+static void seek_with_index(bgav_t * b, int64_t * time, int scale)
+  {
+  int i;
+  int64_t file_pos = -1;
+  int stream_scale;
+
+  if(b->tt->cur->num_audio_streams + b->tt->cur->num_video_streams > 1)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
+             "Seeking with seek index and more than one A/V stream is not implemented");
+    return;
+    }
+  
+  if(!(b->demuxer->flags & BGAV_DEMUXER_HAS_SEEK_INDEX))
+    build_seek_index(b);
+
+  bgav_track_clear(b->tt->cur);
+  
+    
+  /* Get right file position */
+  for(i = 0; i < b->tt->cur->num_streams; i++)
+    {
+    bgav_stream_t * s = &b->tt->cur->streams[i];
+    
+    stream_scale = -1;
+    if(((s->type != GAVL_STREAM_AUDIO) && (s->type != GAVL_STREAM_VIDEO)) ||
+       !gavl_dictionary_get_int(s->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, &stream_scale) ||
+       (stream_scale <= 0))
+      {
+      s->index_position = -1;
+      continue;
+      }
+    else
+      {
+      s->index_position = gavl_seek_index_seek(&s->index,
+                                               gavl_time_rescale(scale, stream_scale, *time));
+
+      if((file_pos < 0) || (file_pos > s->index.entries[s->index_position].position))
+        file_pos = s->index.entries[s->index_position].position;
+      }
+    }
+
+  /* Seek to file position */
+  bgav_input_seek(b->input, file_pos, SEEK_SET);
+  
+  /* Resync streams */
+
+  for(i = 0; i < b->tt->cur->num_streams; i++)
+    {
+    bgav_stream_t * s = &b->tt->cur->streams[i];
+    
+    if(s->index_position >= 0)
+      {
+      STREAM_SET_SYNC(s, s->index.entries[s->index_position].pts);
+      }
+    }
+  
+  bgav_track_resync(b->tt->cur);
+  skip_to(b, b->tt->cur, time, scale);
+  }
+
 void
 bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
   {
@@ -386,6 +480,8 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
   /* Seek iterative */
   else if(b->demuxer->demuxer->post_seek_resync)
     seek_generic(b, time, scale);
+  else if(b->demuxer->flags & (BGAV_DEMUXER_HAS_SEEK_INDEX|BGAV_DEMUXER_BUILD_SEEK_INDEX))
+    seek_with_index(b, time, scale);
   }
 
 void

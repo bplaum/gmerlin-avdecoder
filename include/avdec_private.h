@@ -1274,6 +1274,9 @@ struct bgav_demuxer_s
 /* Set if packets allow to build a seek index */
 #define BGAV_DEMUXER_BUILD_SEEK_INDEX       (1<<13)
 
+/* Set if a seek index is already there */
+#define BGAV_DEMUXER_HAS_SEEK_INDEX         (1<<14)
+
 
 #define INDEX_MODE_NONE   0 /* Default: No sample accuracy */
 /* Packets have precise timestamps and durations and are adjacent in the file */
@@ -1371,6 +1374,8 @@ bgav_demuxer_next_packet(bgav_demuxer_context_t * demuxer);
 int bgav_demuxer_start(bgav_demuxer_context_t * ctx);
 void bgav_demuxer_stop(bgav_demuxer_context_t * ctx);
 
+#define BGAV_DEMUXER_STREAM_ID_RAW 1
+gavl_source_status_t bgav_demuxer_next_packet_raw(bgav_demuxer_context_t * ctx);
 
 // bgav_packet_t *
 // bgav_demuxer_get_packet_write(bgav_demuxer_context_t * demuxer, int stream);

@@ -80,6 +80,7 @@ static int probe_mpegvideo(bgav_input_context_t * input)
   return detect_type(input) ? 1 : 0;
   }
 
+#if 0
 static gavl_source_status_t next_packet_mpegvideo(bgav_demuxer_context_t * ctx)
   {
   int ret;
@@ -106,6 +107,7 @@ static gavl_source_status_t next_packet_mpegvideo(bgav_demuxer_context_t * ctx)
   bgav_stream_done_packet_write(s, p);
   return ret;
   }
+#endif
 
 static int open_mpegvideo(bgav_demuxer_context_t * ctx)
   {
@@ -121,6 +123,8 @@ static int open_mpegvideo(bgav_demuxer_context_t * ctx)
   
   s = bgav_track_add_video_stream(ctx->tt->cur, ctx->opt);
   s->index_mode = INDEX_MODE_SIMPLE;
+  s->stream_id = BGAV_DEMUXER_STREAM_ID_RAW;
+  
   /*
    *  We just set the fourcc, everything else will
    *  be set by the parser
@@ -128,7 +132,7 @@ static int open_mpegvideo(bgav_demuxer_context_t * ctx)
 
   s->fourcc = detect_type(ctx->input);
 
-  s->flags |= (STREAM_RAW_PACKETS);
+  s->flags |= STREAM_RAW_PACKETS;
   s->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
   
   ctx->tt->cur->data_start = ctx->input->position;
@@ -168,7 +172,7 @@ const bgav_demuxer_t bgav_demuxer_mpegvideo =
   {
     .probe =       probe_mpegvideo,
     .open =        open_mpegvideo,
-    .next_packet = next_packet_mpegvideo,
+    .next_packet = bgav_demuxer_next_packet_raw,
     //    .seek =        seek_mpegvideo,
     .close =       close_mpegvideo,
     .select_track =      select_track_mpegvideo

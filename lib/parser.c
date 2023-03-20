@@ -116,7 +116,9 @@ static void parser_flush_bytes(bgav_packet_parser_t * p)
     return;
   
   gavl_buffer_flush(&p->buf, bytes);
-
+  
+  p->raw_position += bytes;
+  
   for(i = 0; i < p->num_packets; i++)
     {
     if(p->packets[i].size > bytes)
@@ -221,6 +223,9 @@ static gavl_sink_status_t sink_put_func_full(void * priv, gavl_packet_t * pkt)
   pi->position = pkt->position;
   pi->size = pkt->buf.len;
 
+  if(p->raw_position < 0)
+    p->raw_position = pkt->position;
+  
   /*
    *   Check if we have a chance to find a frame boundary
    *
@@ -250,16 +255,21 @@ static gavl_sink_status_t sink_put_func_full(void * priv, gavl_packet_t * pkt)
       if(p->packets[0].pts != GAVL_TIME_UNDEFINED)
         {
         pkt->pes_pts = p->packets[0].pts;
-        pkt->position = p->packets[0].position;
 
+        pkt->position = p->packets[0].position;
+        
         /* Don't use this pts for other frames */
         p->packets[0].pts = GAVL_TIME_UNDEFINED;
         p->packets[0].position = -1;
         }
 
+      
       /* Parse frame (must be done *after* pes_pts is set) */
       if(!do_parse_frame(p, pkt))
         return GAVL_SINK_ERROR;
+
+      if(p->stream_flags & STREAM_RAW_PACKETS)
+        pkt->position = p->raw_position;
       
       if(gavl_packet_sink_put_packet(p->next, pkt) != GAVL_SINK_OK)
         return GAVL_SINK_ERROR;
@@ -359,8 +369,38 @@ void bgav_packet_parser_destroy(bgav_packet_parser_t * p)
 
 void bgav_packet_parser_flush(bgav_packet_parser_t * p)
   {
-  if(!(p->stream_flags & STREAM_PARSE_FULL) ||
-     (!p->buf.len))
+  gavl_packet_t * pkt;
+  
+  if(!(p->stream_flags & STREAM_PARSE_FULL) || !p->buf.len)
+    return;
+  
+  /* Output last packet */
+
+  /* Get new packet */
+  pkt = gavl_packet_sink_get_packet(p->next);
+  gavl_buffer_append_data_pad(&pkt->buf, p->buf.buf, p->buf.len, GAVL_PACKET_PADDING);
+      
+  /* Set pts */
+  if(p->packets[0].pts != GAVL_TIME_UNDEFINED)
+    {
+    pkt->pes_pts = p->packets[0].pts;
+
+    pkt->position = p->packets[0].position;
+        
+    /* Don't use this pts for other frames */
+    p->packets[0].pts = GAVL_TIME_UNDEFINED;
+    p->packets[0].position = -1;
+    }
+
+      
+  /* Parse frame (must be done *after* pes_pts is set) */
+  if(!do_parse_frame(p, pkt))
+    return;
+
+  if(p->stream_flags & STREAM_RAW_PACKETS)
+    pkt->position = p->raw_position;
+      
+  if(gavl_packet_sink_put_packet(p->next, pkt) != GAVL_SINK_OK)
     return;
   
   }
@@ -371,6 +411,7 @@ void bgav_packet_parser_reset(bgav_packet_parser_t * p)
   p->parser_flags &= ~PARSER_HAS_SYNC;
   //  p->timestamp = GAVL_TIME_UNDEFINED;
   p->num_packets = 0;
+  p->raw_position = -1;
   gavl_buffer_reset(&p->buf);
   
   if(p->reset)

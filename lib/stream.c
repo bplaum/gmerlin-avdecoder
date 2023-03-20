@@ -246,6 +246,13 @@ read_packet_continuous(void * priv, bgav_packet_t ** ret)
     if(st1 == GAVL_SOURCE_AGAIN)
       break; // Return for now
     }
+
+  if((st == GAVL_SOURCE_OK) && s->opt->dump_packets)
+    {
+    bgav_dprintf("Packet out (stream %d): ", s->stream_id);
+    bgav_packet_dump(*ret);
+    //    gavl_hexdump((*ret)->buf.buf, (*ret)->buf.len < 16 ? (*ret)->buf.len : 16, 16);
+    }
   
   return st;
   }
@@ -513,12 +520,6 @@ bgav_stream_get_packet_read(bgav_stream_t * s, bgav_packet_t ** ret)
     bgav_dprintf("Limiting last duration: %"PRId64"\n", (*ret)->duration);
     }
   
-  if(s->opt->dump_packets)
-    {
-    bgav_dprintf("Packet out (stream %d): ", s->stream_id);
-    bgav_packet_dump(*ret);
-    //    gavl_hexdump((*ret)->buf.buf, (*ret)->buf.len < 16 ? (*ret)->buf.len : 16, 16);
-    }
   
   return GAVL_SOURCE_OK;
   }

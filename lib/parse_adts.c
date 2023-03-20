@@ -42,7 +42,6 @@ static int find_frame_boundary_adts(bgav_packet_parser_t * parser, int * skip)
       *skip = h.frame_bytes;
       return 1;
       }
-
     }
   
   parser->buf.pos = parser->buf.len - HEADER_BYTES;

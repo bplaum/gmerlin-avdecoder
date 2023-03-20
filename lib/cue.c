@@ -246,7 +246,7 @@ bgav_cue_read(bgav_input_context_t * ctx)
       continue;
     
     /* Track */
-    if(!strncasecmp(pos, "TRACK ", 6))
+    if(gavl_string_starts_with_i(pos, "TRACK "))
       {
       pos += 6;
       ret->tracks = realloc(ret->tracks,
@@ -267,7 +267,7 @@ bgav_cue_read(bgav_input_context_t * ctx)
         cur->mode = gavl_strdup(pos);
       }
     /* Comment */
-    else if(!strncasecmp(pos, "REM ", 4))
+    else if(gavl_string_starts_with_i(pos, "REM "))
       {
       pos += 4;
       pos = skip_space(pos);
@@ -283,7 +283,7 @@ bgav_cue_read(bgav_input_context_t * ctx)
         ret->num_comments++;
         }
       }
-    else if(!strncasecmp(pos, "PERFORMER ", 10))
+    else if(gavl_string_starts_with_i(pos, "PERFORMER "))
       {
       pos += 10;
 
@@ -293,7 +293,7 @@ bgav_cue_read(bgav_input_context_t * ctx)
         ret->performer = get_string(pos);
         
       }
-    else if(!strncasecmp(pos, "TITLE ", 6))
+    else if(gavl_string_starts_with_i(pos, "TITLE "))
       {
       pos += 6;
       if(cur)
@@ -302,7 +302,7 @@ bgav_cue_read(bgav_input_context_t * ctx)
         ret->title = get_string(pos);
       
       }
-    else if(!strncasecmp(pos, "SONGWRITER ", 11))
+    else if(gavl_string_starts_with_i(pos, "SONGWRITER "))
       {
       pos += 11;
       if(cur)
@@ -310,7 +310,7 @@ bgav_cue_read(bgav_input_context_t * ctx)
       else
         ret->songwriter = get_string(pos);
       }
-    else if(!strncasecmp(pos, "INDEX ", 6))
+    else if(gavl_string_starts_with_i(pos, "INDEX "))
       {
       pos += 6;
       if(cur)

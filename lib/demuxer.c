@@ -687,73 +687,6 @@ gavl_source_status_t bgav_demuxer_next_packet(bgav_demuxer_context_t * demuxer)
   return ret;
   }
 
-#if 0
-gavl_source_status_t
-bgav_demuxer_get_packet_read(void * stream1, bgav_packet_t ** ret)
-  {
-  bgav_stream_t * s = stream1;
-  bgav_demuxer_context_t * demuxer = s->demuxer;
-  
-  demuxer->request_stream = s;
-  
-  while(!bgav_packet_buffer_peek_packet_read(s->packet_buffer))
-    {
-    if(s->flags & STREAM_EOF_D)
-      return GAVL_SOURCE_EOF;
-    
-    if(!bgav_demuxer_next_packet(demuxer))
-      {
-      s->flags |= STREAM_EOF_D;
-      return GAVL_SOURCE_EOF;
-      }
-    }
-  
-  demuxer->request_stream = NULL;
-  *ret = bgav_packet_buffer_get_packet_read(s->packet_buffer);
-  return GAVL_SOURCE_OK;
-  }
-
-gavl_source_status_t
-bgav_demuxer_peek_packet_read(void * stream1, bgav_packet_t ** ret,
-                              int force)
-  {
-  bgav_packet_t * p;
-  
-  bgav_stream_t * s = stream1;
-  bgav_demuxer_context_t * demuxer = s->demuxer;
-  
-  if(demuxer->flags & BGAV_DEMUXER_PEEK_FORCES_READ)
-    force = 1;
-
-  p = bgav_packet_buffer_peek_packet_read(s->packet_buffer);
-
-  if(p)
-    {
-    if(ret)
-      *ret = p;
-    return GAVL_SOURCE_OK;
-    }
-
-  if(s->flags & STREAM_EOF_D)
-    return GAVL_SOURCE_EOF;
-  
-  if(!force)
-    return GAVL_SOURCE_AGAIN;
-  
-  demuxer->request_stream = s;
-  while(!bgav_packet_buffer_peek_packet_read(s->packet_buffer))
-    {
-    if(!bgav_demuxer_next_packet(demuxer))
-      return GAVL_SOURCE_EOF;
-    }
-  demuxer->request_stream = NULL;
-
-  if(ret)
-    *ret = bgav_packet_buffer_peek_packet_read(s->packet_buffer);
-  return GAVL_SOURCE_OK;
-  }
-#endif
-
 void bgav_formats_dump()
   {
   int i;
@@ -944,3 +877,25 @@ void bgav_demuxer_parse_track(bgav_demuxer_context_t * ctx)
   
   }
 #endif
+
+#define RAW_BUFFER_LEN 1024
+
+gavl_source_status_t bgav_demuxer_next_packet_raw(bgav_demuxer_context_t * ctx)
+  {
+  int ret;
+  bgav_packet_t * p;
+  bgav_stream_t * s;
+
+  if(!(s = bgav_track_find_stream(ctx, BGAV_DEMUXER_STREAM_ID_RAW)))
+    return GAVL_SOURCE_EOF;
+  
+  p = bgav_stream_get_packet_write(s);
+  
+  bgav_packet_alloc(p, RAW_BUFFER_LEN);
+  p->position = ctx->input->position;
+  p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, RAW_BUFFER_LEN);
+  
+  ret = (p->buf.len > 0) ? GAVL_SOURCE_OK : GAVL_SOURCE_EOF;
+  bgav_stream_done_packet_write(s, p);
+  return ret;
+  }

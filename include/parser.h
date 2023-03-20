@@ -46,11 +46,6 @@ struct bgav_packet_parser_s
 
   int fourcc;
   
-  /* Timing stuff */
-  // int64_t timestamp;
-  //  int in_scale;
-  //  int out_scale;
-  
   packet_info_t * packets;
   int num_packets;
   int packets_alloc;
@@ -67,6 +62,8 @@ struct bgav_packet_parser_s
   int stream_flags;
   int parser_flags;
 
+  int64_t raw_position;
+  
   /* Format specific */
 
   void * priv;
