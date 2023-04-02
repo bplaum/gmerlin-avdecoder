@@ -339,9 +339,6 @@ static int bg_avdec_start(void * priv)
     else if(st->psrc)
       gavl_packet_source_set_lock_funcs(st->psrc, bg_avdec_lock, bg_avdec_unlock, avdec);
     }
-
-
-  
   
 #if 0  
   num = gavl_track_get_num_msg_streams(avdec->src.track);
@@ -380,12 +377,16 @@ const char * bg_avdec_get_disc_name(void * priv)
 void bg_avdec_lock(void * priv)
   {
   avdec_priv * avdec = priv;
+
   pthread_mutex_lock(&avdec->mutex);
+  //  fprintf(stderr, "bg_avdec_lock %ld\n", pthread_self());
   }
 
 void bg_avdec_unlock(void * priv)
   {
   avdec_priv * avdec = priv;
+  
+  // fprintf(stderr, "bg_avdec_unlock %ld\n", pthread_self());
   pthread_mutex_unlock(&avdec->mutex);
   
   }

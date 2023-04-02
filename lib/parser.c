@@ -148,8 +148,10 @@ static void parser_flush_bytes(bgav_packet_parser_t * p)
 static int do_parse_frame(bgav_packet_parser_t * p, gavl_packet_t * pkt)
   {
   if(!p->parse_frame(p, pkt))
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Parsing frame failed");
     return 0;
-  
+    }
   /* Set format and compression */
   if(!(p->parser_flags & PARSER_HAS_HEADER))
     {
@@ -266,8 +268,9 @@ static gavl_sink_status_t sink_put_func_full(void * priv, gavl_packet_t * pkt)
       
       /* Parse frame (must be done *after* pes_pts is set) */
       if(!do_parse_frame(p, pkt))
+        {
         return GAVL_SINK_ERROR;
-
+        }
       if(p->stream_flags & STREAM_RAW_PACKETS)
         pkt->position = p->raw_position;
       

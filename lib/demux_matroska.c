@@ -27,6 +27,7 @@
 #include <avdec_private.h>
 #include <matroska.h>
 #include <nanosoft.h>
+#include <pthread.h>
 
 #define LOG_DOMAIN "demux_matroska"
 
@@ -473,12 +474,16 @@ static int init_audio(bgav_demuxer_context_t * ctx,
   if(a->SamplingFrequency > 0.0)
     {
     fmt->samplerate = (int)a->SamplingFrequency;
+    
+    gavl_dictionary_set_int(s->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, a->SamplingFrequency);
 
+#if 0 // Handled by the audio decoder (Setting this here cause sample_timescale to be wrong)
     if(a->OutputSamplingFrequency > a->SamplingFrequency)
       {
       fmt->samplerate = (int)a->OutputSamplingFrequency;
       s->ci->flags |= GAVL_COMPRESSION_SBR;
       }
+#endif
     }
   if(a->Channels > 0)
     fmt->num_channels = a->Channels;
@@ -1038,21 +1043,22 @@ static void setup_packet(mkv_t * m, bgav_stream_t * s,
   p->position = m->cluster_pos;
   t = s->priv;
 
-  if(!index)
-    p->pes_pts = pts;
+
   
   if(t->frame_samples && !(s->flags & STREAM_PARSE_FRAME))
     {
     p->duration = t->frame_samples;
+    if(!index)
+      p->pes_pts = pts;
     }
   else if(!index)
     {
     if((s->type == GAVL_STREAM_VIDEO) ||
        (s->type == GAVL_STREAM_TEXT))
-      {
       p->pts = pts;
-      }
-
+    else
+      p->pes_pts = pts;
+    
     //    if(s->type == GAVL_STREAM_VIDEO)
     //      fprintf(stderr, "Video PTS: %"PRId64"\n", pts);
     
@@ -1106,6 +1112,7 @@ static int process_block(bgav_demuxer_context_t * ctx,
   switch(b->flags & MKV_LACING_MASK)
     {
     case MKV_LACING_NONE:
+      
       p = bgav_stream_get_packet_write(s);
       p->buf.len = 0;
       set_packet_data(s, p, b->data, b->data_size);
@@ -1118,6 +1125,7 @@ static int process_block(bgav_demuxer_context_t * ctx,
         }
       
       bgav_stream_done_packet_write(s, p);
+      
       break;
     case MKV_LACING_EBML:
       {

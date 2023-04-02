@@ -412,6 +412,9 @@ int bgav_stream_skipto(bgav_stream_t * s, gavl_time_t * time, int scale)
 
 bgav_packet_t * bgav_stream_get_packet_write(bgav_stream_t * s)
   {
+  //  if(s->type == GAVL_STREAM_VIDEO)
+  //    fprintf(stderr, "bgav_stream_get_packet_write\n");
+      
   return gavl_packet_sink_get_packet(s->psink);
   }
 
@@ -421,6 +424,7 @@ void bgav_stream_done_packet_write(bgav_stream_t * s, bgav_packet_t * p)
   bgav_dprintf("Packet in (stream %d): ", s->stream_id);
   bgav_packet_dump(p);
 #endif
+
   s->in_position++;
 
   if(!(s->flags & STREAM_WRITE_STARTED))
@@ -429,14 +433,17 @@ void bgav_stream_done_packet_write(bgav_stream_t * s, bgav_packet_t * p)
     s->flags |= STREAM_WRITE_STARTED;
     }
   
-  /* If the stream has a constant framerate, all packets have the same
-     duration */
   if(s->type == GAVL_STREAM_VIDEO)
     {
+    /* If the stream has a constant framerate, all packets have the same
+       duration */
+    
     if((s->data.video.format->frame_duration) &&
        (s->data.video.format->framerate_mode == GAVL_FRAMERATE_CONSTANT) &&
        (p->duration <= 0))
       p->duration = s->data.video.format->frame_duration;
+
+    /* Send palette */
 
     if(s->data.video.pal && !s->data.video.pal_sent)
       {
@@ -460,6 +467,9 @@ void bgav_stream_done_packet_write(bgav_stream_t * s, bgav_packet_t * p)
     p->pts = GAVL_TIME_UNDEFINED;
     }
 #endif
+
+  //  if(s->type == GAVL_STREAM_VIDEO)
+  //    fprintf(stderr, "bgav_stream_done_packet_write\n");
   
   gavl_packet_sink_put_packet(s->psink, p);
   }

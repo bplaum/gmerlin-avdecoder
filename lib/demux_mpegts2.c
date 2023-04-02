@@ -391,6 +391,13 @@ static gavl_source_status_t next_packet_mpegts(bgav_demuxer_context_t * ctx)
     
     if(pkt.payload_start) // First transport packet of one PES packet
       {
+      if(s->type == GAVL_STREAM_VIDEO)
+        {
+        //        fprintf(stderr, "Got packet for video stream %d\n", s->stream_id);
+        //        gavl_hexdump(ptr, 4, 4);
+        //        bgav_transport_packet_dump(&pkt);
+        }
+
       if(s->packet)
         {
 #if 0
