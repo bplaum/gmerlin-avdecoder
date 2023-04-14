@@ -87,7 +87,10 @@ typedef struct
 
   int next_state;
   int flags;
-  
+
+  /* used only for pause */
+  int64_t ts_pos;
+  char * ts_uri;
   
   } hls_priv_t;
 
@@ -734,7 +737,7 @@ static void init_segment_io(bgav_input_context_t * ctx)
     }
   else
     p->io = p->ts_io;
-
+  
   //  fprintf(stderr, "init_segment_io %p %p %p\n", p->io, p->ts_io, p->ts_io_next);
 
   p->next_state = NEXT_STATE_START;
@@ -744,6 +747,14 @@ static void init_segment_io(bgav_input_context_t * ctx)
   /* Some streams (NDR3) have two id3 tags with different infos */
   handle_id3(ctx);
   
+  }
+
+static gavf_io_t * create_http_client(bgav_input_context_t * ctx)
+  {
+  hls_priv_t * priv = ctx->priv;
+  gavf_io_t * ret = gavl_http_client_create();
+  gavl_http_client_set_req_vars(ret,     &priv->http_vars);
+  return ret;
   }
 
 static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
@@ -763,21 +774,16 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   gavl_timer_start(priv->m3u_timer);
   
   ctx->location = gavl_strdup(url1);
-  
-  priv->m3u_io = gavl_http_client_create();
-  
-  gavl_http_client_set_response_body(priv->m3u_io, &priv->m3u_buf);
 
-  priv->ts_io      = gavl_http_client_create();
-  priv->ts_io_next = gavl_http_client_create();
-  
   url = gavl_strdup(url1);
   url = gavl_url_extract_http_vars(url, &priv->http_vars);
   free(url);
+  
+  priv->m3u_io = create_http_client(ctx);
+  gavl_http_client_set_response_body(priv->m3u_io, &priv->m3u_buf);
 
-  gavl_http_client_set_req_vars(priv->ts_io,      &priv->http_vars);
-  gavl_http_client_set_req_vars(priv->ts_io_next, &priv->http_vars);
-  gavl_http_client_set_req_vars(priv->m3u_io,     &priv->http_vars);
+  priv->ts_io = create_http_client(ctx);
+  priv->ts_io_next = create_http_client(ctx);
   
   priv->seq_start = -1;
   priv->seq_cur = -1;
@@ -817,7 +823,9 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   if((priv->window_end == GAVL_TIME_UNDEFINED) ||
      (priv->window_start == GAVL_TIME_UNDEFINED))
     ctx->flags &= ~BGAV_INPUT_CAN_SEEK_TIME;
-
+  
+  ctx->flags |= BGAV_INPUT_CAN_PAUSE;
+  
   if((src = gavl_metadata_get_src_nc(&ctx->m, GAVL_META_SRC, 0)))
     {
     const gavl_dictionary_t * resp = gavl_http_client_get_response(priv->ts_io);
@@ -831,14 +839,94 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   return ret;
   }
 
-static void seek_time_hls(bgav_input_context_t * ctx, int64_t t1, int scale)
+static void seek_time_hls(bgav_input_context_t * ctx, int64_t *t1, int scale)
   {
-  
+  fprintf(stderr, "seek_time_hls %"PRId64" %d\n", *t1, scale);
   }
+
+static void pause_hls(bgav_input_context_t * ctx)
+  {
+  hls_priv_t * p = ctx->priv;
+
+  if(gavf_io_can_seek(p->ts_io))
+    gavl_http_client_pause(p->ts_io);
+  else
+    {
+    p->ts_pos = gavf_io_position(p->ts_io);
+    p->ts_uri = gavl_strdup(gavf_io_filename(p->ts_io));
+    
+    gavf_io_destroy(p->ts_io);
+    p->ts_io = NULL;
+    }
+  p->next_state = NEXT_STATE_START;
+  }
+
+#define RESUME_SKIP_BYTES 1024*1024
+
+static void resume_hls(bgav_input_context_t * ctx)
+  {
+  hls_priv_t * p = ctx->priv;
+
+  if(p->ts_io)
+    gavl_http_client_resume(p->ts_io);
+  else
+    {
+    int skip_bytes;
+    uint8_t * dummy;
+    
+    p->ts_io = create_http_client(ctx);
+
+    /* Open, skip bytes */
+
+    fprintf(stderr, "Re-opening %s, pos: %"PRId64"\n", p->ts_uri, p->ts_pos);
+    
+    if(!gavl_http_client_open(p->ts_io, "GET", p->ts_uri))
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Re-opening ts uri after pause failed");
+      gavf_io_destroy(p->ts_io);
+      p->ts_io = NULL;
+      return;
+      }
+    dummy = malloc(RESUME_SKIP_BYTES);
+    
+    //    init_segment_io(ctx);
+    
+    while(p->ts_pos > 0)
+      {
+      skip_bytes = RESUME_SKIP_BYTES;
+      if(skip_bytes > p->ts_pos)
+        skip_bytes = p->ts_pos;
+      if(gavf_io_read_data(p->ts_io, dummy, skip_bytes) < skip_bytes)
+        {
+        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Skipping bytes after pause failed");
+        gavf_io_destroy(p->ts_io);
+        p->ts_io = NULL;
+        free(dummy);
+        return;
+        }
+      p->ts_pos -= skip_bytes;
+      }
+
+    if(p->cipher_io)
+      {
+      p->io = p->cipher_io;
+      gavf_io_cipher_set_src(p->cipher_io, p->ts_io);
+      }
+    else
+      p->io = p->ts_io;
+    
+    free(dummy);
+    }
+  }
+
 
 static int can_read_hls(bgav_input_context_t * ctx, int timeout)
   {
   hls_priv_t * p = ctx->priv;
+  
+  if(!p->ts_io)
+    return 1;
+  
   if(p->io)
     return gavf_io_can_read(p->io, timeout);
   else
@@ -853,6 +941,9 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
   hls_priv_t * p = ctx->priv;
 
   //  fprintf(stderr, "read_hls %d\n", len);
+  
+  if(!p->ts_io)
+    return 0;
   
   while(bytes_read < len)
     {
@@ -985,6 +1076,8 @@ const bgav_input_t bgav_input_hls =
     .read          = read_hls,
     .read_nonblock = read_nonblock_hls,
     .can_read      = can_read_hls,
+    .pause         = pause_hls,
+    .resume         = resume_hls,
     .close         = close_hls,
     .seek_time     = seek_time_hls,
   };

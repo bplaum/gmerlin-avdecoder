@@ -416,6 +416,9 @@ void bgav_packet_parser_reset(bgav_packet_parser_t * p)
   p->num_packets = 0;
   p->raw_position = -1;
   gavl_buffer_reset(&p->buf);
+
+  if(p->sink)
+    gavl_packet_sink_reset(p->sink);
   
   if(p->reset)
     p->reset(p);

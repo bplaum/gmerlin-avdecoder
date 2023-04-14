@@ -439,6 +439,17 @@ static void seek_with_index(bgav_t * b, int64_t * time, int scale)
   skip_to(b, b->tt->cur, time, scale);
   }
 
+static void seek_input(bgav_t * b, int64_t * time, int scale)
+  {
+  bgav_track_clear(b->tt->cur);
+  
+  b->input->input->seek_time(b->input, time, scale);
+  
+  bgav_track_resync(b->tt->cur);
+  //  skip_to(b, b->tt->cur, time, scale);
+  
+  }
+
 void
 bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
   {
@@ -466,8 +477,10 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
    */
   
   if(b->demuxer->si && !(b->demuxer->flags & BGAV_DEMUXER_SI_PRIVATE_FUNCS))
-    {
     seek_si(b, b->demuxer, *time, scale);
+  else if(b->input->flags & BGAV_INPUT_CAN_SEEK_TIME)
+    {
+    seek_input(b, time, scale);
     }
   /* Seek with sample accuracy */
   else if(b->tt->cur->flags & TRACK_SAMPLE_ACCURATE)

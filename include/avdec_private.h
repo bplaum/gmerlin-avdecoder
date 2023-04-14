@@ -818,7 +818,7 @@ struct bgav_input_s
   
   /* Time based seek function for media, which are not stored
      stricktly linear. Time is changed to the actual seeked time */
-  void (*seek_time)(bgav_input_context_t*, int64_t time, int scale);
+  void (*seek_time)(bgav_input_context_t*, int64_t * time, int scale);
   
   /* Some inputs autoscan the available devices */
   bgav_device_info_t (*find_devices)();

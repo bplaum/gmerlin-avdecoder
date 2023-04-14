@@ -509,6 +509,8 @@ gavl_source_status_t
 bgav_stream_get_packet_read(bgav_stream_t * s, bgav_packet_t ** ret)
   {
   gavl_source_status_t st;
+
+  //  fprintf(stderr, "bgav_stream_get_packet_read\n");
   
   if((st = gavl_packet_source_read_packet(s->psrc, ret)) != GAVL_SOURCE_OK)
     {
@@ -530,6 +532,7 @@ bgav_stream_get_packet_read(bgav_stream_t * s, bgav_packet_t ** ret)
     bgav_dprintf("Limiting last duration: %"PRId64"\n", (*ret)->duration);
     }
   
+  //  fprintf(stderr, "bgav_stream_get_packet_read %p\n", *ret);
   
   return GAVL_SOURCE_OK;
   }
@@ -538,6 +541,9 @@ gavl_source_status_t
 bgav_stream_peek_packet_read(bgav_stream_t * s, bgav_packet_t ** p)
   {
   gavl_source_status_t st;
+
+  //  fprintf(stderr, "bgav_stream_peek_packet_read\n");
+
   if((st = gavl_packet_source_peek_packet(s->psrc, p)) != GAVL_SOURCE_OK)
     {
     // fprintf(stderr, "bgav_stream_get_packet_read returned %d\n", st);
@@ -553,6 +559,7 @@ bgav_stream_peek_packet_read(bgav_stream_t * s, bgav_packet_t ** p)
   
   //  if((*p)->pts + (*p)->duration > s->stats.pts_end)
   //    (*p)->duration = s->stats.pts_end - (*p)->pts;
+  //  fprintf(stderr, "bgav_stream_peek_packet_read %p\n", *p);
   
   return st;
   }
@@ -560,6 +567,7 @@ bgav_stream_peek_packet_read(bgav_stream_t * s, bgav_packet_t ** p)
 void bgav_stream_done_packet_read(bgav_stream_t * s, bgav_packet_t * p)
   {
   /* Nop */ 
+  //  fprintf(stderr, "bgav_stream_done_packet_read %p\n", p);
   }
 
 

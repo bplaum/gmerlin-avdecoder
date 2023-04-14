@@ -41,7 +41,7 @@ typedef struct
   FLAC__StreamDecoder * dec;
 
   bgav_packet_t * p;
-  uint8_t * data_ptr;
+  //  uint8_t * data_ptr;
   uint8_t * header_ptr;
   
   gavl_audio_frame_t * frame;
@@ -87,20 +87,19 @@ read_callback(const FLAC__StreamDecoder *decoder,
       gavl_source_status_t st;
       if((st = bgav_stream_get_packet_read(s, &priv->p)) != GAVL_SOURCE_OK)
         break;
-      priv->data_ptr = priv->p->buf.buf;
       }
 
     /* Bytes, which are left from the packet */
-    bytes_to_copy = (priv->p->buf.len - (priv->data_ptr - priv->p->buf.buf));
+    bytes_to_copy = (priv->p->buf.len - priv->p->buf.pos);
     if(bytes_to_copy > *bytes - bytes_read)
       bytes_to_copy = *bytes - bytes_read;
 
-    memcpy(&buffer[bytes_read], priv->data_ptr, bytes_to_copy);
-
+    memcpy(&buffer[bytes_read], priv->p->buf.buf + priv->p->buf.pos, bytes_to_copy);
+    
     bytes_read += bytes_to_copy;
-    priv->data_ptr += bytes_to_copy;
-
-    if(priv->data_ptr - priv->p->buf.buf == priv->p->buf.len)
+    priv->p->buf.pos += bytes_to_copy;
+      
+    if(priv->p->buf.pos == priv->p->buf.len)
       {
       bgav_stream_done_packet_read(s, priv->p);
       priv->p = NULL;
