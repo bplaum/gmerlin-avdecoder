@@ -470,7 +470,7 @@ void bgav_metadata_changed(bgav_t * b,
   }
 
 void bgav_seek_window_changed(bgav_t * b,
-                              gavl_time_t start, gavl_time_t end)
+                              gavl_time_t start, gavl_time_t end, gavl_src_seek_unit_t unit)
   {
   gavl_value_t val;
   gavl_dictionary_t * dict;
@@ -479,6 +479,7 @@ void bgav_seek_window_changed(bgav_t * b,
   dict = gavl_value_set_dictionary(&val);  
   gavl_dictionary_set_long(dict, GAVL_STATE_SRC_SEEK_WINDOW_START, start);
   gavl_dictionary_set_long(dict, GAVL_STATE_SRC_SEEK_WINDOW_END, end);
+  gavl_dictionary_set_int(dict, GAVL_STATE_SRC_SEEK_WINDOW_UNIT, unit);
   state_changed(b, GAVL_STATE_SRC_SEEK_WINDOW, &val);
   }
 

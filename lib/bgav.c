@@ -206,12 +206,15 @@ int bgav_init(bgav_t * ret)
   bgav_check_sample_accurate(ret);
   
   if(bgav_can_seek(ret) || 
+     bgav_can_seek_clock(ret) || 
      bgav_can_pause(ret))
     {
     for(i = 0; i < ret->tt->num_tracks; i++)
       {
       if(bgav_can_seek(ret))
         gavl_dictionary_set_int(ret->tt->tracks[i]->metadata, GAVL_META_CAN_SEEK, 1);
+      if(bgav_can_seek_clock(ret))
+        gavl_dictionary_set_int(ret->tt->tracks[i]->metadata, GAVL_META_CAN_SEEK_CLOCK, 1);
       if(bgav_can_pause(ret))
         gavl_dictionary_set_int(ret->tt->tracks[i]->metadata, GAVL_META_CAN_PAUSE, 1);
       }
@@ -555,6 +558,11 @@ int bgav_start(bgav_t * b)
 int bgav_can_seek(bgav_t * b)
   {
   return !!(b->demuxer) && !!(b->demuxer->flags & BGAV_DEMUXER_CAN_SEEK);
+  }
+
+int bgav_can_seek_clock(bgav_t * b)
+  {
+  return !!(b->demuxer) && !!(b->input->flags & BGAV_INPUT_CAN_SEEK_CLOCK);
   }
 
 const bgav_metadata_t * bgav_get_metadata(bgav_t*b, int track)

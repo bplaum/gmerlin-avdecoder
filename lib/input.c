@@ -852,7 +852,7 @@ static int input_open(bgav_input_context_t * ctx,
     {
     /* Check dvd image */
       
-#ifdef HAVE_DVDREAD
+#ifdef HAVE_DVDNAV
     if(strlen(url) >= DVD_PATH_LEN)
       {
       char * tmp_pos;
@@ -887,8 +887,9 @@ static int input_open(bgav_input_context_t * ctx,
 
   if(ctx->input->seek_byte)
     ctx->flags |= BGAV_INPUT_CAN_SEEK_BYTE;
-  if(ctx->input->seek_time)
-    ctx->flags |= BGAV_INPUT_CAN_SEEK_TIME;
+
+  //  if(ctx->input->seek_time)
+  //    ctx->flags |= BGAV_INPUT_CAN_SEEK_TIME;
   
   if(!ctx->input->open(ctx, tmp_url, redir))
     {
@@ -1148,7 +1149,7 @@ bgav_input_context_t * bgav_input_create(bgav_t * b, const bgav_options_t * opt)
     bgav_options_copy(&ret->opt, opt);
   else
     bgav_options_set_defaults(&ret->opt);
-  
+
   return ret;
   }
 
@@ -1318,4 +1319,13 @@ int bgav_eject_disc(const char * device)
   {
   gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Called deprecated disabled function bgav_eject_disc");
   return 0;
+  }
+
+void bgav_input_set_demuxer_pts(bgav_input_context_t * ctx, int64_t pts, int scale)
+  {
+  if(!ctx->demuxer_scale)
+    {
+    ctx->demuxer_pts = pts;
+    ctx->demuxer_scale = scale;
+    }
   }

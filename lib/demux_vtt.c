@@ -40,6 +40,9 @@ typedef struct
   int got_cr;
   } vtt_t;
 
+static int read_line(bgav_demuxer_context_t * ctx, int block);
+static void flush_line(bgav_demuxer_context_t * ctx);
+
 
 static const char * webvtt_signatures[] =
   {
@@ -73,8 +76,39 @@ static int probe_vtt(bgav_input_context_t * input)
   return is_vtt_sig((char*)data);
   }
 
+static int parse_time_map(const char * str, gavl_time_t * offset)
+  {
+  const char * pos;
+  gavl_time_t mpeg_time = GAVL_TIME_UNDEFINED;
+  gavl_time_t vtt_time = GAVL_TIME_UNDEFINED;
+
+  if((pos = strstr(str, "MPEGTS:")))
+    {
+    mpeg_time = strtoll(pos + strlen("MPEGTS:"), NULL, 10);
+    mpeg_time = gavl_time_unscale(90000, mpeg_time);
+    }
+  if((pos = strstr(str, "LOCAL:")))
+    gavl_time_parse(pos + strlen("LOCAL:"), &vtt_time);
+
+  if((mpeg_time != GAVL_TIME_UNDEFINED) &&
+     (vtt_time != GAVL_TIME_UNDEFINED))
+    {
+    /* packet timestamp = vtt_time - vtt_offset + mpeg_offset; */
+    *offset = mpeg_time - vtt_time;
+    return 1;
+    }
+  else
+    return 0;
+  }
+
+
 static int open_vtt(bgav_demuxer_context_t * ctx)
   {
+  /* X-TIMESTAMP-MAP= */
+  // #define PROBE_LEN 16
+  //  char probe_buffer[PROBE_LEN+1];
+  
+  
   bgav_stream_t * s;
   vtt_t * priv = calloc(1, sizeof(*priv));
   ctx->priv = priv;
@@ -82,12 +116,31 @@ static int open_vtt(bgav_demuxer_context_t * ctx)
   ctx->flags |= BGAV_DEMUXER_DISCONT;
   
   ctx->tt = bgav_track_table_create(1);
-
+  
+  priv->time_offset = GAVL_TIME_UNDEFINED;
+  
   s = bgav_track_add_text_stream(ctx->tt->cur, ctx->opt, BGAV_UTF8);
   s->stream_id = STREAM_ID;
   s->timescale = GAVL_TIME_SCALE;
 
   bgav_track_set_format(ctx->tt->cur, "WEBVTT", "text/vtt");
+
+  /* Skip signature */
+#if 0
+  read_line(ctx, 1);  
+  flush_line(ctx);
+  
+  probe_buffer[PROBE_LEN] = '\0';
+  if(bgav_input_get_data(ctx->input, (uint8_t*)probe_buffer, PROBE_LEN) &&
+     !strcmp(probe_buffer, "X-TIMESTAMP-MAP="))
+    {
+    read_line(ctx, 1);  
+    parse_time_map((char*)priv->buf.buf, &priv->time_offset);
+    // gavl_track_set_display_time_offset(ctx->tt->cur->info, priv->time_offset);
+    flush_line(ctx);
+    }
+#endif
+  
   return 1;
   }
 
@@ -329,9 +382,7 @@ static void append_payload_line(gavl_packet_t * p, gavl_buffer_t * buf)
       gavl_buffer_append_data(&p->buf, (const uint8_t*)pos, 1);
       pos++;
       }
-    
     }
-  
   }
 
 static gavl_source_status_t next_packet_vtt(bgav_demuxer_context_t * ctx)
@@ -392,24 +443,7 @@ static gavl_source_status_t next_packet_vtt(bgav_demuxer_context_t * ctx)
       }
     else if(gavl_string_starts_with((char*)priv->buf.buf, "X-TIMESTAMP-MAP="))
       {
-      const char * pos;
-      int64_t mpeg_time = GAVL_TIME_UNDEFINED;
-      gavl_time_t vtt_time = GAVL_TIME_UNDEFINED;
-
-      if((pos = strstr((char*)priv->buf.buf, "MPEGTS:")))
-        {
-        mpeg_time = strtoll(pos + strlen("MPEGTS:"), NULL, 10);
-        mpeg_time = gavl_time_unscale(90000, mpeg_time);
-        }
-      if((pos = strstr((char*)priv->buf.buf, "LOCAL:")))
-        gavl_time_parse(pos + strlen("LOCAL:"), &vtt_time);
-
-      if((mpeg_time != GAVL_TIME_UNDEFINED) &&
-         (vtt_time != GAVL_TIME_UNDEFINED))
-        {
-        /* packet timestamp = vtt_time - vtt_offset + mpeg_offset; */
-        priv->time_offset = mpeg_time - vtt_time;
-        }
+      parse_time_map((char*)priv->buf.buf, &priv->time_offset);
       }
     else if((result = parse_time((char*)priv->buf.buf, &start, &end)))
       {
@@ -421,6 +455,7 @@ static gavl_source_status_t next_packet_vtt(bgav_demuxer_context_t * ctx)
       s->packet           = bgav_stream_get_packet_write(s);
       s->packet->pts      = start;
       s->packet->duration = end - start;
+      bgav_input_set_demuxer_pts(ctx->input, s->packet->pts, GAVL_TIME_SCALE);
       }
     else if(s->packet) /* Payload */
       {

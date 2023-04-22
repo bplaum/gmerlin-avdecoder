@@ -513,13 +513,8 @@ void bgav_video_stop(bgav_stream_t * s)
 void bgav_video_resync(bgav_stream_t * s)
   {
   if(s->out_time == GAVL_TIME_UNDEFINED)
-    {
-    s->out_time =
-      gavl_time_rescale(s->timescale,
-                        s->data.video.format->timescale,
-                        STREAM_GET_SYNC(s));
-    }
-
+    s->out_time = STREAM_GET_SYNC(s);
+  
   s->flags &= ~STREAM_HAVE_FRAME;
   
   if(s->data.video.vsrc)
@@ -553,6 +548,8 @@ void bgav_video_resync(bgav_stream_t * s)
   
   if(s->data.video.decoder && s->data.video.decoder->resync)
     s->data.video.decoder->resync(s);
+  
+  //  fprintf(stderr, "video resync %"PRId64"\n", gavl_time_unscale(s->data.video.format->timescale, s->out_time));
   }
 
 /* Skipping to a specified time can happen in 3 ways:

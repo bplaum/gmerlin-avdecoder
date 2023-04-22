@@ -816,9 +816,13 @@ struct bgav_input_s
   int (*read_block)(bgav_input_context_t*);
   int (*seek_block)(bgav_input_context_t*, int64_t block);
   
-  /* Time based seek function for media, which are not stored
-     stricktly linear. Time is changed to the actual seeked time */
-  void (*seek_time)(bgav_input_context_t*, int64_t * time, int scale);
+  /*
+   * Time based seek function for media, which are not stored
+   * stricktly linear. Time is changed to the actual seeked time.
+   * Time is the *DISPLAY*-Time, not the PTS time.
+   */
+  
+  void (*seek_time)(bgav_input_context_t*, gavl_time_t * time);
   
   /* Some inputs autoscan the available devices */
   bgav_device_info_t (*find_devices)();
@@ -837,6 +841,7 @@ struct bgav_input_s
 #define BGAV_INPUT_CAN_SEEK_TIME  (1<<3)
 #define BGAV_INPUT_SEEK_SLOW      (1<<4)
 #define BGAV_INPUT_PAUSED         (1<<5)
+#define BGAV_INPUT_CAN_SEEK_CLOCK (1<<6)
 
 struct bgav_input_context_s
   {
@@ -900,9 +905,17 @@ struct bgav_input_context_s
   
   bgav_t * b;
 
-  /* Set by the HLS input, read by the adts and webvtt demuxers */
+  /* Set by the HLS input, read by the adts demuxer */
   int64_t input_pts;
-
+  
+  /*
+   *  Set by the mpegts and vtt demuxers, read by the HLS input to have a
+   *  PTS <-> Segment assosiation
+   */
+  
+  int64_t demuxer_pts;
+  int demuxer_scale;
+  
   /*
    *  Set by the HLS input, converted to metadata
    *  by the mpegts and adts demultiplexers
@@ -916,6 +929,8 @@ struct bgav_input_context_s
 /* Read functions return FALSE on error */
 
 BGAV_PUBLIC int bgav_input_read_data(bgav_input_context_t*, uint8_t*, int);
+
+void bgav_input_set_demuxer_pts(bgav_input_context_t*, int64_t pts, int scale);
 
 /* Non-blocking i/o */
 
@@ -1436,7 +1451,7 @@ void bgav_metadata_changed(bgav_t * b,
 void bgav_signal_restart(bgav_t * b, int reason);
 
 void bgav_seek_window_changed(bgav_t * b,
-                              gavl_time_t start, gavl_time_t end);
+                              gavl_time_t start, gavl_time_t end, gavl_src_seek_unit_t unit);
 
 // void bgav_abs_time_offset_changed(bgav_t * b, gavl_time_t off);
 //void bgav_start_time_absolute_changed(bgav_t * b, gavl_time_t off);

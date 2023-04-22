@@ -424,7 +424,9 @@ static gavl_source_status_t next_packet_mpegts(bgav_demuxer_context_t * ctx)
       
       //      fprintf(stderr, "Got PTS: %"PRId64"\n", pes_header.pts);
       s->packet->pes_pts = pes_header.pts;
-
+      
+      bgav_input_set_demuxer_pts(ctx->input, pes_header.pts, 90000);
+      
       if(ctx->input->clock_time != GAVL_TIME_UNDEFINED)
         {
         bgav_demuxer_set_clock_time(ctx,

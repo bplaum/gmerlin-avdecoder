@@ -441,9 +441,13 @@ static void seek_with_index(bgav_t * b, int64_t * time, int scale)
 
 static void seek_input(bgav_t * b, int64_t * time, int scale)
   {
-  bgav_track_clear(b->tt->cur);
+  gavl_time_t seek_time;
+  //  gavl_time_t time_offset = gavl_track_get_display_time_offset(b->tt->cur->info);
   
-  b->input->input->seek_time(b->input, time, scale);
+  bgav_track_clear(b->tt->cur);
+
+  seek_time = gavl_time_unscale(scale, *time);
+  b->input->input->seek_time(b->input, &seek_time);
   
   bgav_track_resync(b->tt->cur);
   //  skip_to(b, b->tt->cur, time, scale);

@@ -173,7 +173,7 @@ void bgav_stream_flush(bgav_stream_t * s)
   if(s->pbuffer)
     gavl_packet_buffer_flush(s->pbuffer);
 
-#if 0  
+#if 0
   switch(s->type)
     {
     case GAVL_STREAM_VIDEO:
@@ -205,6 +205,9 @@ void bgav_stream_clear(bgav_stream_t * s)
   
   if(s->packet)
     s->packet = NULL;
+
+  if(s->pf)
+    bgav_packet_filter_reset(s->pf);
   
   if(s->psrc_priv)
     gavl_packet_source_reset(s->psrc_priv);

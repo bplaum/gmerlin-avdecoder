@@ -852,11 +852,14 @@ void bgav_demuxer_set_clock_time(bgav_demuxer_context_t * ctx,
      !ctx->tt ||
      !ctx->tt->cur)
     return;
+
+  /* clock_time = pts_time - gavl_time_unscale(scale, pts) + clock_time */
   
-  gavl_track_set_clock_time_map(ctx->tt->cur->info, pts, scale, clock_time);
+  //  gavl_track_set_clock_time_map(ctx->tt->cur->info, pts, scale, clock_time);
+  gavl_track_set_pts_to_clock_time(ctx->tt->cur->info, clock_time - gavl_time_unscale(scale, pts));
   
   ctx->flags |= BGAV_DEMUXER_HAS_CLOCK_TIME;
-  
+  fprintf(stderr, "Have clock time\n");
 
   }
 

@@ -337,7 +337,7 @@ void bgav_audio_resync(bgav_stream_t * s)
   if(s->data.audio.source)
     gavl_audio_source_reset(s->data.audio.source);
 
-  //  fprintf(stderr, "audio resync %"PRId64"\n", s->out_time);
+  //  fprintf(stderr, "audio resync %"PRId64"\n", gavl_time_unscale(s->data.audio.format->samplerate, s->out_time));
 
   }
 
