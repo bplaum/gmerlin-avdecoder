@@ -77,8 +77,8 @@ typedef struct
   int64_t seq_start; // First sequence number of the array
   int64_t seq_cur;   // Current sequence number
   
-  gavl_time_t window_start;
-  gavl_time_t window_end;
+  //  gavl_time_t window_start;
+  //  gavl_time_t window_end;
   
   gavl_buffer_t cipher_key;
   gavl_buffer_t cipher_iv;
@@ -92,69 +92,74 @@ typedef struct
   /* used only for pause */
   int64_t ts_pos;
   char * ts_uri;
-
-  /* Time in PTS-Scale corresponding to zero in Window units */
-
-  /*  pts = win_time + window_to_pts */
-  /*  win_time = pts - window_to_pts */
-  gavl_time_t window_to_pts;
-
-  /* Absolute time can be requested via url-variables */
-  //  gavl_time_t abs_time;
   
   int have_clock_time;
   } hls_priv_t;
 
-static void set_window_to_pts(bgav_input_context_t * ctx, gavl_time_t pts_time);
 
-static gavl_time_t idx_to_window_time(bgav_input_context_t * ctx, int idx)
+static gavl_time_t get_segment_clock_time(bgav_input_context_t * ctx, int idx)
   {
-  int i;
+  gavl_time_t ret = GAVL_TIME_UNDEFINED;
   const gavl_dictionary_t * d;
   hls_priv_t * p = ctx->priv;
-  gavl_time_t duration;
-  gavl_time_t ret = p->window_start;
   
-  for(i = 0; i < idx; i++)
-    {
-    if((d = gavl_value_get_dictionary(&p->segments.entries[i])) &&
-       gavl_dictionary_get_long(d, SEGMENT_DURATION, &duration) &&
-       (duration > 0))
-      {
-      ret += duration;
-      }
-    }
-  return ret;
+  if((d = gavl_value_get_dictionary(&p->segments.entries[idx])) &&
+     gavl_dictionary_get_long(d, SEGMENT_START_TIME_ABS, &ret) &&
+     (ret > 0))
+    return ret;
+  else
+    return GAVL_TIME_UNDEFINED;
   }
 
-static int window_time_to_idx(bgav_input_context_t * ctx, gavl_time_t * time)
+static gavl_time_t get_segment_duration(bgav_input_context_t * ctx, int idx)
+  {
+  gavl_time_t ret = GAVL_TIME_UNDEFINED;
+  const gavl_dictionary_t * d;
+  hls_priv_t * p = ctx->priv;
+  
+  if((d = gavl_value_get_dictionary(&p->segments.entries[idx])) &&
+     gavl_dictionary_get_long(d, SEGMENT_DURATION, &ret) &&
+     (ret > 0))
+    return ret;
+  else
+    return GAVL_TIME_UNDEFINED;
+  }
+
+static int clock_time_to_idx(bgav_input_context_t * ctx, gavl_time_t * time)
   {
   int i;
-  const gavl_dictionary_t * d;
-  gavl_time_t duration;
   hls_priv_t * p = ctx->priv;
-  gavl_time_t t = p->window_start;
-  
-  if(*time < p->window_start)
-    return -1;
-  else if(*time >= p->window_end)
-    return -1;
-  
-  for(i = 0; i < p->segments.num_entries; i++)
+  gavl_time_t test_time;
+  i = p->segments.num_entries - 1;
+
+  while(i >= 0)
     {
-    if((d = gavl_value_get_dictionary(&p->segments.entries[i])) &&
-       gavl_dictionary_get_long(d, SEGMENT_DURATION, &duration) &&
-       (duration > 0))
+    if(((test_time = get_segment_clock_time(ctx, i)) != GAVL_TIME_UNDEFINED) &&
+       (test_time <= *time))
       {
-      if(t + duration > *time)
-        {
-        *time = t;
-        return i;
-        }
-      t += duration;
+      *time = test_time;
+      return i;
       }
+    i--;
     }
   return -1;
+  }
+
+
+static void get_seek_window(bgav_input_context_t * ctx, gavl_time_t * start, gavl_time_t * end)
+  {
+  hls_priv_t * p = ctx->priv;
+
+  gavl_time_t duration;
+  
+  *start = get_segment_clock_time(ctx, 0);
+  *end = get_segment_clock_time(ctx, p->segments.num_entries-1);
+  
+  duration = get_segment_duration(ctx, p->segments.num_entries-1);
+
+  if(duration > 0)
+    *end += duration;
+  
   }
 
 static int parse_m3u8(bgav_input_context_t * ctx)
@@ -201,19 +206,10 @@ static int parse_m3u8(bgav_input_context_t * ctx)
     }
   else
     {
-    const gavl_dictionary_t * d;
-    int i;
     int num_deleted = new_seq - p->seq_start;
     
     if(num_deleted > 0)
       {
-      for(i = 0; i < num_deleted; i++)
-        {
-        if((d = gavl_value_get_dictionary(&p->segments.entries[i])) &&
-           gavl_dictionary_get_long(d, SEGMENT_DURATION, &segment_duration) &&
-           (segment_duration > 0))
-          p->window_start += segment_duration;
-        }
       gavl_array_splice_val(&p->segments, 0, num_deleted, NULL);
       p->seq_start += num_deleted;
       window_changed = 1;
@@ -313,10 +309,9 @@ static int parse_m3u8(bgav_input_context_t * ctx)
       
       if(!gavl_time_parse_iso8601(lines[idx] + strlen("#EXT-X-PROGRAM-DATE-TIME:") ,
                                   &segment_start_time_abs))
-        {
         segment_start_time_abs = GAVL_TIME_UNDEFINED;
+      else
         p->have_clock_time = 1;
-        }
       }
     else if(gavl_string_starts_with(lines[idx], "#EXTINF:"))
       {
@@ -342,9 +337,6 @@ static int parse_m3u8(bgav_input_context_t * ctx)
       gavl_dictionary_set_string_nocopy(dict, GAVL_META_URI, uri);
       gavl_array_splice_val_nocopy(&p->segments, -1, 0, &val);
 
-      if(segment_duration > 0)
-        p->window_end += segment_duration;
-      
       
       segment_start_time_abs = GAVL_TIME_UNDEFINED;
       segment_duration = 0;
@@ -367,14 +359,12 @@ static int parse_m3u8(bgav_input_context_t * ctx)
   
   fail:
 
-  if(window_changed)
+  if(window_changed && p->segments.num_entries && p->have_clock_time)
     {
-    //    const gavl_dictionary_t * d;
-
-    if(p->segments.num_entries)
-      {
-      bgav_seek_window_changed(ctx->b, p->window_start, p->window_end, GAVL_SRC_SEEK_START);
-      }
+    gavl_time_t start_time = 0;
+    gavl_time_t end_time = 0;
+    get_seek_window(ctx, &start_time, &end_time);
+    bgav_seek_window_changed(ctx->b, start_time, end_time, GAVL_SRC_SEEK_CLOCK);
     }
   
   gavl_value_free(&val);
@@ -449,14 +439,8 @@ static int handle_id3(bgav_input_context_t * ctx)
     int64_t pts;
 
     if((pts = bgav_id3v2_get_pts(id3)) != GAVL_TIME_UNDEFINED)
-      {
       ctx->input_pts = pts;
-      
-      if(p->window_to_pts == GAVL_TIME_UNDEFINED)
-        set_window_to_pts(ctx, gavl_time_unscale(90000, ctx->input_pts));
-      
-
-      }
+    
     if((pts = bgav_id3v2_get_clock_time(id3)) != GAVL_TIME_UNDEFINED)
       ctx->clock_time = pts;
 #if 0
@@ -559,45 +543,22 @@ static int init_cipher(bgav_input_context_t * ctx)
 
 static void init_seek_window(bgav_input_context_t * ctx)
   {
-  int idx;
-  int i;
-  const gavl_dictionary_t * d;
-  gavl_time_t segment_duration = 0;
-  gavl_time_t start_time_abs = 0;
+  gavl_time_t win_start = 0;
+  gavl_time_t win_end = 0;
   hls_priv_t * p = ctx->priv;
-
   gavl_value_t val;
   gavl_dictionary_t * dict;
   
-  idx = p->seq_cur - p->seq_start;
+  if(!p->have_clock_time)
+    return;
 
-  p->window_start = 0;
-  p->window_end = 0;
-
-  for(i = 0; i < idx; i++)
-    {
-    if((d = gavl_value_get_dictionary(&p->segments.entries[i])) &&
-       gavl_dictionary_get_long(d, SEGMENT_DURATION, &segment_duration) &&
-       (segment_duration > 0))
-      p->window_start -= segment_duration;
-    }
-  for(i = idx; i < p->segments.num_entries; i++)
-    {
-    if((d = gavl_value_get_dictionary(&p->segments.entries[i])))
-      {
-      if(gavl_dictionary_get_long(d, SEGMENT_DURATION, &segment_duration) &&
-         (segment_duration > 0))
-        p->window_end += segment_duration;
-      
-      if((i==idx) && gavl_dictionary_get_long(d, SEGMENT_START_TIME_ABS, &start_time_abs))
-        ctx->clock_time = start_time_abs;
-      }
-    }
-
+  get_seek_window(ctx, &win_start, &win_end);
+  
   gavl_value_init(&val);
   dict = gavl_value_set_dictionary(&val);  
-  gavl_dictionary_set_long(dict, GAVL_STATE_SRC_SEEK_WINDOW_START, p->window_start);
-  gavl_dictionary_set_long(dict, GAVL_STATE_SRC_SEEK_WINDOW_END, p->window_end);
+  gavl_dictionary_set_long(dict, GAVL_STATE_SRC_SEEK_WINDOW_START, win_start);
+  gavl_dictionary_set_long(dict, GAVL_STATE_SRC_SEEK_WINDOW_END, win_end);
+  gavl_dictionary_set_int(dict, GAVL_STATE_SRC_SEEK_WINDOW_UNIT, GAVL_SRC_SEEK_CLOCK);
   gavl_dictionary_set_nocopy(&ctx->m, GAVL_STATE_SRC_SEEK_WINDOW, &val);
   
   }
@@ -649,6 +610,8 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
         p->seq_cur = p->seq_start + p->segments.num_entries - 2;
 
       gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Initializing sequence number: %"PRId64, p->seq_cur);
+
+      ctx->clock_time = get_segment_clock_time(ctx, p->seq_cur - p->seq_start);
       
       init_seek_window(ctx);
       }
@@ -794,6 +757,7 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
   return 0;
   }
 
+#if 0
 static void set_window_to_pts(bgav_input_context_t * ctx, gavl_time_t pts_time)
   {
   gavl_time_t window_time;
@@ -808,7 +772,8 @@ static void set_window_to_pts(bgav_input_context_t * ctx, gavl_time_t pts_time)
   
   gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got Window -> PTS: %"PRId64, p->window_to_pts);
   }
-  
+#endif
+
 static void init_segment_io(bgav_input_context_t * ctx)
   {
   gavf_io_t * swp;
@@ -827,11 +792,6 @@ static void init_segment_io(bgav_input_context_t * ctx)
     p->io = p->ts_io;
   
   //  fprintf(stderr, "init_segment_io %p %p %p\n", p->io, p->ts_io, p->ts_io_next);
-
-  if((p->window_to_pts == GAVL_TIME_UNDEFINED) && (ctx->demuxer_scale > 0))
-    {
-    set_window_to_pts(ctx, gavl_time_unscale(ctx->demuxer_scale, ctx->demuxer_pts));
-    }
   
   p->next_state = NEXT_STATE_START;
   p->seq_cur++;
@@ -859,8 +819,6 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   gavl_dictionary_t * src;
 
   hls_priv_t * priv = calloc(1, sizeof(*priv));
-  
-  priv->window_to_pts = GAVL_TIME_UNDEFINED;
   
   //  fprintf(stderr, "Open HLS: %s\n", url1);
   
@@ -914,14 +872,14 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
     }
 
   init_segment_io(ctx);
-
+  
   if(priv->have_clock_time)
     ctx->flags |= BGAV_INPUT_CAN_SEEK_CLOCK;
 #if 0  
   if((priv->window_end == GAVL_TIME_UNDEFINED) ||
      (priv->window_start == GAVL_TIME_UNDEFINED))
     ctx->flags &= ~BGAV_INPUT_CAN_SEEK_TIME;
-#endif  
+#endif
   ctx->flags |= BGAV_INPUT_CAN_PAUSE;
   
   if((src = gavl_metadata_get_src_nc(&ctx->m, GAVL_META_SRC, 0)))
@@ -971,26 +929,30 @@ static int jump_to_idx(bgav_input_context_t * ctx, int idx)
   return 1;
   }
 
-static void seek_time_hls(bgav_input_context_t * ctx, gavl_time_t *t1)
+static void seek_time_hls(bgav_input_context_t * ctx, gavl_time_t *t1, gavl_src_seek_unit_t unit)
   {
   int idx;
-  gavl_time_t window_time;
   hls_priv_t * p = ctx->priv;
 
-  //  fprintf(stderr, "seek_time_hls %"PRId64"\n", *t1);
-
-  if(p->window_to_pts != GAVL_TIME_UNDEFINED)
-    window_time = *t1 - p->window_to_pts;
-  else
-    window_time = *t1;
+  if(unit != GAVL_SRC_SEEK_CLOCK)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Only clock based seeking supported");
+    return;
+    }
+  if(!p->segments.num_entries)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "No segments loaded");
+    return;
+    }
   
-  idx = window_time_to_idx(ctx, &window_time);
-
+  
+  idx = clock_time_to_idx(ctx, t1);
+  
   //  fprintf(stderr, "idx %d\n", idx);
 
   if(idx < 0)
     {
-    if(window_time < p->window_start)
+    if(*t1 < get_segment_clock_time(ctx, 0))
       idx = 0;
     else
       idx = p->segments.num_entries - 1;

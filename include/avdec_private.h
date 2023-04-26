@@ -819,10 +819,9 @@ struct bgav_input_s
   /*
    * Time based seek function for media, which are not stored
    * stricktly linear. Time is changed to the actual seeked time.
-   * Time is the *DISPLAY*-Time, not the PTS time.
    */
   
-  void (*seek_time)(bgav_input_context_t*, gavl_time_t * time);
+  void (*seek_time)(bgav_input_context_t*, gavl_time_t * time, gavl_src_seek_unit_t unit);
   
   /* Some inputs autoscan the available devices */
   bgav_device_info_t (*find_devices)();

@@ -848,19 +848,28 @@ int bgav_demuxer_get_duration(bgav_demuxer_context_t * ctx)
 void bgav_demuxer_set_clock_time(bgav_demuxer_context_t * ctx,
                                  int64_t pts, int scale, gavl_time_t clock_time)
   {
-  if(ctx->flags & BGAV_DEMUXER_HAS_CLOCK_TIME ||
+  gavl_time_t offset;
+  
+  if((ctx->flags & BGAV_DEMUXER_HAS_CLOCK_TIME) ||
      !ctx->tt ||
      !ctx->tt->cur)
     return;
 
   /* clock_time = pts_time - gavl_time_unscale(scale, pts) + clock_time */
+
+  //  fprintf(stderr, "bgav_demuxer_set_clock_time: %"PRId64" %d %"PRId64"\n",
+  //          pts, scale, clock_time);
+  
+  offset = clock_time - gavl_time_unscale(scale, pts);
   
   //  gavl_track_set_clock_time_map(ctx->tt->cur->info, pts, scale, clock_time);
-  gavl_track_set_pts_to_clock_time(ctx->tt->cur->info, clock_time - gavl_time_unscale(scale, pts));
+  gavl_track_set_pts_to_clock_time(ctx->tt->cur->info, offset);
   
   ctx->flags |= BGAV_DEMUXER_HAS_CLOCK_TIME;
-  fprintf(stderr, "Have clock time\n");
-
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got PTS to Clock time offset: %"PRId64, offset);
+  
+  // fprintf(stderr, "Have clock time\n");
+  
   }
 
 #if 0

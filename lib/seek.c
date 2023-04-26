@@ -439,7 +439,7 @@ static void seek_with_index(bgav_t * b, int64_t * time, int scale)
   skip_to(b, b->tt->cur, time, scale);
   }
 
-static void seek_input(bgav_t * b, int64_t * time, int scale)
+static void seek_input(bgav_t * b, int64_t * time, int scale, gavl_src_seek_unit_t unit)
   {
   gavl_time_t seek_time;
   //  gavl_time_t time_offset = gavl_track_get_display_time_offset(b->tt->cur->info);
@@ -447,7 +447,7 @@ static void seek_input(bgav_t * b, int64_t * time, int scale)
   bgav_track_clear(b->tt->cur);
 
   seek_time = gavl_time_unscale(scale, *time);
-  b->input->input->seek_time(b->input, &seek_time);
+  b->input->input->seek_time(b->input, &seek_time, unit);
   
   bgav_track_resync(b->tt->cur);
   //  skip_to(b, b->tt->cur, time, scale);
@@ -455,7 +455,7 @@ static void seek_input(bgav_t * b, int64_t * time, int scale)
   }
 
 void
-bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
+bgav_seek_scaled_unit(bgav_t * b, int64_t * time, int scale, gavl_src_seek_unit_t unit)
   {
   bgav_track_t * track = b->tt->cur;
 
@@ -484,7 +484,7 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
     seek_si(b, b->demuxer, *time, scale);
   else if(b->input->flags & BGAV_INPUT_CAN_SEEK_TIME)
     {
-    seek_input(b, time, scale);
+    seek_input(b, time, scale, unit);
     }
   /* Seek with sample accuracy */
   else if(b->tt->cur->flags & TRACK_SAMPLE_ACCURATE)
@@ -499,6 +499,12 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
     seek_generic(b, time, scale);
   else if(b->demuxer->flags & (BGAV_DEMUXER_HAS_SEEK_INDEX|BGAV_DEMUXER_BUILD_SEEK_INDEX))
     seek_with_index(b, time, scale);
+  }
+
+void
+bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
+  {
+  bgav_seek_scaled_unit(b, time, scale, GAVL_SRC_SEEK_PTS);
   }
 
 void
