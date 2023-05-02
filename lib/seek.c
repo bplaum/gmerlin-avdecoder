@@ -281,7 +281,7 @@ static void seek_generic(bgav_t * b, int64_t * time, int scale)
   else
     total_bytes = b->input->total_bytes - b->tt->cur->data_start;
 
-  start_time = gavl_track_get_display_time_offset(b->tt->cur->info);
+  start_time = gavl_track_get_start_time(b->tt->cur->info);
   end_time = start_time + gavl_track_get_duration(b->tt->cur->info);
   
   tab[0].sync_time = gavl_time_scale(scale, start_time);
@@ -439,7 +439,7 @@ static void seek_with_index(bgav_t * b, int64_t * time, int scale)
   skip_to(b, b->tt->cur, time, scale);
   }
 
-static void seek_input(bgav_t * b, int64_t * time, int scale, gavl_src_seek_unit_t unit)
+static void seek_input(bgav_t * b, int64_t * time, int scale)
   {
   gavl_time_t seek_time;
   //  gavl_time_t time_offset = gavl_track_get_display_time_offset(b->tt->cur->info);
@@ -447,15 +447,16 @@ static void seek_input(bgav_t * b, int64_t * time, int scale, gavl_src_seek_unit
   bgav_track_clear(b->tt->cur);
 
   seek_time = gavl_time_unscale(scale, *time);
-  b->input->input->seek_time(b->input, &seek_time, unit);
+  b->input->input->seek_time(b->input, &seek_time);
   
   bgav_track_resync(b->tt->cur);
   //  skip_to(b, b->tt->cur, time, scale);
   
   }
 
+
 void
-bgav_seek_scaled_unit(bgav_t * b, int64_t * time, int scale, gavl_src_seek_unit_t unit)
+bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
   {
   bgav_track_t * track = b->tt->cur;
 
@@ -484,7 +485,7 @@ bgav_seek_scaled_unit(bgav_t * b, int64_t * time, int scale, gavl_src_seek_unit_
     seek_si(b, b->demuxer, *time, scale);
   else if(b->input->flags & BGAV_INPUT_CAN_SEEK_TIME)
     {
-    seek_input(b, time, scale, unit);
+    seek_input(b, time, scale);
     }
   /* Seek with sample accuracy */
   else if(b->tt->cur->flags & TRACK_SAMPLE_ACCURATE)
@@ -501,11 +502,13 @@ bgav_seek_scaled_unit(bgav_t * b, int64_t * time, int scale, gavl_src_seek_unit_
     seek_with_index(b, time, scale);
   }
 
+#if 0
 void
 bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
   {
   bgav_seek_scaled_unit(b, time, scale, GAVL_SRC_SEEK_PTS);
   }
+#endif
 
 void
 bgav_seek(bgav_t * b, gavl_time_t * time)

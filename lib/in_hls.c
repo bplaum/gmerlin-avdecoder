@@ -82,7 +82,6 @@ typedef struct
   
   gavl_buffer_t cipher_key;
   gavl_buffer_t cipher_iv;
-  gavl_src_seek_unit_t seek_unit;
   
   gavl_dictionary_t http_vars;
 
@@ -364,7 +363,7 @@ static int parse_m3u8(bgav_input_context_t * ctx)
     gavl_time_t start_time = 0;
     gavl_time_t end_time = 0;
     get_seek_window(ctx, &start_time, &end_time);
-    bgav_seek_window_changed(ctx->b, start_time, end_time, GAVL_SRC_SEEK_CLOCK);
+    bgav_seek_window_changed(ctx->b, start_time, end_time);
     }
   
   gavl_value_free(&val);
@@ -558,7 +557,6 @@ static void init_seek_window(bgav_input_context_t * ctx)
   dict = gavl_value_set_dictionary(&val);  
   gavl_dictionary_set_long(dict, GAVL_STATE_SRC_SEEK_WINDOW_START, win_start);
   gavl_dictionary_set_long(dict, GAVL_STATE_SRC_SEEK_WINDOW_END, win_end);
-  gavl_dictionary_set_int(dict, GAVL_STATE_SRC_SEEK_WINDOW_UNIT, GAVL_SRC_SEEK_CLOCK);
   gavl_dictionary_set_nocopy(&ctx->m, GAVL_STATE_SRC_SEEK_WINDOW, &val);
   
   }
@@ -874,12 +872,8 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   init_segment_io(ctx);
   
   if(priv->have_clock_time)
-    ctx->flags |= BGAV_INPUT_CAN_SEEK_CLOCK;
-#if 0  
-  if((priv->window_end == GAVL_TIME_UNDEFINED) ||
-     (priv->window_start == GAVL_TIME_UNDEFINED))
-    ctx->flags &= ~BGAV_INPUT_CAN_SEEK_TIME;
-#endif
+    ctx->flags |= BGAV_INPUT_CAN_SEEK_TIME;
+  
   ctx->flags |= BGAV_INPUT_CAN_PAUSE;
   
   if((src = gavl_metadata_get_src_nc(&ctx->m, GAVL_META_SRC, 0)))
@@ -929,26 +923,24 @@ static int jump_to_idx(bgav_input_context_t * ctx, int idx)
   return 1;
   }
 
-static void seek_time_hls(bgav_input_context_t * ctx, gavl_time_t *t1, gavl_src_seek_unit_t unit)
+static void seek_time_hls(bgav_input_context_t * ctx, gavl_time_t *t1)
   {
   int idx;
   hls_priv_t * p = ctx->priv;
 
-  if(unit != GAVL_SRC_SEEK_CLOCK)
-    {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Only clock based seeking supported");
-    return;
-    }
+  fprintf(stderr, "seek_time_hls 1: %"PRId64"\n", *t1);
+
   if(!p->segments.num_entries)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "No segments loaded");
     return;
     }
+
   
   
   idx = clock_time_to_idx(ctx, t1);
-  
-  //  fprintf(stderr, "idx %d\n", idx);
+
+  fprintf(stderr, "seek_time_hls 2: idx %d\n", idx);
 
   if(idx < 0)
     {
@@ -957,6 +949,8 @@ static void seek_time_hls(bgav_input_context_t * ctx, gavl_time_t *t1, gavl_src_
     else
       idx = p->segments.num_entries - 1;
     }
+
+  fprintf(stderr, "seek_time_hls 3: idx %d\n", idx);
   
   jump_to_idx(ctx, idx);
   }

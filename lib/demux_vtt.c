@@ -136,7 +136,6 @@ static int open_vtt(bgav_demuxer_context_t * ctx)
     {
     read_line(ctx, 1);  
     parse_time_map((char*)priv->buf.buf, &priv->time_offset);
-    // gavl_track_set_display_time_offset(ctx->tt->cur->info, priv->time_offset);
     flush_line(ctx);
     }
 #endif

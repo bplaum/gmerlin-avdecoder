@@ -2184,8 +2184,6 @@ int bgav_read_subtitle_text(bgav_t * bgav, char ** ret, int *ret_alloc,
 BGAV_PUBLIC
 int bgav_can_seek(bgav_t * bgav);
 
-BGAV_PUBLIC
-int bgav_can_seek_clock(bgav_t * bgav);
   
 /** \ingroup seeking
  *  \brief Seek to a specific time

@@ -821,7 +821,7 @@ struct bgav_input_s
    * stricktly linear. Time is changed to the actual seeked time.
    */
   
-  void (*seek_time)(bgav_input_context_t*, gavl_time_t * time, gavl_src_seek_unit_t unit);
+  void (*seek_time)(bgav_input_context_t*, gavl_time_t * time);
   
   /* Some inputs autoscan the available devices */
   bgav_device_info_t (*find_devices)();
@@ -840,7 +840,6 @@ struct bgav_input_s
 #define BGAV_INPUT_CAN_SEEK_TIME  (1<<3)
 #define BGAV_INPUT_SEEK_SLOW      (1<<4)
 #define BGAV_INPUT_PAUSED         (1<<5)
-#define BGAV_INPUT_CAN_SEEK_CLOCK (1<<6)
 
 struct bgav_input_context_s
   {
@@ -1450,7 +1449,7 @@ void bgav_metadata_changed(bgav_t * b,
 void bgav_signal_restart(bgav_t * b, int reason);
 
 void bgav_seek_window_changed(bgav_t * b,
-                              gavl_time_t start, gavl_time_t end, gavl_src_seek_unit_t unit);
+                              gavl_time_t start, gavl_time_t end);
 
 // void bgav_abs_time_offset_changed(bgav_t * b, gavl_time_t off);
 //void bgav_start_time_absolute_changed(bgav_t * b, gavl_time_t off);
