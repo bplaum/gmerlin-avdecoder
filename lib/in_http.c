@@ -256,7 +256,7 @@ static int64_t seek_byte_http(bgav_input_context_t * ctx,
                               int64_t pos, int whence)
   {
   http_priv * p = ctx->priv;
-  //  fprintf(stderr, "Seek_byte http %"PRId64" %"PRId64"\n", pos, ctx->position);
+  //  fprintf(stderr, "seek_byte_http %"PRId64" %"PRId64"\n", pos, ctx->position);
   gavf_io_seek(p->io, pos, whence);
   return ctx->position;
   }
@@ -264,12 +264,14 @@ static int64_t seek_byte_http(bgav_input_context_t * ctx,
 static void pause_http(bgav_input_context_t * ctx)
   {
   http_priv * p = ctx->priv;
+  //  fprintf(stderr, "pause_http\n");
   gavl_http_client_pause(p->io);
   }
 
 static void resume_http(bgav_input_context_t * ctx)
   {
   http_priv * p = ctx->priv;
+  //  fprintf(stderr, "resume_http\n");
   gavl_http_client_resume(p->io);
   }
 

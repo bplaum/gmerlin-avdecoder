@@ -209,6 +209,9 @@ static int open_adts(bgav_demuxer_context_t * ctx)
   //  fprintf(stderr, "adts_open\n");
   //  gavl_dictionary_dump(ctx->tt->cur->info, 2);
 
+  if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_TIME)
+    ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
+  
   return 1;
   
   fail:
@@ -259,15 +262,6 @@ static gavl_source_status_t next_packet_adts(bgav_demuxer_context_t * ctx)
   return GAVL_SOURCE_OK;
   }
 
-static int select_track_adts(bgav_demuxer_context_t * ctx, int track)
-  {
-#if 0
-  int64_t pts_start_num = 0;
-  int     pts_start_den = 0;
-  bgav_stream_t * s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
-#endif
-  return 1;
-  }
 
 static void close_adts(bgav_demuxer_context_t * ctx)
   {
@@ -281,7 +275,6 @@ const bgav_demuxer_t bgav_demuxer_adts =
   {
     .probe        = probe_adts,
     .open         = open_adts,
-    .select_track = select_track_adts,
     .next_packet  = next_packet_adts,
     .close        = close_adts,
   };

@@ -902,6 +902,8 @@ static int jump_to_idx(bgav_input_context_t * ctx, int idx)
     gavf_io_destroy(p->ts_io);
   if(p->ts_io_next)
     gavf_io_destroy(p->ts_io_next);
+
+  p->io = NULL;
   
   p->ts_io = create_http_client(ctx);
   p->ts_io_next = create_http_client(ctx);
@@ -912,7 +914,10 @@ static int jump_to_idx(bgav_input_context_t * ctx, int idx)
     {
     int result = open_next_async(ctx, 200);
     if(result < 0)
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Jumping to idx %d failed\n", idx);
       return 0;
+      }
     if(result > 0)
       break;
     }
@@ -965,6 +970,8 @@ static void pause_hls(bgav_input_context_t * ctx)
     {
     p->ts_pos = gavf_io_position(p->ts_io);
     p->ts_uri = gavl_strdup(gavf_io_filename(p->ts_io));
+
+    fprintf(stderr, "pause_hls %s\n", p->ts_uri);
     
     gavf_io_destroy(p->ts_io);
     p->ts_io = NULL;
@@ -989,7 +996,7 @@ static void resume_hls(bgav_input_context_t * ctx)
 
     /* Open, skip bytes */
 
-    // fprintf(stderr, "Re-opening %s, pos: %"PRId64"\n", p->ts_uri, p->ts_pos);
+    fprintf(stderr, "resume_hls %s, pos: %"PRId64"\n", p->ts_uri, p->ts_pos);
     
     if(!gavl_http_client_open(p->ts_io, "GET", p->ts_uri))
       {
@@ -1053,9 +1060,11 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
 
   //  fprintf(stderr, "read_hls %d\n", len);
   
-  if(!p->ts_io)
+  if(!p->io)
+    {
+    gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Read error: underlying I/0 missing");
     return 0;
-  
+    }
   while(bytes_read < len)
     {
     if(!block)

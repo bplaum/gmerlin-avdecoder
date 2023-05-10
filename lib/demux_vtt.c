@@ -140,6 +140,9 @@ static int open_vtt(bgav_demuxer_context_t * ctx)
     }
 #endif
   
+  if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_TIME)
+    ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
+  
   return 1;
   }
 
