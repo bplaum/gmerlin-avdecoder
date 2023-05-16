@@ -93,7 +93,17 @@ typedef struct
   char * ts_uri;
   
   int have_clock_time;
+  gavl_time_t clock_time_start;
+  
   } hls_priv_t;
+
+static gavf_io_t * create_http_client(bgav_input_context_t * ctx)
+  {
+  hls_priv_t * priv = ctx->priv;
+  gavf_io_t * ret = gavl_http_client_create();
+  gavl_http_client_set_req_vars(ret,     &priv->http_vars);
+  return ret;
+  }
 
 
 static gavl_time_t get_segment_clock_time(bgav_input_context_t * ctx, int idx)
@@ -592,7 +602,18 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
     if(result <= 0)
       {
       if(result < 0)
+        {
         gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Downloading m3u8 failed");
+
+        if(p->seq_cur >= 0)
+          {
+          gavf_io_destroy(p->m3u_io);
+          p->m3u_io = create_http_client(ctx);
+          gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Re-starting m3u8 download");
+          p->next_state = NEXT_STATE_START;
+          return 0;
+          }
+        }
       return result;
       }
     if(!parse_m3u8(ctx))
@@ -602,7 +623,15 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
       }
     if(p->seq_cur < 0)
       {
-      if(p->segments.num_entries <= 10)
+      if(p->clock_time_start > 0)
+        {
+        gavl_time_t t = p->clock_time_start;
+        p->seq_cur = p->seq_start + clock_time_to_idx(ctx, &t);
+        
+        gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Initialized from clock time, difference: %f secs",
+                 gavl_time_to_seconds(p->clock_time_start - t));
+        }
+      else if(p->segments.num_entries <= 10)
         p->seq_cur = p->seq_start;
       else
         p->seq_cur = p->seq_start + p->segments.num_entries - 2;
@@ -800,18 +829,31 @@ static void init_segment_io(bgav_input_context_t * ctx)
   
   }
 
-static gavf_io_t * create_http_client(bgav_input_context_t * ctx)
+
+static int open_next_sync(bgav_input_context_t * ctx)
   {
+  int i, result;
   hls_priv_t * priv = ctx->priv;
-  gavf_io_t * ret = gavl_http_client_create();
-  gavl_http_client_set_req_vars(ret,     &priv->http_vars);
-  return ret;
+  
+  for(i = 0; i < 1000; i++)
+    {
+    result = open_next_async(ctx, 3000);
+
+    if(result < 0)
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "open next ssync failed (result: %d)", result);
+      return 0;
+      }
+    
+    if(priv->next_state == NEXT_STATE_DONE)
+      return 1;
+    }
+  gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "open_next_sync failed: %d Iterations exceeded", i);
+  return 0;
   }
 
 static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   {
-  int result;
-  int i;
   int ret = 0;
   char * url;
   gavl_dictionary_t * src;
@@ -826,6 +868,13 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   
   ctx->location = gavl_strdup(url1);
 
+  ctx->location = gavl_url_extract_var_long(ctx->location,
+                                            GAVL_URL_VAR_CLOCK_TIME,
+                                            &priv->clock_time_start);
+  
+  if(priv->clock_time_start > 0)
+    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got clock time: %"PRId64, priv->clock_time_start);
+    
   url = gavl_strdup(url1);
   url = gavl_url_extract_http_vars(url, &priv->http_vars);
   free(url);
@@ -841,34 +890,15 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   
   //  if(!load_m3u8(ctx))
   //    goto fail;
-
   
   //  if(!open_ts(ctx))
   //    goto fail;
-
+  
   priv->next_state = NEXT_STATE_START;
-
-  for(i = 0; i < 1000; i++)
-    {
-    result = open_next_async(ctx, 3000);
-
-    if(result < 0)
-      {
-      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "open next async failed %d", result);
-      goto fail;
-      }
-    
-    if(priv->next_state == NEXT_STATE_DONE)
-      break;
-    }
-
-  if(priv->next_state != NEXT_STATE_DONE)
-    {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "open next async: Too many iterations %d",
-             priv->next_state);
+  
+  if(!open_next_sync(ctx))
     goto fail;
-    }
-
+  
   init_segment_io(ctx);
   
   if(priv->have_clock_time)
@@ -891,7 +921,6 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
 
 static int jump_to_idx(bgav_input_context_t * ctx, int idx)
   {
-  int i;
   hls_priv_t * p = ctx->priv;
 
   p->seq_cur = p->seq_start + idx;
@@ -902,25 +931,20 @@ static int jump_to_idx(bgav_input_context_t * ctx, int idx)
     gavf_io_destroy(p->ts_io);
   if(p->ts_io_next)
     gavf_io_destroy(p->ts_io_next);
-
-  p->io = NULL;
+  if(p->m3u_io)
+    gavf_io_destroy(p->m3u_io);
   
+  p->io = NULL;
+
+  p->m3u_io = create_http_client(ctx);
   p->ts_io = create_http_client(ctx);
   p->ts_io_next = create_http_client(ctx);
   p->next_state = NEXT_STATE_GOT_TS;
 
-  //  fprintf(stderr, "Jump to idx: %d\n", idx);
-  for(i = 0; i < 100; i++)
-    {
-    int result = open_next_async(ctx, 200);
-    if(result < 0)
-      {
-      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Jumping to idx %d failed\n", idx);
-      return 0;
-      }
-    if(result > 0)
-      break;
-    }
+  fprintf(stderr, "Jump to idx: %d\n", idx);
+
+  if(!open_next_sync(ctx))
+    return 0;
   
   init_segment_io(ctx);
 
@@ -940,8 +964,6 @@ static void seek_time_hls(bgav_input_context_t * ctx, gavl_time_t *t1)
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "No segments loaded");
     return;
     }
-
-  
   
   idx = clock_time_to_idx(ctx, t1);
 
@@ -971,7 +993,7 @@ static void pause_hls(bgav_input_context_t * ctx)
     p->ts_pos = gavf_io_position(p->ts_io);
     p->ts_uri = gavl_strdup(gavf_io_filename(p->ts_io));
 
-    fprintf(stderr, "pause_hls %s\n", p->ts_uri);
+    fprintf(stderr, "pause_hls %p %s\n", ctx, p->ts_uri);
     
     gavf_io_destroy(p->ts_io);
     p->ts_io = NULL;
@@ -991,16 +1013,22 @@ static void resume_hls(bgav_input_context_t * ctx)
     {
     int skip_bytes;
     uint8_t * dummy;
+
+    if(!p->ts_uri)
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "No TS Uri available for resuming");
+      return;
+      }
     
     p->ts_io = create_http_client(ctx);
 
     /* Open, skip bytes */
 
-    fprintf(stderr, "resume_hls %s, pos: %"PRId64"\n", p->ts_uri, p->ts_pos);
+    fprintf(stderr, "resume_hls %p %s, pos: %"PRId64"\n", ctx, p->ts_uri, p->ts_pos);
     
     if(!gavl_http_client_open(p->ts_io, "GET", p->ts_uri))
       {
-      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Re-opening ts uri after pause failed");
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Re-opening stream uri after pause failed");
       gavf_io_destroy(p->ts_io);
       p->ts_io = NULL;
       return;
