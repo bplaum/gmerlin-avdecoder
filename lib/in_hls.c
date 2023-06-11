@@ -105,7 +105,6 @@ static gavf_io_t * create_http_client(bgav_input_context_t * ctx)
   return ret;
   }
 
-
 static gavl_time_t get_segment_clock_time(bgav_input_context_t * ctx, int idx)
   {
   gavl_time_t ret = GAVL_TIME_UNDEFINED;
@@ -577,8 +576,22 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
 
   if(p->next_state == NEXT_STATE_WAIT_M3U)
     {
-    if(gavl_timer_get(p->m3u_timer) >= p->m3u_time)
+    gavl_time_t cur = gavl_timer_get(p->m3u_timer);
+
+    /* Wait */
+    if((cur < p->m3u_time) && (timeout > 0))
+      {
+      gavl_time_t delay_time = p->m3u_time - cur;
+      if(delay_time > timeout)
+        delay_time = timeout;
+      gavl_time_delay(&delay_time);
+      cur += delay_time;
+      }
+    
+    if(cur >= p->m3u_time)
       p->next_state = NEXT_STATE_START;
+
+    
     }
   
   if(p->next_state == NEXT_STATE_START)
@@ -645,7 +658,9 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
 
     if(p->seq_cur >= p->seq_start + p->segments.num_entries)
       {
-      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Next segment not available in m3u8. Trying again in 1 sec.");
+      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Next segment not available in m3u8, cur: %"PRId64", last: %"PRId64,
+               p->seq_cur, p->seq_start + p->segments.num_entries);
+      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Trying again in 1 sec.");
       p->m3u_time = gavl_timer_get(p->m3u_timer) + GAVL_TIME_SCALE;
       p->next_state = NEXT_STATE_WAIT_M3U;
       return 0;
@@ -841,14 +856,15 @@ static int open_next_sync(bgav_input_context_t * ctx)
 
     if(result < 0)
       {
-      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "open next ssync failed (result: %d)", result);
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "open next sync failed (result: %d)", result);
       return 0;
       }
     
     if(priv->next_state == NEXT_STATE_DONE)
       return 1;
     }
-  gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "open_next_sync failed: %d Iterations exceeded", i);
+  gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "open_next_sync failed: %d Iterations exceeded, next_state: %d",
+           i, priv->next_state);
   return 0;
   }
 
@@ -1108,14 +1124,16 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
     if(result < 0)
       gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Read error");
     
-#if 0    
+#if 0
     if(result < len - bytes_read)
       {
-      fprintf(stderr, "Wanted %d, got %d\n", len - bytes_read, result);
+      fprintf(stderr, "read_hls Wanted %d, got %d\n", len - bytes_read, result);
       }
+    if(!result)
+      fprintf(stderr, "read_hls 1 %d result: %d %d\n", len - bytes_read, result,
+              gavf_io_got_eof(p->io));
 #endif
-    //    fprintf(stderr, "read_hls 1 %d\n", len - bytes_read);
-
+    
     if((p->next_state != NEXT_STATE_DONE) && !(p->flags & END_OF_SEQUENCE))
       {
       if(open_next_async(ctx, 0) < 0)
@@ -1141,9 +1159,6 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
         }
       else
         {
-        int i;
-        int result1;
-        
         if(p->flags & END_OF_SEQUENCE)
           return bytes_read;
         
@@ -1152,22 +1167,14 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
         if(p->next_state != NEXT_STATE_DONE)
           {
           gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Need to open next syncronously");
-          
-          for(i = 0 ; i < 100; i++)
-            {
-            result1 = open_next_async(ctx, 100);
-            
-            if(result1 > 0)
-              break;
 
-            if(result1 < 0)
-              return bytes_read;
-          
-            if(p->next_state == NEXT_STATE_DONE)
-              break;
-            }
+          if(open_next_sync(ctx))
+            init_segment_io(ctx);
+          else
+            gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Open next segment failed");
           }
-        init_segment_io(ctx);
+        else
+          init_segment_io(ctx);
         }
       }
     }

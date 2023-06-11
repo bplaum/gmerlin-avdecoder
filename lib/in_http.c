@@ -286,8 +286,10 @@ static int read_data(bgav_input_context_t* ctx,
   if(ret < len)
     {
     if(gavf_io_got_error(p->io))
+      {
+      /* TODO: Re-open */
       bgav_signal_restart(ctx->b, GAVL_MSG_SRC_RESTART_ERROR);
-    
+      }
     //  fprintf(stderr, "Got %d exprected %d %d\n", ret, len, gavf_io_got_error(p->io));
     }
   return ret;
