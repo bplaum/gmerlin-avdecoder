@@ -191,7 +191,10 @@ static int parse_m3u8(bgav_input_context_t * ctx)
   gavl_dictionary_init(&cipher_params);
   
   lines = gavl_strbreak((char*)p->m3u_buf.buf, '\n');
-
+  
+  //  fprintf(stderr, "parse_m3u8 %d\n", p->m3u_buf.len);
+  //  gavl_hexdump(p->m3u_buf.buf, 128, 16);
+  
   idx = 0;
 
   while(lines[idx])
@@ -610,7 +613,12 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
     {
     int result = gavl_http_client_run_async_done(p->m3u_io, timeout);
     
-    //    fprintf(stderr, "Read m3u %d %d\n", result,  p->m3u_buf.len);
+    if((result > 0) && !p->m3u_buf.len)
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Got no m3u8 data");
+      gavl_dictionary_dump(gavl_http_client_get_response(p->m3u_io), 2);
+      return -1;
+      }
     
     if(result <= 0)
       {
@@ -622,6 +630,8 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
           {
           gavf_io_destroy(p->m3u_io);
           p->m3u_io = create_http_client(ctx);
+          gavl_buffer_reset(&p->m3u_buf);
+          gavl_http_client_set_response_body(p->m3u_io, &p->m3u_buf);
           gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Re-starting m3u8 download");
           p->next_state = NEXT_STATE_START;
           return 0;

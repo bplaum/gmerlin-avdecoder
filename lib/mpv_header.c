@@ -36,9 +36,11 @@ first_zero_byte(const uint8_t *p, int len)
 
   /* Align pointer to 8 byte boundary */
   num = (unsigned long)(p) & 0x07;
+  num = (8 - num) & 0x07;
+  
   if(num > len)
     num = len;
-  
+
   i = num+1;
   while(--i)
     {
@@ -51,6 +53,7 @@ first_zero_byte(const uint8_t *p, int len)
 
   /* Main loop: Take 8 bytes at once */
   num = (len - done)/8;
+
   i = num+1;
   while(--i)
     {
