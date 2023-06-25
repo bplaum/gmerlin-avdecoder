@@ -38,8 +38,8 @@
 #include <libavcore/avcore.h>
 #endif
 
-// #define DUMP_DECODE
-// #define DUMP_PACKET
+#define DUMP_DECODE
+#define DUMP_PACKET
 // #define DUMP_EXTRADATA
 
 /* Different decoding functions */
@@ -216,8 +216,7 @@ static gavl_source_status_t decode_frame_ffmpeg(bgav_stream_t * s)
       if(p)
         {
         bgav_dprintf("Got packet\n");
-        bgav_packet_dump(p);
-        gavl_hexdump(p->buf.buf, 16, 16);
+        gavl_packet_dump(p);
         }
 #endif
       avcodec_send_packet(priv->ctx, priv->pkt);
@@ -383,6 +382,9 @@ static int init_ffmpeg_audio(bgav_stream_t * s)
 static void resync_ffmpeg(bgav_stream_t * s)
   {
   ffmpeg_audio_priv * priv;
+
+  fprintf(stderr, "resync_ffmpeg\n");
+
   priv = s->decoder_priv;
   avcodec_flush_buffers(priv->ctx);
   if(priv->frame)

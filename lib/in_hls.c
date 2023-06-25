@@ -450,10 +450,15 @@ static int handle_id3(bgav_input_context_t * ctx)
     int64_t pts;
 
     if((pts = bgav_id3v2_get_pts(id3)) != GAVL_TIME_UNDEFINED)
+      {
       ctx->input_pts = pts;
-    
+      fprintf(stderr, "Got PTS from ID3: %"PRId64"\n", pts);
+      }
     if((pts = bgav_id3v2_get_clock_time(id3)) != GAVL_TIME_UNDEFINED)
+      {
+      // fprintf(stderr, "Clock time: %"PRId64" %"PRId64" %"PRId64"\n", ctx->clock_time, pts, ctx->clock_time - pts);
       ctx->clock_time = pts;
+      }
 #if 0
     fprintf(stderr, "Got ID3V2 %"PRId64"\n", gavl_time_unscale(90000, ctx->input_pts));
     bgav_id3v2_dump(id3);
@@ -834,7 +839,7 @@ static void init_segment_io(bgav_input_context_t * ctx)
   swp = p->ts_io;
   p->ts_io = p->ts_io_next;
   p->ts_io_next = swp;
-
+  
   if(p->cipher_io)
     {
     gavf_io_cipher_init(p->cipher_io, p->ts_io, p->cipher_key.buf, p->cipher_iv.buf);
@@ -843,7 +848,7 @@ static void init_segment_io(bgav_input_context_t * ctx)
   else
     p->io = p->ts_io;
   
-  //  fprintf(stderr, "init_segment_io %p %p %p\n", p->io, p->ts_io, p->ts_io_next);
+  fprintf(stderr, "init_segment_io %"PRId64" %p %s\n", p->seq_cur, ctx, ctx->location);
   
   p->next_state = NEXT_STATE_START;
   p->seq_cur++;
@@ -963,6 +968,9 @@ static int jump_to_idx(bgav_input_context_t * ctx, int idx)
   p->io = NULL;
 
   p->m3u_io = create_http_client(ctx);
+  gavl_buffer_reset(&p->m3u_buf);
+  gavl_http_client_set_response_body(p->m3u_io, &p->m3u_buf);
+  
   p->ts_io = create_http_client(ctx);
   p->ts_io_next = create_http_client(ctx);
   p->next_state = NEXT_STATE_GOT_TS;
@@ -970,8 +978,10 @@ static int jump_to_idx(bgav_input_context_t * ctx, int idx)
   fprintf(stderr, "Jump to idx: %d\n", idx);
 
   if(!open_next_sync(ctx))
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Failed to re-open after seek");
     return 0;
-  
+    }
   init_segment_io(ctx);
 
   //  fprintf(stderr, "Jump to idx: %d done\n", idx);
@@ -1012,6 +1022,8 @@ static void pause_hls(bgav_input_context_t * ctx)
   {
   hls_priv_t * p = ctx->priv;
 
+  fprintf(stderr, "pause_hls %p\n", ctx);
+  
   if(gavf_io_can_seek(p->ts_io))
     gavl_http_client_pause(p->ts_io);
   else
@@ -1019,7 +1031,6 @@ static void pause_hls(bgav_input_context_t * ctx)
     p->ts_pos = gavf_io_position(p->ts_io);
     p->ts_uri = gavl_strdup(gavf_io_filename(p->ts_io));
 
-    fprintf(stderr, "pause_hls %p %s\n", ctx, p->ts_uri);
     
     gavf_io_destroy(p->ts_io);
     p->ts_io = NULL;
@@ -1033,6 +1044,8 @@ static void resume_hls(bgav_input_context_t * ctx)
   {
   hls_priv_t * p = ctx->priv;
 
+  fprintf(stderr, "resume_hls %p %p\n", ctx, p->ts_io);
+  
   if(p->ts_io)
     gavl_http_client_resume(p->ts_io);
   else

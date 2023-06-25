@@ -121,6 +121,10 @@ static gavl_source_status_t source_func_adts(void * priv, gavl_packet_t ** p)
       
       adts->in_pkt->data = adts->in_pkt_g->buf.buf;
       adts->in_pkt->size = adts->in_pkt_g->buf.len;
+
+      //      fprintf(stderr, "adts Packet in\n");
+      //      gavl_packet_dump(adts->in_pkt_g);
+      
       av_bsf_send_packet(adts->ctx, adts->in_pkt);
       
       if(adts->pts == GAVL_TIME_UNDEFINED)
@@ -174,6 +178,10 @@ static gavl_source_status_t source_func_adts(void * priv, gavl_packet_t ** p)
   adts->out_pkt_g.pts      = adts->pts;
   adts->out_pkt_g.duration = 1024;
   adts->pts += adts->out_pkt_g.duration;
+
+  //  fprintf(stderr, "adts Packet out\n");
+  //  gavl_packet_dump(&adts->out_pkt_g);
+  
   
   *p = &adts->out_pkt_g;
   return GAVL_SOURCE_OK;
