@@ -38,8 +38,8 @@
 #include <libavcore/avcore.h>
 #endif
 
-#define DUMP_DECODE
-#define DUMP_PACKET
+// #define DUMP_DECODE
+// #define DUMP_PACKET
 // #define DUMP_EXTRADATA
 
 /* Different decoding functions */

@@ -54,6 +54,7 @@
 #define NEXT_STATE_LOST_SYNC       8
 
 #define END_OF_SEQUENCE (1<<0)
+#define SENT_HEADER     (1<<1)
 
 typedef struct
   {
@@ -94,6 +95,8 @@ typedef struct
   
   int have_clock_time;
   gavl_time_t clock_time_start;
+
+  char * header_uri;
   
   } hls_priv_t;
 
@@ -167,6 +170,15 @@ static void get_seek_window(bgav_input_context_t * ctx, gavl_time_t * start, gav
 
   if(duration > 0)
     *end += duration;
+  
+  }
+
+static int parse_byterange(const char * str, int64_t * start, int64_t * len)
+  {
+  char * rest = NULL;
+  *start = 0;
+
+  //  if((*len = strtol(
   
   }
 
@@ -260,6 +272,7 @@ static int parse_m3u8(bgav_input_context_t * ctx)
     /* Skip header lines to suppress fake warnings */
     if(gavl_string_starts_with(lines[idx], "#EXTM3U") ||
        gavl_string_starts_with(lines[idx], "#EXT-X-VERSION") ||
+       gavl_string_starts_with(lines[idx], "#ENCODER") ||
        gavl_string_starts_with(lines[idx], "#EXT-X-MEDIA-SEQUENCE") ||
        gavl_string_starts_with(lines[idx], "#EXT-X-TARGETDURATION"))
       {
@@ -329,6 +342,37 @@ static int parse_m3u8(bgav_input_context_t * ctx)
       double duration = strtod(lines[idx] + strlen("#EXTINF:"), NULL);
       segment_duration = gavl_seconds_to_time(duration);
       }
+    else if(gavl_string_starts_with(lines[idx], "#EXT-X-MAP:"))
+      {
+      if(!p->header_uri)
+        {
+        char * pos;
+        char * end;
+        char * tmp_string;
+        if((pos = strstr(lines[idx], "URI=\"")))
+          {
+          // URI="
+          pos += 5;
+
+          if((end = strchr(pos, '\"')))
+            {
+            tmp_string = gavl_strndup(pos, end);
+            p->header_uri = bgav_input_absolute_url(ctx, tmp_string);
+            p->header_uri = gavl_url_append_http_vars(p->header_uri, &p->http_vars);
+            gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got global header: %s", p->header_uri);
+            free(tmp_string);            
+            }
+          }
+
+        if(p->header_uri && (pos = strstr(lines[idx], "BYTERANGE=\"")))
+          {
+          // BYTERANGE="
+          pos += 11;
+          
+          }
+        
+        }
+      }
     else if(!gavl_string_starts_with(lines[idx], "#"))
       {
       char * uri;
@@ -341,9 +385,7 @@ static int parse_m3u8(bgav_input_context_t * ctx)
       gavl_dictionary_merge2(dict, &cipher_params);
 
       uri = bgav_input_absolute_url(ctx, lines[idx]);
-
       uri = gavl_url_append_http_vars(uri, &p->http_vars);
-
       
       gavl_dictionary_set_string_nocopy(dict, GAVL_META_URI, uri);
       gavl_array_splice_val_nocopy(&p->segments, -1, 0, &val);
