@@ -31,6 +31,8 @@
 #include <utils.h>
 #define LOG_DOMAIN "quicktime"
 
+static gavl_source_status_t handle_emsg(bgav_demuxer_context_t * ctx,
+                                        qt_atom_header_t * h, gavl_dictionary_t * metadata);
 
 typedef struct
   {
@@ -99,11 +101,13 @@ typedef struct
 
   int skip_first_frame; /* Enabled only if the first frame has a different codec */
   int skip_last_frame; /* Enabled only if the last frame has a different codec */
-  int64_t first_pts;
+  int64_t dts;
   } stream_priv_t;
 
 typedef struct
   {
+  gavl_dictionary_t m_emsg;
+  
   uint32_t ftyp_fourcc;
   qt_moov_t moov;
 
@@ -144,6 +148,7 @@ static void bgav_qt_moof_to_superindex(bgav_demuxer_context_t * ctx,
   bgav_stream_t * s;
   qt_priv_t * priv = ctx->priv;
   bgav_track_t * t = ctx->tt->cur;
+  stream_priv_t * sp;
   
   for(i = 0; i < m->num_trafs; i++)
     {
@@ -159,6 +164,7 @@ static void bgav_qt_moof_to_superindex(bgav_demuxer_context_t * ctx,
       }
 
     s = bgav_track_find_stream_all(t, stream_id);
+    sp = s->priv;
     
     for(j = 0; j < m->traf[i].num_truns; j++)
       {
@@ -195,7 +201,7 @@ static void bgav_qt_moof_to_superindex(bgav_demuxer_context_t * ctx,
             keyframe = 0;
           }
         
-        timestamp = s->dts +
+        timestamp = sp->dts +
           trun->samples[k].sample_composition_time_offset -
           trun->samples[0].sample_composition_time_offset;
 
@@ -215,7 +221,7 @@ static void bgav_qt_moof_to_superindex(bgav_demuxer_context_t * ctx,
                                    keyframe,
                                    duration);
         
-        s->dts += duration;
+        sp->dts += duration;
         offset += size;
         }
       }
@@ -241,6 +247,8 @@ static void stream_init(bgav_stream_t * bgav_s, qt_trak_t * trak,
   s->trak = trak;
   s->stbl = &trak->mdia.minf.stbl;
 
+  bgav_s->stats.pts_start = 0;
+  
   s->stts_pos = (s->stbl->stts.num_entries > 1) ? 0 : -1;
   s->ctts_pos = (s->stbl->has_ctts) ? 0 : -1;
   /* stsz_pos is -1 if all samples have the same size */
@@ -249,20 +257,17 @@ static void stream_init(bgav_stream_t * bgav_s, qt_trak_t * trak,
   /* Detect negative first timestamp */
   if((trak->edts.elst.num_entries == 1) &&
      (trak->edts.elst.table[0].media_time != 0))
-    s->first_pts = -trak->edts.elst.table[0].media_time;
+    bgav_s->stats.pts_start = -trak->edts.elst.table[0].media_time;
 
   /* Detect positive first timestamp */
   else if((trak->edts.elst.num_entries == 2) &&
           (trak->edts.elst.table[0].media_time == -1))
-    s->first_pts = gavl_time_rescale(moov_scale, trak->mdia.mdhd.time_scale, 
-                                     trak->edts.elst.table[0].duration);
-
-  //  fprintf(stderr, "stream_init: %"PRId64"\n", s->first_pts);
+    bgav_s->stats.pts_start = gavl_time_rescale(moov_scale, trak->mdia.mdhd.time_scale, 
+                                                trak->edts.elst.table[0].duration);
+  
+  fprintf(stderr, "stream_init: %"PRId64"\n", bgav_s->stats.pts_start);
   
   //  if(s->first_pts)
-
-  bgav_s->stats.pts_start = s->first_pts;
-  bgav_s->stats.pts_end   = s->first_pts;
   
   /* Set encoding software */
   if(trak->mdia.hdlr.component_name)
@@ -430,7 +435,7 @@ static void build_index_fragmented(bgav_demuxer_context_t * ctx)
     {
     /* current_moof is already loaded */
     bgav_qt_moof_to_superindex(ctx, &priv->current_moof, ctx->si);
- 
+    
     if(!(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))    
       break;
 
@@ -511,6 +516,18 @@ static void build_index(bgav_demuxer_context_t * ctx)
   
   i = 0;
 
+  /* Set the dts of the streams */
+  for(i = 0; i < ctx->tt->cur->num_streams; i++)
+    {
+    bgav_s = &ctx->tt->cur->streams[i];
+    if(!bgav_s->priv)
+      break;
+    s = bgav_s->priv;
+    s->dts = bgav_s->stats.pts_start;
+
+    fprintf(stderr, "Stream: %d, dts: %"PRId64"\n", i, s->dts);
+    }
+  
   while(i < num_packets)
     {
     /* Find the stream with the lowest chunk offset */
@@ -566,11 +583,11 @@ static void build_index(bgav_demuxer_context_t * ctx)
                      bgav_s,
                      i, chunk_offset,
                      stream_id,
-                     bgav_s->stats.pts_end,
+                     s->dts,
                      check_keyframe(s), chunk_samples, packet_size);
-          
-          bgav_s->stats.pts_end += chunk_samples;
-          
+
+          s->dts += chunk_samples;
+            
           chunk_offset += packet_size;
           /* Advance stts */
           if(s->stts_pos >= 0)
@@ -607,10 +624,10 @@ static void build_index(bgav_demuxer_context_t * ctx)
                    bgav_s,
                    i, chunk_offset,
                    stream_id,
-                   bgav_s->stats.pts_end,
+                   s->dts,
                    check_keyframe(s), chunk_samples, 0);
         /* Time to sample */
-        bgav_s->stats.pts_end += chunk_samples;
+        s->dts += chunk_samples;
         if(s->stts_pos >= 0)
           {
           s->stts_count++;
@@ -675,7 +692,7 @@ static void build_index(bgav_demuxer_context_t * ctx)
                      bgav_s,
                      i, chunk_offset,
                      -1,
-                     bgav_s->stats.pts_end + pts_offset + s->first_pts,
+                     s->dts + pts_offset,
                      check_keyframe(s),
                      duration,
                      packet_size);
@@ -687,16 +704,15 @@ static void build_index(bgav_demuxer_context_t * ctx)
                      bgav_s,
                      i, chunk_offset,
                      stream_id,
-                     bgav_s->stats.pts_end + pts_offset + s->first_pts,
+                     s->dts + pts_offset,
                      check_keyframe(s),
                      duration,
                      packet_size);
           i++;
           }
         chunk_offset += packet_size;
-
-        bgav_s->stats.pts_end += duration;
-
+        s->dts += duration;
+        
         /* Time to sample */
         if(s->stts_pos >= 0)
           {
@@ -750,13 +766,13 @@ static void build_index(bgav_demuxer_context_t * ctx)
                    bgav_s,
                    i, chunk_offset,
                    stream_id,
-                   bgav_s->stats.pts_end,
+                   s->dts,
                    check_keyframe(s), duration,
                    packet_size);
         
         chunk_offset += packet_size;
 
-        bgav_s->stats.pts_end += duration;
+        s->dts += duration;
         
         /* Time to sample */
         if(s->stts_pos >= 0)
@@ -858,6 +874,7 @@ static void set_metadata(bgav_demuxer_context_t * ctx)
   if(cnv)
     bgav_charset_converter_destroy(cnv);
 
+  
   //  gavl_dictionary_dump(&ctx->tt->cur->metadata);
   }
 
@@ -1591,7 +1608,7 @@ static void quicktime_init(bgav_demuxer_context_t * ctx)
   char language[4];
   
   track = ctx->tt->cur;
-  
+
   //  ctx->tt->cur->duration = 0;
   
   priv->streams = calloc(moov->num_tracks, sizeof(*(priv->streams)));
@@ -1758,7 +1775,7 @@ static void quicktime_init(bgav_demuxer_context_t * ctx)
       }
     
     }
-  
+
   set_metadata(ctx);
 
   if(priv->timecode_track && (ctx->tt->cur->num_video_streams == 1))
@@ -1767,9 +1784,11 @@ static void quicktime_init(bgav_demuxer_context_t * ctx)
     
     stream_priv = vs->priv;
     bgav_qt_init_timecodes(ctx->input, vs,
-                           priv->timecode_track, stream_priv->first_pts);
+                           priv->timecode_track, vs->stats.pts_start);
     }
   
+  gavl_dictionary_update_fields(ctx->tt->cur->metadata, &priv->m_emsg);
+  gavl_dictionary_reset(&priv->m_emsg);
   }
 
 static int handle_rmra(bgav_demuxer_context_t * ctx)
@@ -1968,6 +1987,7 @@ static int open_quicktime(bgav_demuxer_context_t * ctx)
   int have_mdat = 0;
   int done = 0;
   int i;
+
   /* Create track */
 
   
@@ -2043,6 +2063,10 @@ static int open_quicktime(bgav_demuxer_context_t * ctx)
         // fprintf(stderr, "First moof: %ld\n", h.start_position);
         priv->fragment_mdat.start = -1; // Set invalid
         }
+        break;
+      case BGAV_MK_FOURCC('e','m','s','g'):
+        if(handle_emsg(ctx, &h, &priv->m_emsg) != GAVL_SOURCE_OK)
+          return 0;
         break;
       default:
         bgav_qt_atom_skip_unknown(ctx->input, &h, 0);
@@ -2136,7 +2160,12 @@ static int open_quicktime(bgav_demuxer_context_t * ctx)
   
   if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
     ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
-  
+
+  if(!priv->fragmented || (ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
+    {
+    bgav_demuxer_check_interleave(ctx);
+    bgav_demuxer_set_durations_from_superindex(ctx, ctx->tt->cur);
+    }
   return 1;
   }
 
@@ -2155,11 +2184,151 @@ static void close_quicktime(bgav_demuxer_context_t * ctx)
   free(ctx->priv);
   }
 
+static gavl_source_status_t handle_emsg(bgav_demuxer_context_t * ctx,
+                                        qt_atom_header_t * h, gavl_dictionary_t * m_msg)
+  {
+  qt_emsg_t emsg;
+  qt_priv_t * priv;
+  
+  priv = ctx->priv;
+  
+  bgav_qt_emsg_init(&emsg);
+  if(!bgav_qt_emsg_read(h, ctx->input, &emsg))
+    return GAVL_SOURCE_EOF;
+
+  if((emsg.message_data.len > 3) &&
+     (emsg.message_data.buf[0] == 'I') &&
+     (emsg.message_data.buf[1] == 'D') &&
+     (emsg.message_data.buf[2] == '3'))
+    {
+    bgav_input_context_t * input_mem;
+
+    input_mem = bgav_input_open_memory(emsg.message_data.buf,
+                                       emsg.message_data.len);
+
+    if(bgav_id3v2_probe(input_mem))
+      {
+      bgav_id3v2_tag_t * tag;
+                
+      if((tag = bgav_id3v2_read(input_mem)))
+        {
+        const char * artist;
+        const char * title;
+        
+        //        fprintf(stderr, "Got ID3 tag\n");
+        //        bgav_id3v2_dump(tag);
+
+        if(!ctx->tt)
+          {
+          bgav_id3v2_2_metadata(tag, &priv->m_emsg);
+
+          if((artist = gavl_dictionary_get_string(&priv->m_emsg, GAVL_META_ARTIST)) &&
+             (title = gavl_dictionary_get_string(&priv->m_emsg, GAVL_META_TITLE)))
+            gavl_dictionary_set_string_nocopy(&priv->m_emsg,
+                                              GAVL_META_LABEL, gavl_sprintf("%s - %s", artist, title));
+          
+          fprintf(stderr, "Got initial metadata:\n");
+          gavl_dictionary_dump(&priv->m_emsg, 2);
+          }
+        else
+          {
+          gavl_dictionary_t m;
+          gavl_dictionary_init(&m);
+          bgav_id3v2_2_metadata(tag, &m);
+
+          if((artist = gavl_dictionary_get_string(&m, GAVL_META_ARTIST)) &&
+             (title = gavl_dictionary_get_string(&m, GAVL_META_TITLE)))
+            gavl_dictionary_set_string_nocopy(&m, GAVL_META_LABEL, gavl_sprintf("%s - %s", artist, title));
+          
+          gavl_dictionary_merge2(&m, ctx->tt->cur->metadata);
+          
+          if(gavl_dictionary_compare(&m, ctx->tt->cur->metadata))
+            {
+            //            fprintf(stderr, "Got metadata:\n");
+            //            gavl_dictionary_dump(&m, 2);
+
+            gavl_dictionary_reset(ctx->tt->cur->metadata);
+            gavl_dictionary_move(ctx->tt->cur->metadata, &m);
+            bgav_metadata_changed(ctx->b, ctx->tt->cur->metadata);
+            }
+          else
+            gavl_dictionary_free(&m);
+          }
+        }
+      }
+    }
+  else
+    {
+    bgav_qt_emsg_dump(0, &emsg);
+    }
+  bgav_qt_emsg_free(&emsg);
+  return GAVL_SOURCE_OK;
+  }
+
+static gavl_source_status_t next_packet_quicktime(bgav_demuxer_context_t * ctx)
+  {
+  qt_priv_t * priv;
+  priv = ctx->priv;
+
+  if(priv->fragmented && !(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
+    {
+    if(ctx->si->current_position >= ctx->si->num_entries)
+      {
+      qt_atom_header_t h;
+      int done = 0;
+      gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Next segment");
+
+      while(!done)
+        {
+        if(!bgav_qt_atom_read_header(ctx->input, &h))
+          return GAVL_SOURCE_EOF;
+        fprintf(stderr, "got atom: ");
+        bgav_qt_atom_dump_header(0, &h);
+
+        switch(h.fourcc)
+          {
+          case BGAV_MK_FOURCC('e','m','s','g'):
+            handle_emsg(ctx, &h, NULL);
+            break;
+          case BGAV_MK_FOURCC('m','o','o','f'):
+            bgav_qt_moof_free(&priv->current_moof);
+            bgav_qt_moof_read(&h, ctx->input, &priv->current_moof);
+            bgav_superindex_clear(ctx->si);
+            bgav_qt_moof_to_superindex(ctx, &priv->current_moof, ctx->si);
+            break;
+          case BGAV_MK_FOURCC('m','d','a','t'):
+            done = 1;
+            break;
+          default:
+            done = 1;
+            break;
+          }
+        
+        }
+      
+      if(done)
+        return bgav_demuxer_next_packet_si(ctx);
+      else
+        return GAVL_SOURCE_EOF;
+      }
+    else
+      {
+      // fprintf(stderr, "next_packet_fragmented %d %d\n", ctx->si->current_position, ctx->si->num_entries);
+      return bgav_demuxer_next_packet_si(ctx);
+      }
+    }
+  else
+    {
+    return bgav_demuxer_next_packet_si(ctx);
+    }
+  
+  }
+
 const bgav_demuxer_t bgav_demuxer_quicktime =
   {
     .probe =       probe_quicktime,
     .open =        open_quicktime,
-    //    .next_packet = next_packet_quicktime,
+    .next_packet = next_packet_quicktime,
     //    .seek =        seek_quicktime,
     .close =       close_quicktime
   };

@@ -70,6 +70,14 @@ void bgav_qt_atom_skip(bgav_input_context_t * input,
     bgav_input_skip(input, bytes_to_skip);
   }
 
+void bgav_qt_atom_skip_dump(bgav_input_context_t * input,
+                             qt_atom_header_t * h)
+  {
+  int64_t bytes_to_skip = h->size - (input->position - h->start_position);
+  if(bytes_to_skip > 0)
+    bgav_input_skip_dump(input, bytes_to_skip);
+  }
+
 void bgav_qt_atom_skip_unknown(bgav_input_context_t * input,
                                qt_atom_header_t * h, uint32_t parent)
   {

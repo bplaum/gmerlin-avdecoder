@@ -19,8 +19,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
-
-
 #include <avdec_private.h>
 
 #include <gavl/trackinfo.h>
@@ -625,7 +623,7 @@ int bgav_track_foreach(bgav_track_t * t,
   return 1;
   }
 
-#if 0
+#if 1
 static int reset_index_positions(void * priv, bgav_stream_t * s)
   {
   s->first_index_position = INT_MAX;
@@ -1070,6 +1068,21 @@ void bgav_track_export_infos(bgav_track_t * t)
     gavl_stream_set_stats(t->streams[i].info_ext, &t->streams[i].stats);
     gavl_stream_set_compression_info(t->streams[i].info_ext, t->streams[i].ci);
     }
+  }
+
+int bgav_track_num_media_streams(bgav_track_t * t)
+  {
+  int ret = 0;
+  int i;
+  for(i = 0; i < t->num_streams; i++)
+    {
+    if((t->streams[i].type == GAVL_STREAM_AUDIO) ||
+       (t->streams[i].type == GAVL_STREAM_VIDEO) ||
+       (t->streams[i].type == GAVL_STREAM_TEXT) ||
+       (t->streams[i].type == GAVL_STREAM_OVERLAY))
+      ret++;
+    }
+  return ret;
   }
 
 static const char * track_priv = "$avdec";

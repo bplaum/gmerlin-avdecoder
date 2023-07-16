@@ -361,7 +361,7 @@ typedef struct
   bgav_dv_dec_t * dv_dec;
   int dv_frame_size;
   uint8_t * dv_frame_buffer;
-  int has_iavs;
+  //  int has_iavs;
   int duplicate_si;
   int64_t iavs_sample_counter;
   int64_t iavs_frame_counter;
@@ -965,8 +965,6 @@ static void indx_build_superindex(bgav_demuxer_context_t * ctx)
   uint32_t size = 0, test_size;
   bgav_stream_t * s;
   
-  avi_priv_t * priv = ctx->priv;
-  
   struct
     {
     int index_position;
@@ -981,22 +979,20 @@ static void indx_build_superindex(bgav_demuxer_context_t * ctx)
 
   num_audio_streams = 0;
 
-  if(!priv->has_iavs)
+  for(i = 0; i < ctx->tt->cur->num_audio_streams; i++)
     {
-    for(i = 0; i < ctx->tt->cur->num_audio_streams; i++)
-      {
-      s = bgav_track_get_audio_stream(ctx->tt->cur, i);
+    s = bgav_track_get_audio_stream(ctx->tt->cur, i);
       
-      avi_as = s->priv;
+    avi_as = s->priv;
       
-      if(!avi_as->has_indx)
-        return;
+    if(!avi_as->has_indx)
+      return;
       
-      avi_as->total_bytes = 0;
-      avi_as->total_blocks = 0;
-      }
-    num_audio_streams = ctx->tt->cur->num_audio_streams;
+    avi_as->total_bytes = 0;
+    avi_as->total_blocks = 0;
     }
+  num_audio_streams = ctx->tt->cur->num_audio_streams;
+    
   for(i = 0; i < ctx->tt->cur->num_video_streams; i++)
     {
     s = bgav_track_get_video_stream(ctx->tt->cur, i);
@@ -1012,10 +1008,7 @@ static void indx_build_superindex(bgav_demuxer_context_t * ctx)
   
   num_entries = 0;
 
-  if(priv->has_iavs)
-    num_streams = 1;
-  else
-    num_streams = num_audio_streams + ctx->tt->cur->num_video_streams;
+  num_streams = num_audio_streams + ctx->tt->cur->num_video_streams;
   
   streams = calloc(num_streams, sizeof(*streams));
 
@@ -1395,306 +1388,6 @@ static int init_video_stream(bgav_demuxer_context_t * ctx,
   return 1;
   }
 
-static int process_packet_iavs(bgav_demuxer_context_t * ctx, int64_t position)
-  {
-  int do_init = 0;
-  bgav_stream_t * as, *vs;
-  bgav_packet_t * ap = NULL;
-  bgav_packet_t * vp = NULL;
-  uint8_t header[DV_HEADER_SIZE];
-  avi_priv_t * priv;
-  
-  priv = ctx->priv;
-  
-  if(!priv->dv_dec)
-    {
-    priv->dv_dec = bgav_dv_dec_create();
-    do_init = 1;
-    /* Get formats */
-    if(bgav_input_get_data(ctx->input, header, DV_HEADER_SIZE) <
-       DV_HEADER_SIZE)
-      return 0;
-
-    bgav_dv_dec_set_header(priv->dv_dec, header);
-    priv->dv_frame_size = bgav_dv_dec_get_frame_size(priv->dv_dec);
-    priv->dv_frame_buffer = malloc(priv->dv_frame_size);
-    }
-  
-  if(bgav_input_read_data(ctx->input, priv->dv_frame_buffer,
-                          priv->dv_frame_size) < priv->dv_frame_size)
-    return 0;
-  
-  if(do_init)
-    {
-    vs = bgav_track_get_video_stream(ctx->tt->cur, 0);
-    as = bgav_track_get_video_stream(ctx->tt->cur, 0);
-    }
-  else
-    {
-    vs = bgav_track_find_stream(ctx, DV_VIDEO_ID);
-    as = bgav_track_find_stream(ctx, DV_AUDIO_ID);
-    }
-
-  if(!do_init)
-    bgav_dv_dec_set_header(priv->dv_dec, priv->dv_frame_buffer);
-  bgav_dv_dec_set_frame(priv->dv_dec, priv->dv_frame_buffer);
-  
-  if(do_init)
-    {
-    bgav_dv_dec_init_audio(priv->dv_dec, as);
-    bgav_dv_dec_init_video(priv->dv_dec, vs);
-    as->timescale = as->data.audio.format->samplerate;
-    }
-  
-  if(vs)
-    {
-    vp = bgav_stream_get_packet_write(vs);
-    vp->position = position;
-    }
-  if(as)
-    {
-    ap = bgav_stream_get_packet_write(as);
-    ap->position = position;
-    }
-  
-  if(!bgav_dv_dec_get_audio_packet(priv->dv_dec, ap))
-    return 0;
-  bgav_dv_dec_get_video_packet(priv->dv_dec, vp);
-
-#if 0  
-  if(vs) bgav_dv_dec_set_frame_counter(priv->dv_dec, vs->in_position,
-                                       gavl_time_rescale(vs->data.video.format->timescale,
-                                                         vs->data.audio.format->samplerate,
-                                                         vs->in_position *
-                                                         vs->data.video.format->frame_duration));
-#endif
-  if(ap)
-    bgav_stream_done_packet_write(as, ap);
-  if(vp)
-    bgav_stream_done_packet_write(vs, vp);
-  
-  return 1;
-  }
-
-static void seek_iavs(bgav_demuxer_context_t * ctx, gavl_time_t time,
-                      int scale)
-  {
-  bgav_stream_t * as, *vs;
-
-  vs = bgav_track_find_stream(ctx, DV_VIDEO_ID);
-  as = bgav_track_find_stream(ctx, DV_AUDIO_ID);
-  
-  bgav_superindex_seek(ctx->si, vs, &time, scale);
-  
-  STREAM_SET_SYNC(as, gavl_time_rescale(vs->timescale, as->timescale, time));
-  
-  ctx->si->current_position = vs->index_position;
-  bgav_input_seek(ctx->input, ctx->si->entries[ctx->si->current_position].offset,
-                  SEEK_SET);
-  vs->in_position = vs->index_position;
-  
-  }
-
-static gavl_source_status_t next_packet_iavs_si(bgav_demuxer_context_t * ctx)
-  {
-  int result;
-  
-  if(ctx->si->current_position >= ctx->si->num_entries)
-    {
-    return GAVL_SOURCE_EOF;
-    }
-  
-  if(ctx->input->position >=
-     ctx->si->entries[ctx->si->num_entries - 1].offset +
-     ctx->si->entries[ctx->si->num_entries - 1].size)
-    {
-    return GAVL_SOURCE_EOF;
-    }
-
-  if(ctx->si->entries[ctx->si->current_position].offset > ctx->input->position)
-    {
-    bgav_input_skip(ctx->input,
-                    ctx->si->entries[ctx->si->current_position].offset - ctx->input->position);
-    }
-
-  result = process_packet_iavs(ctx, ctx->si->current_position);
-  
-  ctx->si->current_position++;
-
-  if(result)
-    return GAVL_SOURCE_OK;
-  else
-    return GAVL_SOURCE_EOF;
-  }
-
-static void process_packet_iavs_stream(bgav_stream_t * s, bgav_packet_t * p)
-  {
-  int do_init = 0;
-  avi_priv_t * priv;
-  bgav_stream_t * as;
-  bgav_stream_t * vs;
-  
-  priv = s->demuxer->priv;
-  
-  if(!priv->dv_dec)
-    {
-    priv->dv_dec = bgav_dv_dec_create();
-    do_init = 1;
-
-    bgav_dv_dec_set_header(priv->dv_dec, p->buf.buf);
-    priv->dv_frame_size = bgav_dv_dec_get_frame_size(priv->dv_dec);
-    priv->iavs_sample_counter = 0;
-    priv->iavs_frame_counter = 0;
-
-    }
-
-  if(do_init)
-    {
-    vs = bgav_track_get_audio_stream(s->demuxer->tt->cur, 0);
-    as = bgav_track_get_video_stream(s->demuxer->tt->cur, 0);
-    }
-  else
-    {
-    vs = bgav_track_find_stream(s->demuxer, DV_VIDEO_ID);
-    as = bgav_track_find_stream(s->demuxer, DV_AUDIO_ID);
-    }
-  
-  if(!do_init)
-    bgav_dv_dec_set_header(priv->dv_dec, p->buf.buf);
-  
-  bgav_dv_dec_set_frame(priv->dv_dec, p->buf.buf);
-  
-  if(do_init)
-    {
-    bgav_dv_dec_init_audio(priv->dv_dec, as);
-    bgav_dv_dec_init_video(priv->dv_dec, vs);
-    as->timescale = as->data.audio.format->samplerate;
-    }
-  
-  if(s->type == GAVL_STREAM_AUDIO)
-    {
-    bgav_dv_dec_get_audio_packet(priv->dv_dec, p);
-
-    if(s->demuxer->flags & BGAV_DEMUXER_BUILD_INDEX)
-      {
-      p->pts = priv->iavs_sample_counter;
-      //      p->audio_frame->timestamp = p->pts;
-      priv->iavs_sample_counter += p->duration;
-      }
-    else
-      {
-      p->pts      = s->demuxer->si->entries[s->index_position].pts;
-      p->duration = s->demuxer->si->entries[s->index_position].duration;
-      }
-    //    p->audio_frame->timestamp = p->pts;
-    }
-  else if(s->type == GAVL_STREAM_VIDEO)
-    {
-    if(s->demuxer->flags & BGAV_DEMUXER_BUILD_INDEX)
-      {
-      p->pts = priv->iavs_frame_counter * s->data.video.format->frame_duration;
-      priv->iavs_frame_counter++;
-      }
-    else
-      {
-      p->pts      = s->demuxer->si->entries[s->index_position].pts;
-      p->duration = s->demuxer->si->entries[s->index_position].duration;
-      }
-    }
-  }
-
-static int init_iavs_stream(bgav_demuxer_context_t * ctx,
-                            strh_t * strh, chunk_header_t * ch)
-  {
-  avih_t * avih;
-  int keep_going;
-  video_priv_t * video_priv;
-  bgav_stream_t * bg_vs;
-  bgav_stream_t * bg_as;
-  avi_priv_t * priv = ctx->priv;
-
-  priv->has_iavs = 1;
-  
-  keep_going = 1;
-  
-  avih = &(((avi_priv_t*)(ctx->priv))->avih);
-  
-  bg_vs = bgav_track_add_video_stream(ctx->tt->cur, ctx->opt);
-  bg_vs->stream_id = DV_VIDEO_ID;
-  bg_vs->cleanup = cleanup_stream_avi;
-  
-  video_priv = calloc(1, sizeof(*video_priv));
-  bg_vs->priv = video_priv;
-
-  memcpy(&video_priv->strh, strh, sizeof(*strh));
-  
-  bg_as = bgav_track_add_audio_stream(ctx->tt->cur, ctx->opt);
-  bg_as->stream_id = DV_AUDIO_ID;
-  bg_as->cleanup = cleanup_stream_avi;
-  
-  /* Tell the core that we do our own demuxing */
-  ctx->flags |= BGAV_DEMUXER_SI_PRIVATE_FUNCS;
-  
-  /* Prevent the core from thinking these streams are unsupported */
-  bg_vs->fourcc = BGAV_MK_FOURCC('d', 'v', 'c', ' ');
-  bg_as->fourcc = BGAV_MK_FOURCC('g', 'a', 'v', 'l');
-
-  while(keep_going)
-    {
-    if(!read_chunk_header(ctx->input, ch))
-      return 0;
-    switch(ch->ckID)
-      {
-      case ID_STRF:
-        /* Format chunk can be skipped */
-        bgav_input_skip(ctx->input, PADD(ch->ckSize));
-        break;
-      case ID_STRD:
-        bgav_input_skip(ctx->input, PADD(ch->ckSize));
-        break;
-      case ID_JUNK:
-        bgav_input_skip(ctx->input, PADD(ch->ckSize));
-        break;
-      case ID_LIST:
-        keep_going = 0;
-        break;
-      case ID_INDX:
-        if(!read_indx(ctx->input, &video_priv->indx, ch))
-          return 0;
-        if(ctx->opt->dump_indices)
-          dump_indx(&video_priv->indx);
-        video_priv->has_indx = 1;
-        break;
-      default:
-        bgav_input_skip(ctx->input, PADD(ch->ckSize));
-        break;
-      }
-    }
-
-  /* Get frame rate (These values will be overwritten later,
-     they are only for getting the correct duration */
-  if(strh->dwScale && strh->dwRate)
-    {
-    bg_vs->data.video.format->timescale = strh->dwRate;
-    bg_vs->data.video.format->frame_duration = strh->dwScale;
-    }
-  else if(avih->dwMicroSecPerFrame)
-    {
-    bg_vs->data.video.format->timescale = 1000000;
-    bg_vs->data.video.format->frame_duration = avih->dwMicroSecPerFrame;
-    }
-  else
-    {
-    bg_vs->data.video.format->timescale = 25;
-    bg_vs->data.video.format->frame_duration = 1;
-    }
-  //  bg_vs->timescale = bg_vs->data.video.format->timescale;
-  //  bg_as->timescale = bg_vs->timescale;
-
-  return 1;
-  }
-
-
 /* Get a stream ID (internally used) from the stream ID in the chunk header */
 
 static int get_stream_id(uint32_t fourcc)
@@ -1797,27 +1490,6 @@ static const uint32_t audio_codecs_parse_simple[] =
   };
 
 
-static void duplicate_si(bgav_superindex_t * idx)
-  {
-  int i;
-  int num_frames = idx->num_entries;
-  bgav_superindex_set_size(idx, num_frames * 2);
-
-  for(i = num_frames - 1; i > 0; i--)
-    {
-    memcpy(idx->entries + 2 * i, idx->entries + i, sizeof(*idx->entries));
-    }
-  for(i = 0; i < num_frames; i++)
-    {
-    idx->entries[2*i+1].stream_id = DV_AUDIO_ID;
-    idx->entries[2*i+1].offset = idx->entries[2*i].offset;
-    idx->entries[2*i+1].size   = idx->entries[2*i].size;
-    idx->entries[2*i+1].flags  = GAVL_PACKET_KEYFRAME;
-    idx->entries[2*i+1].pts = 0;
-    idx->entries[2*i+1].duration = 0;
-    }
-  }
-
 
 
 static int open_avi(bgav_demuxer_context_t * ctx)
@@ -1894,7 +1566,10 @@ static int open_avi(bgav_demuxer_context_t * ctx)
     else if(strh.fccType == ID_VIDS)
       init_video_stream(ctx, &strh, &ch);
     else if(strh.fccType == ID_IAVS)
-      init_iavs_stream(ctx, &strh, &ch);
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Obsolete and unsupported DV in AVI found. Convert to raw DV and re-try");
+      return 0;
+      }
     else
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Unknown stream type: %c%c%c%c",
@@ -1992,28 +1667,7 @@ static int open_avi(bgav_demuxer_context_t * ctx)
     }
 
   /* Obtain index mode */
-
-  if(ctx->opt->sample_accurate && ctx->si && p->has_iavs)
-    {
-    bgav_stream_t * as;
-    bgav_stream_t * vs;
-
-    as = bgav_track_get_audio_stream(ctx->tt->cur, 0);
-    vs = bgav_track_get_video_stream(ctx->tt->cur, 0);
-    
-    duplicate_si(ctx->si);
-    p->duplicate_si = 1;
-    ctx->flags &= ~BGAV_DEMUXER_SI_PRIVATE_FUNCS;
-    as->process_packet = process_packet_iavs_stream;
-    vs->process_packet = process_packet_iavs_stream;
-
-    vs->first_index_position = 0;
-    vs->last_index_position = ctx->si->num_entries - 2;
-
-    as->first_index_position = 1;
-    as->last_index_position = ctx->si->num_entries - 1;
-    }
-
+  
   if(ctx->si)
     {
     bgav_stream_t * s;
@@ -2107,7 +1761,10 @@ static int open_avi(bgav_demuxer_context_t * ctx)
     bgav_RIFFINFO_get_metadata(p->info, ctx->tt->cur->metadata);
 
   bgav_track_set_format(ctx->tt->cur, "AVI", "video/x-msvideo");
-    
+
+  bgav_demuxer_check_interleave(ctx);
+  bgav_demuxer_set_durations_from_superindex(ctx, ctx->tt->cur);
+  
   return 1;
   fail:
   return 0;
@@ -2164,11 +1821,9 @@ static gavl_source_status_t next_packet_avi(bgav_demuxer_context_t * ctx)
   int result = 1;
   int64_t position;
   priv = ctx->priv;
-
-  if(priv->has_iavs && ctx->si)
-    {
-    return next_packet_iavs_si(ctx);
-    }
+  
+  if(ctx->si)
+    return bgav_demuxer_next_packet_si(ctx);
   
   if(ctx->input->position + 8 >= ctx->tt->cur->data_start + priv->movi_size)
     {
@@ -2207,50 +1862,46 @@ static gavl_source_status_t next_packet_avi(bgav_demuxer_context_t * ctx)
   
   if(ch.ckSize)
     {
-    if(priv->has_iavs)
-      result = process_packet_iavs(ctx, position);
-    else
+    p = bgav_stream_get_packet_write(s);
+    p->position = position;
+    bgav_packet_alloc(p, PADD(ch.ckSize));
+      
+    if(bgav_input_read_data(ctx->input, p->buf.buf, ch.ckSize) < ch.ckSize)
       {
-      p = bgav_stream_get_packet_write(s);
-      p->position = position;
-      bgav_packet_alloc(p, PADD(ch.ckSize));
-      
-      if(bgav_input_read_data(ctx->input, p->buf.buf, ch.ckSize) < ch.ckSize)
-        {
-        return GAVL_SOURCE_EOF;
-        }
-      p->buf.len = ch.ckSize;
-      
-      if(s->type == GAVL_STREAM_VIDEO)
-        {
-        avi_vs = s->priv;
-        
-        if(s->ci->flags & GAVL_COMPRESSION_HAS_B_FRAMES)
-          p->dts = avi_vs->frame_counter * s->data.video.format->frame_duration;
-        else
-          p->pts = avi_vs->frame_counter * s->data.video.format->frame_duration;
-        
-        avi_vs->frame_counter++;
-        if(s->action == BGAV_STREAM_PARSE)
-          s->stats.pts_end = avi_vs->frame_counter * s->data.video.format->frame_duration;
-        
-        if(!avi_vs->is_keyframe || avi_vs->is_keyframe(p->buf.buf)) 
-          PACKET_SET_KEYFRAME(p);
-        }
-      else if(s->type == GAVL_STREAM_AUDIO)
-        {
-        if(s->index_mode == INDEX_MODE_SIMPLE)
-          {
-          avi_as = s->priv;
-          p->pts = avi_as->sample_counter;
-          avi_as->sample_counter += p->buf.len / s->data.audio.block_align;
-          if(s->action == BGAV_STREAM_PARSE)
-            s->stats.pts_end = avi_as->sample_counter;
-          PACKET_SET_KEYFRAME(p);
-          }
-        }
-      bgav_stream_done_packet_write(s, p);
+      return GAVL_SOURCE_EOF;
       }
+    p->buf.len = ch.ckSize;
+      
+    if(s->type == GAVL_STREAM_VIDEO)
+      {
+      avi_vs = s->priv;
+        
+      if(s->ci->flags & GAVL_COMPRESSION_HAS_B_FRAMES)
+        p->dts = avi_vs->frame_counter * s->data.video.format->frame_duration;
+      else
+        p->pts = avi_vs->frame_counter * s->data.video.format->frame_duration;
+        
+      avi_vs->frame_counter++;
+      if(s->action == BGAV_STREAM_PARSE)
+        s->stats.pts_end = avi_vs->frame_counter * s->data.video.format->frame_duration;
+        
+      if(!avi_vs->is_keyframe || avi_vs->is_keyframe(p->buf.buf)) 
+        PACKET_SET_KEYFRAME(p);
+      }
+    else if(s->type == GAVL_STREAM_AUDIO)
+      {
+      if(s->index_mode == INDEX_MODE_SIMPLE)
+        {
+        avi_as = s->priv;
+        p->pts = avi_as->sample_counter;
+        avi_as->sample_counter += p->buf.len / s->data.audio.block_align;
+        if(s->action == BGAV_STREAM_PARSE)
+          s->stats.pts_end = avi_as->sample_counter;
+        PACKET_SET_KEYFRAME(p);
+        }
+      }
+    bgav_stream_done_packet_write(s, p);
+    
     if(ch.ckSize & 1)
       bgav_input_skip(ctx->input, 1);
     }
@@ -2292,13 +1943,6 @@ static void resync_avi(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
     }
   }
 
-static void seek_avi(bgav_demuxer_context_t * ctx, gavl_time_t time, int scale)
-  {
-  avi_priv_t * priv;
-  priv = ctx->priv;
-  if(ctx->si && priv->has_iavs)
-    seek_iavs(ctx, time, scale);
-  }
 
 const bgav_demuxer_t bgav_demuxer_avi =
   {
@@ -2306,7 +1950,6 @@ const bgav_demuxer_t bgav_demuxer_avi =
     .open =        open_avi,
     .select_track = select_track_avi,
     .next_packet = next_packet_avi,
-    .seek =        seek_avi,
     .resync  =     resync_avi,
     .close =       close_avi
     

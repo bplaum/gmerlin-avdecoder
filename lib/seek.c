@@ -65,7 +65,7 @@ static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
                     int64_t time, int scale)
   {
   int64_t orig_time;
-  uint32_t i, j;
+  uint32_t j;
   int32_t start_packet;
   int32_t end_packet;
   bgav_track_t * track;
@@ -105,7 +105,7 @@ static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
   
   /* Find the start and end packet */
 
-  if(ctx->demux_mode == DEMUX_MODE_SI_I)
+  if(ctx->si && !(ctx->flags & BGAV_DEMUXER_NONINTERLEAVED))
     {
     start_packet = 0x7FFFFFFF;
     end_packet   = 0x0;
@@ -113,8 +113,9 @@ static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
     get_start_end(track->streams, track->num_streams,
                   &start_packet, &end_packet);
     
-    /* Do the seek */
     ctx->si->current_position = start_packet;
+#if 0
+    /* Do the seek */
     bgav_input_seek(ctx->input,
                     ctx->si->entries[ctx->si->current_position].offset,
                     SEEK_SET);
@@ -124,6 +125,7 @@ static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
       bgav_demuxer_next_packet_interleaved(ctx);
 
     ctx->flags &= ~BGAV_DEMUXER_SI_SEEKING;
+#endif
     }
   bgav_track_resync(track);
   skip_to(b, track, &orig_time, scale);
@@ -481,7 +483,7 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
    * AVIs with mp3 audio will also have b->tt->cur->sample_accurate = 1
    */
   
-  if(b->demuxer->si && !(b->demuxer->flags & BGAV_DEMUXER_SI_PRIVATE_FUNCS))
+  if(b->demuxer->si)
     seek_si(b, b->demuxer, *time, scale);
   else if(b->input->flags & BGAV_INPUT_CAN_SEEK_TIME)
     {

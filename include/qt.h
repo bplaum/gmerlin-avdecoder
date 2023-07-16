@@ -62,6 +62,8 @@ void bgav_qt_atom_dump_header(int indent, qt_atom_header_t * h);
 
 void bgav_qt_atom_skip(bgav_input_context_t * input,
                        qt_atom_header_t * h);
+void bgav_qt_atom_skip_dump(bgav_input_context_t * input,
+                            qt_atom_header_t * h);
 
 void bgav_qt_atom_skip_unknown(bgav_input_context_t * input,
                                qt_atom_header_t * h, uint32_t parent);
@@ -129,6 +131,37 @@ int bgav_qt_tref_read(qt_atom_header_t * h,
 void bgav_qt_tref_free(qt_tref_t * r);
 
 void bgav_qt_tref_dump(int indent, qt_tref_t * r);
+
+/*
+ * emsg
+ */
+
+typedef struct
+  {
+  int version;
+  uint32_t flags;
+  
+  char * scheme_id_uri;
+  char * value;
+
+  uint32_t timescale;
+  uint32_t presentation_time_delta; // version == 0
+  uint64_t presentation_time; // version == 1
+  
+  uint32_t event_duration;
+  uint32_t id;
+
+  gavl_buffer_t message_data;
+  
+  } qt_emsg_t;
+
+int bgav_qt_emsg_read(qt_atom_header_t * h,
+                      bgav_input_context_t * ctx,
+                      qt_emsg_t * emsg);
+
+void bgav_qt_emsg_free(qt_emsg_t * emsg);
+void bgav_qt_emsg_dump(int indent, qt_emsg_t * emsg);
+void bgav_qt_emsg_init(qt_emsg_t * emsg);
 
 
 /*

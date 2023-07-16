@@ -280,18 +280,12 @@ struct bgav_stream_s
   void * priv;
   void * decoder_priv;
   
-  //  int initialized; /* Mostly means, that the format is valid */
-
-  int64_t dts; // Auxillary variable for generating timestamps on the fly
-  
   const bgav_options_t * opt;
 
   bgav_stream_action_t action;
   int stream_id; /* Format specific stream id */
   gavl_stream_type_t type;
 
-  //  bgav_packet_buffer_t * packet_buffer;
-  
   uint32_t fourcc;
 
   uint32_t subformat; /* Real flavors, sub_ids.... */
@@ -610,6 +604,8 @@ bgav_stream_t * bgav_track_get_msg_stream(bgav_track_t * track, int stream);
 
 bgav_stream_t * bgav_track_get_msg_stream_by_id(bgav_track_t * track, int id);
 
+int bgav_track_num_media_streams(bgav_track_t * t);
+
 bgav_stream_t *
 bgav_track_add_text_stream(bgav_track_t * t, const bgav_options_t * opt,
                            const char * encoding);
@@ -673,7 +669,6 @@ void bgav_track_free(bgav_track_t * t);
 void bgav_track_dump(bgav_track_t * t);
 
 int bgav_track_has_sync(bgav_track_t * t);
-
 
 void bgav_track_reset_index_positions(bgav_track_t * t);
 
@@ -1057,12 +1052,14 @@ bgav_input_open_fd(int fd, int64_t total_bytes, const char * mimetype);
  *  generic next_packet() and seek() functions will be used
  */
 
+#define BGAV_SUPERINDEX_INTERLEAVED (1<<0)
+
 typedef struct 
   {
   int num_entries;
   int entries_alloc;
-
   int current_position;
+  int flags;
   
   struct
     {
@@ -1079,7 +1076,8 @@ typedef struct
 
 bgav_superindex_t * bgav_superindex_create(int size);
 void bgav_superindex_destroy(bgav_superindex_t *);
-
+/* Delete entries */
+void bgav_superindex_clear(bgav_superindex_t *);
 
 void bgav_superindex_add_packet(bgav_superindex_t * idx,
                                 bgav_stream_t * s,
@@ -1136,72 +1134,7 @@ gavl_timecode_t
 bgav_timecode_table_get_timecode(bgav_timecode_table_t * table,
                                  int64_t pts);
 
-#if 0
-
-/*
- * File index
- *
- * fileindex.c
- */
-
-typedef struct
-  {
-  uint32_t flags;     /* Packet flags */
-  /*
-   * Seek positon:
-   * 
-   * For 1-layer muxed files, it's the
-   * fseek() position, where the demuxer
-   * can start to parse the packet header.
-   *
-   * For 2-layer muxed files, it's the
-   * fseek() position of the lowest level
-   * paket inside which the subpacket *starts*
-   *
-   * For superindex formats, it's the position
-   * inside the superindex
-   */
-  
-  uint64_t position; 
-
-  /*
-   *  Presentation time of the frame in
-   *  format-based timescale (*not* in
-   *  stream timescale)
-   */
-
-  int64_t pts;
-  
-  } bgav_file_index_entry_t;
-
-/* Per stream structure */
-
-struct bgav_file_index_s
-  {
-  /* Infos stored to speed up loading */
-  uint32_t stream_id;
-  uint32_t fourcc;
-  
-  uint32_t max_packet_size;
-  
-  /* Video infos stored by the format tracker */
-
-  uint32_t interlace_mode;
-  uint32_t framerate_mode;
-  
-  uint32_t num_entries;
-  uint32_t entries_alloc;
-  bgav_file_index_entry_t * entries;
-  
-  bgav_timecode_table_t tt;
-  };
-
-bgav_file_index_t * bgav_file_index_create();
-void bgav_file_index_destroy(bgav_file_index_t *);
-#endif
-
-gavl_source_status_t bgav_demuxer_next_packet_fileindex(bgav_demuxer_context_t * ctx);
-gavl_source_status_t bgav_demuxer_next_packet_interleaved(bgav_demuxer_context_t * ctx);
+// gavl_source_status_t bgav_demuxer_next_packet_interleaved(bgav_demuxer_context_t * ctx);
 
 BGAV_PUBLIC void bgav_file_index_dump(bgav_t * b);
 
@@ -1268,16 +1201,14 @@ struct bgav_demuxer_s
 
 #define BGAV_DEMUXER_CAN_SEEK             (1<<0)
 #define BGAV_DEMUXER_PEEK_FORCES_READ     (1<<2) /* This is set if only subtitle streams are read */
-#define BGAV_DEMUXER_SI_SEEKING           (1<<3) /* Demuxer is seeking */
-#define BGAV_DEMUXER_SI_PRIVATE_FUNCS     (1<<4) /* We have a suprindex but use private seek/demux funcs */
 
-#define BGAV_DEMUXER_BUILD_INDEX          (1<<8) /* We're just building
-                                                    an index */
+// #define BGAV_DEMUXER_BUILD_INDEX          (1<<8) /* We're just building an index */
 
 /* Discontionus demuxer: Read_packet *might* return GAVL_SOURCE_AGAIN */
 #define BGAV_DEMUXER_DISCONT              (1<<10) /*
                                                    * True if we have just one active subtitle stream with attached subreader
                                                    */
+
 
 /* Use generic code to get the duration */
 #define BGAV_DEMUXER_GET_DURATION          (1<<11)
@@ -1290,6 +1221,8 @@ struct bgav_demuxer_s
 /* Set if a seek index is already there */
 #define BGAV_DEMUXER_HAS_SEEK_INDEX         (1<<14)
 
+/* Set if a seek index is already there */
+#define BGAV_DEMUXER_NONINTERLEAVED         (1<<15)
 
 #define INDEX_MODE_NONE   0 /* Default: No sample accuracy */
 /* Packets have precise timestamps and durations and are adjacent in the file */
@@ -1307,11 +1240,6 @@ struct bgav_demuxer_s
 
 // #define INDEX_MODE_CUSTOM 4 /* Demuxer builds index */
 
-
-#define DEMUX_MODE_STREAM 0
-#define DEMUX_MODE_SI_I   1 /* Interleaved with superindex */
-#define DEMUX_MODE_SI_NI  2 /* Non-interleaved with superindex */
-
 struct bgav_demuxer_context_s
   {
   const bgav_options_t * opt;
@@ -1324,7 +1252,6 @@ struct bgav_demuxer_context_s
   int packet_size; /* Optional, if it's fixed */
   
   int index_mode;
-  int demux_mode;
   uint32_t flags;
   
   /*
@@ -1358,6 +1285,10 @@ const bgav_demuxer_t * bgav_demuxer_probe(bgav_input_context_t * input);
 void bgav_demuxer_create_buffers(bgav_demuxer_context_t * demuxer);
 void bgav_demuxer_destroy(bgav_demuxer_context_t * demuxer);
 
+void bgav_demuxer_check_interleave(bgav_demuxer_context_t * ctx);
+void bgav_demuxer_set_durations_from_superindex(bgav_demuxer_context_t * ctx, bgav_track_t * t);
+
+
 /*
  *  Get the duration of the current track for demuxers which, have the
  *  post_seek_resync method
@@ -1376,6 +1307,9 @@ bgav_demuxer_seek(bgav_demuxer_context_t * demuxer,
 
 gavl_source_status_t 
 bgav_demuxer_next_packet(bgav_demuxer_context_t * demuxer);
+
+gavl_source_status_t
+bgav_demuxer_next_packet_si(bgav_demuxer_context_t * ctx);
 
 /*
  *  Start a demuxer. Some demuxers (most notably quicktime)

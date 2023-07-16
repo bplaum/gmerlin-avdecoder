@@ -367,7 +367,6 @@ demux_p2xml.c \
 demux_psxstr.c \
 demux_quicktime.c \
 demux_ogg2.c \
-demux_r3d.c \
 demux_ra.c \
 demux_rm.c \
 demux_roq.c \
@@ -451,6 +450,7 @@ qt_dinf.c \
 qt_dref.c \
 qt_edts.c \
 qt_elst.c \
+qt_emsg.c \
 qt_enda.c \
 qt_esds.c \
 qt_fiel.c \

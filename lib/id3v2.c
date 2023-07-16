@@ -605,8 +605,8 @@ static int read_frame(bgav_input_context_t * input,
     return 0;
   
   if(((ret->header.fourcc & 0xFF000000) ==
-     BGAV_MK_FOURCC('T', 0x00, 0x00, 0x00)) &&
-     (ret->header.fourcc != BGAV_MK_FOURCC('T', 'X', 'X', 'X')))
+     BGAV_MK_FOURCC('T', 0x00, 0x00, 0x00)) ||
+     (ret->header.fourcc == BGAV_MK_FOURCC('W', 'X', 'X', 'X')))
     {
     ret->strings = read_string_list(data, ret->header.data_size);
     }
@@ -785,7 +785,6 @@ static const uint32_t album_tags[] =
     0x0
   };
 
-
 static const uint32_t copyright_tags[] =
   {
     BGAV_MK_FOURCC('T','C','O','P'),
@@ -863,6 +862,25 @@ static const uint32_t clock_time_tags[] =
     0x00,
   };
 
+static const uint32_t txxx_tags[] =
+  {
+    BGAV_MK_FOURCC('T', 'X', 'X', 'X'),
+    0x00,
+  };
+
+static const uint32_t wxxx_tags[] =
+  {
+    BGAV_MK_FOURCC('W', 'X', 'X', 'X'),
+    0x00,
+  };
+
+static const uint32_t station_tags[] =
+  {
+    BGAV_MK_FOURCC('T','R','S','N'),
+    0x0
+  };
+
+
 static char * get_comment(const bgav_options_t * opt,
                           bgav_id3v2_frame_t* frame)
   {
@@ -937,6 +955,9 @@ void bgav_id3v2_2_metadata(bgav_id3v2_tag_t * t, gavl_dictionary_t*m)
   int i;
   int i_tmp;
   bgav_id3v2_frame_t * frame;
+  char * artwork_uris[4];
+
+  memset(artwork_uris, 0, sizeof(artwork_uris));
   
   /* Title */
 
@@ -1000,6 +1021,12 @@ void bgav_id3v2_2_metadata(bgav_id3v2_tag_t * t, gavl_dictionary_t*m)
   if(frame && frame->strings)
     gavl_dictionary_set_string(m, GAVL_META_YEAR, frame->strings[0]);
 
+  /* Station */
+  
+  frame = bgav_id3v2_find_frame(t, station_tags);
+  if(frame && frame->strings)
+    gavl_dictionary_set_string(m, GAVL_META_STATION, frame->strings[0]);
+  
   /* Track */
 
   frame = bgav_id3v2_find_frame(t, track_tags);
@@ -1044,26 +1071,59 @@ void bgav_id3v2_2_metadata(bgav_id3v2_tag_t * t, gavl_dictionary_t*m)
                                      frame->picture->data_size);
     }
 
-#if 0  
-  /* Start PTS */
-  if((frame = bgav_id3v2_find_frame(t, start_pts_tags)))
+  /* TXXX and WXXX */
+  for(i = 0; i < t->num_frames; i++)
     {
-    
-    // fprintf(stderr, "Got PRIV tag:\n");
-    // gavl_hexdump(frame->data, frame->header.data_size, 16);
+    int j = 0;
 
-    if((frame->header.data_size == 53) &&
-       !memcmp("com.apple.streaming.transportStreamTimestamp", frame->data, 45))
+    while(txxx_tags[j])
       {
-      int64_t pts;
-      uint8_t * ptr = frame->data+45;
-      pts = GAVL_PTR_2_64BE(ptr);
+      if(t->frames[i].header.fourcc == txxx_tags[j])
+        {
+        /* Handle TXXX tag */
+        if(!strcmp(t->frames[i].strings[0], "enc"))
+          gavl_dictionary_set_string(m, GAVL_META_SOFTWARE, t->frames[i].strings[1]);
+        else if(!strcmp(t->frames[i].strings[0], "dev"))
+          gavl_dictionary_set_string(m, GAVL_META_DEVICE, t->frames[i].strings[1]);
 
-      gavl_dictionary_set_int(m, META_START_PTS_DEN, 90000);
-      gavl_dictionary_set_long(m, META_START_PTS_NUM, pts);
+        break;
+        }
+      j++;
       }
+
+    j = 0;
+    while(wxxx_tags[j])
+      {
+      if(t->frames[i].header.fourcc == wxxx_tags[j])
+        {
+        /* Handle WXXX tag */
+        
+        if(!strcmp(t->frames[i].strings[0], "artworkURL_640x"))
+          artwork_uris[2] = t->frames[i].strings[1];
+        else if(!strcmp(t->frames[i].strings[0], "artworkURL_1280x"))
+          artwork_uris[1] = t->frames[i].strings[1];
+        else if(!strcmp(t->frames[i].strings[0], "artworkURL_1920x"))
+          artwork_uris[0] = t->frames[i].strings[1];
+        
+        break;
+        }
+      j++;
+      }
+    
+    //    if(t->frames[i].
+    
     }
-#endif
+
+  for(i = 0; i < 3; i++)
+    {
+    if(artwork_uris[i])
+      gavl_metadata_add_image_uri(m,
+                                  GAVL_META_COVER_URL,
+                                  -1, -1,
+                                  NULL,
+                                  artwork_uris[i]);
+    }
+  
   }
 
 int64_t bgav_id3v2_get_pts(bgav_id3v2_tag_t * t)

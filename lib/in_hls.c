@@ -54,7 +54,9 @@
 #define NEXT_STATE_LOST_SYNC       8
 
 #define END_OF_SEQUENCE (1<<0)
-#define SENT_HEADER     (1<<1)
+#define HAVE_HEADER     (1<<1)
+#define SENT_HEADER     (1<<2)
+
 
 typedef struct
   {
@@ -78,9 +80,6 @@ typedef struct
   int64_t seq_start; // First sequence number of the array
   int64_t seq_cur;   // Current sequence number
   
-  //  gavl_time_t window_start;
-  //  gavl_time_t window_end;
-  
   gavl_buffer_t cipher_key;
   gavl_buffer_t cipher_iv;
   
@@ -96,9 +95,16 @@ typedef struct
   int have_clock_time;
   gavl_time_t clock_time_start;
 
+  /* Global header */
   char * header_uri;
+  int64_t header_offset;
+  int64_t header_length;
+  gavl_buffer_t header_buf;
   
   } hls_priv_t;
+
+#define HAVE_HEADER_BYTES(p) ((p->flags & (HAVE_HEADER | SENT_HEADER)) == HAVE_HEADER)
+
 
 static gavf_io_t * create_http_client(bgav_input_context_t * ctx)
   {
@@ -178,8 +184,21 @@ static int parse_byterange(const char * str, int64_t * start, int64_t * len)
   char * rest = NULL;
   *start = 0;
 
-  //  if((*len = strtol(
-  
+  *len = strtol(str, &rest, 10);
+
+  if(str == rest)
+    return 0;
+
+  str = rest;
+  if(*str == '@')
+    {
+    str++;
+    *start = strtol(str, &rest, 10);
+
+    if(str == rest)
+      return 0;
+    }
+  return 1;
   }
 
 static int parse_m3u8(bgav_input_context_t * ctx)
@@ -363,14 +382,13 @@ static int parse_m3u8(bgav_input_context_t * ctx)
             free(tmp_string);            
             }
           }
-
+        
         if(p->header_uri && (pos = strstr(lines[idx], "BYTERANGE=\"")))
           {
           // BYTERANGE="
           pos += 11;
-          
+          parse_byterange(pos, &p->header_offset, &p->header_length);
           }
-        
         }
       }
     else if(!gavl_string_starts_with(lines[idx], "#"))
@@ -856,23 +874,6 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
   return 0;
   }
 
-#if 0
-static void set_window_to_pts(bgav_input_context_t * ctx, gavl_time_t pts_time)
-  {
-  gavl_time_t window_time;
-  hls_priv_t * p = ctx->priv;
-  /* Sync point */
-
-  window_time = idx_to_window_time(ctx, p->seq_cur - p->seq_start);
-  /*  pts = win_time + window_to_pts */
-  /*  win_time = pts - window_to_pts */
-    
-  p->window_to_pts = pts_time - window_time;
-  
-  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got Window -> PTS: %"PRId64, p->window_to_pts);
-  }
-#endif
-
 static void init_segment_io(bgav_input_context_t * ctx)
   {
   gavf_io_t * swp;
@@ -901,7 +902,6 @@ static void init_segment_io(bgav_input_context_t * ctx)
   
   }
 
-
 static int open_next_sync(bgav_input_context_t * ctx)
   {
   int i, result;
@@ -923,6 +923,32 @@ static int open_next_sync(bgav_input_context_t * ctx)
   gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "open_next_sync failed: %d Iterations exceeded, next_state: %d",
            i, priv->next_state);
   return 0;
+  }
+
+/* Download header to buffer */
+static int download_header(bgav_input_context_t * ctx)
+  {
+  gavf_io_t * io;
+  hls_priv_t * p = ctx->priv;
+
+  io = create_http_client(ctx);
+  if(p->header_length)
+    gavl_http_client_set_range(io, p->header_offset, p->header_offset + p->header_length);
+
+  gavl_http_client_set_response_body(io, &p->header_buf);
+
+  if(!gavl_http_client_open(io, "GET", p->header_uri))
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Downloading header failed");
+    return 0;
+    }
+  gavf_io_destroy(io);
+
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Downloaded header: %d bytes", p->header_buf.len);
+  gavl_hexdump(p->header_buf.buf, 16, 16);
+  
+  p->flags |= HAVE_HEADER;
+  return 1;
   }
 
 static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
@@ -973,6 +999,12 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
     goto fail;
   
   init_segment_io(ctx);
+
+  if(priv->header_uri && !download_header(ctx))
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Could not download global header");
+    goto fail;
+    }
   
   if(priv->have_clock_time)
     ctx->flags |= BGAV_INPUT_CAN_SEEK_TIME;
@@ -1151,7 +1183,7 @@ static int can_read_hls(bgav_input_context_t * ctx, int timeout)
   {
   hls_priv_t * p = ctx->priv;
   
-  if(!p->ts_io)
+  if(HAVE_HEADER_BYTES(p) || !p->ts_io)
     return 1;
   
   if(p->io)
@@ -1168,7 +1200,7 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
   hls_priv_t * p = ctx->priv;
 
   //  fprintf(stderr, "read_hls %d\n", len);
-  
+
   if(!p->io)
     {
     gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Read error: underlying I/0 missing");
@@ -1176,6 +1208,26 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
     }
   while(bytes_read < len)
     {
+    if(HAVE_HEADER_BYTES(p))
+      {
+      int bytes_to_copy = p->header_buf.len - p->header_buf.pos;
+
+      if(bytes_to_copy > len)
+        bytes_to_copy = len;
+      
+      memcpy(buffer + bytes_read, p->header_buf.buf + p->header_buf.pos, bytes_to_copy);
+      
+      bytes_read        += bytes_to_copy;
+      p->header_buf.pos += bytes_to_copy;
+
+      if(p->header_buf.pos == p->header_buf.len)
+        {
+        p->flags |= SENT_HEADER;
+        gavl_buffer_free(&p->header_buf);
+        gavl_buffer_init(&p->header_buf);
+        }
+      continue;
+      }
     if(!block)
       {
       if(!gavf_io_can_read(p->io, 0))
@@ -1278,6 +1330,9 @@ static void close_hls(bgav_input_context_t * ctx)
 
   if(p->cipher_key_io)
     gavf_io_destroy(p->cipher_key_io);
+
+  if(p->header_uri)
+    free(p->header_uri);
   
   gavl_array_free(&p->segments);
   gavl_dictionary_free(&p->http_vars);
@@ -1285,6 +1340,7 @@ static void close_hls(bgav_input_context_t * ctx)
   gavl_buffer_free(&p->m3u_buf);
   gavl_buffer_free(&p->cipher_key);
   gavl_buffer_free(&p->cipher_iv);
+  gavl_buffer_free(&p->header_buf);
   
   
   free(p);
