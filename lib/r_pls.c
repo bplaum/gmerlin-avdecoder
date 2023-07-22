@@ -71,15 +71,13 @@ static bgav_track_table_t * parse_pls(bgav_input_context_t * input)
       goto fail;
 
     str = (char*)line_buf.buf;
-
-    pos = str;
-    while(isspace(*pos))
-      pos++;
-    if(*pos != '\0')
+    
+    gavl_strtrim(str);
+    if(*str != '\0')
       break;
     }
   
-  if(gavl_string_starts_with_i(str, "[playlist]"))
+  if(!gavl_string_starts_with_i(str, "[playlist]"))
     goto fail;
   
   /* Get number of entries */

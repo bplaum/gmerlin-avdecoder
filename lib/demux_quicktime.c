@@ -2227,8 +2227,8 @@ static gavl_source_status_t handle_emsg(bgav_demuxer_context_t * ctx,
             gavl_dictionary_set_string_nocopy(&priv->m_emsg,
                                               GAVL_META_LABEL, gavl_sprintf("%s - %s", artist, title));
           
-          fprintf(stderr, "Got initial metadata:\n");
-          gavl_dictionary_dump(&priv->m_emsg, 2);
+          //          fprintf(stderr, "Got initial metadata:\n");
+          //          gavl_dictionary_dump(&priv->m_emsg, 2);
           }
         else
           {
@@ -2282,8 +2282,6 @@ static gavl_source_status_t next_packet_quicktime(bgav_demuxer_context_t * ctx)
         {
         if(!bgav_qt_atom_read_header(ctx->input, &h))
           return GAVL_SOURCE_EOF;
-        fprintf(stderr, "got atom: ");
-        bgav_qt_atom_dump_header(0, &h);
 
         switch(h.fourcc)
           {
@@ -2300,7 +2298,9 @@ static gavl_source_status_t next_packet_quicktime(bgav_demuxer_context_t * ctx)
             done = 1;
             break;
           default:
-            done = 1;
+            fprintf(stderr, "Ignoring atom: ");
+            bgav_qt_atom_dump_header(0, &h);
+            bgav_qt_atom_skip(ctx->input, &h);
             break;
           }
         

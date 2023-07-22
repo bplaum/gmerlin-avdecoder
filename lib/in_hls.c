@@ -945,7 +945,7 @@ static int download_header(bgav_input_context_t * ctx)
   gavf_io_destroy(io);
 
   gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Downloaded header: %d bytes", p->header_buf.len);
-  gavl_hexdump(p->header_buf.buf, 16, 16);
+  //  gavl_hexdump(p->header_buf.buf, 16, 16);
   
   p->flags |= HAVE_HEADER;
   return 1;
