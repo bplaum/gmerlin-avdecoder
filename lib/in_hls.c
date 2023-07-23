@@ -922,6 +922,11 @@ static int open_next_sync(bgav_input_context_t * ctx)
     }
   gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "open_next_sync failed: %d Iterations exceeded, next_state: %d",
            i, priv->next_state);
+  
+  if(priv->next_state == NEXT_STATE_READ_M3U)
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "m3u client state: %d",
+             gavl_http_client_get_state(priv->m3u_io));
+  
   return 0;
   }
 
