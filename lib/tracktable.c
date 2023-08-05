@@ -156,9 +156,8 @@ void bgav_track_table_merge_metadata(bgav_track_table_t*t,
     src_t   = gavl_metadata_get_src_nc(t->tracks[i]->metadata, GAVL_META_SRC, 0);
     
     if(src_ext && src_t &&
-       (uri_t = gavl_dictionary_get_string(src_t, GAVL_META_URI)) &&
-       gavl_string_starts_with(uri_t, uri_ext) && 
-       !gavl_dictionary_get(src_t, GAVL_META_EDL))
+       (!(uri_t = gavl_dictionary_get_string(src_t, GAVL_META_URI)) ||
+         gavl_string_starts_with(uri_t, uri_ext)))
       {
       gavl_dictionary_merge2(src_t, src_ext);
       }

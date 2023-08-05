@@ -205,7 +205,7 @@ static bgav_stream_action_t get_stream_action(bg_stream_action_t action)
 static int handle_msg(void * priv, gavl_msg_t * msg)
   {
   bg_media_source_stream_t * st = priv;
-  bg_msg_sink_put(bg_msg_hub_get_sink(st->msghub), msg);
+  bg_msg_sink_put_copy(bg_msg_hub_get_sink(st->msghub), msg);
   return 1;
   }
 
