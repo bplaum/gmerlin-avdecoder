@@ -93,6 +93,77 @@ sample_format_ffmpeg_2_gavl(enum SampleFormat p, int * planar)
   return GAVL_SAMPLE_NONE;
   }
 
+static const struct
+  {
+  uint64_t ffmpeg_id;
+  gavl_channel_id_t gavl_id;
+  }
+channel_ids[] =
+  {
+    { AV_CH_FRONT_LEFT,            GAVL_CHID_FRONT_LEFT         },
+    { AV_CH_FRONT_RIGHT,           GAVL_CHID_FRONT_RIGHT        },
+    { AV_CH_FRONT_CENTER,          GAVL_CHID_FRONT_CENTER       },
+    { AV_CH_LOW_FREQUENCY,         GAVL_CHID_LFE                },
+    { AV_CH_BACK_LEFT,             GAVL_CHID_REAR_LEFT          },
+    { AV_CH_BACK_RIGHT,            GAVL_CHID_REAR_RIGHT         },
+    { AV_CH_FRONT_LEFT_OF_CENTER,  GAVL_CHID_FRONT_CENTER_LEFT  },
+    { AV_CH_FRONT_RIGHT_OF_CENTER, GAVL_CHID_FRONT_CENTER_RIGHT },
+    { AV_CH_BACK_CENTER,           GAVL_CHID_REAR_CENTER        },
+    { AV_CH_SIDE_LEFT,             GAVL_CHID_SIDE_LEFT          },
+    { AV_CH_SIDE_RIGHT,            GAVL_CHID_SIDE_RIGHT         },
+#if 0
+    { AV_CH_TOP_CENTER,            GAVL_CHID_AUX                },
+    { AV_CH_TOP_FRONT_LEFT,        GAVL_CHID_AUX                },
+    { AV_CH_TOP_FRONT_CENTER,      GAVL_CHID_AUX                },
+    { AV_CH_TOP_FRONT_RIGHT,       GAVL_CHID_AUX                },
+    { AV_CH_TOP_BACK_LEFT,         GAVL_CHID_AUX                },
+    { AV_CH_TOP_BACK_CENTER,       GAVL_CHID_AUX                },
+    { AV_CH_TOP_BACK_RIGHT,        GAVL_CHID_AUX                },
+    { AV_CH_STEREO_LEFT,           GAVL_CHID_AUX                },  ///< Stereo downmix.
+    { AV_CH_STEREO_RIGHT,          GAVL_CHID_AUX                },  ///< See AV_CH_STEREO_LEFT.
+    { AV_CH_WIDE_LEFT,             GAVL_CHID_AUX                },
+    { AV_CH_WIDE_RIGHT,            GAVL_CHID_AUX                },
+    { AV_CH_SURROUND_DIRECT_LEFT,  GAVL_CHID_AUX                },
+    { AV_CH_SURROUND_DIRECT_RIGHT, GAVL_CHID_AUX                },
+    { AV_CH_LOW_FREQUENCY_2,       GAVL_CHID_AUX                },
+#endif
+    { 0, 0 },
+  };
+
+static gavl_channel_id_t get_channel_id(uint64_t ffmpeg_id)
+  {
+  int i = 0;
+  while(channel_ids[i].ffmpeg_id)
+    {
+    if(channel_ids[i].ffmpeg_id == ffmpeg_id)
+      return channel_ids[i].gavl_id;
+    i++;
+    }
+  return GAVL_CHID_AUX;
+  }
+
+static void convert_channel_layout(gavl_audio_format_t * fmt,
+                                   uint64_t ffmpeg_layout)
+  {
+  int i;
+  int chidx = 0;
+  uint64_t mask = 1;
+  
+  for(i = 0; i < 64; i++)
+    {
+    if(ffmpeg_layout & mask)
+      {
+      fmt->channel_locations[chidx] = get_channel_id(mask);
+      chidx++;
+
+      if(chidx == fmt->num_channels)
+        break;
+      }
+    mask <<= 1;
+    }
+  
+  }
+
 
 /* Map of ffmpeg codecs to fourccs (from ffmpeg's avienc.c) */
 
@@ -165,11 +236,12 @@ static int init_format(bgav_stream_t * s, int samples_per_frame)
     }
   priv->sample_size =
     gavl_bytes_per_sample(s->data.audio.format->sample_format);
-  
-  gavl_set_channel_setup(s->data.audio.format);
 
+  if(priv->ctx->channel_layout)
+    convert_channel_layout(s->data.audio.format, priv->ctx->channel_layout);
+  else
+    gavl_set_channel_setup(s->data.audio.format);
   
-
   //  fprintf(stderr, "Got format\n");
   return 1;
   }

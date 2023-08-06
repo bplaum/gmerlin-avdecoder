@@ -101,7 +101,7 @@ static int add_stream(bgav_demuxer_context_t * ctx, bgav_track_t * t, const bgav
   uint32_t fourcc;
   int len, result;
   gavl_buffer_t buf;
-  bgav_stream_t * s;
+  bgav_stream_t * s = NULL;
   int num_packets;
   
   gavl_buffer_init(&buf);
@@ -169,10 +169,13 @@ static int add_stream(bgav_demuxer_context_t * ctx, bgav_track_t * t, const bgav
       break;
 #endif
     }
-  
-  stream_append_header_packet(s, &buf);
-  s->stream_id = page->serialno;
 
+  if(s)
+    {
+    stream_append_header_packet(s, &buf);
+    s->stream_id = page->serialno;
+    }
+  
   for(i = 1; i < num_packets; i++)
     {
     len = bgav_ogg_page_get_packet_size(page, i);
@@ -181,7 +184,9 @@ static int add_stream(bgav_demuxer_context_t * ctx, bgav_track_t * t, const bgav
     if(result < len)
       return 0;
     buf.len = len;
-    stream_append_header_packet(s, &buf);
+
+    if(s)
+      stream_append_header_packet(s, &buf);
     }
   
   gavl_buffer_free(&buf);
