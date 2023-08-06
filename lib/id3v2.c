@@ -1094,7 +1094,8 @@ void bgav_id3v2_2_metadata(bgav_id3v2_tag_t * t, gavl_dictionary_t*m)
     j = 0;
     while(wxxx_tags[j])
       {
-      if(t->frames[i].header.fourcc == wxxx_tags[j])
+      if((t->frames[i].header.fourcc == wxxx_tags[j]) &&
+         t->frames[i].strings[0])
         {
         /* Handle WXXX tag */
         
