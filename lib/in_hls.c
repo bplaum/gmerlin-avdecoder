@@ -147,19 +147,49 @@ static int clock_time_to_idx(bgav_input_context_t * ctx, gavl_time_t * time)
   int i;
   hls_priv_t * p = ctx->priv;
   gavl_time_t test_time;
-  i = p->segments.num_entries - 1;
+  gavl_time_t test_diff;
 
-  while(i >= 0)
+  gavl_time_t last_diff;
+  gavl_time_t last_time = GAVL_TIME_UNDEFINED;
+  // int last_index;
+  
+  last_time = get_segment_clock_time(ctx, 0);
+
+  if(*time <= last_time)
     {
-    if(((test_time = get_segment_clock_time(ctx, i)) != GAVL_TIME_UNDEFINED) &&
-       (test_time <= *time))
-      {
-      *time = test_time;
-      return i;
-      }
-    i--;
+    *time = last_time;
+    return 0;
     }
-  return -1;
+
+  for(i = 0; i < p->segments.num_entries; i++)
+    {
+    test_time = get_segment_clock_time(ctx, i);
+
+    //    if(test_time == GAVL_TIME_UNDEFINED)
+    //      continue;
+    
+    if(test_time >= *time)
+      {
+      test_diff = test_time - *time;
+      last_diff = *time - last_time;
+      
+      if(last_diff < test_diff)
+        {
+        *time = last_time;
+        return i-1;
+        }
+      else
+        {
+        *time = test_time;
+        return i;
+        }
+      }
+    
+    last_time = test_time;
+    }
+  
+  *time = last_time;
+  return p->segments.num_entries - 1;
   }
 
 
@@ -408,8 +438,14 @@ static int parse_m3u8(bgav_input_context_t * ctx)
       gavl_dictionary_set_string_nocopy(dict, GAVL_META_URI, uri);
       gavl_array_splice_val_nocopy(&p->segments, -1, 0, &val);
 
-      
-      segment_start_time_abs = GAVL_TIME_UNDEFINED;
+      if(segment_start_time_abs != GAVL_TIME_UNDEFINED)
+        {
+        if(segment_duration >  0)
+          segment_start_time_abs += segment_duration;
+        else
+          segment_start_time_abs = GAVL_TIME_UNDEFINED;
+        }
+      // segment_start_time_abs = GAVL_TIME_UNDEFINED;
       segment_duration = 0;
       
       gavl_value_reset(&val);
@@ -514,11 +550,14 @@ static int handle_id3(bgav_input_context_t * ctx)
       ctx->input_pts = pts;
       fprintf(stderr, "Got PTS from ID3: %"PRId64"\n", pts);
       }
+#if 0 // The ID3 clock time is sometimes terriblly wrong. Lets use the time from the m3u8 instead
     if((pts = bgav_id3v2_get_clock_time(id3)) != GAVL_TIME_UNDEFINED)
       {
       // fprintf(stderr, "Clock time: %"PRId64" %"PRId64" %"PRId64"\n", ctx->clock_time, pts, ctx->clock_time - pts);
       ctx->clock_time = pts;
       }
+#endif
+    
 #if 0
     fprintf(stderr, "Got ID3V2 %"PRId64"\n", gavl_time_unscale(90000, ctx->input_pts));
     bgav_id3v2_dump(id3);
@@ -719,8 +758,10 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
         gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Initialized from clock time, difference: %f secs",
                  gavl_time_to_seconds(p->clock_time_start - t));
         }
+      /* Short window: Place in the middle */
       else if(p->segments.num_entries <= 10)
-        p->seq_cur = p->seq_start;
+        p->seq_cur = p->seq_start + p->segments.num_entries/2;
+      /* Longer window: Place near the end */
       else
         p->seq_cur = p->seq_start + p->segments.num_entries - 2;
 

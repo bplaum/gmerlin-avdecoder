@@ -893,8 +893,8 @@ void bgav_demuxer_set_clock_time(bgav_demuxer_context_t * ctx,
 
   /* clock_time = pts_time - gavl_time_unscale(scale, pts) + clock_time */
 
-  //  fprintf(stderr, "bgav_demuxer_set_clock_time: %"PRId64" %d %"PRId64"\n",
-  //          pts, scale, clock_time);
+  fprintf(stderr, "bgav_demuxer_set_clock_time: %"PRId64" %d %"PRId64"\n",
+          pts, scale, clock_time);
   
   offset = clock_time - gavl_time_unscale(scale, pts);
   
