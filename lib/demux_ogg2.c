@@ -240,7 +240,7 @@ static int init_track(bgav_demuxer_context_t * ctx, bgav_track_t * t)
     done = 1;
     for(i = 0; i < t->num_streams; i++)
       {
-      s = &t->streams[i];
+      s = t->streams[i];
       sp = s->priv;
       if(sp->header_packets_read < sp->header_packets_needed)
         {
@@ -256,21 +256,21 @@ static int init_track(bgav_demuxer_context_t * ctx, bgav_track_t * t)
   for(i = 0; i < t->num_streams; i++)
     {
     /* Merge metadata */
-    sp =  t->streams[i].priv;
+    sp =  t->streams[i]->priv;
     gavl_dictionary_merge2(t->metadata, &sp->m);
     
     /* Set parse flags */
-    switch(t->streams[i].fourcc)
+    switch(t->streams[i]->fourcc)
       {
       case FOURCC_VORBIS:
       case FOURCC_FLAC:
       case FOURCC_FLAC_NEW:
       case FOURCC_OPUS:
       case FOURCC_SPEEX:
-        t->streams[i].flags |= STREAM_DEMUXER_SETS_PTS_END;
+        t->streams[i]->flags |= STREAM_DEMUXER_SETS_PTS_END;
         /* Fall through */
       case FOURCC_THEORA:
-        bgav_stream_set_parse_frame(&t->streams[i]);
+        bgav_stream_set_parse_frame(t->streams[i]);
         break;
       case FOURCC_DIRAC:
       case FOURCC_OGM_VIDEO:
@@ -601,10 +601,10 @@ static void sync_streams(bgav_demuxer_context_t * ctx, int64_t t)
     {
     ogg_stream_t * sp;
 
-    if(ctx->tt->cur->streams[i].type == GAVL_STREAM_MSG)
+    if(ctx->tt->cur->streams[i]->type == GAVL_STREAM_MSG)
       continue;
     
-    sp = ctx->tt->cur->streams[i].priv;
+    sp = ctx->tt->cur->streams[i]->priv;
     sp->prev_granulepos = t;
     if(t == GAVL_TIME_UNDEFINED)
       sp->flags |= FLAG_UNSYNC;

@@ -41,23 +41,23 @@ static void skip_to(bgav_t * b, bgav_track_t * track, int64_t * time, int scale)
 
 /* Seek functions with superindex */
 
-static void get_start_end(bgav_stream_t * s, int num,
+static void get_start_end(bgav_stream_t ** s, int num,
                           int32_t * start_packet, int32_t * end_packet)
   {
   int i;
   for(i = 0; i < num; i++)
     {
-    if(s[i].action == BGAV_STREAM_MUTE)
+    if(s[i]->action == BGAV_STREAM_MUTE)
       continue;
     
-    if((s[i].type != GAVL_STREAM_AUDIO) &&
-       (s[i].type != GAVL_STREAM_VIDEO))
+    if((s[i]->type != GAVL_STREAM_AUDIO) &&
+       (s[i]->type != GAVL_STREAM_VIDEO))
       continue;
     
-    if(*start_packet > s[i].index_position)
-      *start_packet = s[i].index_position;
-    if(*end_packet < s[i].index_position)
-      *end_packet = s[i].index_position;
+    if(*start_packet > s[i]->index_position)
+      *start_packet = s[i]->index_position;
+    if(*end_packet < s[i]->index_position)
+      *end_packet = s[i]->index_position;
     }
   }
 
@@ -94,13 +94,13 @@ static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
     }
   for(j = 0; j < track->num_streams; j++)
     {
-    if((track->streams[j].action == BGAV_STREAM_MUTE) ||
-       (track->streams[j].type == GAVL_STREAM_VIDEO) ||
-       (track->streams[j].flags & STREAM_EXTERN))
+    if((track->streams[j]->action == BGAV_STREAM_MUTE) ||
+       (track->streams[j]->type == GAVL_STREAM_VIDEO) ||
+       (track->streams[j]->flags & STREAM_EXTERN))
       continue;
     
     seek_time = time;
-    bgav_superindex_seek(ctx->si, &track->streams[j], &seek_time, scale);
+    bgav_superindex_seek(ctx->si, track->streams[j], &seek_time, scale);
     }
   
   /* Find the start and end packet */
@@ -362,7 +362,7 @@ static void build_seek_index(bgav_t * b)
   /* TODO: This gets a bit more complicated when we build seek indices for files with more than one A/V stream */
   for(i = 0; i < b->tt->cur->num_streams; i++)
     {
-    s = &b->tt->cur->streams[i];
+    s = b->tt->cur->streams[i];
     if((s->type == GAVL_STREAM_AUDIO) || (s->type == GAVL_STREAM_VIDEO))
       break;
     }
@@ -402,7 +402,7 @@ static void seek_with_index(bgav_t * b, int64_t * time, int scale)
   /* Get right file position */
   for(i = 0; i < b->tt->cur->num_streams; i++)
     {
-    bgav_stream_t * s = &b->tt->cur->streams[i];
+    bgav_stream_t * s = b->tt->cur->streams[i];
     
     stream_scale = -1;
     if(((s->type != GAVL_STREAM_AUDIO) && (s->type != GAVL_STREAM_VIDEO)) ||
@@ -429,7 +429,7 @@ static void seek_with_index(bgav_t * b, int64_t * time, int scale)
 
   for(i = 0; i < b->tt->cur->num_streams; i++)
     {
-    bgav_stream_t * s = &b->tt->cur->streams[i];
+    bgav_stream_t * s = b->tt->cur->streams[i];
     
     if(s->index_position >= 0)
       {

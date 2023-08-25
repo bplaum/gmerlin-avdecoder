@@ -349,7 +349,7 @@ static void init_superindex(bgav_demuxer_context_t * ctx)
 
   while(i < ctx->tt->cur->num_streams)
     {
-    if(ctx->tt->cur->streams[i].last_index_position < 0)
+    if(ctx->tt->cur->streams[i]->last_index_position < 0)
       {
       gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
                "Removing stream %d (no packets found)", i+1);
@@ -372,8 +372,8 @@ void bgav_demuxer_set_durations_from_superindex(bgav_demuxer_context_t * ctx, bg
 
   for(i = 0; i < t->num_streams; i++)
     {
-    bgav_superindex_set_durations(ctx->si, &t->streams[i]);
-    bgav_superindex_set_stream_stats(ctx->si, &t->streams[i]);
+    bgav_superindex_set_durations(ctx->si, t->streams[i]);
+    bgav_superindex_set_stream_stats(ctx->si, t->streams[i]);
     i++;
     }
   
@@ -385,8 +385,8 @@ void bgav_demuxer_check_interleave(bgav_demuxer_context_t * ctx)
     return;
   
   if((bgav_track_num_media_streams(ctx->tt->cur) > 1) &&
-     ((ctx->tt->cur->streams[0].last_index_position < ctx->tt->cur->streams[1].first_index_position) ||
-      (ctx->tt->cur->streams[1].last_index_position < ctx->tt->cur->streams[0].first_index_position)))
+     ((ctx->tt->cur->streams[0]->last_index_position < ctx->tt->cur->streams[1]->first_index_position) ||
+      (ctx->tt->cur->streams[1]->last_index_position < ctx->tt->cur->streams[0]->first_index_position)))
     {
     ctx->flags = BGAV_DEMUXER_NONINTERLEAVED;
     }
@@ -705,11 +705,11 @@ gavl_source_status_t bgav_demuxer_next_packet(bgav_demuxer_context_t * demuxer)
         
         for(i = 0; i < demuxer->tt->cur->num_streams; i++)
           {
-          if(demuxer->tt->cur->streams[i].packet)
+          if(demuxer->tt->cur->streams[i]->packet)
             {
-            bgav_stream_done_packet_write(&demuxer->tt->cur->streams[i],
-                                          demuxer->tt->cur->streams[i].packet);
-            demuxer->tt->cur->streams[i].packet = NULL;
+            bgav_stream_done_packet_write(demuxer->tt->cur->streams[i],
+                                          demuxer->tt->cur->streams[i]->packet);
+            demuxer->tt->cur->streams[i]->packet = NULL;
             ret = 1;
             }
           }
@@ -741,28 +741,28 @@ static void parse_start(bgav_demuxer_context_t * ctx, int type_mask, int dur)
   
   for(j = 0; j < ctx->tt->cur->num_streams; j++)
     {
-    if(!(ctx->tt->cur->streams[j].type & type_mask))
+    if(!(ctx->tt->cur->streams[j]->type & type_mask))
       continue;
-    ctx->tt->cur->streams[j].action = BGAV_STREAM_PARSE;
+    ctx->tt->cur->streams[j]->action = BGAV_STREAM_PARSE;
 
     if(dur)
       {
-      ctx->tt->cur->streams[j].psink_parse =
+      ctx->tt->cur->streams[j]->psink_parse =
         gavl_packet_sink_create(NULL,
                                 bgav_stream_put_packet_get_duration,
                                 &ctx->tt->cur->streams[j]);
       
-      gavl_packet_buffer_set_calc_frame_durations(ctx->tt->cur->streams[j].pbuffer, 1);
+      gavl_packet_buffer_set_calc_frame_durations(ctx->tt->cur->streams[j]->pbuffer, 1);
       }
     else
       {
-      ctx->tt->cur->streams[j].psink_parse =
+      ctx->tt->cur->streams[j]->psink_parse =
         gavl_packet_sink_create(NULL,
                                 bgav_stream_put_packet_parse,
                                 &ctx->tt->cur->streams[j]);
 
-      gavl_packet_buffer_set_mark_last(ctx->tt->cur->streams[j].pbuffer, 1);
-      gavl_packet_buffer_set_calc_frame_durations(ctx->tt->cur->streams[j].pbuffer, 1);
+      gavl_packet_buffer_set_mark_last(ctx->tt->cur->streams[j]->pbuffer, 1);
+      gavl_packet_buffer_set_calc_frame_durations(ctx->tt->cur->streams[j]->pbuffer, 1);
       }
     }
   }
@@ -773,18 +773,18 @@ static void parse_end(bgav_demuxer_context_t * ctx, int type_mask)
   bgav_track_clear(ctx->tt->cur);
   for(j = 0; j < ctx->tt->cur->num_streams; j++)
     {
-    if(!(ctx->tt->cur->streams[j].type & type_mask))
+    if(!(ctx->tt->cur->streams[j]->type & type_mask))
       continue;
-    ctx->tt->cur->streams[j].action = BGAV_STREAM_MUTE;
-    gavl_packet_buffer_clear(ctx->tt->cur->streams[j].pbuffer);
-    if(ctx->tt->cur->streams[j].psink_parse)
+    ctx->tt->cur->streams[j]->action = BGAV_STREAM_MUTE;
+    gavl_packet_buffer_clear(ctx->tt->cur->streams[j]->pbuffer);
+    if(ctx->tt->cur->streams[j]->psink_parse)
       {
-      gavl_packet_sink_destroy(ctx->tt->cur->streams[j].psink_parse);
-      ctx->tt->cur->streams[j].psink_parse = NULL;
+      gavl_packet_sink_destroy(ctx->tt->cur->streams[j]->psink_parse);
+      ctx->tt->cur->streams[j]->psink_parse = NULL;
       }
 
-    gavl_packet_buffer_set_mark_last(ctx->tt->cur->streams[j].pbuffer, 0);
-    gavl_packet_buffer_set_calc_frame_durations(ctx->tt->cur->streams[j].pbuffer, 0);
+    gavl_packet_buffer_set_mark_last(ctx->tt->cur->streams[j]->pbuffer, 0);
+    gavl_packet_buffer_set_calc_frame_durations(ctx->tt->cur->streams[j]->pbuffer, 0);
     
     }
   bgav_input_seek(ctx->input, ctx->tt->cur->data_start, SEEK_SET);
@@ -800,15 +800,15 @@ static int parse_packet(bgav_demuxer_context_t * ctx)
     
   for(i = 0; i < ctx->tt->cur->num_streams; i++)
     {
-    if(!ctx->tt->cur->streams[i].psink_parse)
+    if(!ctx->tt->cur->streams[i]->psink_parse)
       continue;
     
     while(1)
       {
       p = NULL;
-      if(gavl_packet_source_read_packet(gavl_packet_buffer_get_source(ctx->tt->cur->streams[i].pbuffer), &p) != GAVL_SOURCE_OK)
+      if(gavl_packet_source_read_packet(gavl_packet_buffer_get_source(ctx->tt->cur->streams[i]->pbuffer), &p) != GAVL_SOURCE_OK)
         break;
-      gavl_packet_sink_put_packet(ctx->tt->cur->streams[i].psink_parse, p);
+      gavl_packet_sink_put_packet(ctx->tt->cur->streams[i]->psink_parse, p);
       }
     }
   return 1;
@@ -855,9 +855,9 @@ int bgav_demuxer_get_duration(bgav_demuxer_context_t * ctx)
 
     for(i = 0; i < ctx->tt->cur->num_streams; i++)
       {
-      if(!(ctx->tt->cur->streams[i].type & type_mask))
+      if(!(ctx->tt->cur->streams[i]->type & type_mask))
         continue;
-      if(ctx->tt->cur->streams[i].stats.pts_end == GAVL_TIME_UNDEFINED)
+      if(ctx->tt->cur->streams[i]->stats.pts_end == GAVL_TIME_UNDEFINED)
         {
         done = 0;
         break;

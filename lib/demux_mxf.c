@@ -612,7 +612,7 @@ static int open_mxf(bgav_demuxer_context_t * ctx)
   ctx->index_mode = INDEX_MODE_MIXED;
   for(i = 0; i < ctx->tt->cur->num_streams; i++)
     {
-    if(ctx->tt->cur->streams[i].index_mode == INDEX_MODE_NONE)
+    if(ctx->tt->cur->streams[i]->index_mode == INDEX_MODE_NONE)
       {
       ctx->index_mode = INDEX_MODE_NONE;
       break;
@@ -625,29 +625,25 @@ static int open_mxf(bgav_demuxer_context_t * ctx)
   return 1;
   }
 
-static bgav_stream_t * next_stream(bgav_stream_t * s, int num)
-  {
-  stream_priv_t * sp;
-  int i;
-  for(i = 0; i < num; i++)
-    {
-    if(s[i].flags & STREAM_EXTERN)
-      continue;
-    
-    if(s[i].action != BGAV_STREAM_MUTE)
-      {
-      sp = s[i].priv;
-      if(!sp->eof)
-        return s + i;
-      }
-    }
-  return NULL;
-  }
 
 static gavl_source_status_t next_packet_mxf(bgav_demuxer_context_t * ctx)
   {
   bgav_stream_t * s;
   stream_priv_t * sp;
+
+  if(ctx->request_stream)
+    {
+    s = ctx->request_stream;
+    sp = s->priv;
+    if(!sp->next_packet(ctx, s))
+      return GAVL_SOURCE_EOF;
+    else
+      return GAVL_SOURCE_OK;
+    }
+
+#if 0  
+  for(i = 0; i < ctx->tt->cur->num_streams; i++)
+    
   
   s = ctx->request_stream;
   if(s)
@@ -660,10 +656,12 @@ static gavl_source_status_t next_packet_mxf(bgav_demuxer_context_t * ctx)
     if(sp)
       sp->eof = 1;
 
-    if(!(s = next_stream(ctx->tt->cur->streams, ctx->tt->cur->num_streams)))
+    if(!(idx = next_stream(ctx->tt->cur->streams, ctx->tt->cur->num_streams)))
       return GAVL_SOURCE_EOF;
     sp = s->priv;
     }
+#endif
+  
   return GAVL_SOURCE_OK;
   }
 
@@ -675,17 +673,17 @@ static void seek_mxf(bgav_demuxer_context_t * ctx, int64_t time,
 
 #if 1
 
-static void reset_streams(bgav_stream_t * streams, int num)
+static void reset_streams(bgav_stream_t ** streams, int num)
   {
   int j;
   stream_priv_t * sp;
 
   for(j = 0; j < num; j++)
     {
-    if(streams[j].flags & STREAM_EXTERN)
+    if(streams[j]->flags & STREAM_EXTERN)
       continue;
     
-    sp = streams[j].priv;
+    sp = streams[j]->priv;
     if(sp)
       {
       sp->pos = sp->start;
@@ -724,17 +722,17 @@ const bgav_demuxer_t bgav_demuxer_mxf =
     .close        = close_mxf
   };
 
-static int find_source_stream(bgav_stream_t * streams, int num, int track_id)
+static int find_source_stream(bgav_stream_t ** streams, int num, int track_id)
   {
   int i;
   stream_priv_t * p;
   
   for(i = 0; i < num; i++)
     {
-    if(streams[i].flags & STREAM_EXTERN)
+    if(streams[i]->flags & STREAM_EXTERN)
       continue;
     
-    switch(streams[i].type)
+    switch(streams[i]->type)
       {
       case GAVL_STREAM_AUDIO:
       case GAVL_STREAM_VIDEO:
@@ -746,7 +744,7 @@ static int find_source_stream(bgav_stream_t * streams, int num, int track_id)
         break;
       }
     
-    p = streams[i].priv;
+    p = streams[i]->priv;
     if(p->track_id == track_id)
       return i;
     }

@@ -470,7 +470,7 @@ void bgav_stream_set_parse_frame(bgav_stream_t * s);
 void bgav_stream_set_from_gavl(bgav_stream_t * s,
                                gavl_dictionary_t * dict);
 
-int bgav_streams_foreach(bgav_stream_t * s, int num,
+int bgav_streams_foreach(bgav_stream_t ** s, int num,
                          int (*action)(void * priv, bgav_stream_t * s), void * priv);
 
 int64_t bgav_stream_get_duration(bgav_stream_t * s);
@@ -534,7 +534,7 @@ struct bgav_track_s
   bgav_metadata_t * metadata;
 
   int num_streams;
-  bgav_stream_t * streams;
+  bgav_stream_t ** streams;
   
   int num_audio_streams;
   int num_video_streams;

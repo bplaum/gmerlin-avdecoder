@@ -2905,9 +2905,9 @@ bgav_stream_t * bgav_mxf_find_stream(mxf_file_t * f, bgav_demuxer_context_t * t,
 
     for(i = 0; i < t->tt->cur->num_streams; i++)
       {
-      if(!(t->tt->cur->streams[i].flags & STREAM_EXTERN) &&
+      if(!(t->tt->cur->streams[i]->flags & STREAM_EXTERN) &&
          (ret->action != BGAV_STREAM_MUTE))
-        return &t->tt->cur->streams[i];
+        return t->tt->cur->streams[i];
       }
     return NULL;
     }

@@ -619,13 +619,13 @@ void bgav_stream_set_from_gavl(bgav_stream_t * s,
   s->container_bitrate = s->ci->bitrate;
   }
 
-int bgav_streams_foreach(bgav_stream_t * s, int num,
+int bgav_streams_foreach(bgav_stream_t ** s, int num,
                          int (*action)(void * priv, bgav_stream_t * s), void * priv)
   {
   int i;
   for(i = 0; i < num; i++)
     {
-    if(!action(priv, s + i))
+    if(!action(priv, s[i]))
       return 0;
     }
   return 1;

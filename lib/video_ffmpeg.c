@@ -1572,7 +1572,8 @@ static codec_info_t codec_infos[] =
 
     { "FFmpeg VP9 decoder", "VP9", AV_CODEC_ID_VP9,
       (uint32_t[]){ BGAV_MK_FOURCC('V', 'P', '9', '0'),
-                    0x00 } },
+        BGAV_MK_FOURCC('v', 'p', '0', '9'),
+        0x00 } },
     
     { "Ffmpeg MPEG-1 decoder", "MPEG-1", AV_CODEC_ID_MPEG1VIDEO,
       (uint32_t[])

@@ -55,17 +55,17 @@ bgav_stream_t * bgav_track_get_stream(bgav_track_t * track, gavl_stream_type_t t
 
   for(i = 0; i < track->num_streams; i++)
     {
-    if(track->streams[i].type == type)
+    if(track->streams[i]->type == type)
       {
       if((type == GAVL_STREAM_MSG))
         {
-        if(track->streams[i].stream_id == stream)
-          return &track->streams[i];
+        if(track->streams[i]->stream_id == stream)
+          return track->streams[i];
         else
           idx++;
         }
       else if(idx == stream)
-        return &track->streams[i];
+        return track->streams[i];
       else
         idx++;
       }
@@ -130,7 +130,9 @@ static bgav_stream_t * append_stream(bgav_track_t * t)
     memset(t->streams + t->num_streams, 0,
            sizeof(*t->streams) * (t->streams_alloc - t->num_streams));
     }
-  ret = t->streams + t->num_streams;
+  t->streams[t->num_streams] = calloc(1, sizeof(*t->streams[t->num_streams]));
+  ret = t->streams[t->num_streams];
+  
   t->num_streams++;
   return ret;
   }
@@ -316,21 +318,21 @@ bgav_track_find_stream_all(bgav_track_t * t, int stream_id)
   
   for(i = 0; i < t->num_streams; i++)
     {
-    if((t->streams[i].stream_id == stream_id) &&
-       !(t->streams[i].flags & STREAM_EXTERN))
-      return &t->streams[i];
+    if((t->streams[i]->stream_id == stream_id) &&
+       !(t->streams[i]->flags & STREAM_EXTERN))
+      return t->streams[i];
     }
   return NULL;
   }
 
-static bgav_stream_t * find_stream_by_id(bgav_stream_t * s,
+static bgav_stream_t * find_stream_by_id(bgav_stream_t ** s,
                                          int num, int id)
   {
   int i;
   for(i = 0; i < num; i++)
     {
-    if(s[i].stream_id == id)
-      return &s[i];
+    if(s[i]->stream_id == id)
+      return s[i];
     }
   return NULL;
   }
@@ -358,7 +360,7 @@ void bgav_track_stop(bgav_track_t * t)
   int i;
   //  fprintf(stderr, "Stop track\n");
   for(i = 0; i < t->num_streams; i++)
-    bgav_stream_stop(&t->streams[i]);
+    bgav_stream_stop(t->streams[i]);
   }
 
 #if 0
@@ -459,21 +461,21 @@ void bgav_track_dump(bgav_track_t * t)
   
   for(i = 0; i < t->num_streams; i++)
     {
-    bgav_stream_dump(&t->streams[i]);
+    bgav_stream_dump(t->streams[i]);
     
-    switch(t->streams[i].type)
+    switch(t->streams[i]->type)
       {
       case GAVL_STREAM_AUDIO:
-        bgav_audio_dump(&t->streams[i]);
+        bgav_audio_dump(t->streams[i]);
         break;
       case GAVL_STREAM_VIDEO:
-        bgav_video_dump(&t->streams[i]);
+        bgav_video_dump(t->streams[i]);
         break;
       case GAVL_STREAM_TEXT:
-        bgav_subtitle_dump(&t->streams[i]);
+        bgav_subtitle_dump(t->streams[i]);
         break;
       case GAVL_STREAM_OVERLAY:
-        bgav_subtitle_dump(&t->streams[i]);
+        bgav_subtitle_dump(t->streams[i]);
         break;
       case GAVL_STREAM_MSG:
       case GAVL_STREAM_NONE:
@@ -490,7 +492,10 @@ void bgav_track_free(bgav_track_t * t)
   if(t->streams)
     {
     for(i = 0; i < t->num_streams; i++)
-      bgav_stream_free(&t->streams[i]);
+      {
+      bgav_stream_free(t->streams[i]);
+      free(t->streams[i]);
+      }
     free(t->streams);
     }
   }
@@ -500,7 +505,8 @@ static void remove_stream_abs(bgav_track_t * t, int idx)
   gavl_track_delete_stream(t->info, idx);
   
   /* Streams are sometimes also removed for other reasons */
-  bgav_stream_free(&t->streams[idx]);
+  bgav_stream_free(t->streams[idx]);
+  free(t->streams[idx]);
   if(idx < t->num_streams - 1)
     {
     memmove(&t->streams[idx],
@@ -522,7 +528,7 @@ void bgav_track_remove_stream(bgav_track_t * track, int stream)
   {
   remove_stream_abs(track, stream);
   
-  switch(track->streams[stream].type)
+  switch(track->streams[stream]->type)
     {
     case GAVL_STREAM_AUDIO:
       track->num_audio_streams--;
@@ -663,13 +669,13 @@ void bgav_track_init_read(bgav_track_t * track)
   /* Set all streams to read mode */
   for(i = 0; i < track->num_streams; i++)
     {
-    switch(track->streams[i].type)
+    switch(track->streams[i]->type)
       {
       case GAVL_STREAM_AUDIO:
       case GAVL_STREAM_VIDEO:
       case GAVL_STREAM_OVERLAY:
       case GAVL_STREAM_TEXT:
-        track->streams[i].action = BGAV_STREAM_INIT;
+        track->streams[i]->action = BGAV_STREAM_INIT;
         break;
       case GAVL_STREAM_MSG:
       case GAVL_STREAM_NONE:
@@ -682,13 +688,13 @@ void bgav_track_init_read(bgav_track_t * track)
   /* Set all streams back to mute mode */
   for(i = 0; i < track->num_streams; i++)
     {
-    switch(track->streams[i].type)
+    switch(track->streams[i]->type)
       {
       case GAVL_STREAM_AUDIO:
       case GAVL_STREAM_VIDEO:
       case GAVL_STREAM_OVERLAY:
       case GAVL_STREAM_TEXT:
-        track->streams[i].action = BGAV_STREAM_MUTE;
+        track->streams[i]->action = BGAV_STREAM_MUTE;
         break;
       case GAVL_STREAM_MSG:
       case GAVL_STREAM_NONE:
@@ -976,10 +982,10 @@ void bgav_track_export_infos(bgav_track_t * t)
   int i;
   for(i = 0; i < t->num_streams; i++)
     {
-    gavl_dictionary_reset(t->streams[i].info_ext);
-    gavl_dictionary_copy(t->streams[i].info_ext, &t->streams[i].in_info);
-    gavl_stream_set_stats(t->streams[i].info_ext, &t->streams[i].stats);
-    gavl_stream_set_compression_info(t->streams[i].info_ext, t->streams[i].ci);
+    gavl_dictionary_reset(t->streams[i]->info_ext);
+    gavl_dictionary_copy(t->streams[i]->info_ext, &t->streams[i]->in_info);
+    gavl_stream_set_stats(t->streams[i]->info_ext, &t->streams[i]->stats);
+    gavl_stream_set_compression_info(t->streams[i]->info_ext, t->streams[i]->ci);
     }
   }
 
@@ -989,10 +995,10 @@ int bgav_track_num_media_streams(bgav_track_t * t)
   int i;
   for(i = 0; i < t->num_streams; i++)
     {
-    if((t->streams[i].type == GAVL_STREAM_AUDIO) ||
-       (t->streams[i].type == GAVL_STREAM_VIDEO) ||
-       (t->streams[i].type == GAVL_STREAM_TEXT) ||
-       (t->streams[i].type == GAVL_STREAM_OVERLAY))
+    if((t->streams[i]->type == GAVL_STREAM_AUDIO) ||
+       (t->streams[i]->type == GAVL_STREAM_VIDEO) ||
+       (t->streams[i]->type == GAVL_STREAM_TEXT) ||
+       (t->streams[i]->type == GAVL_STREAM_OVERLAY))
       ret++;
     }
   return ret;

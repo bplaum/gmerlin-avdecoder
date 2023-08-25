@@ -519,7 +519,7 @@ static void build_index(bgav_demuxer_context_t * ctx)
   /* Set the dts of the streams */
   for(i = 0; i < ctx->tt->cur->num_streams; i++)
     {
-    bgav_s = &ctx->tt->cur->streams[i];
+    bgav_s = ctx->tt->cur->streams[i];
     if(!bgav_s->priv)
       break;
     s = bgav_s->priv;
@@ -1900,11 +1900,11 @@ static void build_edl(bgav_demuxer_context_t * ctx)
   
   for(i = 0; i < ctx->tt->cur->num_streams; i++)
     {
-    if(ctx->tt->cur->streams[i].flags & STREAM_EXTERN)
+    if(ctx->tt->cur->streams[i]->flags & STREAM_EXTERN)
       continue;
     
-    es = gavl_track_append_stream(t, ctx->tt->cur->streams[i].type);
-    set_stream_edl(priv, &ctx->tt->cur->streams[i], es);
+    es = gavl_track_append_stream(t, ctx->tt->cur->streams[i]->type);
+    set_stream_edl(priv, ctx->tt->cur->streams[i], es);
     }
 #if 0
   for(i = 0; i < ctx->tt->cur->num_video_streams; i++)

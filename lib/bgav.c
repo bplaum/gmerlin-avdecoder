@@ -360,7 +360,7 @@ static void set_stream_demuxers(bgav_track_t * t,
      before we initialize the parsers/decoders */
   
   for(i = 0; i < t->num_streams; i++)
-    t->streams[i].demuxer = demuxer;
+    t->streams[i]->demuxer = demuxer;
   }
 
 int bgav_select_track(bgav_t * b, int track)
@@ -601,7 +601,7 @@ int bgav_set_stream_action_all(bgav_t * bgav, int idx, bgav_stream_action_t acti
   if(!bgav->tt || !bgav->tt->cur || (idx < 0) || (idx >= bgav->tt->cur->num_streams))
     return 0;
 
-  bgav->tt->cur->streams[idx].action = action;
+  bgav->tt->cur->streams[idx]->action = action;
   return 1;
   }
 
