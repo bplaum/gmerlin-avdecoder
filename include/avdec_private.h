@@ -1017,6 +1017,9 @@ void bgav_input_seek(bgav_input_context_t * ctx,
                      int64_t position,
                      int whence);
 
+void bgav_input_seek_time(bgav_input_context_t * ctx,
+                          gavl_time_t time);
+
 
 
 

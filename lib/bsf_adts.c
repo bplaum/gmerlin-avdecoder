@@ -88,6 +88,9 @@ static void reset_adts(bgav_packet_filter_t * f)
   adts_t * adts = f->priv;
   av_bsf_flush(adts->ctx);	
   adts->pts = GAVL_TIME_UNDEFINED;
+  
+  gavl_packet_reset(&adts->out_pkt_g);
+  adts->in_pkt_g = NULL;
   }
 
 static gavl_source_status_t source_func_adts(void * priv, gavl_packet_t ** p)

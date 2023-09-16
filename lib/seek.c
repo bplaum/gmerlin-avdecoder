@@ -449,8 +449,7 @@ static void seek_input(bgav_t * b, int64_t * time, int scale)
   bgav_track_clear(b->tt->cur);
 
   seek_time = gavl_time_unscale(scale, *time);
-  b->input->input->seek_time(b->input, &seek_time);
-  
+  bgav_input_seek_time(b->input, seek_time);
   bgav_track_resync(b->tt->cur);
   //  skip_to(b, b->tt->cur, time, scale);
   

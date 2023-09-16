@@ -144,6 +144,11 @@ static int do_convert(bgav_charset_converter_t * cnv,
                    "Incomplete multibyte sequence");
           return 0;
           break;
+        default:
+          gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
+                   "iconv failed: %s", strerror(errno));
+          return 0;
+          break;
         }
       }
     if(!inbytesleft)

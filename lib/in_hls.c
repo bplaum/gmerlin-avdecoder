@@ -1079,17 +1079,28 @@ static int jump_to_idx(bgav_input_context_t * ctx, int idx)
   ctx->input_pts = GAVL_TIME_UNDEFINED;
     
   if(p->ts_io)
+    {
     gavf_io_destroy(p->ts_io);
+    p->ts_io = NULL;
+    }
   if(p->ts_io_next)
+    {
     gavf_io_destroy(p->ts_io_next);
+    p->ts_io_next = NULL;
+    }
   if(p->m3u_io)
+    {
     gavf_io_destroy(p->m3u_io);
+    p->m3u_io = NULL;
+    }
   
   p->io = NULL;
 
   p->m3u_io = create_http_client(ctx);
   gavl_buffer_reset(&p->m3u_buf);
   gavl_http_client_set_response_body(p->m3u_io, &p->m3u_buf);
+
+  gavl_buffer_reset(&p->header_buf);
   
   p->ts_io = create_http_client(ctx);
   p->ts_io_next = create_http_client(ctx);
@@ -1113,8 +1124,6 @@ static void seek_time_hls(bgav_input_context_t * ctx, gavl_time_t *t1)
   int idx;
   hls_priv_t * p = ctx->priv;
 
-  fprintf(stderr, "seek_time_hls 1: %"PRId64"\n", *t1);
-
   if(!p->segments.num_entries)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "No segments loaded");
@@ -1122,8 +1131,6 @@ static void seek_time_hls(bgav_input_context_t * ctx, gavl_time_t *t1)
     }
   
   idx = clock_time_to_idx(ctx, t1);
-
-  fprintf(stderr, "seek_time_hls 2: idx %d\n", idx);
 
   if(idx < 0)
     {
@@ -1133,7 +1140,7 @@ static void seek_time_hls(bgav_input_context_t * ctx, gavl_time_t *t1)
       idx = p->segments.num_entries - 1;
     }
 
-  fprintf(stderr, "seek_time_hls 3: idx %d\n", idx);
+  fprintf(stderr, "seek_time_hls: time: %"PRId64", idx %d\n", *t1, idx);
   
   jump_to_idx(ctx, idx);
   }
@@ -1277,8 +1284,12 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
     if(!block)
       {
       if(!gavf_io_can_read(p->io, 0))
+        {
+        if(!bytes_read)
+          gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Detected EOF 4");
+
         return bytes_read;
-      
+        }
       result = gavf_io_read_data_nonblock(p->io, buffer + bytes_read, len - bytes_read);
       }
     else
@@ -1311,6 +1322,10 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
         {
         gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Got I/O error from underlying stream");
         bgav_signal_restart(ctx->b, GAVL_MSG_SRC_RESTART_ERROR);
+
+        if(!bytes_read)
+          gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Detected EOF 3");
+        
         return bytes_read;
         }
       else if(!block)
@@ -1323,8 +1338,12 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
       else
         {
         if(p->flags & END_OF_SEQUENCE)
+          {
+          if(!bytes_read)
+            gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Detected EOF 1");
+          
           return bytes_read;
-        
+          }
         //  fprintf(stderr, "Opening next segment: %d %d %d\n", result, len, bytes_read);
         
         if(p->next_state != NEXT_STATE_DONE)
@@ -1341,6 +1360,10 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
         }
       }
     }
+
+  if(!bytes_read)
+    gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Detected EOF");
+  
   return bytes_read;
   }
 
