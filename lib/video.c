@@ -340,10 +340,11 @@ int bgav_video_init(bgav_stream_t * s)
   
   gavl_dictionary_reset(s->info_ext);
   gavl_dictionary_copy(s->info_ext, gavl_packet_source_get_stream(s->psrc));
-
+  
   gavl_compression_info_free(s->ci);
   gavl_compression_info_init(s->ci);
   gavl_stream_get_compression_info(s->info_ext, s->ci);
+  gavl_stream_set_stats(s->info_ext, &s->stats);
   
   if(s->stats.pts_start == GAVL_TIME_UNDEFINED)
     {

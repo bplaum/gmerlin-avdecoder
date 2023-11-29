@@ -62,8 +62,7 @@ static int init_v4l2(bgav_stream_t * s)
   priv->hwctx = gavl_hw_ctx_create_v4l2(dev_file);
   
   priv->dev = gavl_hw_ctx_v4l2_get_device(priv->hwctx);
-    
-  //  fprintf(stderr, "Opened device %p\n", priv->dev);
+  
   
   if(!gavl_v4l2_device_init_decoder(priv->dev, s->info_ext, s->psrc))
     {
@@ -119,6 +118,9 @@ static void resync_v4l2(bgav_stream_t * s)
   BGAV_MK_FOURCC('H', '2', '6', '4'), \
   BGAV_MK_FOURCC('h', '2', '6', '4')
 
+#define JPEG_FOURCCS                  \
+  BGAV_MK_FOURCC('M', 'J', 'P', 'G')
+
 #define V4L_DECODER(n, f) \
   { \
   .name = "V4L2 M2M " n " Decoder", \
@@ -128,7 +130,7 @@ static void resync_v4l2(bgav_stream_t * s)
   .close =  close_v4l2,              \
   .resync = resync_v4l2,             \
   }
-    
+
 static struct
   {
   gavl_codec_id_t codec_id;
@@ -140,6 +142,12 @@ decoders[] =
     GAVL_CODEC_ID_H264,
     V4L_DECODER("H.264", H264_FOURCCS)
    },
+#if 1
+   {
+    GAVL_CODEC_ID_JPEG,
+    V4L_DECODER("MJPEG", JPEG_FOURCCS)
+   },
+#endif
    { /* End */ }
   };
 

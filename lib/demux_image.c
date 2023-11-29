@@ -122,18 +122,21 @@ static int open_image(bgav_demuxer_context_t * ctx)
     {
     s->fourcc = BGAV_MK_FOURCC('p', 'n', 'g', ' ');
     bgav_track_set_format(ctx->tt->cur, "PNG image", "image/png");
+    s->ci->id = GAVL_CODEC_ID_PNG;
     }
   else if(is_tiff(probe_data))
     {
     s->fourcc = BGAV_MK_FOURCC('t', 'i', 'f', 'f');
     bgav_track_set_format(ctx->tt->cur, "TIFF image", "image/tiff");
+    s->ci->id = GAVL_CODEC_ID_TIFF;
     }
   else if(is_jpeg(probe_data))
     {
     s->fourcc = BGAV_MK_FOURCC('j', 'p', 'e', 'g');    
     bgav_track_set_format(ctx->tt->cur, "JPEG image", "image/jpeg");
+    s->ci->id = GAVL_CODEC_ID_JPEG;
     }
-
+  
   s->data.video.format->timescale = 1000; // Actually arbitrary since we only have pts = 0
   s->data.video.format->frame_duration = 0;
   s->data.video.format->framerate_mode = GAVL_FRAMERATE_STILL;
@@ -143,6 +146,9 @@ static int open_image(bgav_demuxer_context_t * ctx)
   s->data.video.format->pixel_height = 1;  
   
   s->ci->flags &= ~(GAVL_COMPRESSION_HAS_B_FRAMES | GAVL_COMPRESSION_HAS_P_FRAMES);
+
+  s->stats.size_max = ctx->input->total_bytes;
+  s->stats.size_min = ctx->input->total_bytes;
   
   ctx->index_mode = INDEX_MODE_SIMPLE;
   return 1;

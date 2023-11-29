@@ -394,6 +394,11 @@ gavl_dictionary_t * bgav_cue_get_edl(bgav_cue_t * cue,
   int64_t seg_time  = GAVL_TIME_UNDEFINED;
   char * audio_file;
   int64_t total_samples;
+  gavl_dictionary_t * ret_m = gavl_dictionary_get_dictionary_create(ret, GAVL_META_METADATA);
+
+  gavl_dictionary_set_string(ret_m, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_MULTITRACK_FILE);
+
+  
   
   if(!(audio_file = get_audio_file(filename)))
     {
@@ -409,6 +414,18 @@ gavl_dictionary_t * bgav_cue_get_edl(bgav_cue_t * cue,
     gavl_dictionary_set_string(&m, GAVL_META_ALBUM, cue->title);
   if(cue->performer)
     gavl_dictionary_set_string(&m, GAVL_META_ALBUMARTIST, cue->performer);
+
+  if(cue->performer && cue->title)
+    {
+    gavl_dictionary_set_string_nocopy(ret_m, GAVL_META_LABEL, gavl_sprintf("%s - %s", cue->performer, cue->title));
+    gavl_dictionary_set_string(ret_m, GAVL_META_CHILD_CLASS, GAVL_META_MEDIA_CLASS_SONG);
+    }
+  else if(cue->title)
+    gavl_dictionary_set_string(ret_m, GAVL_META_LABEL, cue->title);
+  else if((pos = strrchr(filename, '/')))
+    gavl_dictionary_set_string(ret_m, GAVL_META_LABEL, pos + 1);
+  else
+    gavl_dictionary_set_string(ret_m, GAVL_META_LABEL, filename);
   
   for(i = 0; i < cue->num_comments; i++)
     {
@@ -546,7 +563,7 @@ gavl_dictionary_t * bgav_cue_get_edl(bgav_cue_t * cue,
     gavl_dictionary_destroy(ret);
     ret = NULL;
     }
-  
+    
   if(audio_file)
     free(audio_file);
   
