@@ -37,43 +37,38 @@
 
 static int probe_m3u(bgav_input_context_t * input)
   {
-  char probe_buffer[PROBE_BYTES];
   const char * mimetype = NULL;
-  int result = 0;
 
-  const char * real_uri = gavl_dictionary_get_string(&input->m, GAVL_META_REAL_URI);
+  const char * uri = gavl_dictionary_get_string(&input->m, GAVL_META_REAL_URI);
 
-  if(real_uri &&
-     (gavl_string_ends_with(real_uri, ".m3u") ||
-      gavl_string_ends_with(real_uri, ".m3u8")))
+  if(!uri)
+    uri = input->location;
+  
+  if(uri &&
+     (gavl_string_ends_with_i(uri, ".m3u") ||
+      gavl_string_ends_with_i(uri, ".m3u8") ||
+      gavl_string_ends_with_i(uri, ".ram")))
     return 1;
   
   /* Most likely, we get this via http, so we can check the mimetype */
-  if(input->location)
+
+  if(gavl_metadata_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, NULL) && mimetype)
     {
-    if(gavl_metadata_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, NULL) && mimetype)
-      {
-      if(strcasecmp(mimetype, "audio/x-pn-realaudio-plugin") &&
-         strcasecmp(mimetype, "video/x-pn-realvideo-plugin") &&
-         strcasecmp(mimetype, "audio/x-pn-realaudio") &&
-         strcasecmp(mimetype, "video/x-pn-realvideo") &&
-         strcasecmp(mimetype, "audio/x-mpegurl") &&
-         strcasecmp(mimetype, "audio/mpegurl") &&
-         strcasecmp(mimetype, "audio/m3u") &&
-         strncasecmp(mimetype, "application/x-mpegurl", 21) && // HLS
-         strncasecmp(mimetype, "application/vnd.apple.mpegurl", 29) && // HLS
-         (!gavl_string_ends_with_i(input->location, ".m3u") &&
-          !gavl_string_ends_with_i(input->location, ".m3u8")))
-        return 0;
-      }
-    else // No mimetype
-      {
-      if(!gavl_string_ends_with(input->location, ".m3u")  &&
-         !gavl_string_ends_with(input->location, ".m3u8") &&
-         !gavl_string_ends_with(input->location, ".ram"))
-        return 0;
-      }
+    if(!strcasecmp(mimetype, "audio/x-pn-realaudio-plugin") ||
+       !strcasecmp(mimetype, "video/x-pn-realvideo-plugin") ||
+       !strcasecmp(mimetype, "audio/x-pn-realaudio") ||
+       !strcasecmp(mimetype, "video/x-pn-realvideo") ||
+       !strcasecmp(mimetype, "audio/x-mpegurl") ||
+       !strcasecmp(mimetype, "audio/mpegurl") ||
+       !strcasecmp(mimetype, "audio/m3u") ||
+       !strncasecmp(mimetype, "application/x-mpegurl", 21) || // HLS
+       !strncasecmp(mimetype, "application/vnd.apple.mpegurl", 29)) // HLS
+      return 1;
     }
+
+  return 0;
+
+#if 0
   
   if(bgav_input_get_data(input, (uint8_t*)probe_buffer,
                          PROBE_BYTES) < PROBE_BYTES)
@@ -90,7 +85,7 @@ static int probe_m3u(bgav_input_context_t * input)
   result = 1;
   end:
   return result;
-  
+#endif
   }
 
 static char * strip_spaces(char * str)
