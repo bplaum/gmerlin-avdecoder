@@ -60,14 +60,8 @@
 /* Define to 1 if you have the <dts.h> header file. */
 #undef HAVE_DTS_H
 
-/* Define to 1 if you have the `DVDFinish' function. */
-#undef HAVE_DVDFINISH
-
-/* Define to 1 if you have the `DVDInit' function. */
-#undef HAVE_DVDINIT
-
-/* Enable libdvdread */
-#undef HAVE_DVDREAD
+/* Do we have libdvdnav installed? */
+#undef HAVE_DVDNAV
 
 /* EGL available */
 #undef HAVE_EGL
