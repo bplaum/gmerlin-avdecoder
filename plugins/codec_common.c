@@ -49,6 +49,9 @@ void bg_avdec_codec_destroy(void * priv)
     bgav_stream_decoder_destroy(c->dec);
   if(c->compressions)
     free(c->compressions);
+  if(c->codec_tags)
+    free(c->codec_tags);
+
   free(c);
   }
 

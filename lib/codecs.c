@@ -337,4 +337,94 @@ gavl_codec_id_t * bgav_supported_video_compressions()
   return ret;
   }
 
+/* TODO: Codecs by fourccs */
 
+uint32_t * bgav_supported_audio_fourccs()
+  {
+  uint32_t * ret = NULL;
+
+  bgav_audio_decoder_t * cur;
+  int i, num, idx;
+
+  bgav_codecs_init(NULL);
+
+  /* Count fourccs */
+  cur = audio_decoders;
+  while(cur)
+    {
+    i = 0;
+
+    while(cur->fourccs[i])
+      {
+      i++;
+      num++;
+      }
+    cur = cur->next;
+    }
+
+  ret = calloc(num+1, sizeof(*ret));
+  idx = 0;
+
+  /* Set return array */
+  cur = audio_decoders;
+  while(cur)
+    {
+    i = 0;
+
+    while(cur->fourccs[i])
+      {
+      ret[idx++] = cur->fourccs[i];
+      i++;
+      }
+    cur = cur->next;
+    }
+  
+  return ret;
+  }
+
+uint32_t * bgav_supported_video_fourccs()
+  {
+  
+  uint32_t * ret = NULL;
+
+  bgav_video_decoder_t * cur;
+  int i, num, idx;
+
+  bgav_codecs_init(NULL);
+
+  /* Count fourccs */
+  cur = video_decoders;
+  while(cur)
+    {
+    i = 0;
+
+    while(cur->fourccs[i])
+      {
+      i++;
+      num++;
+      }
+    cur = cur->next;
+    }
+
+  ret = calloc(num+1, sizeof(*ret));
+  idx = 0;
+
+  /* Set return array */
+  cur = video_decoders;
+  while(cur)
+    {
+    i = 0;
+
+    while(cur->fourccs[i])
+      {
+      ret[idx++] = cur->fourccs[i];
+      i++;
+      }
+    cur = cur->next;
+    }
+  
+  return ret;
+
+
+  
+  }

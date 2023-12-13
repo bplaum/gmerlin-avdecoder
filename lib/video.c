@@ -753,6 +753,7 @@ int bgav_get_video_compression_info(bgav_t * bgav, int stream,
 int bgav_set_video_compression_info(bgav_stream_t * s)
   {
   gavl_codec_id_t id;
+  uint32_t codec_tag = 0;
   int need_bitrate = 0;
   //  bgav_bsf_t * bsf = NULL;
   
@@ -793,8 +794,8 @@ int bgav_set_video_compression_info(bgav_stream_t * s)
     id = GAVL_CODEC_ID_MPEG4_ASP;
   else
     {
-    s->flags |= STREAM_GOT_NO_CI;
-    return 0;
+    id = GAVL_CODEC_ID_EXTENDED;
+    codec_tag = s->fourcc;
     }
   if(gavl_compression_need_pixelformat(id) &&
      s->data.video.format->pixelformat == GAVL_PIXELFORMAT_NONE)
@@ -806,6 +807,7 @@ int bgav_set_video_compression_info(bgav_stream_t * s)
     }
   
   s->ci->id = id;
+  s->ci->codec_tag = codec_tag;
   
   if((s->ci->codec_header.len) && (bgav_video_is_divx4(s->fourcc)))
     {

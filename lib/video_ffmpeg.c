@@ -873,8 +873,12 @@ static int init_ffmpeg(bgav_stream_t * s)
   if(s->data.video.format->pixelformat == GAVL_PIXELFORMAT_NONE)
     {
     const AVPixFmtDescriptor * d = av_pix_fmt_desc_get(priv->ctx->pix_fmt);
+
+    if(d)
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Unsupported pixelformat %s", d->name);
+    else
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Codec initialization failed");
     
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Unsupported pixelformat %s", d->name);
     return 0;
     }
 

@@ -40,30 +40,31 @@ static const gavl_codec_id_t * get_compressions(void * priv)
   return c->compressions;
   }
 
+static const uint32_t * get_codec_tags(void * priv)
+  {
+  bg_avdec_codec_t * c = priv;
+  if(!c->codec_tags)
+    c->codec_tags = bgav_supported_video_compressions();
+  return c->codec_tags;
+  }
+
 static gavl_video_source_t *
 connect_decode_video(void * priv,
                      gavl_packet_source_t * src,
-                     const gavl_compression_info_t * ci,
-                     const gavl_video_format_t * fmt,
-                     gavl_dictionary_t * m)
+                     gavl_dictionary_t * s)
   {
   bg_avdec_codec_t * c = priv;
-  return bgav_stream_decoder_connect_video(c->dec, src, ci,
-                                           fmt, m);
+  return bgav_stream_decoder_connect_video(c->dec, src, s);
   
   }
 
 static gavl_video_source_t *
 connect_decode_overlay(void * priv,
-                      gavl_packet_source_t * src,
-                      const gavl_compression_info_t * ci,
-                      const gavl_video_format_t * fmt,
-                      gavl_dictionary_t * m)
+                       gavl_packet_source_t * src,
+                       gavl_dictionary_t * s)
   {
   bg_avdec_codec_t * c = priv;
-  return bgav_stream_decoder_connect_overlay(c->dec, src, ci,
-                                             fmt, m);
-
+  return bgav_stream_decoder_connect_overlay(c->dec, src, s);
   }
 
 
@@ -95,8 +96,9 @@ const bg_codec_plugin_t the_plugin =
       .set_parameter =  bg_avdec_codec_set_parameter,
     },
     .get_compressions     = get_compressions,
-    .connect_decode_video = connect_decode_video,
-    .connect_decode_overlay = connect_decode_overlay,
+    .get_codec_tags       = get_codec_tags,
+    .open_decode_video = connect_decode_video,
+    .open_decode_overlay = connect_decode_overlay,
     .reset                = bg_avdec_codec_reset,
     .skip                 = bg_avdec_codec_skip,
     

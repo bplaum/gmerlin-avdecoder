@@ -40,16 +40,21 @@ static const gavl_codec_id_t * get_compressions(void * priv)
   return c->compressions;
   }
 
+static const uint32_t * get_codec_tags(void * priv)
+  {
+  bg_avdec_codec_t * c = priv;
+  if(!c->compressions)
+    c->compressions = bgav_supported_audio_compressions();
+  return c->compressions;
+  }
+
 static gavl_audio_source_t *
 connect_decode_audio(void * priv,
                      gavl_packet_source_t * src,
-                     const gavl_compression_info_t * ci,
-                     const gavl_audio_format_t * fmt,
-                     gavl_dictionary_t * m)
+                     gavl_dictionary_t * s)
   {
   bg_avdec_codec_t * c = priv;
-  return bgav_stream_decoder_connect_audio(c->dec, src, ci,
-                                           fmt, m);
+  return bgav_stream_decoder_connect_audio(c->dec, src, s);
   }
 
 static const bg_parameter_info_t parameters[] =
@@ -80,7 +85,8 @@ const bg_codec_plugin_t the_plugin =
       .set_parameter =  bg_avdec_codec_set_parameter,
     },
     .get_compressions     = get_compressions,
-    .connect_decode_audio = connect_decode_audio,
+    .get_codec_tags      = get_codec_tags,
+    .open_decode_audio = connect_decode_audio,
     .reset                = bg_avdec_codec_reset,
     .skip                 = bg_avdec_codec_skip,
     

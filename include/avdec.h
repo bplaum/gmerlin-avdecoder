@@ -2507,9 +2507,7 @@ bgav_stream_decoder_get_options(bgav_stream_decoder_t * dec);
 BGAV_PUBLIC gavl_audio_source_t *
 bgav_stream_decoder_connect_audio(bgav_stream_decoder_t * dec,
                                   gavl_packet_source_t * src,
-                                  const gavl_compression_info_t * ci,
-                                  const gavl_audio_format_t * fmt,
-                                  gavl_dictionary_t * m);
+                                  gavl_dictionary_t * s);
   
 /** \brief Connect a video stream decoder
  *  \param dec A stream decoder
@@ -2530,9 +2528,7 @@ bgav_stream_decoder_connect_audio(bgav_stream_decoder_t * dec,
 BGAV_PUBLIC gavl_video_source_t *
 bgav_stream_decoder_connect_video(bgav_stream_decoder_t * dec,
                                   gavl_packet_source_t * src,
-                                  const gavl_compression_info_t * ci,
-                                  const gavl_video_format_t * fmt,
-                                  gavl_dictionary_t * m);
+                                  gavl_dictionary_t * s);
 
 /** \brief Connect an overlay stream decoder
  *  \param dec A stream decoder
@@ -2553,9 +2549,7 @@ bgav_stream_decoder_connect_video(bgav_stream_decoder_t * dec,
 BGAV_PUBLIC gavl_video_source_t *
 bgav_stream_decoder_connect_overlay(bgav_stream_decoder_t * dec,
                                     gavl_packet_source_t * src,
-                                    const gavl_compression_info_t * ci,
-                                    const gavl_video_format_t * fmt,
-                                    gavl_dictionary_t * m);
+                                    gavl_dictionary_t * s);
 
 /** \brief Skip to a specified time
  *  \param dec A stream decoder
@@ -2609,6 +2603,13 @@ bgav_supported_audio_compressions();
 BGAV_PUBLIC
 gavl_codec_id_t * bgav_supported_video_compressions();
 
+BGAV_PUBLIC
+uint32_t * bgav_supported_audio_fourccs();
+
+BGAV_PUBLIC
+uint32_t * bgav_supported_video_fourccs();
+
+  
 BGAV_PUBLIC
 int bgav_set_stream_action_all(bgav_t * bgav, int idx, bgav_stream_action_t action);
   

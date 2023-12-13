@@ -477,7 +477,6 @@ int bgav_get_overlay_compression_info(bgav_t * bgav, int stream,
   if(!(s = bgav_track_get_overlay_stream(bgav->tt->cur, stream)))
     return 0;
   return gavl_stream_get_compression_info(s->info, info);
-  
   }
 
 int bgav_set_overlay_compression_info(bgav_stream_t * s)

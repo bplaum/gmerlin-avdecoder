@@ -26,6 +26,7 @@ typedef struct
   bgav_stream_decoder_t * dec;
   gavl_codec_id_t * compressions;
   bgav_options_t * opt;
+  uint32_t * codec_tags;
   } bg_avdec_codec_t;
 
 void * bg_avdec_codec_create();

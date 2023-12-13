@@ -31,14 +31,12 @@
 
 struct bgav_stream_decoder_s
   {
+  gavl_dictionary_t info;
   bgav_options_t opt;
   bgav_stream_t s;
 
   bgav_packet_t p;
   bgav_packet_t * out_packet;
-  gavl_packet_source_t * src;
-
-  gavl_dictionary_t info;
   
   int flags;
   };
@@ -127,7 +125,7 @@ static int init_common(bgav_stream_decoder_t * dec,
                        gavl_packet_source_t * src)
   {
   dec->s.action = BGAV_STREAM_DECODE;
-  dec->src = src;
+  dec->s.psrc = src;
   
   return bgav_stream_start(&dec->s);
   }
@@ -135,27 +133,18 @@ static int init_common(bgav_stream_decoder_t * dec,
 gavl_audio_source_t *
 bgav_stream_decoder_connect_audio(bgav_stream_decoder_t * dec,
                                   gavl_packet_source_t * src,
-                                  const gavl_compression_info_t * ci,
-                                  const gavl_audio_format_t * fmt,
-                                  gavl_dictionary_t * m)
+                                  gavl_dictionary_t * s)
   {
   dec->s.type = GAVL_STREAM_AUDIO;
   dec->s.flags |= STREAM_STANDALONE;
 
-  gavl_init_audio_stream(&dec->info);
-
-  dec->s.m = gavl_stream_get_metadata_nc(dec->s.info);
-  gavl_dictionary_copy(dec->s.m, m);
-  gavl_stream_set_compression_info(dec->s.info, ci);
-  
+  gavl_dictionary_copy(&dec->info, s);
   bgav_stream_set_from_gavl(&dec->s, dec->s.info);
-  
-  gavl_audio_format_copy(dec->s.data.audio.format, fmt);
   
   if(!init_common(dec, src))
     return NULL;
 
-  gavl_dictionary_copy(m, dec->s.m);
+  gavl_dictionary_copy(s, &dec->info);
   
   return dec->s.data.audio.source;
   }
@@ -163,56 +152,40 @@ bgav_stream_decoder_connect_audio(bgav_stream_decoder_t * dec,
 gavl_video_source_t *
 bgav_stream_decoder_connect_video(bgav_stream_decoder_t * dec,
                                   gavl_packet_source_t * src,
-                                  const gavl_compression_info_t * ci,
-                                  const gavl_video_format_t * fmt,
-                                  gavl_dictionary_t * m)
+                                  gavl_dictionary_t * s)
   {
   dec->s.type = GAVL_STREAM_VIDEO;
   dec->s.flags |= STREAM_STANDALONE;
-  
-  gavl_init_video_stream(&dec->info);
 
-  dec->s.m = gavl_stream_get_metadata_nc(dec->s.info);
-  gavl_dictionary_copy(dec->s.m, m);
-  gavl_stream_set_compression_info(dec->s.info, ci);
-  
+  gavl_dictionary_copy(&dec->info, s);
   bgav_stream_set_from_gavl(&dec->s, dec->s.info);
-  
-  gavl_video_format_copy(dec->s.data.video.format, fmt);
   
   if(!init_common(dec, src))
     return NULL;
-
-  gavl_dictionary_copy(m, dec->s.m);
+  
+  gavl_dictionary_copy(s, &dec->info);
   
   return dec->s.data.video.vsrc;
   }
 
-
 gavl_video_source_t *
 bgav_stream_decoder_connect_overlay(bgav_stream_decoder_t * dec,
                                     gavl_packet_source_t * src,
-                                    const gavl_compression_info_t * ci,
-                                    const gavl_video_format_t * fmt,
-                                    gavl_dictionary_t * m)
+                                    gavl_dictionary_t * s)
   {
   dec->s.type = GAVL_STREAM_VIDEO;
   dec->s.flags |= STREAM_STANDALONE;
   dec->s.src_flags |= GAVL_SOURCE_SRC_DISCONTINUOUS;
 
-  gavl_init_overlay_stream(&dec->info);
-  dec->s.m = gavl_stream_get_metadata_nc(dec->s.info);
-  gavl_dictionary_copy(dec->s.m, m);
-  
+  gavl_dictionary_copy(&dec->info, s);
   bgav_stream_set_from_gavl(&dec->s, dec->s.info);
-
-  gavl_video_format_copy(dec->s.data.subtitle.video.format, fmt);
+  
   
   if(!init_common(dec, src))
     return NULL;
 
-  gavl_dictionary_copy(m, dec->s.m);
-
+  gavl_dictionary_copy(s, &dec->info);
+  
   return dec->s.data.subtitle.video.vsrc;
   }
 

@@ -462,6 +462,7 @@ int bgav_set_audio_compression_info(bgav_stream_t * s)
   {
   int need_header = 0;
   int need_bitrate = 1;
+  uint32_t codec_tag = 0;
   gavl_codec_id_t id = GAVL_CODEC_ID_NONE;
   
   //  bgav_track_get_compression(bgav->tt->cur);
@@ -518,11 +519,10 @@ int bgav_set_audio_compression_info(bgav_stream_t * s)
   
   if(id == GAVL_CODEC_ID_NONE)
     {
-    gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-             "Cannot output compressed audio stream: Unsupported codec");
-    s->flags |= STREAM_GOT_NO_CI;
-    return 0;
+    id = GAVL_CODEC_ID_EXTENDED;
+    codec_tag = s->fourcc;
     }
+  
   if(need_header && !s->ci->codec_header.len)
     {
     gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
@@ -538,7 +538,7 @@ int bgav_set_audio_compression_info(bgav_stream_t * s)
     return 0;
     }
   s->ci->id = id;
-  
+  s->ci->codec_tag = codec_tag;
   
   if(s->codec_bitrate)
     s->ci->bitrate = s->codec_bitrate;
