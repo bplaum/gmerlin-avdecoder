@@ -46,7 +46,6 @@ static int probe_m3u(bgav_input_context_t * input)
   
   if(uri &&
      (gavl_string_ends_with_i(uri, ".m3u") ||
-      gavl_string_ends_with_i(uri, ".m3u8") ||
       gavl_string_ends_with_i(uri, ".ram")))
     return 1;
   
