@@ -297,7 +297,15 @@ static gavl_source_status_t decode_frame_ffmpeg(bgav_stream_t * s)
         bgav_stream_done_packet_read(s, p);
       }
     else
+      {
+      if(result != AVERROR_EOF)
+        {
+        char errbuf[128];
+        av_strerror(result, errbuf, 128);
+        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Got decoder error: %s\n", errbuf);
+        }
       return GAVL_SOURCE_EOF;
+      }
     }
   
   if(!result && priv->f->nb_samples)
@@ -454,9 +462,7 @@ static int init_ffmpeg_audio(bgav_stream_t * s)
 static void resync_ffmpeg(bgav_stream_t * s)
   {
   ffmpeg_audio_priv * priv;
-
-  fprintf(stderr, "resync_ffmpeg\n");
-
+  
   priv = s->decoder_priv;
   avcodec_flush_buffers(priv->ctx);
   if(priv->frame)

@@ -225,6 +225,8 @@ static gavl_source_status_t next_packet_adts(bgav_demuxer_context_t * ctx)
   bgav_adts_header_t adts;
   aac_priv_t * priv;
   uint8_t buf[ADTS_HEADER_LEN];
+
+  //  fprintf(stderr, "next packet ADTS\n");
   
   priv = ctx->priv;
 
@@ -232,10 +234,13 @@ static gavl_source_status_t next_packet_adts(bgav_demuxer_context_t * ctx)
 
   if(bgav_input_get_data(ctx->input, buf, ADTS_HEADER_LEN) < ADTS_HEADER_LEN)
     return GAVL_SOURCE_EOF;
-
+  
   if(!bgav_adts_header_read(buf, &adts))
+    {
+    //    fprintf(stderr, "ADTS (Reading header failed)\n");
+    //    gavl_hexdump(buf, ADTS_HEADER_LEN, ADTS_HEADER_LEN);
     return GAVL_SOURCE_EOF;
-
+    }
   
   p = bgav_stream_get_packet_write(s);
 

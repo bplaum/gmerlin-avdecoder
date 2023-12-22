@@ -43,7 +43,8 @@ static int probe_m3u(bgav_input_context_t * input)
 
   if(!uri)
     uri = input->location;
-  
+
+  /* Don't add .m3u8 here since it will break hls */
   if(uri &&
      (gavl_string_ends_with_i(uri, ".m3u") ||
       gavl_string_ends_with_i(uri, ".ram")))
@@ -64,27 +65,8 @@ static int probe_m3u(bgav_input_context_t * input)
        !strncasecmp(mimetype, "application/vnd.apple.mpegurl", 29)) // HLS
       return 1;
     }
-
+  
   return 0;
-
-#if 0
-  
-  if(bgav_input_get_data(input, (uint8_t*)probe_buffer,
-                         PROBE_BYTES) < PROBE_BYTES)
-    goto end;
-  
-  /* Some streams with the above mimetype are in realtiy
-     different streams, so we check this here */
-  if(strncmp(probe_buffer, "mms://", 6) &&
-     strncmp(probe_buffer, "http://", 7) &&
-     strncmp(probe_buffer, "https://", 8) &&
-     strncmp(probe_buffer, "rtsp://", 7) &&
-     (probe_buffer[0] != '#'))
-    goto end;
-  result = 1;
-  end:
-  return result;
-#endif
   }
 
 static char * strip_spaces(char * str)
@@ -203,14 +185,12 @@ static void parse_ext_x_media(bgav_input_context_t * input, const char * pos, ga
       if((pos2 = strchr(pos1, '"')))
         gavl_dictionary_set_string_nocopy(dict, GAVL_META_LANGUAGE, gavl_strndup(pos1, pos2));
       }
-          
     }
-        
+  
   if(type)
     free(type);
   if(group_id)
     free(group_id);
-  
   }
 
 static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)

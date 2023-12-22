@@ -522,7 +522,7 @@ static int handle_id3(bgav_input_context_t * ctx)
   gavl_buffer_t buf;
   bgav_input_context_t * mem;
   bgav_id3v2_tag_t * id3;
-  
+
   gavl_buffer_init(&buf);
   
   if(gavf_io_get_data(p->io, probe_buf, BGAV_ID3V2_DETECT_LEN) < BGAV_ID3V2_DETECT_LEN)
@@ -548,7 +548,7 @@ static int handle_id3(bgav_input_context_t * ctx)
     if((pts = bgav_id3v2_get_pts(id3)) != GAVL_TIME_UNDEFINED)
       {
       ctx->input_pts = pts;
-      fprintf(stderr, "Got PTS from ID3: %"PRId64"\n", pts);
+      //      fprintf(stderr, "Got PTS from ID3: %"PRId64"\n", pts);
       }
 #if 0 // The ID3 clock time is sometimes terriblly wrong. Lets use the time from the m3u8 instead
     if((pts = bgav_id3v2_get_clock_time(id3)) != GAVL_TIME_UNDEFINED)
@@ -932,7 +932,7 @@ static void init_segment_io(bgav_input_context_t * ctx)
   else
     p->io = p->ts_io;
   
-  fprintf(stderr, "init_segment_io %"PRId64" %p %s\n", p->seq_cur, ctx, ctx->location);
+  //  fprintf(stderr, "init_segment_io %"PRId64" %p %s\n", p->seq_cur, ctx, ctx->location);
   
   p->next_state = NEXT_STATE_START;
   p->seq_cur++;
@@ -1106,7 +1106,7 @@ static int jump_to_idx(bgav_input_context_t * ctx, int idx)
   p->ts_io_next = create_http_client(ctx);
   p->next_state = NEXT_STATE_GOT_TS;
 
-  fprintf(stderr, "Jump to idx: %d\n", idx);
+  //  fprintf(stderr, "Jump to idx: %d\n", idx);
 
   if(!open_next_sync(ctx))
     {
@@ -1149,7 +1149,7 @@ static void pause_hls(bgav_input_context_t * ctx)
   {
   hls_priv_t * p = ctx->priv;
 
-  fprintf(stderr, "pause_hls %p\n", ctx);
+  //  fprintf(stderr, "pause_hls %p\n", ctx);
   
   if(gavf_io_can_seek(p->ts_io))
     gavl_http_client_pause(p->ts_io);
@@ -1171,10 +1171,14 @@ static void resume_hls(bgav_input_context_t * ctx)
   {
   hls_priv_t * p = ctx->priv;
 
-  fprintf(stderr, "resume_hls %p %p\n", ctx, p->ts_io);
+  //  fprintf(stderr, "resume_hls %p %s\n", p->ts_io, p->ts_uri);
   
   if(p->ts_io)
+    {
     gavl_http_client_resume(p->ts_io);
+    handle_id3(ctx);
+    handle_id3(ctx);
+    }
   else
     {
     int skip_bytes;
@@ -1190,7 +1194,7 @@ static void resume_hls(bgav_input_context_t * ctx)
 
     /* Open, skip bytes */
 
-    fprintf(stderr, "resume_hls %p %s, pos: %"PRId64"\n", ctx, p->ts_uri, p->ts_pos);
+    //    fprintf(stderr, "resume_hls %p %s, pos: %"PRId64"\n", ctx, p->ts_uri, p->ts_pos);
     
     if(!gavl_http_client_open(p->ts_io, "GET", p->ts_uri))
       {
@@ -1200,8 +1204,6 @@ static void resume_hls(bgav_input_context_t * ctx)
       return;
       }
     dummy = malloc(RESUME_SKIP_BYTES);
-    
-    //    init_segment_io(ctx);
     
     while(p->ts_pos > 0)
       {
