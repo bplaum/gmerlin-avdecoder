@@ -344,7 +344,7 @@ uint32_t * bgav_supported_audio_fourccs()
   uint32_t * ret = NULL;
 
   bgav_audio_decoder_t * cur;
-  int i, num, idx;
+  int i, num = 0, idx;
 
   bgav_codecs_init(NULL);
 
@@ -388,7 +388,7 @@ uint32_t * bgav_supported_video_fourccs()
   uint32_t * ret = NULL;
 
   bgav_video_decoder_t * cur;
-  int i, num, idx;
+  int i, num = 0, idx;
 
   bgav_codecs_init(NULL);
 
