@@ -265,7 +265,7 @@ static void stream_init(bgav_stream_t * bgav_s, qt_trak_t * trak,
     bgav_s->stats.pts_start = gavl_time_rescale(moov_scale, trak->mdia.mdhd.time_scale, 
                                                 trak->edts.elst.table[0].duration);
   
-  fprintf(stderr, "stream_init: %"PRId64"\n", bgav_s->stats.pts_start);
+  //  fprintf(stderr, "stream_init: %"PRId64"\n", bgav_s->stats.pts_start);
   
   //  if(s->first_pts)
   
@@ -525,7 +525,7 @@ static void build_index(bgav_demuxer_context_t * ctx)
     s = bgav_s->priv;
     s->dts = bgav_s->stats.pts_start;
 
-    fprintf(stderr, "Stream: %d, dts: %"PRId64"\n", i, s->dts);
+    //    fprintf(stderr, "Stream: %d, dts: %"PRId64"\n", i, s->dts);
     }
   
   while(i < num_packets)
