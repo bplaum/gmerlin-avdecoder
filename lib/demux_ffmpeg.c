@@ -82,7 +82,7 @@ static void cleanup_stream_ffmpeg(bgav_stream_t * s)
 
 typedef struct
   {
-  ff_const59 AVInputFormat *avif;
+  const AVInputFormat *avif;
   AVFormatContext *avfc;
 #ifdef NEW_IO_API
 #define BUFFER_SIZE 1024 * 4
