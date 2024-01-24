@@ -588,6 +588,8 @@ void bgav_stream_set_from_gavl(bgav_stream_t * s,
                                gavl_dictionary_t * dict)
   {
   s->info = dict;
+  s->info_ext = dict;
+  
   s->m = gavl_stream_get_metadata_nc(dict);
 
   gavl_stream_get_compression_info(dict, &s->ci_orig);
