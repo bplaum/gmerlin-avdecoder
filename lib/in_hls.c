@@ -1350,7 +1350,7 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
         
         if(p->next_state != NEXT_STATE_DONE)
           {
-          gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Need to open next syncronously");
+          gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Need to open next synchronously");
 
           if(open_next_sync(ctx))
             init_segment_io(ctx);
