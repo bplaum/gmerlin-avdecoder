@@ -532,133 +532,7 @@ void bgav_demuxer_stop(bgav_demuxer_context_t * ctx)
     bgav_superindex_destroy(ctx->si);
     ctx->si = NULL;
     }
-  
   }
-
-#if 0
-gavl_source_status_t bgav_demuxer_next_packet_interleaved(bgav_demuxer_context_t * ctx)
-  {
-  bgav_stream_t * stream;
-  bgav_packet_t * p;
-  
-  if(ctx->si->current_position >= ctx->si->num_entries)
-    {
-    return GAVL_SOURCE_EOF;
-    }
-  
-  if(ctx->input->position >=
-     ctx->si->entries[ctx->si->num_entries - 1].offset + 
-     ctx->si->entries[ctx->si->num_entries - 1].size)
-    {
-    return  GAVL_SOURCE_EOF;
-    }
-  stream =
-    bgav_track_find_stream(ctx,
-                           ctx->si->entries[ctx->si->current_position].stream_id);
-  
-  if(!stream) /* Skip unused stream */
-    {
-    //  fprintf(stderr, "Skipping unused stream\n");
-    //    bgav_input_skip_dump(ctx->input,
-    //                         ctx->si->entries[ctx->si->current_position].size);
-    
-#if 0
-    fprintf(stderr, "Skip unused %d\n",
-            ctx->si->entries[ctx->si->current_position].stream_id);
-#endif
-    ctx->si->current_position++;
-    return  GAVL_SOURCE_OK;
-    }
-#if 0
-  if(stream->type == GAVF_STREAM_TEXT)
-    {
-    fprintf(stderr, "Got subtitle packet\n");
-    }
-#endif
-  
-  p = bgav_stream_get_packet_write(stream);
-  bgav_packet_alloc(p, ctx->si->entries[ctx->si->current_position].size);
-  p->buf.len = ctx->si->entries[ctx->si->current_position].size;
-  p->flags = ctx->si->entries[ctx->si->current_position].flags;
-
-  if(stream->flags & STREAM_DTS_ONLY)
-    p->dts = ctx->si->entries[ctx->si->current_position].pts;
-  else
-    p->pts = ctx->si->entries[ctx->si->current_position].pts;
-  
-  p->duration = ctx->si->entries[ctx->si->current_position].duration;
-  p->position = ctx->si->current_position;
-
-  /* Skip until this packet */
-  if(ctx->si->entries[ctx->si->current_position].offset > ctx->input->position)
-    {
-    bgav_input_skip(ctx->input,
-                    ctx->si->entries[ctx->si->current_position].offset - ctx->input->position);
-    }
-  
-  if(bgav_input_read_data(ctx->input, p->buf.buf, p->buf.len) < p->buf.len)
-    return GAVL_SOURCE_EOF;
-  
-  if(stream->process_packet)
-    stream->process_packet(stream, p);
-  
-  bgav_stream_done_packet_write(stream, p);
-  
-  ctx->si->current_position++;
-  return GAVL_SOURCE_OK;
-  }
-
-
-static int next_packet_noninterleaved(bgav_demuxer_context_t * ctx)
-  {
-  bgav_packet_t * p;
-  bgav_stream_t * s = NULL;
-
-  s = ctx->request_stream;
-  
-  if(s->index_position > s->last_index_position)
-    return 0;
-  
-  /* If the file is truely noninterleaved, this isn't neccessary, but who knows? */
-  while(ctx->si->entries[s->index_position].stream_id != s->stream_id)
-    {
-    s->index_position++;
-    }
-
-  if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
-    {
-    bgav_input_seek(ctx->input, ctx->si->entries[s->index_position].offset, SEEK_SET);
-    }
-  /* TODO: How is this necessary? */
-  else if(ctx->si->entries[s->index_position].offset > ctx->input->position)
-    {
-    bgav_input_skip(ctx->input,
-                    ctx->si->entries[s->index_position].offset - ctx->input->position);
-    }
-  
-  p = bgav_stream_get_packet_write(s);
-  p->buf.len = ctx->si->entries[s->index_position].size;
-  bgav_packet_alloc(p, p->buf.len);
-  
-  p->pts = ctx->si->entries[s->index_position].pts;
-  p->duration = ctx->si->entries[s->index_position].duration;
-
-  p->flags = ctx->si->entries[s->index_position].flags;
-  p->position = s->index_position;
-  
-  if(bgav_input_read_data(ctx->input, p->buf.buf, p->buf.len) < p->buf.len)
-    return 0;
-
-  if(s->process_packet)
-    s->process_packet(s, p);
-  
-  bgav_stream_done_packet_write(s, p);
-  
-  s->index_position++;
-  return 1;
-  
-  }
-#endif
 
 gavl_source_status_t bgav_demuxer_next_packet(bgav_demuxer_context_t * demuxer)
   {
@@ -674,51 +548,25 @@ gavl_source_status_t bgav_demuxer_next_packet(bgav_demuxer_context_t * demuxer)
     demuxer->b->flags |= BGAV_FLAG_STATE_SENT;
     }
 
-#if 0  
-  //   fprintf(stderr, "bgav_demuxer_next_packet\n");
-  switch(demuxer->demux_mode)
+  ret = demuxer->demuxer->next_packet(demuxer);
+      
+  if(ret == GAVL_SOURCE_EOF)
     {
-    case DEMUX_MODE_SI_I:
-      if(bgav_track_eof_d(demuxer->tt->cur))
-        return 0;
-      
-      ret = bgav_demuxer_next_packet_interleaved(demuxer);
-      if(!ret)
-        bgav_track_set_eof_d(demuxer->tt->cur);
-      
-      break;
-    case DEMUX_MODE_SI_NI:
-      if(demuxer->request_stream->flags & STREAM_EOF_D)
-        return 0;
-      ret = next_packet_noninterleaved(demuxer);
-      if(!ret)
-        demuxer->request_stream->flags |= STREAM_EOF_D;
-      break;
-    case DEMUX_MODE_STREAM:
-#endif
-      ret = demuxer->demuxer->next_packet(demuxer);
-      
-      if(ret == GAVL_SOURCE_EOF)
-        {
-        /* Some demuxers have packets stored in the streams,
-           we flush them here */
+    /* Some demuxers have packets stored in the streams,
+       we flush them here */
         
-        for(i = 0; i < demuxer->tt->cur->num_streams; i++)
-          {
-          if(demuxer->tt->cur->streams[i]->packet)
-            {
-            bgav_stream_done_packet_write(demuxer->tt->cur->streams[i],
-                                          demuxer->tt->cur->streams[i]->packet);
-            demuxer->tt->cur->streams[i]->packet = NULL;
-            ret = 1;
-            }
-          }
-        bgav_track_set_eof_d(demuxer->tt->cur);
+    for(i = 0; i < demuxer->tt->cur->num_streams; i++)
+      {
+      if(demuxer->tt->cur->streams[i]->packet)
+        {
+        bgav_stream_done_packet_write(demuxer->tt->cur->streams[i],
+                                      demuxer->tt->cur->streams[i]->packet);
+        demuxer->tt->cur->streams[i]->packet = NULL;
+        ret = 1;
         }
-#if 0  
-      break;
+      }
+    bgav_track_set_eof_d(demuxer->tt->cur);
     }
-#endif
   
   return ret;
   }
