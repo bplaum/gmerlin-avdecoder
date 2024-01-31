@@ -29,47 +29,7 @@
 
 #define PROBE_SIZE 2048 /* Same as in MPlayer */
 
-#if LIBAVFORMAT_VERSION_MAJOR >= 53
-#define NEW_IO_API
-#endif
 
-#if LIBAVFORMAT_VERSION_INT >= ((53<<16)+(2<<8)+0)
-#define BRANDNEW_IO_API
-#endif
-
-#if LIBAVFORMAT_VERSION_MAJOR >= 53
-#define NEW_METADATA
-#endif
-
-#if LIBAVFORMAT_VERSION_MAJOR >= 54
-#define AV_METADATA_MATCH_CASE      AV_DICT_MATCH_CASE
-#define AV_METADATA_IGNORE_SUFFIX   AV_DICT_IGNORE_SUFFIX
-#define AV_METADATA_DONT_STRDUP_KEY AV_DICT_DONT_STRDUP_KEY
-#define AV_METADATA_DONT_STRDUP_VAL AV_DICT_DONT_STRDUP_VAL
-#define AV_METADATA_DONT_OVERWRITE  AV_DICT_DONT_OVERWRITE
-
-
-#define AVMetadata    AVDictionary
-#define AVMetadataTag AVDictionaryEntry
-
-#define av_metadata_get(m, key, prev, flags) av_dict_get(m, key, prev, flags)
-
-#endif
-
-#if LIBAVCODEC_VERSION_MAJOR >= 53
-#define CodecType AVMediaType
-#define CODEC_TYPE_UNKNOWN    AVMEDIA_TYPE_UNKNOWN
-#define CODEC_TYPE_VIDEO      AVMEDIA_TYPE_VIDEO
-#define CODEC_TYPE_AUDIO      AVMEDIA_TYPE_AUDIO
-#define CODEC_TYPE_DATA       AVMEDIA_TYPE_DATA
-#define CODEC_TYPE_SUBTITLE   AVMEDIA_TYPE_SUBTITLE
-#define CODEC_TYPE_ATTACHMENT AVMEDIA_TYPE_ATTACHMENT
-#define CODEC_TYPE_NB         AVMEDIA_TYPE_NB
-#endif
-
-#if LIBAVCODEC_VERSION_MAJOR >= 53
-#define PKT_FLAG_KEY AV_PKT_FLAG_KEY
-#endif
 
 static void cleanup_stream_ffmpeg(bgav_stream_t * s)
   {
@@ -84,21 +44,15 @@ typedef struct
   {
   const AVInputFormat *avif;
   AVFormatContext *avfc;
-#ifdef NEW_IO_API
 #define BUFFER_SIZE 1024 * 4
   AVIOContext * pb;
   unsigned char * buffer;
-#else  
-  ByteIOContext * pb;
-#endif // OLD_IO_API  
 
   AVPacket * pkt;
   } ffmpeg_priv_t;
 
 /* Callbacks for URLProtocol */
 
-#ifdef NEW_IO_API
-// TODO
 static int lavf_read(void * opaque, uint8_t *buf, int buf_size)
   {
   return bgav_input_read_data(opaque, buf, buf_size);
@@ -112,67 +66,10 @@ static int64_t lavf_seek(void *opaque, int64_t offset, int whence)
   bgav_input_seek(input, offset, whence);
   return input->position;
   }
-  
-#else
-
-static int lavf_open(URLContext *h, const char *filename, int flags)
-  {
-  return 0;
-  }
-
-static int lavf_read(URLContext *h, unsigned char *buf, int size)
-  {
-  bgav_input_context_t * input;
-  int result;
-  input = h->priv_data;
-
-  result = bgav_input_read_data(input, buf, size);
-  if(!result)
-    return -1;
-  return result;
-  }
-
-static int lavf_write(URLContext *h, const unsigned char *buf, int size)
-  {
-  return -1;
-  }
-
-static int64_t lavf_seek(URLContext *h, int64_t pos, int whence)
-  {
-  bgav_input_context_t * input;
-  input = h->priv_data;
-
-  if(!(input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
-    return -1;
-  if(pos > input->total_bytes)
-    return -1;
-#if LIBAVFORMAT_BUILD >= ((51<<16)+(8<<8)+0)
-  if(whence == AVSEEK_SIZE)
-    return input->total_bytes;
-#endif
-  bgav_input_seek(input, pos, whence);
-  return input->position;
-  }
-
-static int lavf_close(URLContext *h)
-  {
-  return 0;
-  }
-
-static URLProtocol bgav_protocol = {
-    "bgav",
-    lavf_open,
-    lavf_read,
-    lavf_write,
-    lavf_seek,
-    lavf_close,
-};
-
-#endif
 
 /* Demuxer functions */
 
-static ff_const59 AVInputFormat * get_format(bgav_input_context_t * input)
+static const AVInputFormat * get_format(bgav_input_context_t * input)
   {
   uint8_t data[PROBE_SIZE];
   AVProbeData avpd;
@@ -644,14 +541,8 @@ static int open_ffmpeg(bgav_demuxer_context_t * ctx)
   AVFormatContext *avfc;
   char * tmp_string;
   
-#ifdef NEW_METADATA
-  AVMetadataTag * tag;
-#endif
+  AVDictionaryEntry * tag;
 
-#ifndef BRANDNEW_IO_API
-  AVFormatParameters ap;
-  memset(&ap, 0, sizeof(ap));
-#endif
   
   priv = calloc(1, sizeof(*priv));
   ctx->priv = priv;
@@ -663,8 +554,6 @@ static int open_ffmpeg(bgav_demuxer_context_t * ctx)
 
   tmp_string = bgav_sprintf("bgav:%s", ctx->input->location);
   
-#ifdef NEW_IO_API
-  // TODO
   priv->buffer = av_malloc(BUFFER_SIZE);
   priv->pb =
     avio_alloc_context(priv->buffer,
@@ -674,21 +563,11 @@ static int open_ffmpeg(bgav_demuxer_context_t * ctx)
                        lavf_read,
                        NULL,
                        (ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE) ? lavf_seek : NULL);
-#else
-  
-  av_register_protocol(&bgav_protocol);
-
-  url_fopen(&priv->pb, tmp_filename, URL_RDONLY);
-
-  ((URLContext*)(priv->pb->opaque))->priv_data= ctx->input;
-
-#endif // !NEW_IO_API
 
   avfc = avformat_alloc_context();
 
   priv->avif = get_format(ctx->input);
 
-#ifdef BRANDNEW_IO_API
   avfc->pb = priv->pb;
 
   if(avformat_open_input(&avfc, tmp_string, priv->avif, NULL)<0)
@@ -698,33 +577,17 @@ static int open_ffmpeg(bgav_demuxer_context_t * ctx)
     free(tmp_string);
     return 0;
     }
-#else 
-  if(av_open_input_stream(&avfc, priv->pb, tmp_filename, priv->avif, &ap)<0)
-    {
-    gavl_log(GAVL_LOG_ERROR,LOG_DOMAIN,
-             "av_open_input_stream failed");
-    free(tmp_string);
-    return 0;
-    }
-#endif
+  
   free(tmp_string);
   priv->avfc= avfc;
   /* Get the streams */
-#if LIBAVFORMAT_VERSION_INT >= ((53<<16)|(6<<8))|0
+
   if(avformat_find_stream_info(avfc, NULL) < 0)
     {
     gavl_log(GAVL_LOG_ERROR,LOG_DOMAIN,
              "avformat_find_stream_info failed");
     return 0;
     }
-#else
-  if(av_find_stream_info(avfc) < 0)
-    {
-    gavl_log(GAVL_LOG_ERROR,LOG_DOMAIN,
-             "av_find_stream_info failed");
-    return 0;
-    }
-#endif
   
   ctx->tt = bgav_track_table_create(1);
   
@@ -753,16 +616,15 @@ static int open_ffmpeg(bgav_demuxer_context_t * ctx)
       ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
     }
   
-#ifdef NEW_METADATA
 #define GET_METADATA_STRING(gavl_name, ffmpeg_name) \
-  tag = av_metadata_get(avfc->metadata, ffmpeg_name, NULL, \
-                        AV_METADATA_IGNORE_SUFFIX); \
+  tag = av_dict_get(avfc->metadata, ffmpeg_name, NULL, \
+                        AV_DICT_IGNORE_SUFFIX); \
   if(tag) \
     gavl_dictionary_set_string(ctx->tt->cur->metadata, gavl_name, tag->value);
 
 #define GET_METADATA_INT(gavl_name, ffmpeg_name) \
-  tag = av_metadata_get(avfc->metadata, ffmpeg_name, NULL, \
-                        AV_METADATA_IGNORE_SUFFIX); \
+  tag = av_dict_get(avfc->metadata, ffmpeg_name, NULL, \
+                        AV_DICT_IGNORE_SUFFIX); \
   if(tag) \
     gavl_dictionary_set_int(ctx->tt->cur->metadata, gavl_name, atoi(tag->value));
 
@@ -776,23 +638,6 @@ static int open_ffmpeg(bgav_demuxer_context_t * ctx)
     GET_METADATA_STRING(GAVL_META_ALBUM,     "album");
     GET_METADATA_INT(GAVL_META_TRACKNUMBER,  "track");
     }
-
-#else
-  
-  /* Metadata */
-  if(avfc->title[0])
-    gavl_dictionary_set_string(&ctx->tt->cur->metadata, GAVL_META_TITLE, avfc->title);
-  if(avfc->author[0])
-    gavl_dictionary_set_string(&ctx->tt->cur->metadata, GAVL_META_AUTHOR, avfc->author);
-  if(avfc->copyright[0])
-    gavl_dictionary_set_string(&ctx->tt->cur->metadata, GAVL_META_COPYRIGHT, avfc->copyright);
-  if(avfc->album[0])
-    gavl_dictionary_set_string(&ctx->tt->cur->metadata, GAVL_META_ALBUM, avfc->album);
-  if(avfc->genre[0])
-    gavl_dictionary_set_string(&ctx->tt->cur->metadata, GAVL_META_GENRE, avfc->genre);
-  if(avfc->track)
-    gavl_dictionary_set_string_int(&ctx->tt->cur->metadata, GAVL_META_TRACKNUMBER, avfc->track);
-#endif
   
   tmp_string = bgav_sprintf(TRD("%s (via ffmpeg)"),
                                 priv->avfc->iformat->long_name);
@@ -834,7 +679,7 @@ static gavl_source_status_t next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
   int i_tmp;
   uint32_t * pal_i;
 
-#if FF_API_BUFFER_SIZE_T
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 137, 100)
   int pal_i_len;
 #else
   size_t pal_i_len;
@@ -906,7 +751,7 @@ static gavl_source_status_t next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
     avs->params->palctrl->palette_changed = 0;
 #endif
     }
-  if(priv->pkt->flags&PKT_FLAG_KEY)
+  if(priv->pkt->flags&AV_PKT_FLAG_KEY)
     PACKET_SET_KEYFRAME(p);
   bgav_stream_done_packet_write(s, p);
   
