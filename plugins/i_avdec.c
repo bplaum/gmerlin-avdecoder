@@ -38,15 +38,15 @@
 
 static int read_callback(void * priv, uint8_t * data, int len)
   {
-  return gavf_io_read_data(priv, data, len);
+  return gavl_io_read_data(priv, data, len);
   }
 
 static int64_t seek_callback(void * priv, int64_t pos, int whence)
   {
-  return gavf_io_seek(priv, pos, whence);
+  return gavl_io_seek(priv, pos, whence);
   }
 
-static int open_io_avdec(void * priv, gavf_io_t * io)
+static int open_io_avdec(void * priv, gavl_io_t * io)
   {
   bgav_options_t * opt;
   avdec_priv * avdec = priv;
@@ -57,9 +57,9 @@ static int open_io_avdec(void * priv, gavf_io_t * io)
   bgav_options_copy(opt, avdec->opt);
   
   if(!bgav_open_callbacks(avdec->dec, read_callback, 
-                          gavf_io_can_seek(io) ? seek_callback : 0, io, 
-                          gavf_io_filename(io), gavf_io_mimetype(io),
-                          gavf_io_total_bytes(io)))
+                          gavl_io_can_seek(io) ? seek_callback : 0, io, 
+                          gavl_io_filename(io), gavl_io_mimetype(io),
+                          gavl_io_total_bytes(io)))
     return 0;
   return 1;
   }

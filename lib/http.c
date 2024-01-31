@@ -39,7 +39,7 @@ struct bgav_http_s
   const bgav_options_t * opt;
   gavl_dictionary_t header;
 
-  gavf_io_t * io;
+  gavl_io_t * io;
 
   //  int fd;
   
@@ -87,7 +87,7 @@ do_connect(bgav_http_t * ret, const char * host, int port, const bgav_options_t 
   
   if(ret->keepalive_host && strcmp(ret->keepalive_host, host))
     {
-    gavf_io_destroy(ret->io);
+    gavl_io_destroy(ret->io);
     ret->io = NULL;
     free(ret->keepalive_host);
     ret->keepalive_host = NULL;
@@ -103,9 +103,9 @@ do_connect(bgav_http_t * ret, const char * host, int port, const bgav_options_t 
   /* Wrap https */
   
   if(use_tls)
-    ret->io = gavf_io_create_tls_client(fd, host, GAVF_IO_SOCKET_DO_CLOSE);
+    ret->io = gavl_io_create_tls_client(fd, host, GAVF_IO_SOCKET_DO_CLOSE);
   else
-    ret->io = gavf_io_create_socket(fd, ret->opt->read_timeout, GAVF_IO_SOCKET_DO_CLOSE);
+    ret->io = gavl_io_create_socket(fd, ret->opt->read_timeout, GAVF_IO_SOCKET_DO_CLOSE);
 
   if(!ret->io)
     {
@@ -125,7 +125,7 @@ do_connect(bgav_http_t * ret, const char * host, int port, const bgav_options_t 
     if(ret->keepalive_host) // Keepalive connection got closed by server
       {
       gavl_socket_close(fd);
-      gavf_io_destroy(ret->io);
+      gavl_io_destroy(ret->io);
       ret->io = NULL;
       
       fd = bgav_tcp_connect(ret->opt, host, port);
@@ -133,9 +133,9 @@ do_connect(bgav_http_t * ret, const char * host, int port, const bgav_options_t 
         goto fail;
 
       if(use_tls)
-        ret->io = gavf_io_create_tls_client(fd, host, GAVF_IO_SOCKET_DO_CLOSE);
+        ret->io = gavl_io_create_tls_client(fd, host, GAVF_IO_SOCKET_DO_CLOSE);
       else
-        ret->io = gavf_io_create_socket(fd, ret->opt->read_timeout, GAVF_IO_SOCKET_DO_CLOSE);
+        ret->io = gavl_io_create_socket(fd, ret->opt->read_timeout, GAVF_IO_SOCKET_DO_CLOSE);
       
       if(!ret->io ||
          !gavl_http_request_write(ret->io, &header))
@@ -470,7 +470,7 @@ bgav_http_t * bgav_http_open(const char * url, const bgav_options_t * opt,
 void bgav_http_close(bgav_http_t * h)
   {
   if(h->io)
-    gavf_io_destroy(h->io);
+    gavl_io_destroy(h->io);
   
   gavl_dictionary_free(&h->header);
   
@@ -498,7 +498,7 @@ static int next_chunk(bgav_http_t * h)
        This is always done in blocking mode since we
        don't expect to wait too long */
 
-    if((gavf_io_read_data(h->io, (uint8_t*)buf, 2) < 2) ||
+    if((gavl_io_read_data(h->io, (uint8_t*)buf, 2) < 2) ||
        (buf[0] != '\r') ||
        (buf[1] != '\n'))
       {
@@ -510,7 +510,7 @@ static int next_chunk(bgav_http_t * h)
 
   /* Read first character of the chunk length */
   
-  if(gavf_io_read_data(h->io, &c, 1) < 1)
+  if(gavl_io_read_data(h->io, &c, 1) < 1)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Reading first byte of chunk length failed");
     h->chunk_error = 1;
@@ -525,7 +525,7 @@ static int next_chunk(bgav_http_t * h)
   /* Allow max 4 GB chunks */
   while(buf_len < 16)
     {
-    if(gavf_io_read_data(h->io, &c, 1) < 1)
+    if(gavl_io_read_data(h->io, &c, 1) < 1)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Reading chunk length failed");
       h->chunk_error = 1;
@@ -583,7 +583,7 @@ static int read_chunked(bgav_http_t * h, uint8_t * data, int len)
     if(bytes_to_read > h->chunk_size - h->chunk_pos)
       bytes_to_read = h->chunk_size - h->chunk_pos;
     
-    result = gavf_io_read_data(h->io, data + bytes_read, bytes_to_read);
+    result = gavl_io_read_data(h->io, data + bytes_read, bytes_to_read);
     
     if(result <= 0)
       {
@@ -600,7 +600,7 @@ static int read_chunked(bgav_http_t * h, uint8_t * data, int len)
 
 static int read_normal(bgav_http_t * h, uint8_t * data, int len)
   {
-  return gavf_io_read_data(h->io, data, len);
+  return gavl_io_read_data(h->io, data, len);
   }
 
 int bgav_http_read(bgav_http_t * h, uint8_t * data, int len)

@@ -63,15 +63,15 @@ typedef struct
   gavl_timer_t * m3u_timer;
   gavl_time_t m3u_time;
   
-  gavf_io_t * m3u_io;
-  gavf_io_t * ts_io;
-  gavf_io_t * ts_io_next;
+  gavl_io_t * m3u_io;
+  gavl_io_t * ts_io;
+  gavl_io_t * ts_io_next;
 
-  gavf_io_t * cipher_io;
-  gavf_io_t * cipher_key_io;
+  gavl_io_t * cipher_io;
+  gavl_io_t * cipher_key_io;
   
   /* ts_io or cipher_io */
-  gavf_io_t * io;
+  gavl_io_t * io;
   
   gavl_array_t segments;
   
@@ -106,10 +106,10 @@ typedef struct
 #define HAVE_HEADER_BYTES(p) ((p->flags & (HAVE_HEADER | SENT_HEADER)) == HAVE_HEADER)
 
 
-static gavf_io_t * create_http_client(bgav_input_context_t * ctx)
+static gavl_io_t * create_http_client(bgav_input_context_t * ctx)
   {
   hls_priv_t * priv = ctx->priv;
-  gavf_io_t * ret = gavl_http_client_create();
+  gavl_io_t * ret = gavl_http_client_create();
   gavl_http_client_set_req_vars(ret,     &priv->http_vars);
   return ret;
   }
@@ -525,7 +525,7 @@ static int handle_id3(bgav_input_context_t * ctx)
 
   gavl_buffer_init(&buf);
   
-  if(gavf_io_get_data(p->io, probe_buf, BGAV_ID3V2_DETECT_LEN) < BGAV_ID3V2_DETECT_LEN)
+  if(gavl_io_get_data(p->io, probe_buf, BGAV_ID3V2_DETECT_LEN) < BGAV_ID3V2_DETECT_LEN)
     return 1;
   
   //  fprintf(stderr, "Segment start:\n");
@@ -535,7 +535,7 @@ static int handle_id3(bgav_input_context_t * ctx)
     return 1;
   gavl_buffer_alloc(&buf, len);
 
-  if(gavf_io_read_data(p->io, buf.buf, len) < len)
+  if(gavl_io_read_data(p->io, buf.buf, len) < len)
     return 0;
 
   buf.len = len;
@@ -595,7 +595,7 @@ static int init_cipher(bgav_input_context_t * ctx)
     {
     if(p->cipher_io)
       {
-      gavf_io_destroy(p->cipher_io);
+      gavl_io_destroy(p->cipher_io);
       p->cipher_io = NULL;
       }
     return 1;
@@ -638,7 +638,7 @@ static int init_cipher(bgav_input_context_t * ctx)
   //    goto fail;
   
   if(!p->cipher_io)
-    p->cipher_io = gavf_io_create_cipher(algo, mode, padding, 0);
+    p->cipher_io = gavl_io_create_cipher(algo, mode, padding, 0);
   
   if(cipher_iv)
     {
@@ -732,7 +732,7 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
 
         if(p->seq_cur >= 0)
           {
-          gavf_io_destroy(p->m3u_io);
+          gavl_io_destroy(p->m3u_io);
           p->m3u_io = create_http_client(ctx);
           gavl_buffer_reset(&p->m3u_buf);
           gavl_http_client_set_response_body(p->m3u_io, &p->m3u_buf);
@@ -839,7 +839,7 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
       {
       if(p->cipher_key_io)
         {
-        gavf_io_destroy(p->cipher_key_io);
+        gavl_io_destroy(p->cipher_key_io);
         p->cipher_key_io = NULL;
         }
       p->next_state = NEXT_STATE_START_OPEN_TS;
@@ -917,7 +917,7 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
 
 static void init_segment_io(bgav_input_context_t * ctx)
   {
-  gavf_io_t * swp;
+  gavl_io_t * swp;
   hls_priv_t * p = ctx->priv;
   
   swp = p->ts_io;
@@ -926,7 +926,7 @@ static void init_segment_io(bgav_input_context_t * ctx)
   
   if(p->cipher_io)
     {
-    gavf_io_cipher_init(p->cipher_io, p->ts_io, p->cipher_key.buf, p->cipher_iv.buf);
+    gavl_io_cipher_init(p->cipher_io, p->ts_io, p->cipher_key.buf, p->cipher_iv.buf);
     p->io = p->cipher_io;
     }
   else
@@ -974,7 +974,7 @@ static int open_next_sync(bgav_input_context_t * ctx)
 /* Download header to buffer */
 static int download_header(bgav_input_context_t * ctx)
   {
-  gavf_io_t * io;
+  gavl_io_t * io;
   hls_priv_t * p = ctx->priv;
 
   io = create_http_client(ctx);
@@ -988,7 +988,7 @@ static int download_header(bgav_input_context_t * ctx)
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Downloading header failed");
     return 0;
     }
-  gavf_io_destroy(io);
+  gavl_io_destroy(io);
 
   gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Downloaded header: %d bytes", p->header_buf.len);
   //  gavl_hexdump(p->header_buf.buf, 16, 16);
@@ -1080,17 +1080,17 @@ static int jump_to_idx(bgav_input_context_t * ctx, int idx)
     
   if(p->ts_io)
     {
-    gavf_io_destroy(p->ts_io);
+    gavl_io_destroy(p->ts_io);
     p->ts_io = NULL;
     }
   if(p->ts_io_next)
     {
-    gavf_io_destroy(p->ts_io_next);
+    gavl_io_destroy(p->ts_io_next);
     p->ts_io_next = NULL;
     }
   if(p->m3u_io)
     {
-    gavf_io_destroy(p->m3u_io);
+    gavl_io_destroy(p->m3u_io);
     p->m3u_io = NULL;
     }
   
@@ -1151,15 +1151,15 @@ static void pause_hls(bgav_input_context_t * ctx)
 
   //  fprintf(stderr, "pause_hls %p\n", ctx);
   
-  if(gavf_io_can_seek(p->ts_io))
+  if(gavl_io_can_seek(p->ts_io))
     gavl_http_client_pause(p->ts_io);
   else
     {
-    p->ts_pos = gavf_io_position(p->ts_io);
-    p->ts_uri = gavl_strdup(gavf_io_filename(p->ts_io));
+    p->ts_pos = gavl_io_position(p->ts_io);
+    p->ts_uri = gavl_strdup(gavl_io_filename(p->ts_io));
 
     
-    gavf_io_destroy(p->ts_io);
+    gavl_io_destroy(p->ts_io);
     p->ts_io = NULL;
     }
   p->next_state = NEXT_STATE_START;
@@ -1199,7 +1199,7 @@ static void resume_hls(bgav_input_context_t * ctx)
     if(!gavl_http_client_open(p->ts_io, "GET", p->ts_uri))
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Re-opening stream uri after pause failed");
-      gavf_io_destroy(p->ts_io);
+      gavl_io_destroy(p->ts_io);
       p->ts_io = NULL;
       return;
       }
@@ -1210,10 +1210,10 @@ static void resume_hls(bgav_input_context_t * ctx)
       skip_bytes = RESUME_SKIP_BYTES;
       if(skip_bytes > p->ts_pos)
         skip_bytes = p->ts_pos;
-      if(gavf_io_read_data(p->ts_io, dummy, skip_bytes) < skip_bytes)
+      if(gavl_io_read_data(p->ts_io, dummy, skip_bytes) < skip_bytes)
         {
         gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Skipping bytes after pause failed");
-        gavf_io_destroy(p->ts_io);
+        gavl_io_destroy(p->ts_io);
         p->ts_io = NULL;
         free(dummy);
         return;
@@ -1224,7 +1224,7 @@ static void resume_hls(bgav_input_context_t * ctx)
     if(p->cipher_io)
       {
       p->io = p->cipher_io;
-      gavf_io_cipher_set_src(p->cipher_io, p->ts_io);
+      gavl_io_cipher_set_src(p->cipher_io, p->ts_io);
       }
     else
       p->io = p->ts_io;
@@ -1242,7 +1242,7 @@ static int can_read_hls(bgav_input_context_t * ctx, int timeout)
     return 1;
   
   if(p->io)
-    return gavf_io_can_read(p->io, timeout);
+    return gavl_io_can_read(p->io, timeout);
   else
     return 0;
   }
@@ -1285,17 +1285,17 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
       }
     if(!block)
       {
-      if(!gavf_io_can_read(p->io, 0))
+      if(!gavl_io_can_read(p->io, 0))
         {
         if(!bytes_read)
           gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Detected EOF 4");
 
         return bytes_read;
         }
-      result = gavf_io_read_data_nonblock(p->io, buffer + bytes_read, len - bytes_read);
+      result = gavl_io_read_data_nonblock(p->io, buffer + bytes_read, len - bytes_read);
       }
     else
-      result = gavf_io_read_data(p->io, buffer + bytes_read, len - bytes_read);
+      result = gavl_io_read_data(p->io, buffer + bytes_read, len - bytes_read);
     
     if(result < 0)
       gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Read error");
@@ -1307,7 +1307,7 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
       }
     if(!result)
       fprintf(stderr, "read_hls 1 %d result: %d %d\n", len - bytes_read, result,
-              gavf_io_got_eof(p->io));
+              gavl_io_got_eof(p->io));
 #endif
     
     if((p->next_state != NEXT_STATE_DONE) && !(p->flags & END_OF_SEQUENCE))
@@ -1320,7 +1320,7 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
     
     if(result < len - bytes_read)
       {
-      if(gavf_io_got_error(p->io))
+      if(gavl_io_got_error(p->io))
         {
         gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Got I/O error from underlying stream");
         bgav_signal_restart(ctx->b, GAVL_MSG_SRC_RESTART_ERROR);
@@ -1332,7 +1332,7 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
         }
       else if(!block)
         {
-        if(gavf_io_got_eof(p->io) && (p->next_state == NEXT_STATE_DONE))
+        if(gavl_io_got_eof(p->io) && (p->next_state == NEXT_STATE_DONE))
           init_segment_io(ctx);
         else
           return bytes_read;
@@ -1390,17 +1390,17 @@ static void close_hls(bgav_input_context_t * ctx)
     gavl_timer_destroy(p->m3u_timer);
   
   if(p->m3u_io)
-    gavf_io_destroy(p->m3u_io);
+    gavl_io_destroy(p->m3u_io);
   if(p->ts_io)
-    gavf_io_destroy(p->ts_io);
+    gavl_io_destroy(p->ts_io);
   if(p->ts_io_next)
-    gavf_io_destroy(p->ts_io_next);
+    gavl_io_destroy(p->ts_io_next);
   
   if(p->cipher_io)
-    gavf_io_destroy(p->cipher_io);
+    gavl_io_destroy(p->cipher_io);
 
   if(p->cipher_key_io)
-    gavf_io_destroy(p->cipher_key_io);
+    gavl_io_destroy(p->cipher_key_io);
 
   if(p->header_uri)
     free(p->header_uri);

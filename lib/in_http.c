@@ -41,7 +41,7 @@ typedef struct
   int icy_metaint;
   int icy_bytes;
 
-  gavf_io_t * io;
+  gavl_io_t * io;
   
   bgav_charset_converter_t * charset_cnv;
   int64_t bytes_read;
@@ -221,11 +221,11 @@ static int open_http(bgav_input_context_t * ctx, const char * url1, char ** r)
   
   res = gavl_http_client_get_response(p->io);
 
-  ctx->total_bytes = gavf_io_total_bytes(p->io);
+  ctx->total_bytes = gavl_io_total_bytes(p->io);
   
   set_metadata(res, &ctx->m);
 
-  info = gavf_io_info(p->io);
+  info = gavl_io_info(p->io);
   if((var = gavl_dictionary_get_string(info, GAVL_META_REAL_URI)))
     gavl_dictionary_set_string(&ctx->m, GAVL_META_REAL_URI, var);
   
@@ -239,7 +239,7 @@ static int open_http(bgav_input_context_t * ctx, const char * url1, char ** r)
                                                    BGAV_UTF8);
     }
 
-  if(gavf_io_can_seek(p->io))
+  if(gavl_io_can_seek(p->io))
     ctx->flags |= (BGAV_INPUT_SEEK_SLOW | BGAV_INPUT_CAN_PAUSE);
   else
     ctx->flags &= ~BGAV_INPUT_CAN_SEEK_BYTE;
@@ -257,7 +257,7 @@ static int64_t seek_byte_http(bgav_input_context_t * ctx,
   {
   http_priv * p = ctx->priv;
   //  fprintf(stderr, "seek_byte_http %"PRId64" %"PRId64"\n", pos, ctx->position);
-  gavf_io_seek(p->io, pos, whence);
+  gavl_io_seek(p->io, pos, whence);
   return ctx->position;
   }
 
@@ -281,16 +281,16 @@ static int read_data(bgav_input_context_t* ctx,
   int ret;
   http_priv * p = ctx->priv;
   
-  ret = gavf_io_read_data(p->io, buffer, len);
+  ret = gavl_io_read_data(p->io, buffer, len);
 
   if(ret < len)
     {
-    if(gavf_io_got_error(p->io))
+    if(gavl_io_got_error(p->io))
       {
       /* TODO: Re-open */
       bgav_signal_restart(ctx->b, GAVL_MSG_SRC_RESTART_ERROR);
       }
-    //  fprintf(stderr, "Got %d exprected %d %d\n", ret, len, gavf_io_got_error(p->io));
+    //  fprintf(stderr, "Got %d exprected %d %d\n", ret, len, gavl_io_got_error(p->io));
     }
   return ret;
   }
@@ -438,7 +438,7 @@ static void close_http(bgav_input_context_t * ctx)
   http_priv * p = ctx->priv;
 
   if(p->io)
-    gavf_io_destroy(p->io);
+    gavl_io_destroy(p->io);
   
   if(p->charset_cnv)
     bgav_charset_converter_destroy(p->charset_cnv);
