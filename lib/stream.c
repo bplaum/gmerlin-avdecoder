@@ -264,6 +264,9 @@ read_packet_continuous(void * priv, bgav_packet_t ** ret)
 void bgav_stream_create_packet_buffer(bgav_stream_t * stream)
   {
   stream->pbuffer = gavl_packet_buffer_create(stream->info);
+
+  gavl_packet_buffer_set_calc_frame_durations(stream->pbuffer, 1);
+  
   stream->psink   = gavl_packet_buffer_get_sink(stream->pbuffer);
 
   stream->psrc_priv = gavl_packet_source_create(read_packet_continuous,

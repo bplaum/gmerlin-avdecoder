@@ -413,7 +413,6 @@ void bgav_superindex_dump(bgav_superindex_t * idx)
 void bgav_superindex_clear(bgav_superindex_t * si)
   {
   si->num_entries = 0;
-  si->current_position = 0;
   si->flags = 0;
   memset(si->entries, 0, sizeof(*si->entries) * si->entries_alloc);
   }

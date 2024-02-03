@@ -2272,7 +2272,7 @@ static gavl_source_status_t next_packet_quicktime(bgav_demuxer_context_t * ctx)
 
   if(priv->fragmented && !(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
     {
-    if(ctx->si->current_position >= ctx->si->num_entries)
+    if(ctx->index_position >= ctx->si->num_entries)
       {
       qt_atom_header_t h;
       int done = 0;
@@ -2292,6 +2292,7 @@ static gavl_source_status_t next_packet_quicktime(bgav_demuxer_context_t * ctx)
             bgav_qt_moof_free(&priv->current_moof);
             bgav_qt_moof_read(&h, ctx->input, &priv->current_moof);
             bgav_superindex_clear(ctx->si);
+            ctx->index_position = 0;
             bgav_qt_moof_to_superindex(ctx, &priv->current_moof, ctx->si);
             break;
           case BGAV_MK_FOURCC('m','d','a','t'):

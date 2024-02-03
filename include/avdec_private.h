@@ -1061,7 +1061,7 @@ typedef struct
   {
   int num_entries;
   int entries_alloc;
-  int current_position;
+  //  int current_position;
   int flags;
   
   struct
@@ -1270,6 +1270,9 @@ struct bgav_demuxer_context_s
   bgav_superindex_t * si;
   
   bgav_t * b;
+  
+  int index_position;
+
   };
 
 /* demuxer.c */

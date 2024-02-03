@@ -465,19 +465,19 @@ gavl_source_status_t bgav_demuxer_next_packet_si(bgav_demuxer_context_t * ctx)
     if(bgav_track_eof_d(ctx->tt->cur))
       return GAVL_SOURCE_EOF;
 
-    while(ctx->si->current_position < ctx->si->num_entries)
+    while(ctx->index_position < ctx->si->num_entries)
       {
       if((s = bgav_track_find_stream(ctx,
-                                     ctx->si->entries[ctx->si->current_position].stream_id)) &&
+                                     ctx->si->entries[ctx->index_position].stream_id)) &&
          /* s->index_position can be larger than ctx->si->current_position after seeking */
-         (s->index_position <= ctx->si->current_position))
+         (s->index_position <= ctx->index_position))
         break;
-      ctx->si->current_position++;
+      ctx->index_position++;
       }
     if(!s)
       return GAVL_SOURCE_EOF;
-    idx = ctx->si->current_position;
-    ctx->si->current_position++;
+    idx = ctx->index_position;
+    ctx->index_position++;
     }
     
   /* Shouldn't be neccesary */

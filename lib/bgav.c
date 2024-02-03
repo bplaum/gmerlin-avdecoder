@@ -435,7 +435,7 @@ int bgav_select_track(bgav_t * b, int track)
     {
     if(b->demuxer->si)
       {
-      b->demuxer->si->current_position = 0;
+      b->demuxer->index_position = 0;
       
       if(b->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
         bgav_input_seek(b->input, b->demuxer->si->entries[0].offset, SEEK_SET);
@@ -481,7 +481,7 @@ int bgav_select_track(bgav_t * b, int track)
       {
       if(b->demuxer->si && was_running)
         {
-        b->demuxer->si->current_position = 0;
+        b->demuxer->index_position = 0;
         if(b->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
           bgav_input_seek(b->input, b->demuxer->si->entries[0].offset,
                           SEEK_SET);
