@@ -87,7 +87,7 @@ static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
     if(s->action == BGAV_STREAM_MUTE)
       continue;
     seek_time = time;
-    bgav_superindex_seek(ctx->si, s, &seek_time, scale);
+    gavl_packet_index_seek(ctx->si, s, &seek_time, scale);
     /* Synchronize time to the video stream */
     if(!j)
       time = seek_time;
@@ -100,7 +100,7 @@ static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
       continue;
     
     seek_time = time;
-    bgav_superindex_seek(ctx->si, track->streams[j], &seek_time, scale);
+    gavl_packet_index_seek(ctx->si, track->streams[j], &seek_time, scale);
     }
   
   /* Find the start and end packet */

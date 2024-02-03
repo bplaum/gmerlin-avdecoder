@@ -682,7 +682,7 @@ gavl_video_source_t * bgav_get_video_source(bgav_t * bgav, int stream)
 /* Create frame table from superindex */
 
 static gavl_frame_table_t *
-create_frame_table_si(bgav_stream_t * s, bgav_superindex_t * si)
+create_frame_table_si(bgav_stream_t * s, gavl_packet_index_t * si)
   {
   int i;
   gavl_frame_table_t * ret;

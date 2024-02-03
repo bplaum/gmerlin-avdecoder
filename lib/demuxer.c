@@ -334,7 +334,7 @@ void bgav_demuxer_destroy(bgav_demuxer_context_t * ctx)
     bgav_track_table_unref(ctx->tt);
 
   if(ctx->si)
-    bgav_superindex_destroy(ctx->si);
+    gavl_packet_index_destroy(ctx->si);
   free(ctx);
   }
 
@@ -357,8 +357,8 @@ static void init_superindex(bgav_demuxer_context_t * ctx)
       }
     else
       {
-      //      bgav_superindex_set_durations(ctx->si, &ctx->tt->cur->streams[i]);
-      //      bgav_superindex_set_stream_stats(ctx->si, &ctx->tt->cur->streams[i]);
+      //      gavl_packet_index_set_durations(ctx->si, &ctx->tt->cur->streams[i]);
+      //      gavl_packet_index_set_stream_stats(ctx->si, &ctx->tt->cur->streams[i]);
       i++;
       }
     }
@@ -372,8 +372,8 @@ void bgav_demuxer_set_durations_from_superindex(bgav_demuxer_context_t * ctx, bg
 
   for(i = 0; i < t->num_streams; i++)
     {
-    bgav_superindex_set_durations(ctx->si, t->streams[i]);
-    bgav_superindex_set_stream_stats(ctx->si, t->streams[i]);
+    gavl_packet_index_set_durations(ctx->si, t->streams[i]);
+    gavl_packet_index_set_stream_stats(ctx->si, t->streams[i]);
     i++;
     }
   
@@ -514,7 +514,7 @@ int bgav_demuxer_start(bgav_demuxer_context_t * ctx)
     
     //#ifdef DUMP_SUPERINDEX
     if(ctx->opt->dump_indices)
-      bgav_superindex_dump(ctx->si);
+      gavl_packet_index_dump(ctx->si);
     // #endif
     }
   return 1;
@@ -529,7 +529,7 @@ void bgav_demuxer_stop(bgav_demuxer_context_t * ctx)
   
   if(ctx->si)
     {
-    bgav_superindex_destroy(ctx->si);
+    gavl_packet_index_destroy(ctx->si);
     ctx->si = NULL;
     }
   }

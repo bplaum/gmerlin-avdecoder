@@ -322,7 +322,7 @@ static void build_superindex(bgav_demuxer_context_t * ctx)
   int offset;
   priv = ctx->priv;
 
-  ctx->si = bgav_superindex_create(priv->reob.audio_packets +
+  ctx->si = gavl_packet_index_create(priv->reob.audio_packets +
                                    priv->reob.video_packets);
 
   for(i = 0; i < priv->reob.audio_packets+priv->reob.video_packets; i++)
@@ -335,7 +335,7 @@ static void build_superindex(bgav_demuxer_context_t * ctx)
       s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
       offset = 24+8;
       duration = (priv->rdas[audio_pos]-offset) / 16; /* 4 bytes * 4 channels */
-      bgav_superindex_add_packet(ctx->si,
+      gavl_packet_index_add_packet(ctx->si,
                                  s, priv->rdao[audio_pos] + offset,
                                  priv->rdas[audio_pos] - offset,
                                  s->stream_id,
@@ -349,7 +349,7 @@ static void build_superindex(bgav_demuxer_context_t * ctx)
       s = bgav_track_get_video_stream(ctx->tt->cur, 0);
       offset = 12+8;
       duration = s->data.video.format->frame_duration;
-      bgav_superindex_add_packet(ctx->si,
+      gavl_packet_index_add_packet(ctx->si,
                                  s, priv->rdvo[video_pos] + offset,
                                  priv->rdvs[video_pos] - offset,
                                  s->stream_id,

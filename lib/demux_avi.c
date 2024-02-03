@@ -410,7 +410,7 @@ static void dump_chunk_header(chunk_header_t * chunk)
 static int do_msg = 1;
 #endif
 
-static void add_index_packet(bgav_superindex_t * si, bgav_stream_t * stream,
+static void add_index_packet(gavl_packet_index_t * si, bgav_stream_t * stream,
                              int64_t offset, int size, int keyframe)
   {
   audio_priv_t * avi_as;
@@ -422,7 +422,7 @@ static void add_index_packet(bgav_superindex_t * si, bgav_stream_t * stream,
     avi_as = stream->priv;
     samplerate = stream->data.audio.format->samplerate;
 
-    bgav_superindex_add_packet(si,
+    gavl_packet_index_add_packet(si,
                                stream,
                                offset,
                                size,
@@ -496,7 +496,7 @@ static void add_index_packet(bgav_superindex_t * si, bgav_stream_t * stream,
        the previous frame will be shown */
     if(size)
       {
-      bgav_superindex_add_packet(si,
+      gavl_packet_index_add_packet(si,
                                  stream,
                                  offset,
                                  size,
@@ -1059,7 +1059,7 @@ static void indx_build_superindex(bgav_demuxer_context_t * ctx)
       }
     }
     
-  ctx->si = bgav_superindex_create(num_entries);
+  ctx->si = gavl_packet_index_create(num_entries);
   
   /* Add the packets */
 
@@ -1436,7 +1436,7 @@ static void idx1_build_superindex(bgav_demuxer_context_t * ctx)
     stream->stats.pts_end = 0;
     }
   
-  ctx->si = bgav_superindex_create(avi->idx1.num_entries);
+  ctx->si = gavl_packet_index_create(avi->idx1.num_entries);
 
   /* Some files have a bogus 7Fxx entry as the first one */
   first_pos = 0;

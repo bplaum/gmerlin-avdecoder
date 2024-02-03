@@ -68,7 +68,7 @@ bgav_keyframe_table_t * bgav_keyframe_table_create_fi(bgav_file_index_t * fi)
   return ret;
   }
 
-bgav_keyframe_table_t * bgav_keyframe_table_create_si(bgav_superindex_t * si,
+bgav_keyframe_table_t * bgav_keyframe_table_create_si(gavl_packet_index_t * si,
                                                       bgav_stream_t * s)
   {
   int allocated = 0;

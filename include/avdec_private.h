@@ -1061,7 +1061,6 @@ typedef struct
   {
   int num_entries;
   int entries_alloc;
-  //  int current_position;
   int flags;
   
   struct
@@ -1073,16 +1072,16 @@ typedef struct
     int64_t pts;  /* Time is scaled with the timescale of the stream */
     int duration;  /* In timescale tics, can be 0 if unknown */
     } * entries;
-  } bgav_superindex_t;
+  } gavl_packet_index_t;
 
 /* Create superindex, nothing will be allocated if size == 0 */
 
-bgav_superindex_t * bgav_superindex_create(int size);
-void bgav_superindex_destroy(bgav_superindex_t *);
+gavl_packet_index_t * gavl_packet_index_create(int size);
+void gavl_packet_index_destroy(gavl_packet_index_t *);
 /* Delete entries */
-void bgav_superindex_clear(bgav_superindex_t *);
+void gavl_packet_index_clear(gavl_packet_index_t *);
 
-void bgav_superindex_add_packet(bgav_superindex_t * idx,
+void gavl_packet_index_add_packet(gavl_packet_index_t * idx,
                                 bgav_stream_t * s,
                                 int64_t offset,
                                 uint32_t size,
@@ -1090,21 +1089,20 @@ void bgav_superindex_add_packet(bgav_superindex_t * idx,
                                 int64_t timestamp,
                                 int keyframe, int duration);
 
-void bgav_superindex_seek(bgav_superindex_t * idx,
+void gavl_packet_index_seek(gavl_packet_index_t * idx,
                           bgav_stream_t * s,
                           int64_t * time, int scale);
 
-BGAV_PUBLIC void bgav_superindex_dump(bgav_superindex_t * idx);
+BGAV_PUBLIC void gavl_packet_index_dump(gavl_packet_index_t * idx);
 
-void bgav_superindex_set_durations(bgav_superindex_t * idx, bgav_stream_t * s);
+void gavl_packet_index_set_durations(gavl_packet_index_t * idx, bgav_stream_t * s);
 
-void bgav_superindex_merge_fileindex(bgav_superindex_t * idx, bgav_stream_t * s);
-void bgav_superindex_set_size(bgav_superindex_t * ret, int size);
+void gavl_packet_index_set_size(gavl_packet_index_t * ret, int size);
 
-void bgav_superindex_set_coding_types(bgav_superindex_t * idx,
+void gavl_packet_index_set_coding_types(gavl_packet_index_t * idx,
                                       bgav_stream_t * s);
 
-void bgav_superindex_set_stream_stats(bgav_superindex_t * idx,
+void gavl_packet_index_set_stream_stats(gavl_packet_index_t * idx,
                                       bgav_stream_t * s);
 
 /* timecode.c */
@@ -1267,7 +1265,7 @@ struct bgav_demuxer_context_s
    *  If demuxer creates a superindex, generic get_packet() and
    *  seek() functions will be used
    */
-  bgav_superindex_t * si;
+  gavl_packet_index_t * si;
   
   bgav_t * b;
   
@@ -1731,7 +1729,7 @@ struct bgav_keyframe_table_s
   };
 
 bgav_keyframe_table_t * bgav_keyframe_table_create_fi(bgav_file_index_t * fi);
-bgav_keyframe_table_t * bgav_keyframe_table_create_si(bgav_superindex_t * si,
+bgav_keyframe_table_t * bgav_keyframe_table_create_si(gavl_packet_index_t * si,
                                                       bgav_stream_t * s);
 
 void bgav_keyframe_table_destroy(bgav_keyframe_table_t *);

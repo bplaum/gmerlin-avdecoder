@@ -135,7 +135,7 @@ typedef struct
   } qt_priv_t;
 
 static void bgav_qt_moof_to_superindex(bgav_demuxer_context_t * ctx,
-                                       qt_moof_t * m, bgav_superindex_t * si)
+                                       qt_moof_t * m, gavl_packet_index_t * si)
   {
   int i, j, k;
 
@@ -213,7 +213,7 @@ static void bgav_qt_moof_to_superindex(bgav_demuxer_context_t * ctx,
             s->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES; 
           }
         
-        bgav_superindex_add_packet(si, s,
+        gavl_packet_index_add_packet(si, s,
                                    offset,
                                    size,
                                    stream_id,
@@ -368,7 +368,7 @@ static void add_packet(bgav_demuxer_context_t * ctx,
                        int chunk_size)
   {
   if(stream_id >= 0)
-    bgav_superindex_add_packet(ctx->si, s,
+    gavl_packet_index_add_packet(ctx->si, s,
                                offset, chunk_size,
                                stream_id, timestamp, keyframe, duration);
   
@@ -429,7 +429,7 @@ static void build_index_fragmented(bgav_demuxer_context_t * ctx)
   qt_priv_t * priv;
   priv = ctx->priv;
 
-  ctx->si = bgav_superindex_create(0);
+  ctx->si = gavl_packet_index_create(0);
 
   while(1)
     {
@@ -505,7 +505,7 @@ static void build_index(bgav_demuxer_context_t * ctx)
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "No packets in movie");
     return;
     }
-  ctx->si = bgav_superindex_create(num_packets);
+  ctx->si = gavl_packet_index_create(num_packets);
   
   chunk_indices = calloc(priv->moov.num_tracks, sizeof(*chunk_indices));
 
@@ -1933,7 +1933,7 @@ static void fix_index(bgav_demuxer_context_t * ctx)
   stream_priv_t * sp;
 
   //  fprintf(stderr, "Fix index\n");
-  //  bgav_superindex_dump(ctx->si);
+  //  gavl_packet_index_dump(ctx->si);
 
   
   for(i = 0; i < ctx->tt->cur->num_video_streams; i++)
@@ -2291,7 +2291,7 @@ static gavl_source_status_t next_packet_quicktime(bgav_demuxer_context_t * ctx)
           case BGAV_MK_FOURCC('m','o','o','f'):
             bgav_qt_moof_free(&priv->current_moof);
             bgav_qt_moof_read(&h, ctx->input, &priv->current_moof);
-            bgav_superindex_clear(ctx->si);
+            gavl_packet_index_clear(ctx->si);
             ctx->index_position = 0;
             bgav_qt_moof_to_superindex(ctx, &priv->current_moof, ctx->si);
             break;

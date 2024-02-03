@@ -29,9 +29,9 @@
 
 #define LOG_DOMAIN "superindex"
 
-bgav_superindex_t * bgav_superindex_create(int size)
+gavl_packet_index_t * gavl_packet_index_create(int size)
   {
-  bgav_superindex_t * ret;
+  gavl_packet_index_t * ret;
   ret = calloc(1, sizeof(*ret));
 
   if(size)
@@ -42,7 +42,7 @@ bgav_superindex_t * bgav_superindex_create(int size)
   return ret;
   }
 
-void bgav_superindex_set_size(bgav_superindex_t * ret, int size)
+void gavl_packet_index_set_size(gavl_packet_index_t * ret, int size)
   {
   if(size > ret->entries_alloc)
     {
@@ -55,14 +55,14 @@ void bgav_superindex_set_size(bgav_superindex_t * ret, int size)
   }
 
 
-void bgav_superindex_destroy(bgav_superindex_t * idx)
+void gavl_packet_index_destroy(gavl_packet_index_t * idx)
   {
   if(idx->entries)
     free(idx->entries);
   free(idx);
   }
 
-void bgav_superindex_add_packet(bgav_superindex_t * idx,
+void gavl_packet_index_add_packet(gavl_packet_index_t * idx,
                                 bgav_stream_t * s,
                                 int64_t offset,
                                 uint32_t size,
@@ -102,7 +102,7 @@ void bgav_superindex_add_packet(bgav_superindex_t * idx,
   idx->num_entries++;
   }
 
-void bgav_superindex_set_durations(bgav_superindex_t * idx,
+void gavl_packet_index_set_durations(gavl_packet_index_t * idx,
                                    bgav_stream_t * s)
   {
   int i;
@@ -166,7 +166,7 @@ static int find_min(fix_b_entries * e, int start, int end)
   return ret;
   }
 
-static void fix_b_pyramid(bgav_superindex_t * idx,
+static void fix_b_pyramid(gavl_packet_index_t * idx,
                           bgav_stream_t * s, int num_entries)
   {
   int i, index, min_index;
@@ -241,7 +241,7 @@ static void fix_b_pyramid(bgav_superindex_t * idx,
   free(entries);
   }
 
-void bgav_superindex_set_coding_types(bgav_superindex_t * idx,
+void gavl_packet_index_set_coding_types(gavl_packet_index_t * idx,
                                       bgav_stream_t * s)
   {
   int i;
@@ -250,15 +250,15 @@ void bgav_superindex_set_coding_types(bgav_superindex_t * idx,
   int64_t last_pts = 0;
   int b_pyramid = 0;
   int num_entries = 0;
-
-  if(idx->entries[s->first_index_position].flags & GAVL_PACKET_TYPE_MASK)
-    return;
   
   for(i = 0; i < idx->num_entries; i++)
     {
     if(idx->entries[i].stream_id != s->stream_id)
       continue;
-
+    
+    if(idx->entries[i].flags & GAVL_PACKET_TYPE_MASK)
+      return;
+    
     num_entries++;
     
     if(max_time == GAVL_TIME_UNDEFINED)
@@ -302,7 +302,7 @@ void bgav_superindex_set_coding_types(bgav_superindex_t * idx,
   
   }
 
-void bgav_superindex_set_stream_stats(bgav_superindex_t * idx,
+void gavl_packet_index_set_stream_stats(gavl_packet_index_t * idx,
                                       bgav_stream_t * s)
   {
   int i;
@@ -322,7 +322,7 @@ void bgav_superindex_set_stream_stats(bgav_superindex_t * idx,
   }
 
 
-void bgav_superindex_seek(bgav_superindex_t * idx,
+void gavl_packet_index_seek(gavl_packet_index_t * idx,
                           bgav_stream_t * s,
                           int64_t * time, int scale)
   {
@@ -390,7 +390,7 @@ void bgav_superindex_seek(bgav_superindex_t * idx,
   STREAM_SET_SYNC(s, idx->entries[i].pts);
   }
 
-void bgav_superindex_dump(bgav_superindex_t * idx)
+void gavl_packet_index_dump(gavl_packet_index_t * idx)
   {
   int i;
   bgav_dprintf( "superindex %d entries:\n", idx->num_entries);
@@ -410,7 +410,7 @@ void bgav_superindex_dump(bgav_superindex_t * idx)
   }
 
 
-void bgav_superindex_clear(bgav_superindex_t * si)
+void gavl_packet_index_clear(gavl_packet_index_t * si)
   {
   si->num_entries = 0;
   si->flags = 0;

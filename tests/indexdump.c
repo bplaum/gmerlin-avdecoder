@@ -48,7 +48,7 @@ int main(int argc, char ** argv)
     return -1;
   fprintf(stderr, "\n");
   if(b->demuxer->si)
-    bgav_superindex_dump(b->demuxer->si);
+    gavl_packet_index_dump(b->demuxer->si);
   bgav_close(b);
   return 0;
   }

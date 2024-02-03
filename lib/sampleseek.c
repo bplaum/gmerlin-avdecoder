@@ -156,7 +156,7 @@ void bgav_seek_audio(bgav_t * bgav, int stream, int64_t sample)
     {
     frame_time = gavl_time_rescale(s->data.audio.format->samplerate,
                                    s->timescale, sample);
-    bgav_superindex_seek(bgav->demuxer->si, s,
+    gavl_packet_index_seek(bgav->demuxer->si, s,
                          &frame_time,
                          s->timescale);
     
@@ -211,7 +211,7 @@ void bgav_seek_video(bgav_t * bgav, int stream, int64_t time)
   if(bgav->demuxer->index_mode == INDEX_MODE_SI_SA)
     {
     frame_time = time;
-    bgav_superindex_seek(bgav->demuxer->si, s, &frame_time, s->timescale);
+    gavl_packet_index_seek(bgav->demuxer->si, s, &frame_time, s->timescale);
     s->out_time = bgav->demuxer->si->entries[s->index_position].pts;
     }
     
@@ -230,8 +230,8 @@ int64_t bgav_video_stream_keyframe_before(bgav_stream_t * s, int64_t time)
   int pos;
   if(s->demuxer->index_mode == INDEX_MODE_SI_SA)
     {
-    pos = s->last_index_position;
-    while(pos >= s->first_index_position)
+    pos = s->demuxer->si->num_entries -1;
+    while(pos >= 0)
       {
       if((s->demuxer->si->entries[pos].stream_id == s->stream_id) &&
          (s->demuxer->si->entries[pos].flags & GAVL_PACKET_KEYFRAME) &&
@@ -241,12 +241,11 @@ int64_t bgav_video_stream_keyframe_before(bgav_stream_t * s, int64_t time)
         }
       pos--;
       }
-    if(pos < s->first_index_position)
+    if(pos < 0)
       return GAVL_TIME_UNDEFINED;
     else
       return s->demuxer->si->entries[pos].pts;
     }
-  /* Stupid gcc :( */
   return GAVL_TIME_UNDEFINED;
   }
 
@@ -300,7 +299,7 @@ static void seek_subtitle(bgav_t * bgav, bgav_stream_t * s, int64_t time)
 
   if(bgav->demuxer->index_mode == INDEX_MODE_SI_SA)
     {
-    bgav_superindex_seek(bgav->demuxer->si, s, &time, s->timescale);
+    gavl_packet_index_seek(bgav->demuxer->si, s, &time, s->timescale);
     s->out_time = bgav->demuxer->si->entries[s->index_position].pts;
     }
   }
