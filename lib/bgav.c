@@ -203,8 +203,6 @@ int bgav_init(bgav_t * ret)
   
   bgav_track_table_create_message_streams(ret->tt, &ret->opt);
 
-  bgav_check_sample_accurate(ret);
-  
   if(bgav_can_seek(ret) || 
      bgav_can_pause(ret))
     {
@@ -272,13 +270,6 @@ int bgav_open(bgav_t * ret, const char * location)
      ret->demuxer->demuxer->post_seek_resync &&
      (ret->input->flags & BGAV_INPUT_SEEK_SLOW))
     ret->demuxer->flags &= ~BGAV_DEMUXER_CAN_SEEK;
-  
-  /* Check for file index */
-  if((ret->opt.sample_accurate == 1) ||
-     ((ret->opt.sample_accurate == 2) &&
-      ret->demuxer &&
-      !(ret->demuxer->flags & BGAV_DEMUXER_CAN_SEEK)))
-    bgav_set_sample_accurate(ret);
   
   bgav_track_table_compute_info(ret->tt);
   bgav_track_table_export_infos(ret->tt);
@@ -438,10 +429,10 @@ int bgav_select_track(bgav_t * b, int track)
       b->demuxer->index_position = 0;
       
       if(b->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
-        bgav_input_seek(b->input, b->demuxer->si->entries[0].offset, SEEK_SET);
+        bgav_input_seek(b->input, b->demuxer->si->entries[0].position, SEEK_SET);
       else
         {
-        data_start = b->demuxer->si->entries[0].offset;
+        data_start = b->demuxer->si->entries[0].position;
         reset_input = 1;
         //        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
         //                 "Cannot reset track when on a nonseekable source");
@@ -483,11 +474,11 @@ int bgav_select_track(bgav_t * b, int track)
         {
         b->demuxer->index_position = 0;
         if(b->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
-          bgav_input_seek(b->input, b->demuxer->si->entries[0].offset,
+          bgav_input_seek(b->input, b->demuxer->si->entries[0].position,
                           SEEK_SET);
         else
           {
-          data_start = b->demuxer->si->entries[0].offset;
+          data_start = b->demuxer->si->entries[0].position;
           reset_input = 1;
           //        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
           //                 "Cannot reset track when on a nonseekable source");
@@ -554,7 +545,15 @@ int bgav_start(bgav_t * b)
 
 int bgav_can_seek(bgav_t * b)
   {
-  return !!(b->demuxer) && !!(b->demuxer->flags & BGAV_DEMUXER_CAN_SEEK);
+  if(b->demuxer && (b->demuxer->flags & BGAV_DEMUXER_CAN_SEEK))
+    return 1;
+
+  if((b->demuxer->index_mode == INDEX_MODE_SIMPLE) &&
+     (b->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
+    return 1;
+
+  else
+    return 0;
   }
 
 

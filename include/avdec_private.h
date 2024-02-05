@@ -39,6 +39,7 @@
 #include <gavl/numptr.h>
 #include <gavl/utils.h>
 #include <gavl/trackinfo.h>
+#include <gavl/packetindex.h>
 
 #include <bsf.h>
 
@@ -54,7 +55,6 @@ typedef struct bgav_redirector_s         bgav_redirector_t;
 
 #define bgav_packet_t gavl_packet_t
 
-typedef struct bgav_file_index_s      bgav_file_index_t;
 typedef struct bgav_packet_parser_s   bgav_packet_parser_t;
 
 typedef struct bgav_input_s                    bgav_input_t;
@@ -137,12 +137,6 @@ dst[0] = pal.b >> 8;
 
 /* Packet */
 
-#define BGAV_CODING_TYPE_I GAVL_PACKET_TYPE_I
-#define BGAV_CODING_TYPE_P GAVL_PACKET_TYPE_P
-#define BGAV_CODING_TYPE_B GAVL_PACKET_TYPE_B
-// #define BGAV_CODING_TYPE_D 'D' /* Unsupported */
-
-
 /* If these flags are changed, the flags of the superindex must be
    changed as well */
 
@@ -207,7 +201,7 @@ void bgav_packet_copy(bgav_packet_t * dst,
 #define STREAM_FILTER_PACKETS        (1<<10)
 #define STREAM_NO_DURATIONS          (1<<11)
 #define STREAM_HAS_DTS               (1<<12)
-#define STREAM_B_PYRAMID             (1<<13)
+// #define STREAM_B_PYRAMID             (1<<13)
 
 #define STREAM_GOT_CI                (1<<14) // Compression info present
 #define STREAM_GOT_NO_CI             (1<<15) // Compression info tested but not present
@@ -283,6 +277,7 @@ struct bgav_stream_s
   const bgav_options_t * opt;
 
   bgav_stream_action_t action;
+  
   int stream_id; /* Format specific stream id */
   gavl_stream_type_t type;
 
@@ -360,18 +355,12 @@ struct bgav_stream_s
   
   /* The track, where this stream belongs */
   bgav_track_t * track;
-  //   bgav_file_index_t * file_index;
 
-  gavl_seek_index_t index;
-  
   void (*process_packet)(bgav_stream_t * s, bgav_packet_t * p);
 
   /* Cleanup function (can be set by demuxers) */
   void (*cleanup)(bgav_stream_t * s);
   
-  /* Set for INDEX_MODE_SI_PARSE for all streams, which need parsing */
-  int index_mode;
-
   /* timecode table (for video streams only for now) */
   bgav_timecode_table_t * timecode_table;
   
@@ -524,8 +513,6 @@ int bgav_stream_init_read(bgav_stream_t * s);
 
 int bgav_stream_skipto(bgav_stream_t * s, int64_t * time, int scale);
 
-
-#define TRACK_SAMPLE_ACCURATE (1<<0)
 #define TRACK_HAS_COMPRESSION (1<<2)
 
 struct bgav_track_s
@@ -1055,55 +1042,21 @@ bgav_input_open_fd(int fd, int64_t total_bytes, const char * mimetype);
  *  generic next_packet() and seek() functions will be used
  */
 
-#define BGAV_SUPERINDEX_INTERLEAVED (1<<0)
-
-typedef struct 
-  {
-  int num_entries;
-  int entries_alloc;
-  int flags;
-  
-  struct
-    {
-    int64_t offset;
-    uint32_t size;
-    int stream_id;
-    int flags;
-    int64_t pts;  /* Time is scaled with the timescale of the stream */
-    int duration;  /* In timescale tics, can be 0 if unknown */
-    } * entries;
-  } gavl_packet_index_t;
 
 /* Create superindex, nothing will be allocated if size == 0 */
 
-gavl_packet_index_t * gavl_packet_index_create(int size);
-void gavl_packet_index_destroy(gavl_packet_index_t *);
-/* Delete entries */
-void gavl_packet_index_clear(gavl_packet_index_t *);
 
-void gavl_packet_index_add_packet(gavl_packet_index_t * idx,
-                                bgav_stream_t * s,
-                                int64_t offset,
-                                uint32_t size,
-                                int stream_id,
-                                int64_t timestamp,
-                                int keyframe, int duration);
-
-void gavl_packet_index_seek(gavl_packet_index_t * idx,
+void bgav_packet_index_seek(gavl_packet_index_t * idx,
                           bgav_stream_t * s,
                           int64_t * time, int scale);
 
-BGAV_PUBLIC void gavl_packet_index_dump(gavl_packet_index_t * idx);
 
 void gavl_packet_index_set_durations(gavl_packet_index_t * idx, bgav_stream_t * s);
 
-void gavl_packet_index_set_size(gavl_packet_index_t * ret, int size);
 
 void gavl_packet_index_set_coding_types(gavl_packet_index_t * idx,
                                       bgav_stream_t * s);
 
-void gavl_packet_index_set_stream_stats(gavl_packet_index_t * idx,
-                                      bgav_stream_t * s);
 
 /* timecode.c */
 
@@ -1134,31 +1087,6 @@ bgav_timecode_table_destroy(bgav_timecode_table_t *);
 gavl_timecode_t
 bgav_timecode_table_get_timecode(bgav_timecode_table_t * table,
                                  int64_t pts);
-
-// gavl_source_status_t bgav_demuxer_next_packet_interleaved(bgav_demuxer_context_t * ctx);
-
-BGAV_PUBLIC void bgav_file_index_dump(bgav_t * b);
-
-
-void
-bgav_file_index_append_packet(bgav_file_index_t * idx,
-                              int64_t position,
-                              int64_t time,
-                              int keyframe, gavl_timecode_t tc);
-
-int bgav_file_index_read_header(const char * filename,
-                                bgav_input_context_t * input,
-                                int * num_tracks);
-
-void bgav_file_index_write_header(const char * filename,
-                                  FILE * output,
-                                  int num_tracks);
-
-int bgav_read_file_index(bgav_t*);
-
-void bgav_write_file_index(bgav_t*);
-
-int bgav_build_file_index(bgav_t * b, gavl_time_t * time_needed);
 
 /* Demuxer class */
 
@@ -1216,28 +1144,19 @@ struct bgav_demuxer_s
 
 #define BGAV_DEMUXER_HAS_CLOCK_TIME        (1<<12)
 
-/* Set if packets allow to build a seek index */
-#define BGAV_DEMUXER_BUILD_SEEK_INDEX       (1<<13)
-
-/* Set if a seek index is already there */
-#define BGAV_DEMUXER_HAS_SEEK_INDEX         (1<<14)
-
 /* Set if a seek index is already there */
 #define BGAV_DEMUXER_NONINTERLEAVED         (1<<15)
+
+#define BGAV_DEMUXER_SAMPLE_ACCURATE        (1<<16)
 
 #define INDEX_MODE_NONE   0 /* Default: No sample accuracy */
 /* Packets have precise timestamps and durations and are adjacent in the file */
 #define INDEX_MODE_SIMPLE 1
-/* For PCM soundfiles: Sample accuracy is already there */
-#define INDEX_MODE_PCM    4
 /* File has a global index and codecs, which allow sample accuracy */
-#define INDEX_MODE_SI_SA  5
+// #define INDEX_MODE_SI_SA  5
 /* File has a global index but codecs, which need complete parsing */
 #define INDEX_MODE_SI_PARSE  6
 
-/* Stream must be completely parsed, streams can have
-   INDEX_MODE_SIMPLE, INDEX_MODE_MPEG or INDEX_MODE_PTS */
-#define INDEX_MODE_MIXED  7
 
 // #define INDEX_MODE_CUSTOM 4 /* Demuxer builds index */
 
@@ -1291,6 +1210,8 @@ void bgav_demuxer_destroy(bgav_demuxer_context_t * demuxer);
 
 void bgav_demuxer_check_interleave(bgav_demuxer_context_t * ctx);
 void bgav_demuxer_set_durations_from_superindex(bgav_demuxer_context_t * ctx, bgav_track_t * t);
+
+void bgav_demuxer_parse_track(bgav_demuxer_context_t * ctx);
 
 
 /*
@@ -1484,7 +1405,6 @@ int bgav_read_line_fd(const bgav_options_t * opt, int fd,
 int bgav_read_data_fd(const bgav_options_t * opt, int fd,
                       uint8_t * ret, int size, int milliseconds);
 
-const char * bgav_coding_type_to_string(int type);
 
 uint32_t * bgav_get_vobsub_palette(const char * str);
 
@@ -1691,13 +1611,10 @@ int bgav_bytebuffer_append_read(gavl_buffer_t * b, bgav_input_context_t * input,
 // void bgav_bytebuffer_free(bgav_bytebuffer_t * b);
 // void bgav_bytebuffer_flush(bgav_bytebuffer_t * b);
 
-/* sampleseek.c */
-int bgav_set_sample_accurate(bgav_t * b);
 
-void bgav_check_sample_accurate(bgav_t * b);
 
-int64_t bgav_video_stream_keyframe_after(bgav_stream_t * s, int64_t time);
-int64_t bgav_video_stream_keyframe_before(bgav_stream_t * s, int64_t time);
+//int64_t bgav_video_stream_keyframe_after(bgav_stream_t * s, int64_t time);
+//int64_t bgav_video_stream_keyframe_before(bgav_stream_t * s, int64_t time);
 
 /* Translation specific stuff */
 
@@ -1765,6 +1682,8 @@ int bgav_video_is_divx4(uint32_t fourcc);
 
 void bgav_ffmpeg_lock();
 void bgav_ffmpeg_unlock();
+
+gavl_packet_index_t * bgav_get_packet_index(const char * url);
 
 
 #if __GNUC__ >= 3

@@ -42,7 +42,11 @@ static void cleanup_stream_ffmpeg(bgav_stream_t * s)
 
 typedef struct
   {
+#if LIBAVFORMAT_VERSION_MAJOR < 59
+  AVInputFormat *avif;
+#else
   const AVInputFormat *avif;
+#endif
   AVFormatContext *avfc;
 #define BUFFER_SIZE 1024 * 4
   AVIOContext * pb;
@@ -69,7 +73,11 @@ static int64_t lavf_seek(void *opaque, int64_t offset, int whence)
 
 /* Demuxer functions */
 
+#if LIBAVFORMAT_VERSION_MAJOR < 59
+static AVInputFormat * get_format(bgav_input_context_t * input)
+#else
 static const AVInputFormat * get_format(bgav_input_context_t * input)
+#endif
   {
   uint8_t data[PROBE_SIZE];
   AVProbeData avpd;

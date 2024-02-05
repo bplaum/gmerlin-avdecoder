@@ -258,7 +258,6 @@ static void init_vorbis(bgav_stream_t * s)
   {
   setup_ogg_extradata(s);
   s->fourcc = BGAV_MK_FOURCC('V','B','I','S');
-  s->index_mode = INDEX_MODE_SIMPLE;
   bgav_stream_set_parse_frame(s);
   }
 
@@ -272,7 +271,6 @@ static void init_opus(bgav_stream_t * s)
   
   setup_ogg_extradata(s);
   s->fourcc = BGAV_MK_FOURCC('O', 'P', 'U', 'S');
-  s->index_mode = INDEX_MODE_SIMPLE;
   bgav_stream_set_parse_frame(s);
   }
 
@@ -384,7 +382,6 @@ static void init_ac3(bgav_stream_t * s)
 static void init_dts(bgav_stream_t * s)
   {
   // bgav_mkv_track_t * p = s->priv;
-  s->index_mode = INDEX_MODE_SIMPLE;
   bgav_stream_set_parse_frame(s);
   }
 
@@ -490,9 +487,7 @@ static int init_audio(bgav_demuxer_context_t * ctx,
   if(a->BitDepth > 0)
     s->data.audio.bits_per_sample = a->BitDepth;
   
-  if(track->frame_samples || (s->flags & STREAM_PARSE_FRAME))
-    s->index_mode = INDEX_MODE_SIMPLE;
-  else
+  if(!track->frame_samples && !(s->flags & STREAM_PARSE_FRAME))
     ctx->index_mode = INDEX_MODE_NONE;
   
   return 1;
@@ -626,7 +621,6 @@ static int init_subtitle(bgav_demuxer_context_t * ctx,
     return 1;
   
   init_stream_common(m, s, track, NULL, 1);
-  s->index_mode = INDEX_MODE_SIMPLE;
   return 1;
   }
 
@@ -716,7 +710,7 @@ static int open_matroska(bgav_demuxer_context_t * ctx)
   ctx->priv = p;
   p->pts_offset = GAVL_TIME_UNDEFINED;
 
-  ctx->index_mode = INDEX_MODE_MIXED;
+  ctx->index_mode = INDEX_MODE_SIMPLE;
   
   if(!bgav_mkv_ebml_header_read(ctx->input, &p->ebml_header))
     return 0;

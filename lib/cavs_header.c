@@ -113,7 +113,7 @@ int bgav_cavs_picture_header_read(bgav_cavs_picture_header_t * ret,
 
   if(sc == FRAME_I)
     {
-    ret->coding_type = BGAV_CODING_TYPE_I;
+    ret->coding_type = GAVL_PACKET_TYPE_I;
     if(!bgav_bitstream_get(&b, &ret->time_code_flag, 1))
       return 0;
     if(ret->time_code_flag &&
@@ -125,9 +125,9 @@ int bgav_cavs_picture_header_read(bgav_cavs_picture_header_t * ret,
     if(!bgav_bitstream_get(&b, &ret->picture_coding_type, 2))
       return 0;
     if(ret->picture_coding_type == 1)
-      ret->coding_type = BGAV_CODING_TYPE_P;
+      ret->coding_type = GAVL_PACKET_TYPE_P;
     else
-      ret->coding_type = BGAV_CODING_TYPE_B;
+      ret->coding_type = GAVL_PACKET_TYPE_B;
     }
 
   if(!bgav_bitstream_get(&b, &ret->picture_distance, 8))
@@ -163,11 +163,11 @@ void bgav_cavs_picture_header_dump(const bgav_cavs_picture_header_t * h,
                                    const bgav_cavs_sequence_header_t * seq)
   {
   bgav_dprintf("CAVS Picture header\n");
-  bgav_dprintf("  coding_type:                %s\n", bgav_coding_type_to_string(h->coding_type));
+  bgav_dprintf("  coding_type:                %s\n", gavl_coding_type_to_string(h->coding_type));
 
   bgav_dprintf("  bbv_delay:                  %d\n", h->bbv_delay);       /* I/PB, 16 */
 
-  if(h->coding_type == BGAV_CODING_TYPE_I)
+  if(h->coding_type == GAVL_PACKET_TYPE_I)
     {
     bgav_dprintf("  time_code_flag:             %d\n", h->time_code_flag);  /* I, 1 */
     if(h->time_code_flag)
@@ -185,7 +185,7 @@ void bgav_cavs_picture_header_dump(const bgav_cavs_picture_header_t * h,
   if(!h->progressive_frame)
     {
     bgav_dprintf("  picture_structure:          %d\n", h->picture_structure);
-    if(h->coding_type != BGAV_CODING_TYPE_I)
+    if(h->coding_type != GAVL_PACKET_TYPE_I)
       {
       bgav_dprintf("  advanced_pred_mode_disable: %d\n", h->advanced_pred_mode_disable );
       }

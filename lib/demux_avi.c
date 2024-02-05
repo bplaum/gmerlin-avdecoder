@@ -376,7 +376,6 @@ typedef struct
 
   int64_t total_bytes;
   int64_t total_blocks;
-  int64_t sample_counter;
   } audio_priv_t;
 
 typedef struct
@@ -422,13 +421,12 @@ static void add_index_packet(gavl_packet_index_t * si, bgav_stream_t * stream,
     avi_as = stream->priv;
     samplerate = stream->data.audio.format->samplerate;
 
-    gavl_packet_index_add_packet(si,
-                               stream,
-                               offset,
-                               size,
-                               stream->stream_id,
-                               stream->stats.pts_end,
-                               1, 0);
+    gavl_packet_index_add(si,
+                          offset,
+                          size,
+                          stream->stream_id,
+                          stream->stats.pts_end,
+                          GAVL_PACKET_KEYFRAME, 0);
       
     /* Increase block count */
             
@@ -496,13 +494,12 @@ static void add_index_packet(gavl_packet_index_t * si, bgav_stream_t * stream,
        the previous frame will be shown */
     if(size)
       {
-      gavl_packet_index_add_packet(si,
-                                 stream,
-                                 offset,
-                                 size,
-                                 stream->stream_id,
-                                 stream->stats.pts_end,
-                                 keyframe, 0);
+      gavl_packet_index_add(si,
+                            offset,
+                            size,
+                            stream->stream_id,
+                            stream->stats.pts_end,
+                            keyframe ? GAVL_PACKET_KEYFRAME : 0, 0);
       }
     else /* If we have zero size, the framerate will be nonconstant */
       {
@@ -1483,13 +1480,6 @@ static const uint32_t audio_codecs_parse_mpeg[] =
     0x00,
   };
 
-static const uint32_t audio_codecs_parse_simple[] =
-  {
-    BGAV_MK_FOURCC('g','a','v','l'),
-    0x00,
-  };
-
-
 
 
 static int open_avi(bgav_demuxer_context_t * ctx)
@@ -1672,7 +1662,7 @@ static int open_avi(bgav_demuxer_context_t * ctx)
     {
     bgav_stream_t * s;
 
-    ctx->index_mode = INDEX_MODE_SI_SA;
+    ctx->flags |= BGAV_DEMUXER_SAMPLE_ACCURATE;
   
     for(i = 0; i < ctx->tt->cur->num_audio_streams; i++)
       {
@@ -1681,15 +1671,10 @@ static int open_avi(bgav_demuxer_context_t * ctx)
         continue;
       else if(bgav_check_fourcc(s->fourcc, audio_codecs_parse_mpeg))
         {
-        s->index_mode = INDEX_MODE_SIMPLE;
-        ctx->index_mode = INDEX_MODE_SI_PARSE;
+        ctx->index_mode = INDEX_MODE_SIMPLE;
+        ctx->flags &= ~BGAV_DEMUXER_SAMPLE_ACCURATE;
+        
         bgav_stream_set_parse_full(s);
-        continue;
-        }
-      else if(bgav_check_fourcc(s->fourcc, audio_codecs_parse_simple))
-        {
-        s->index_mode = INDEX_MODE_SIMPLE;
-        ctx->index_mode = INDEX_MODE_SI_PARSE;
         continue;
         }
       else
@@ -1703,8 +1688,8 @@ static int open_avi(bgav_demuxer_context_t * ctx)
     {
     bgav_stream_t * s;
 
-    ctx->index_mode = INDEX_MODE_MIXED;
-
+    ctx->index_mode = INDEX_MODE_SIMPLE;
+    
     for(i = 0; i < ctx->tt->cur->num_video_streams; i++)
       {
       s = bgav_track_get_video_stream(ctx->tt->cur, i);
@@ -1723,7 +1708,6 @@ static int open_avi(bgav_demuxer_context_t * ctx)
         ctx->index_mode = 0;
 
       s->flags |= STREAM_NO_DURATIONS;
-      s->index_mode = INDEX_MODE_SIMPLE;
       }
         
     for(i = 0; i < ctx->tt->cur->num_audio_streams; i++)
@@ -1732,19 +1716,11 @@ static int open_avi(bgav_demuxer_context_t * ctx)
 
       if(bgav_check_fourcc(s->fourcc, audio_codecs_sa))
         {
-        s->index_mode = INDEX_MODE_SIMPLE;
         continue;
         }
       else if(bgav_check_fourcc(s->fourcc, audio_codecs_parse_mpeg))
         {
-        s->index_mode = INDEX_MODE_SIMPLE;
         bgav_stream_set_parse_full(s);
-        continue;
-        }
-      else if(bgav_check_fourcc(s->fourcc, audio_codecs_parse_simple))
-        {
-        s->index_mode = INDEX_MODE_SIMPLE;
-        ctx->index_mode = INDEX_MODE_SI_PARSE;
         continue;
         }
       else
@@ -1817,7 +1793,6 @@ static gavl_source_status_t next_packet_avi(bgav_demuxer_context_t * ctx)
   int stream_id;
   avi_priv_t * priv;
   video_priv_t* avi_vs;
-  audio_priv_t* avi_as;
   int result = 1;
   int64_t position;
   priv = ctx->priv;
@@ -1890,15 +1865,9 @@ static gavl_source_status_t next_packet_avi(bgav_demuxer_context_t * ctx)
       }
     else if(s->type == GAVL_STREAM_AUDIO)
       {
-      if(s->index_mode == INDEX_MODE_SIMPLE)
-        {
-        avi_as = s->priv;
-        p->pts = avi_as->sample_counter;
-        avi_as->sample_counter += p->buf.len / s->data.audio.block_align;
-        if(s->action == BGAV_STREAM_PARSE)
-          s->stats.pts_end = avi_as->sample_counter;
-        PACKET_SET_KEYFRAME(p);
-        }
+      if(s->data.audio.block_align)
+        p->duration = p->buf.len / s->data.audio.block_align;
+      PACKET_SET_KEYFRAME(p);
       }
     bgav_stream_done_packet_write(s, p);
     
@@ -1922,19 +1891,15 @@ static gavl_source_status_t next_packet_avi(bgav_demuxer_context_t * ctx)
 static void resync_avi(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
   {
   video_priv_t* avi_vs;
-  audio_priv_t* avi_as;
 
   switch(s->type)
     {
-    case GAVL_STREAM_AUDIO:
-      avi_as = s->priv;
-      avi_as->sample_counter = STREAM_GET_SYNC(s);
-      break;
     case GAVL_STREAM_VIDEO:
       avi_vs = s->priv;
       avi_vs->frame_counter = STREAM_GET_SYNC(s) /
         s->data.video.format->frame_duration;
       break;
+    case GAVL_STREAM_AUDIO:
     case GAVL_STREAM_OVERLAY:
     case GAVL_STREAM_TEXT:
     case GAVL_STREAM_NONE:

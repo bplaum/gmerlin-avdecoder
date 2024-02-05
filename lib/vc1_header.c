@@ -224,19 +224,19 @@ int bgav_vc1_picture_header_adv_read(bgav_vc1_picture_header_adv_t * ret,
   switch(dummy)
     {
     case 0:
-      ret->coding_type = BGAV_CODING_TYPE_P;
+      ret->coding_type = GAVL_PACKET_TYPE_P;
       break;
     case 1:
-      ret->coding_type = BGAV_CODING_TYPE_B;
+      ret->coding_type = GAVL_PACKET_TYPE_B;
       break;
     case 2:
-      ret->coding_type = BGAV_CODING_TYPE_I;
+      ret->coding_type = GAVL_PACKET_TYPE_I;
       break;
     case 3: // BI
-      ret->coding_type = BGAV_CODING_TYPE_I;
+      ret->coding_type = GAVL_PACKET_TYPE_I;
       break;
     case 4: // Skipped P
-      ret->coding_type = BGAV_CODING_TYPE_P;
+      ret->coding_type = GAVL_PACKET_TYPE_P;
       break;
     }
   return 1;
@@ -246,6 +246,6 @@ void bgav_vc1_picture_header_adv_dump(bgav_vc1_picture_header_adv_t * ret)
   {
   bgav_dprintf("VC-1 picture header\n");
   bgav_dprintf("  fcm:  %d\n", ret->fcm);
-  bgav_dprintf("  type: %s\n", bgav_coding_type_to_string(ret->coding_type));
+  bgav_dprintf("  type: %s\n", gavl_coding_type_to_string(ret->coding_type));
   
   }

@@ -184,7 +184,7 @@ static int open_wav(bgav_demuxer_context_t * ctx)
   
   if(s->data.audio.bits_per_sample)
     {
-    ctx->index_mode = INDEX_MODE_PCM;
+    ctx->flags |= BGAV_DEMUXER_SAMPLE_ACCURATE;
     s->stats.pts_end = s->stats.total_bytes / s->data.audio.block_align;
     }
   else

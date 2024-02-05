@@ -132,14 +132,14 @@ static void set_keyframe_rv2(bgav_stream_t * s,
     {
     case 0:
     case 1:
-      PACKET_SET_CODING_TYPE(p, BGAV_CODING_TYPE_I);
+      PACKET_SET_CODING_TYPE(p, GAVL_PACKET_TYPE_I);
       PACKET_SET_KEYFRAME(p);
       break;
     case 2:
-      PACKET_SET_CODING_TYPE(p, BGAV_CODING_TYPE_P);
+      PACKET_SET_CODING_TYPE(p, GAVL_PACKET_TYPE_P);
       break;
     case 3:
-      PACKET_SET_CODING_TYPE(p, BGAV_CODING_TYPE_B);
+      PACKET_SET_CODING_TYPE(p, GAVL_PACKET_TYPE_B);
       break;
     }
 
@@ -170,9 +170,9 @@ static void parse_frame_info_rv10(uint8_t * data, int len, frame_info_t * info, 
   info->pict_type= SHOW_BITS(1);
 
   if(info->pict_type == 1)
-    info->pict_type = BGAV_CODING_TYPE_P;
+    info->pict_type = GAVL_PACKET_TYPE_P;
   else
-    info->pict_type = BGAV_CODING_TYPE_I;
+    info->pict_type = GAVL_PACKET_TYPE_I;
   }
 
 static void parse_frame_info_rv20(uint8_t * data, int len, frame_info_t * info, uint32_t sub_id)
@@ -189,13 +189,13 @@ static void parse_frame_info_rv20(uint8_t * data, int len, frame_info_t * info, 
     {
     case 0:
     case 1:
-      info->pict_type = BGAV_CODING_TYPE_I;
+      info->pict_type = GAVL_PACKET_TYPE_I;
       break;
     case 2:
-      info->pict_type = BGAV_CODING_TYPE_P;
+      info->pict_type = GAVL_PACKET_TYPE_P;
       break;
     case 3:
-      info->pict_type = BGAV_CODING_TYPE_B;
+      info->pict_type = GAVL_PACKET_TYPE_B;
       break;
     }
   
@@ -215,13 +215,13 @@ static void parse_frame_info_rv30(uint8_t * data, int len, frame_info_t * info, 
     {
     case 0:
     case 1:
-      info->pict_type = BGAV_CODING_TYPE_I;
+      info->pict_type = GAVL_PACKET_TYPE_I;
       break;
     case 2:
-      info->pict_type = BGAV_CODING_TYPE_P;
+      info->pict_type = GAVL_PACKET_TYPE_P;
       break;
     case 3:
-      info->pict_type = BGAV_CODING_TYPE_B;
+      info->pict_type = GAVL_PACKET_TYPE_B;
       break;
     }
   
@@ -240,13 +240,13 @@ static void parse_frame_info_rv40(uint8_t * data, int len, frame_info_t * info, 
     {
     case 0:
     case 1:
-      info->pict_type = BGAV_CODING_TYPE_I;
+      info->pict_type = GAVL_PACKET_TYPE_I;
       break;
     case 2:
-      info->pict_type = BGAV_CODING_TYPE_P;
+      info->pict_type = GAVL_PACKET_TYPE_P;
       break;
     case 3:
-      info->pict_type = BGAV_CODING_TYPE_B;
+      info->pict_type = GAVL_PACKET_TYPE_B;
       break;
     }
   }
@@ -1060,14 +1060,14 @@ static void set_vpacket_flags(bgav_stream_t * s, int len,
   /* Set picture type and keyframe flag */
   PACKET_SET_CODING_TYPE(s->packet, fi.pict_type);
   
-  if(fi.pict_type == BGAV_CODING_TYPE_I)
+  if(fi.pict_type == GAVL_PACKET_TYPE_I)
     PACKET_SET_KEYFRAME(s->packet);
 
   /* Set pts */
 
   if(fi.pts >= 0)
     {
-    if(fi.pict_type == BGAV_CODING_TYPE_I)
+    if(fi.pict_type == GAVL_PACKET_TYPE_I)
       {
       s->packet->pts = h->timestamp;
       sp->pts_offset = (int64_t)h->timestamp - (int64_t)fi.pts;

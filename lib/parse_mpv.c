@@ -260,7 +260,7 @@ static int parse_frame_mpeg12(bgav_packet_parser_t * parser, bgav_packet_t * p)
         if(got_sh)
           {
           if(!(priv->flags & FLAG_INTRA_SLICE_REFRESH) &&
-             (ph.coding_type == BGAV_CODING_TYPE_P))
+             (ph.coding_type == GAVL_PACKET_TYPE_P))
             {
             priv->flags |= FLAG_INTRA_SLICE_REFRESH;
             gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN,

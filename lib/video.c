@@ -694,7 +694,7 @@ create_frame_table_si(bgav_stream_t * s, gavl_packet_index_t * si)
     {
     if(si->entries[i].stream_id == s->stream_id)
       {
-      if((si->entries[i].flags & 0xff) == BGAV_CODING_TYPE_B)
+      if((si->entries[i].flags & 0xff) == GAVL_PACKET_TYPE_B)
         {
         gavl_frame_table_append_entry(ret, si->entries[i].duration);
         }

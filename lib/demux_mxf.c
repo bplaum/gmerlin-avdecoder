@@ -334,7 +334,6 @@ static void init_audio_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
     /* Make a more sensible frame size for clip wrapped PCM streams */
     if(priv->frame_size == s->data.audio.block_align)
       priv->frame_size = 1024 * s->data.audio.block_align; /* 1024 samples */
-    s->index_mode = INDEX_MODE_SIMPLE;
     }
   else
     {
@@ -382,16 +381,12 @@ static void init_video_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
      (s->fourcc == BGAV_MK_FOURCC('m','x','4','n')) ||
      (s->fourcc == BGAV_MK_FOURCC('m','x','3','n')))
     {
-    s->index_mode = INDEX_MODE_SIMPLE;
     bgav_stream_set_parse_frame(s);
     }
   else if(s->fourcc == BGAV_MK_FOURCC('m','p','4','v'))
     {
-    s->index_mode = INDEX_MODE_SIMPLE;
     bgav_stream_set_parse_full(s);
     }
-  else
-    s->index_mode = INDEX_MODE_SIMPLE;
   
   s->data.video.format->timescale      = sd->sample_rate_num;
   s->data.video.format->frame_duration = sd->sample_rate_den;
@@ -577,7 +572,6 @@ static int init_simple(bgav_demuxer_context_t * ctx)
 
 static int open_mxf(bgav_demuxer_context_t * ctx)
   {
-  int i;
   mxf_t * priv;
   
   priv = calloc(1, sizeof(*priv));
@@ -609,16 +603,8 @@ static int open_mxf(bgav_demuxer_context_t * ctx)
   
   ctx->tt->cur->data_start = priv->mxf.data_start;
   /* Decide index mode */
-  ctx->index_mode = INDEX_MODE_MIXED;
-  for(i = 0; i < ctx->tt->cur->num_streams; i++)
-    {
-    if(ctx->tt->cur->streams[i]->index_mode == INDEX_MODE_NONE)
-      {
-      ctx->index_mode = INDEX_MODE_NONE;
-      break;
-      }
-    }
-
+  ctx->index_mode = INDEX_MODE_SIMPLE;
+  
   bgav_track_set_format(ctx->tt->cur, "MXF", NULL);
   
   

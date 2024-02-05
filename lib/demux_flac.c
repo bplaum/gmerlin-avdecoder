@@ -72,15 +72,17 @@ typedef struct
   } flac_priv_t;
 
 static void import_seek_table(bgav_flac_seektable_t * tab,
-                              bgav_stream_t * s,
+                              bgav_demuxer_context_t * ctx,
                               int64_t offset)
   {
   int i;
+
+  ctx->si = gavl_packet_index_create(tab->num_entries);
+  ctx->si->flags |= GAVL_PACKET_INDEX_SPARSE;
   for(i = 0; i < tab->num_entries; i++)
     {
-    gavl_seek_index_append_pos_pts(&s->index, 
-                                   tab->entries[i].offset + offset,
-                                   tab->entries[i].sample_number);
+    ctx->si->entries[i].position = tab->entries[i].offset + offset;
+    ctx->si->entries[i].pts = tab->entries[i].sample_number;
     }
   }
 
@@ -289,13 +291,8 @@ static int open_flac(bgav_demuxer_context_t * ctx)
   if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
     {
     if(priv->seektable.num_entries)
-      {
-      import_seek_table(&priv->seektable, s, ctx->input->position);
-      ctx->flags |= BGAV_DEMUXER_HAS_SEEK_INDEX;
-      }
-    else
-      ctx->flags |= BGAV_DEMUXER_BUILD_SEEK_INDEX;
-
+      import_seek_table(&priv->seektable, ctx, ctx->input->position);
+    
     ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
     gavl_dictionary_set_int(ctx->tt->cur->metadata, GAVL_META_SAMPLE_ACCURATE, 1);
     }

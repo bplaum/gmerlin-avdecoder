@@ -482,11 +482,7 @@ void bgav_options_set_audio_dynrange(bgav_options_t* opt,
  *  \param enable Specifies how sample accurate mode should be enabled (see below)
  *
  *  If enable is 0, sample accuracy will never be enabled. If enable is 1,
- *  sample accuracy will always (whenever possible) be enabled. If enable is 2,
- *  sample accuracy will only be enabled, if the file would not be seekable otherwise.
- *
- *  When switching to sample accurate mode, other demultiplexing
- *  methods are enabled, which might slow things down a bit.
+ *  sample accuracy will always (whenever possible) be enabled.
  */
 
 BGAV_PUBLIC

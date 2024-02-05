@@ -137,7 +137,8 @@ static int open_rawaudio(bgav_demuxer_context_t * ctx)
     }
 
   ctx->tt->cur->data_start = 0;
-  ctx->index_mode = INDEX_MODE_PCM;
+  ctx->flags |= BGAV_DEMUXER_SAMPLE_ACCURATE;
+
   
   bgav_track_set_format(ctx->tt->cur, "LPCM", mimetype);
   return 1;

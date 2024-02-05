@@ -41,10 +41,10 @@ static void skip_to(bgav_t * b, bgav_track_t * track, int64_t * time, int scale)
 
 /* Seek functions with superindex */
 
-static void get_start_end(bgav_stream_t ** s, int num,
-                          int32_t * start_packet, int32_t * end_packet)
+static int get_start(bgav_stream_t ** s, int num)
   {
   int i;
+  int ret = -1;
   for(i = 0; i < num; i++)
     {
     if(s[i]->action == BGAV_STREAM_MUTE)
@@ -54,11 +54,10 @@ static void get_start_end(bgav_stream_t ** s, int num,
        (s[i]->type != GAVL_STREAM_VIDEO))
       continue;
     
-    if(*start_packet > s[i]->index_position)
-      *start_packet = s[i]->index_position;
-    if(*end_packet < s[i]->index_position)
-      *end_packet = s[i]->index_position;
+    if((ret < 0) || (ret > s[i]->index_position))
+      ret = s[i]->index_position;
     }
+  return ret;
   }
 
 static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
@@ -66,12 +65,11 @@ static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
   {
   int64_t orig_time;
   uint32_t j;
-  int32_t start_packet;
-  int32_t end_packet;
   bgav_track_t * track;
   bgav_stream_t * s;
-  int64_t seek_time;
-  
+  int64_t time_scaled;
+  int sample_scale;
+    
   track = ctx->tt->cur;
   bgav_track_clear(track);
   
@@ -81,126 +79,78 @@ static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
   
   for(j = 0; j < track->num_video_streams; j++)
     {
-    
     s = bgav_track_get_video_stream(track, j);
     
     if(s->action == BGAV_STREAM_MUTE)
       continue;
-    seek_time = time;
-    gavl_packet_index_seek(ctx->si, s, &seek_time, scale);
-    /* Synchronize time to the video stream */
-    if(!j)
-      time = seek_time;
+
+    gavl_dictionary_get_int(s->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, &sample_scale);
+    
+    time_scaled = gavl_time_rescale(scale, sample_scale, time);
+    
+    s->index_position = gavl_packet_index_seek(b->demuxer->si, s->stream_id, time_scaled);
+    s->index_position = gavl_packet_index_get_keyframe_before(b->demuxer->si, s->stream_id, s->index_position);
+
+    if(s->index_position < 0)
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Seeking failed");
+      return;
+      }
+    
+    time = gavl_time_rescale(sample_scale, scale, b->demuxer->si->entries[s->index_position].pts);
+    
     }
   for(j = 0; j < track->num_streams; j++)
     {
-    if((track->streams[j]->action == BGAV_STREAM_MUTE) ||
-       (track->streams[j]->type == GAVL_STREAM_VIDEO) ||
-       (track->streams[j]->flags & STREAM_EXTERN))
+    s = track->streams[j];
+    
+    if((s->action == BGAV_STREAM_MUTE) ||
+       (s->type == GAVL_STREAM_VIDEO) ||
+       (s->flags & STREAM_EXTERN))
       continue;
     
-    seek_time = time;
-    gavl_packet_index_seek(ctx->si, track->streams[j], &seek_time, scale);
+    gavl_dictionary_get_int(s->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, &sample_scale);
+    time_scaled = gavl_time_rescale(scale, sample_scale, time);
+    
+    /* Handle preroll */
+    if((s->type == GAVL_STREAM_AUDIO) && s->data.audio.preroll)
+      time_scaled -= s->data.audio.preroll;
+    
+    s->index_position = gavl_packet_index_seek(b->demuxer->si, s->stream_id, time_scaled);
+
+    if(s->index_position < 0)
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Seeking failed");
+      return;
+      }
+    
     }
   
-  /* Find the start and end packet */
+  /* Find the start packet */
 
-  if(ctx->si && !(ctx->flags & BGAV_DEMUXER_NONINTERLEAVED))
+  if(!(ctx->flags & BGAV_DEMUXER_NONINTERLEAVED))
     {
-    start_packet = 0x7FFFFFFF;
-    end_packet   = 0x0;
-
-    get_start_end(track->streams, track->num_streams,
-                  &start_packet, &end_packet);
+    ctx->index_position = get_start(track->streams, track->num_streams);
     
-    ctx->index_position = start_packet;
-#if 0
-    /* Do the seek */
-    bgav_input_seek(ctx->input,
-                    ctx->si->entries[ctx->si->current_position].offset,
-                    SEEK_SET);
+    bgav_input_seek(b->input, ctx->si->entries[ctx->index_position].position, SEEK_SET);
 
-    ctx->flags |= BGAV_DEMUXER_SI_SEEKING;
-    for(i = start_packet; i <= end_packet; i++)
-      bgav_demuxer_next_packet_interleaved(ctx);
+    for(j = 0; j < track->num_streams; j++)
+      {
+      s = track->streams[j];
 
-    ctx->flags &= ~BGAV_DEMUXER_SI_SEEKING;
-#endif
+      if((s->action == BGAV_STREAM_MUTE) ||
+         (s->flags & STREAM_EXTERN))
+        continue;
+
+      s->index_position = gavl_packet_index_get_next_keyframe(ctx->si, s->stream_id, ctx->index_position);
+      STREAM_SET_SYNC(s, b->demuxer->si->entries[s->index_position].pts);
+      }
     }
+  
   bgav_track_resync(track);
   skip_to(b, track, &orig_time, scale);
   }
 
-static void seek_sa(bgav_t * b, int64_t * time, int scale)
-  {
-  int i;
-  bgav_stream_t * s;
-  for(i = 0; i < b->tt->cur->num_video_streams; i++)
-    {
-    s = bgav_track_get_video_stream(b->tt->cur, i);
-    
-    if(s->action != BGAV_STREAM_MUTE)
-      {
-      bgav_seek_video(b, i,
-                      gavl_time_rescale(scale, s->data.video.format->timescale,
-                                        *time) - s->stats.pts_start);
-      if(s->flags & STREAM_EOF_C)
-        {
-        b->flags |= BGAV_FLAG_EOF;
-        return;
-        }
-      /*
-       *  We align seeking at the first frame of the first video stream
-       */
-
-      if(!i)
-        {
-        *time =
-          gavl_time_rescale(s->data.video.format->timescale,
-                            scale, s->out_time);
-        }
-      }
-    }
-    
-  for(i = 0; i < b->tt->cur->num_audio_streams; i++)
-    {
-    s = bgav_track_get_audio_stream(b->tt->cur, i);
-
-    if(s->action != BGAV_STREAM_MUTE)
-      {
-      bgav_seek_audio(b, i,
-                      gavl_time_rescale(scale, s->data.audio.format->samplerate,
-                                        *time) - s->stats.pts_start);
-      if(s->flags & STREAM_EOF_C)
-        {
-        b->flags |= BGAV_FLAG_EOF;
-        return;
-        }
-      }
-    }
-
-  for(i = 0; i < b->tt->cur->num_text_streams; i++)
-    {
-    s = bgav_track_get_text_stream(b->tt->cur, i);
-
-    if(s->action != BGAV_STREAM_MUTE)
-      {
-      bgav_seek_text(b, i, gavl_time_rescale(scale, s->timescale, *time));
-      }
-    }
-
-  for(i = 0; i < b->tt->cur->num_overlay_streams; i++)
-    {
-    s = bgav_track_get_overlay_stream(b->tt->cur, i);
-
-    if(s->action != BGAV_STREAM_MUTE)
-      {
-      bgav_seek_overlay(b, i, gavl_time_rescale(scale, s->timescale, *time));
-      }
-    }
-  return;
-  
-  }
 
 static void seek_once(bgav_t * b, int64_t * time, int scale)
   {
@@ -347,6 +297,7 @@ static void seek_generic(bgav_t * b, int64_t * time, int scale)
   
   }
 
+#if 0
 static void build_seek_index(bgav_t * b)
   {
   int i;
@@ -379,7 +330,9 @@ static void build_seek_index(bgav_t * b)
   gavl_seek_index_dump(&s->index);
   
   }
+#endif
 
+#if 0
 static void seek_with_index(bgav_t * b, int64_t * time, int scale)
   {
   int i;
@@ -440,6 +393,7 @@ static void seek_with_index(bgav_t * b, int64_t * time, int scale)
   bgav_track_resync(b->tt->cur);
   skip_to(b, b->tt->cur, time, scale);
   }
+#endif
 
 static void seek_input(bgav_t * b, int64_t * time, int scale)
   {
@@ -455,6 +409,25 @@ static void seek_input(bgav_t * b, int64_t * time, int scale)
   
   }
 
+static int ensure_index(bgav_t * b)
+  {
+  
+  if((b->demuxer->index_mode == INDEX_MODE_SIMPLE) && !b->demuxer->si)
+    {
+    /* TODO: Build packet index */
+    const char * location = NULL;
+
+    if(!gavl_metadata_get_src(&b->input->m, GAVL_META_SRC, 0, NULL, &location) |
+       !location)
+      return 0;
+    
+    if((b->demuxer->si = bgav_get_packet_index(location)))
+      return 1;
+    
+    }
+
+  return 0;
+  }
 
 void
 bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
@@ -475,23 +448,27 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
   bgav_track_clear_eof_d(track);
   b->flags &= ~BGAV_FLAG_EOF;
   
+  
   /*
    * Seek with superindex
    *
    * This must be checked *before* we check for seek_sa because
    * AVIs with mp3 audio will also have b->tt->cur->sample_accurate = 1
    */
-  
+
+  if(b->opt.sample_accurate && !(b->demuxer->flags & BGAV_DEMUXER_SAMPLE_ACCURATE))
+    {
+    if(!ensure_index(b))
+      {
+      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Sample accurate seeking not supported for format");
+      }
+    }
+    
   if(b->demuxer->si)
     seek_si(b, b->demuxer, *time, scale);
   else if(b->input->flags & BGAV_INPUT_CAN_SEEK_TIME)
     {
     seek_input(b, time, scale);
-    }
-  /* Seek with sample accuracy */
-  else if(b->tt->cur->flags & TRACK_SAMPLE_ACCURATE)
-    {
-    seek_sa(b, time, scale);    
     }
   /* Seek once */
   else if(b->demuxer->demuxer->seek)
@@ -499,8 +476,17 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
   /* Seek iterative */
   else if(b->demuxer->demuxer->post_seek_resync)
     seek_generic(b, time, scale);
-  else if(b->demuxer->flags & (BGAV_DEMUXER_HAS_SEEK_INDEX|BGAV_DEMUXER_BUILD_SEEK_INDEX))
-    seek_with_index(b, time, scale);
+  /* Build seek index */
+  else if((b->demuxer->index_mode == INDEX_MODE_SIMPLE) &&
+          (b->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
+    {
+    if(!ensure_index(b) || !b->demuxer->si)
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Building packet index failed");
+      return;
+      }
+    seek_si(b, b->demuxer, *time, scale);
+    }
   }
 
 #if 0

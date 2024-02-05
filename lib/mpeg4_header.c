@@ -312,14 +312,14 @@ int bgav_mpeg4_vop_header_read(bgav_mpeg4_vop_header_t * ret,
   switch(dummy)
     {
     case 0:
-      ret->coding_type = BGAV_CODING_TYPE_I;
+      ret->coding_type = GAVL_PACKET_TYPE_I;
       break;
     case 1:
     case 3:
-      ret->coding_type = BGAV_CODING_TYPE_P;
+      ret->coding_type = GAVL_PACKET_TYPE_P;
       break;
     case 2:
-      ret->coding_type = BGAV_CODING_TYPE_B;
+      ret->coding_type = GAVL_PACKET_TYPE_B;
       break;
     }
 
@@ -352,7 +352,7 @@ void bgav_mpeg4_vop_header_dump(bgav_mpeg4_vop_header_t * h)
   {
   bgav_dprintf("VOP header\n");
 
-  bgav_dprintf("  coding_type:      %s\n", bgav_coding_type_to_string(h->coding_type));
+  bgav_dprintf("  coding_type:      %s\n", gavl_coding_type_to_string(h->coding_type));
   bgav_dprintf("  modulo_time_base: %d\n", h->modulo_time_base); 
   bgav_dprintf("  time_increment:   %d\n", h->time_increment);
   bgav_dprintf("  vop_coded:        %d\n", h->vop_coded);

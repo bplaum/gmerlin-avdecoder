@@ -25,82 +25,7 @@
 #include <avdec_private.h>
 #include <stdio.h>
 
-#define NUM_ALLOC 1024
-
 #define LOG_DOMAIN "superindex"
-
-gavl_packet_index_t * gavl_packet_index_create(int size)
-  {
-  gavl_packet_index_t * ret;
-  ret = calloc(1, sizeof(*ret));
-
-  if(size)
-    {
-    ret->entries_alloc = size;
-    ret->entries = calloc(ret->entries_alloc, sizeof(*(ret->entries)));
-    }
-  return ret;
-  }
-
-void gavl_packet_index_set_size(gavl_packet_index_t * ret, int size)
-  {
-  if(size > ret->entries_alloc)
-    {
-    ret->entries_alloc = size;
-    ret->entries = realloc(ret->entries, ret->entries_alloc * sizeof(*(ret->entries)));
-    memset(ret->entries + ret->num_entries, 0,
-           sizeof(*ret->entries) * (ret->entries_alloc - ret->num_entries));
-    }
-  ret->num_entries = size;
-  }
-
-
-void gavl_packet_index_destroy(gavl_packet_index_t * idx)
-  {
-  if(idx->entries)
-    free(idx->entries);
-  free(idx);
-  }
-
-void gavl_packet_index_add_packet(gavl_packet_index_t * idx,
-                                bgav_stream_t * s,
-                                int64_t offset,
-                                uint32_t size,
-                                int stream_id,
-                                int64_t timestamp,
-                                int keyframe, int duration)
-  {
-  /* Realloc */
-  
-  if(idx->num_entries >= idx->entries_alloc)
-    {
-    idx->entries_alloc += NUM_ALLOC;
-    idx->entries = realloc(idx->entries,
-                           idx->entries_alloc * sizeof(*idx->entries));
-    memset(idx->entries + idx->num_entries, 0,
-           NUM_ALLOC * sizeof(*idx->entries));
-    }
-  /* Set fields */
-  idx->entries[idx->num_entries].offset    = offset;
-  idx->entries[idx->num_entries].size      = size;
-  idx->entries[idx->num_entries].stream_id = stream_id;
-  idx->entries[idx->num_entries].pts = timestamp;
-
-  if(keyframe)
-    idx->entries[idx->num_entries].flags = GAVL_PACKET_KEYFRAME;
-  idx->entries[idx->num_entries].duration   = duration;
-
-  /* Update indices */
-  if(s)
-    {
-    if(s->first_index_position > idx->num_entries)
-      s->first_index_position = idx->num_entries;
-    if(s->last_index_position < idx->num_entries)
-      s->last_index_position = idx->num_entries;
-    }
-  
-  idx->num_entries++;
-  }
 
 void gavl_packet_index_set_durations(gavl_packet_index_t * idx,
                                    bgav_stream_t * s)
@@ -138,6 +63,7 @@ void gavl_packet_index_set_durations(gavl_packet_index_t * idx,
       idx->entries[s->last_index_position].pts;
   }
 
+#if 0
 typedef struct
   {
   int index;
@@ -203,7 +129,7 @@ static void fix_b_pyramid(gavl_packet_index_t * idx,
     next_ip_frame = index+1;
 
     while((next_ip_frame < num_entries) &&
-          (entries[next_ip_frame].type == BGAV_CODING_TYPE_B))
+          (entries[next_ip_frame].type == GAVL_PACKET_TYPE_B))
       {
       next_ip_frame++;
       }
@@ -242,7 +168,7 @@ static void fix_b_pyramid(gavl_packet_index_t * idx,
   }
 
 void gavl_packet_index_set_coding_types(gavl_packet_index_t * idx,
-                                      bgav_stream_t * s)
+                                        bgav_stream_t * s)
   {
   int i;
   int64_t max_time = GAVL_TIME_UNDEFINED;
@@ -264,24 +190,24 @@ void gavl_packet_index_set_coding_types(gavl_packet_index_t * idx,
     if(max_time == GAVL_TIME_UNDEFINED)
       {
       if(idx->entries[i].flags & GAVL_PACKET_KEYFRAME)
-        idx->entries[i].flags |= BGAV_CODING_TYPE_I;
+        idx->entries[i].flags |= GAVL_PACKET_TYPE_I;
       else
-        idx->entries[i].flags |= BGAV_CODING_TYPE_P;
+        idx->entries[i].flags |= GAVL_PACKET_TYPE_P;
       max_time = idx->entries[i].pts;
       }
     else if(idx->entries[i].pts > max_time)
       {
       if(idx->entries[i].flags & GAVL_PACKET_KEYFRAME)
-        idx->entries[i].flags |= BGAV_CODING_TYPE_I;
+        idx->entries[i].flags |= GAVL_PACKET_TYPE_I;
       else
-        idx->entries[i].flags |= BGAV_CODING_TYPE_P;
+        idx->entries[i].flags |= GAVL_PACKET_TYPE_P;
       max_time = idx->entries[i].pts;
       }
     else
       {
-      idx->entries[i].flags |= BGAV_CODING_TYPE_B;
+      idx->entries[i].flags |= GAVL_PACKET_TYPE_B;
       if(!b_pyramid &&
-         (last_coding_type == BGAV_CODING_TYPE_B) &&
+         (last_coding_type == GAVL_PACKET_TYPE_B) &&
          (idx->entries[i].pts < last_pts))
         {
         b_pyramid = 1;
@@ -296,123 +222,8 @@ void gavl_packet_index_set_coding_types(gavl_packet_index_t * idx,
     {
     gavl_log(GAVL_LOG_INFO, LOG_DOMAIN,
              "Detected B-pyramid, fixing possibly broken timestamps");
-    s->flags |= STREAM_B_PYRAMID;
     fix_b_pyramid(idx, s, num_entries);
     }
   
   }
-
-void gavl_packet_index_set_stream_stats(gavl_packet_index_t * idx,
-                                      bgav_stream_t * s)
-  {
-  int i;
-  gavl_stream_stats_init(&s->stats);
-  
-  for(i = 0; i < idx->num_entries; i++)
-    {
-    if(idx->entries[i].stream_id != s->stream_id)
-      continue;
-    
-    gavl_stream_stats_update_params(&s->stats,
-                                    idx->entries[i].pts,
-                                    idx->entries[i].duration,
-                                    idx->entries[i].size,
-                                    idx->entries[i].flags & 0xFFFF);
-    }
-  }
-
-
-void gavl_packet_index_seek(gavl_packet_index_t * idx,
-                          bgav_stream_t * s,
-                          int64_t * time, int scale)
-  {
-  int i;
-  int64_t time_scaled;
-
-  if(s->first_index_position >= s->last_index_position)
-    return;
-  
-  time_scaled = gavl_time_rescale(scale, s->timescale, *time);
-  
-  i = s->last_index_position;
-
-  /* Go to frame before */
-  while(i >= s->first_index_position)
-    {
-    if((idx->entries[i].stream_id == s->stream_id) &&
-       (idx->entries[i].pts <= time_scaled))
-      {
-      break;
-      }
-    i--;
-    }
-  
-  if(i < s->first_index_position)
-    i = s->first_index_position;
-
-  *time = gavl_time_rescale(s->timescale, scale, idx->entries[i].pts);
-  
-  /* Go to keyframe before */
-  while(i >= s->first_index_position)
-    {
-    if((idx->entries[i].stream_id == s->stream_id) &&
-       (idx->entries[i].flags & GAVL_PACKET_KEYFRAME))
-      {
-      break;
-      }
-    i--;
-    }
-  
-  if(i < s->first_index_position)
-    i = s->first_index_position;
-
-  STREAM_SET_SYNC(s, idx->entries[i].pts);
-  
-  /* Handle audio preroll */
-  if((s->type == GAVL_STREAM_AUDIO) && s->data.audio.preroll)
-    {
-    while(i >= s->first_index_position)
-      {
-      if((idx->entries[i].stream_id == s->stream_id) &&
-         (idx->entries[i].flags & GAVL_PACKET_KEYFRAME) &&
-         (STREAM_GET_SYNC(s) - idx->entries[i].pts >= s->data.audio.preroll))
-        {
-        break;
-        }
-      i--;
-      }
-    }
-
-  if(i < s->first_index_position)
-    i = s->first_index_position;
-
-  s->index_position = i;
-  STREAM_SET_SYNC(s, idx->entries[i].pts);
-  }
-
-void gavl_packet_index_dump(gavl_packet_index_t * idx)
-  {
-  int i;
-  bgav_dprintf( "superindex %d entries:\n", idx->num_entries);
-  for(i = 0; i < idx->num_entries; i++)
-    {
-    bgav_dprintf( "  No: %6d ID: %d K: %d O: %" PRId64 " T: %" PRId64 " D: %d S: %6d", 
-                  i,
-                  idx->entries[i].stream_id,
-                  !!(idx->entries[i].flags & GAVL_PACKET_KEYFRAME),
-                  idx->entries[i].offset,
-                  idx->entries[i].pts,
-                  idx->entries[i].duration,
-                  idx->entries[i].size);
-    bgav_dprintf(" PT: %s\n",
-                 bgav_coding_type_to_string(idx->entries[i].flags));
-    }
-  }
-
-
-void gavl_packet_index_clear(gavl_packet_index_t * si)
-  {
-  si->num_entries = 0;
-  si->flags = 0;
-  memset(si->entries, 0, sizeof(*si->entries) * si->entries_alloc);
-  }
+#endif

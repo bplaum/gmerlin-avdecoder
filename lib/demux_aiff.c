@@ -394,8 +394,8 @@ static int open_aiff(bgav_demuxer_context_t * ctx)
     format = "AIFF";
 
   bgav_track_set_format(ctx->tt->cur, format, "audio/aiff");
-  
-  ctx->index_mode = INDEX_MODE_PCM;
+
+  ctx->flags |= BGAV_DEMUXER_SAMPLE_ACCURATE;
   return 1;
   }
 

@@ -59,7 +59,7 @@ static int parse_frame_dvdsub(bgav_packet_parser_t * parser, bgav_packet_t * p)
   uint16_t ctrl_offset, next_ctrl_offset;
   uint8_t cmd;
   
-  PACKET_SET_CODING_TYPE(p, BGAV_CODING_TYPE_I);
+  PACKET_SET_CODING_TYPE(p, GAVL_PACKET_TYPE_I);
 
   ctrl_offset = GAVL_PTR_2_16BE(p->buf.buf+2);
   //  ctrl_start = ctrl_offset;

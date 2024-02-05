@@ -202,8 +202,8 @@ static int open_au(bgav_demuxer_context_t * ctx)
     }
   
   bgav_track_set_format(ctx->tt->cur, "AU/SND", "audio/x-au");
-  
-  ctx->index_mode = INDEX_MODE_PCM;
+
+  ctx->flags |= BGAV_DEMUXER_SAMPLE_ACCURATE;
   return 1;
   }
 

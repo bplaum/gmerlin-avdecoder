@@ -413,7 +413,7 @@ static gavl_source_status_t get_packet(bgav_stream_t * s)
     if(priv->skip_mode == SKIP_MODE_FAST)
       {
       /* Didn't have "our" I/P-frame yet: Don't even look at this */
-      if((PACKET_GET_CODING_TYPE(p) == BGAV_CODING_TYPE_B) &&
+      if((PACKET_GET_CODING_TYPE(p) == GAVL_PACKET_TYPE_B) &&
          !PACKET_GET_REF(p))
         {
         done_data(s, p);
@@ -426,7 +426,7 @@ static gavl_source_status_t get_packet(bgav_stream_t * s)
 
     if(priv->skip_mode)
       {
-      if(PACKET_GET_CODING_TYPE(p) == BGAV_CODING_TYPE_B)
+      if(PACKET_GET_CODING_TYPE(p) == GAVL_PACKET_TYPE_B)
         {
         if(!(priv->flags & B_REFERENCE) &&
            (p->pts + p->duration < priv->skip_time))
@@ -775,10 +775,7 @@ static int init_ffmpeg(bgav_stream_t * s)
     gavl_hexdump(priv->ctx->extradata, priv->ctx->extradata_size, 16);
 #endif
     }
-  
-  if(s->action == BGAV_STREAM_PARSE) // FIXME: Not needed?
-    return 1;
-  
+    
   priv->ctx->codec_type = AVMEDIA_TYPE_VIDEO;
   
   priv->ctx->bit_rate = 0;

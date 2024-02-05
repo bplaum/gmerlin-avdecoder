@@ -26,6 +26,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include <unistd.h>
+
+
 
 #define LOG_DOMAIN "demuxer"
 
@@ -373,7 +379,7 @@ void bgav_demuxer_set_durations_from_superindex(bgav_demuxer_context_t * ctx, bg
   for(i = 0; i < t->num_streams; i++)
     {
     gavl_packet_index_set_durations(ctx->si, t->streams[i]);
-    gavl_packet_index_set_stream_stats(ctx->si, t->streams[i]);
+    gavl_packet_index_set_stream_stats(ctx->si, t->streams[i]->stream_id, &t->streams[i]->stats);
     i++;
     }
   
@@ -384,27 +390,40 @@ void bgav_demuxer_check_interleave(bgav_demuxer_context_t * ctx)
   if(!ctx->si)
     return;
   
-  if((bgav_track_num_media_streams(ctx->tt->cur) > 1) &&
-     ((ctx->tt->cur->streams[0]->last_index_position < ctx->tt->cur->streams[1]->first_index_position) ||
-      (ctx->tt->cur->streams[1]->last_index_position < ctx->tt->cur->streams[0]->first_index_position)))
+  if(bgav_track_num_media_streams(ctx->tt->cur) > 1)
     {
-    ctx->flags = BGAV_DEMUXER_NONINTERLEAVED;
+    int first_1, first_2, last_1, last_2;
+
+    first_1 = gavl_packet_index_get_first(ctx->si,
+                                          ctx->tt->cur->streams[0]->stream_id);
+    first_2 = gavl_packet_index_get_first(ctx->si,
+                                          ctx->tt->cur->streams[1]->stream_id);
+
+    last_1 = gavl_packet_index_get_last(ctx->si,
+                                         ctx->tt->cur->streams[0]->stream_id);
+    last_2 = gavl_packet_index_get_last(ctx->si,
+                                          ctx->tt->cur->streams[1]->stream_id);
+    
+    if((last_2 < first_1) || (last_1 < first_2))
+      {
+      ctx->flags = BGAV_DEMUXER_NONINTERLEAVED;
+      }
     }
   }
 
 static int read_packet_superindex(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
                                   gavl_packet_t * p, int pos)
   {
-  if(ctx->si->entries[pos].offset > ctx->input->position)
-    bgav_input_skip(ctx->input, ctx->si->entries[pos].offset - ctx->input->position);
-  else if(ctx->si->entries[pos].offset < ctx->input->position)
+  if(ctx->si->entries[pos].position > ctx->input->position)
+    bgav_input_skip(ctx->input, ctx->si->entries[pos].position - ctx->input->position);
+  else if(ctx->si->entries[pos].position < ctx->input->position)
     {
     if(!(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Couldn't seek backwards");
       return 0;
       }
-    bgav_input_seek(ctx->input, ctx->si->entries[pos].offset, SEEK_SET);
+    bgav_input_seek(ctx->input, ctx->si->entries[pos].position, SEEK_SET);
     }
   
   p->buf.len = ctx->si->entries[pos].size;
@@ -445,12 +464,12 @@ gavl_source_status_t bgav_demuxer_next_packet_si(bgav_demuxer_context_t * ctx)
     
     /* If the file is truely noninterleaved, this isn't neccessary, but who knows? */
     while((ctx->si->entries[s->index_position].stream_id != s->stream_id) &&
-          (s->index_position <= s->last_index_position))
+          (s->index_position < ctx->si->num_entries))
       {
       s->index_position++;
       }
 
-    if(s->index_position > s->last_index_position)
+    if(s->index_position >= ctx->si->num_entries)
       {
       ctx->request_stream->flags |= STREAM_EOF_D;
       return GAVL_SOURCE_EOF;
@@ -598,7 +617,7 @@ static void parse_start(bgav_demuxer_context_t * ctx, int type_mask, int dur)
       ctx->tt->cur->streams[j]->psink_parse =
         gavl_packet_sink_create(NULL,
                                 bgav_stream_put_packet_get_duration,
-                                &ctx->tt->cur->streams[j]);
+                                ctx->tt->cur->streams[j]);
       
       gavl_packet_buffer_set_calc_frame_durations(ctx->tt->cur->streams[j]->pbuffer, 1);
       }
@@ -607,7 +626,7 @@ static void parse_start(bgav_demuxer_context_t * ctx, int type_mask, int dur)
       ctx->tt->cur->streams[j]->psink_parse =
         gavl_packet_sink_create(NULL,
                                 bgav_stream_put_packet_parse,
-                                &ctx->tt->cur->streams[j]);
+                                ctx->tt->cur->streams[j]);
 
       gavl_packet_buffer_set_mark_last(ctx->tt->cur->streams[j]->pbuffer, 1);
       gavl_packet_buffer_set_calc_frame_durations(ctx->tt->cur->streams[j]->pbuffer, 1);
@@ -623,6 +642,7 @@ static void parse_end(bgav_demuxer_context_t * ctx, int type_mask)
     {
     if(!(ctx->tt->cur->streams[j]->type & type_mask))
       continue;
+    
     ctx->tt->cur->streams[j]->action = BGAV_STREAM_MUTE;
     gavl_packet_buffer_clear(ctx->tt->cur->streams[j]->pbuffer);
     if(ctx->tt->cur->streams[j]->psink_parse)
@@ -756,22 +776,96 @@ void bgav_demuxer_set_clock_time(bgav_demuxer_context_t * ctx,
   
   }
 
-#if 0
+#if 1
 void bgav_demuxer_parse_track(bgav_demuxer_context_t * ctx)
   {
   int type_mask = GAVL_STREAM_AUDIO | GAVL_STREAM_VIDEO | GAVL_STREAM_TEXT | GAVL_STREAM_OVERLAY;
 
+  ctx->si = gavl_packet_index_create(0);
+  
   parse_start(ctx, type_mask, 0);
   
   bgav_input_seek(ctx->input, ctx->tt->cur->data_start, SEEK_SET);
-  ctx->demuxer->post_seek_resync(ctx);
+
+  if(ctx->demuxer->post_seek_resync)
+    ctx->demuxer->post_seek_resync(ctx);
   
   while(parse_packet(ctx))
     ;
+
+  gavl_packet_index_sort_by_position(ctx->si);
   
   parse_end(ctx, type_mask);
   
   }
+
+gavl_packet_index_t * bgav_get_packet_index(const char * url)
+  {
+  bgav_t * b = NULL;
+  char hash[GAVL_MD5_LENGTH];
+  gavl_packet_index_t * ret = NULL;
+
+  char * filename = NULL;
+  char * cache_dir = NULL;
+  gavl_time_t before;
+  gavl_time_t duration;
+  struct stat st_uri;
+  struct stat st_idx;
+  
+  /* Read cached entry */
+  gavl_md5_buffer_str(url, strlen(url), hash);
+  
+  cache_dir = gavl_search_cache_dir(PACKAGE, "indices");
+  filename = gavl_sprintf("%s/%s", cache_dir, hash);
+  
+  if(!stat(filename, &st_idx) &&
+     !stat(url, &st_uri) &&
+     (st_uri.st_mtime < st_idx.st_mtime) &&
+     (ret = gavl_packet_index_load(filename)))
+    {
+    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Loaded packet index from %s", filename);
+    gavl_packet_index_dump(ret);
+    goto end;
+    }
+  
+  before = gavl_time_get_monotonic();
+  b = bgav_create();
+
+  if(!bgav_open(b, url))
+    goto end;
+
+  bgav_select_track(b, 0);
+  bgav_demuxer_parse_track(b->demuxer);
+
+  ret = b->demuxer->si;
+  b->demuxer->si = NULL;
+
+  duration = gavl_time_get_monotonic() - before;
+  
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Build packet index in %f seconds", gavl_time_to_seconds(duration));
+  gavl_packet_index_dump(ret);
+  
+  gavl_packet_index_save(ret, filename);
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Saved packet index to %s", filename);
+  
+  if(duration > GAVL_TIME_SCALE * 2)
+    {
+    }
+  
+  end:
+
+  if(cache_dir)
+    free(cache_dir);
+  if(filename)
+    free(filename);
+
+  if(b)
+    bgav_close(b);
+  return ret;
+  }
+
+
+
 #endif
 
 #define RAW_BUFFER_LEN 1024

@@ -330,6 +330,7 @@ static int open_mpegts(bgav_demuxer_context_t * ctx)
     ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
   
   ctx->flags |= BGAV_DEMUXER_GET_DURATION;
+  ctx->index_mode = INDEX_MODE_SIMPLE;
   return 1;
   }
 

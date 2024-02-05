@@ -151,17 +151,17 @@ static int parse_frame_dirac(bgav_packet_parser_t * parser,
         
         if(ph.num_refs == 0)
           {
-          PACKET_SET_CODING_TYPE(p, BGAV_CODING_TYPE_I);
+          PACKET_SET_CODING_TYPE(p, GAVL_PACKET_TYPE_I);
           priv->pic_num_max = ph.pic_num;
           }
         else if((priv->pic_num_max >= 0) &&
            (ph.pic_num < priv->pic_num_max))
           {
-          PACKET_SET_CODING_TYPE(p, BGAV_CODING_TYPE_B);
+          PACKET_SET_CODING_TYPE(p, GAVL_PACKET_TYPE_B);
           }
         else
           {
-          PACKET_SET_CODING_TYPE(p, BGAV_CODING_TYPE_P);
+          PACKET_SET_CODING_TYPE(p, GAVL_PACKET_TYPE_P);
           priv->pic_num_max = ph.pic_num;
           }
         if(p->duration <= 0)

@@ -53,8 +53,8 @@ struct bgav_packet_timer_s
   int b_pyramid;
   };
 
-// #define IS_B(idx) (PACKET_GET_CODING_TYPE(pt->packets[idx]) == BGAV_CODING_TYPE_B)
-#define IS_IP(idx) ((PACKET_GET_CODING_TYPE(pt->packets[idx]) != BGAV_CODING_TYPE_B) && \
+// #define IS_B(idx) (PACKET_GET_CODING_TYPE(pt->packets[idx]) == GAVL_PACKET_TYPE_B)
+#define IS_IP(idx) ((PACKET_GET_CODING_TYPE(pt->packets[idx]) != GAVL_PACKET_TYPE_B) && \
                     !(pt->packets[idx]->flags & GAVL_PACKET_NOOUTPUT))
 
 static gavl_source_status_t
@@ -94,7 +94,7 @@ insert_packet(bgav_packet_timer_t * pt, bgav_packet_t ** ret, int force)
     bgav_packet_pool_put(pt->s->pp, p);
     }
   
-  if(PACKET_GET_CODING_TYPE(p) == BGAV_CODING_TYPE_B)
+  if(PACKET_GET_CODING_TYPE(p) == GAVL_PACKET_TYPE_B)
     {
     if(pt->num_ip_frames < 2)
       PACKET_SET_SKIP(p);
@@ -193,7 +193,7 @@ insert_packet_duration_from_pts(bgav_packet_timer_t * pt,
   
   /* Detect B-Pyramid */
 
-  if((PACKET_GET_CODING_TYPE(p) == BGAV_CODING_TYPE_B) && !PACKET_GET_SKIP(p))
+  if((PACKET_GET_CODING_TYPE(p) == GAVL_PACKET_TYPE_B) && !PACKET_GET_SKIP(p))
     {
     if(!pt->b_pyramid &&
        (pt->last_b_pts != GAVL_TIME_UNDEFINED) &&
@@ -237,7 +237,7 @@ static gavl_source_status_t get_next_ip_duration_from_pts(bgav_packet_timer_t * 
       *ret = -1;
       return st;
       }
-    if(PACKET_GET_CODING_TYPE(p) != BGAV_CODING_TYPE_B)
+    if(PACKET_GET_CODING_TYPE(p) != GAVL_PACKET_TYPE_B)
       {
       *ret = pt->num_packets-1;
       return GAVL_SOURCE_OK;
@@ -462,7 +462,7 @@ next_packet_pts_from_dts(bgav_packet_timer_t * pt, int force)
   else if((pt->num_packets < 2) && (st == GAVL_SOURCE_AGAIN))
     return st;
   
-  if(PACKET_GET_CODING_TYPE(pt->packets[0]) != BGAV_CODING_TYPE_B)
+  if(PACKET_GET_CODING_TYPE(pt->packets[0]) != GAVL_PACKET_TYPE_B)
     {
     /* Last packet (non B) */
     if(pt->num_packets == 1)
@@ -473,7 +473,7 @@ next_packet_pts_from_dts(bgav_packet_timer_t * pt, int force)
     else
       {
       /* IP , PP -> output first packet */
-      if(PACKET_GET_CODING_TYPE(pt->packets[1]) != BGAV_CODING_TYPE_B)
+      if(PACKET_GET_CODING_TYPE(pt->packets[1]) != GAVL_PACKET_TYPE_B)
         {
         set_pts_from_dts(pt, pt->packets[0]);
         return GAVL_SOURCE_OK;
@@ -498,13 +498,13 @@ next_packet_pts_from_dts(bgav_packet_timer_t * pt, int force)
             else
               return GAVL_SOURCE_EOF; // Cache full
             }
-          if(PACKET_GET_CODING_TYPE(p) != BGAV_CODING_TYPE_B)
+          if(PACKET_GET_CODING_TYPE(p) != GAVL_PACKET_TYPE_B)
             break;
           }
 
         for(i = 1; i < pt->num_packets; i++)
           {
-          if(PACKET_GET_CODING_TYPE(pt->packets[i]) != BGAV_CODING_TYPE_B)
+          if(PACKET_GET_CODING_TYPE(pt->packets[i]) != GAVL_PACKET_TYPE_B)
             break;
           
           if(!PACKET_GET_SKIP(pt->packets[i]))

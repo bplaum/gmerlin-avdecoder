@@ -423,15 +423,15 @@ static int parse_frame_avc(bgav_packet_parser_t * parser,
           {
           case 2:
           case 7:
-            p->flags |= BGAV_CODING_TYPE_I;
+            p->flags |= GAVL_PACKET_TYPE_I;
             break;
           case 0:
           case 5:
-            p->flags |= BGAV_CODING_TYPE_P;
+            p->flags |= GAVL_PACKET_TYPE_P;
             break;
           case 1:
           case 6:
-            p->flags |= BGAV_CODING_TYPE_B;
+            p->flags |= GAVL_PACKET_TYPE_B;
             break;
           default: /* Assume the worst */
             fprintf(stderr, "Unknown slice type %d\n", sh.slice_type);
@@ -742,15 +742,15 @@ static int parse_frame_h264(bgav_packet_parser_t * parser, bgav_packet_t * p)
             {
             case 2:
             case 7:
-              p->flags |= BGAV_CODING_TYPE_I;
+              p->flags |= GAVL_PACKET_TYPE_I;
               break;
             case 0:
             case 5:
-              p->flags |= BGAV_CODING_TYPE_P;
+              p->flags |= GAVL_PACKET_TYPE_P;
               break;
             case 1:
             case 6:
-              p->flags |= BGAV_CODING_TYPE_B;
+              p->flags |= GAVL_PACKET_TYPE_B;
               break;
             default: /* Assume the worst */
               fprintf(stderr, "Unknown slice type %d\n", sh.slice_type);
@@ -774,13 +774,13 @@ static int parse_frame_h264(bgav_packet_parser_t * parser, bgav_packet_t * p)
         switch(primary_pic_type)
           {
           case 0:
-            p->flags |= BGAV_CODING_TYPE_I;
+            p->flags |= GAVL_PACKET_TYPE_I;
             break;
           case 1:
-            p->flags |= BGAV_CODING_TYPE_P;
+            p->flags |= GAVL_PACKET_TYPE_P;
             break;
           default: /* Assume the worst */
-            p->flags |= BGAV_CODING_TYPE_B;
+            p->flags |= GAVL_PACKET_TYPE_B;
             break;
           }
 #endif

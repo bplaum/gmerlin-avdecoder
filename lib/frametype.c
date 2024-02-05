@@ -45,16 +45,16 @@ static void set_packet_type(bgav_frametype_detector_t * fd,
   
   if(PACKET_GET_KEYFRAME(p))
     {
-    coding_type = BGAV_CODING_TYPE_I;
+    coding_type = GAVL_PACKET_TYPE_I;
     fd->max_pts = p->pts;
     }
   else if(p->pts < fd->max_pts)
     {
-    coding_type = BGAV_CODING_TYPE_B;
+    coding_type = GAVL_PACKET_TYPE_B;
     }
   else
     {
-    coding_type = BGAV_CODING_TYPE_P;
+    coding_type = GAVL_PACKET_TYPE_P;
     fd->max_pts = p->pts;
     }
   PACKET_SET_CODING_TYPE(p, coding_type);
@@ -123,7 +123,7 @@ static int initialize(bgav_frametype_detector_t * fd)
     set_packet_type(fd, p);
     put_packet(fd, p);
     
-    if(PACKET_GET_CODING_TYPE(p) == BGAV_CODING_TYPE_B)
+    if(PACKET_GET_CODING_TYPE(p) == GAVL_PACKET_TYPE_B)
       {
       fd->s->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
       break;

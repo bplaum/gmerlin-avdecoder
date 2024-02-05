@@ -223,7 +223,7 @@ static int open_8svx(bgav_demuxer_context_t * ctx)
     ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
 
   bgav_track_set_format(ctx->tt->cur, "8SVX", NULL);
-  ctx->index_mode = INDEX_MODE_PCM;
+  ctx->flags |= BGAV_DEMUXER_SAMPLE_ACCURATE;
   return 1;
   }
 

@@ -307,13 +307,13 @@ int bgav_mpv_picture_header_parse(bgav_mpv_picture_header_t * ret,
   switch(type)
     {
     case 1:
-      ret->coding_type = BGAV_CODING_TYPE_I;
+      ret->coding_type = GAVL_PACKET_TYPE_I;
       break;
     case 2:
-      ret->coding_type = BGAV_CODING_TYPE_P;
+      ret->coding_type = GAVL_PACKET_TYPE_P;
       break;
     case 3:
-      ret->coding_type = BGAV_CODING_TYPE_B;
+      ret->coding_type = GAVL_PACKET_TYPE_B;
       break;
     default:
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,

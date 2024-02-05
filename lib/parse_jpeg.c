@@ -139,7 +139,7 @@ static int parse_frame_jpeg(bgav_packet_parser_t * parser, bgav_packet_t * p)
   {
   jpeg_priv_t * priv = parser->priv;
   
-  PACKET_SET_CODING_TYPE(p, BGAV_CODING_TYPE_I);
+  PACKET_SET_CODING_TYPE(p, GAVL_PACKET_TYPE_I);
 
   /* Extract format */
   if(!priv->have_format)

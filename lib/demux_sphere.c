@@ -298,7 +298,7 @@ static int open_sphere(bgav_demuxer_context_t * ctx)
   
   bgav_track_set_format(ctx->tt->cur, "NIST SPHERE", NULL);
   
-  ctx->index_mode = INDEX_MODE_PCM;
+  ctx->flags |= BGAV_DEMUXER_SAMPLE_ACCURATE;
   
   if(h.SampleByteFormat)
     free(h.SampleByteFormat);

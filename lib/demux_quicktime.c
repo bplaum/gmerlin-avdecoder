@@ -213,13 +213,13 @@ static void bgav_qt_moof_to_superindex(bgav_demuxer_context_t * ctx,
             s->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES; 
           }
         
-        gavl_packet_index_add_packet(si, s,
-                                   offset,
-                                   size,
-                                   stream_id,
-                                   timestamp,
-                                   keyframe,
-                                   duration);
+        gavl_packet_index_add(si, 
+                              offset,
+                              size,
+                              stream_id,
+                              timestamp,
+                              keyframe ? GAVL_PACKET_KEYFRAME : 0,
+                              duration);
         
         sp->dts += duration;
         offset += size;
@@ -368,9 +368,8 @@ static void add_packet(bgav_demuxer_context_t * ctx,
                        int chunk_size)
   {
   if(stream_id >= 0)
-    gavl_packet_index_add_packet(ctx->si, s,
-                               offset, chunk_size,
-                               stream_id, timestamp, keyframe, duration);
+    gavl_packet_index_add(ctx->si, offset, chunk_size,
+                          stream_id, timestamp, keyframe ? GAVL_PACKET_KEYFRAME : 0, duration);
   
   if(index && !ctx->si->entries[index-1].size)
     {
@@ -383,7 +382,7 @@ static void add_packet(bgav_demuxer_context_t * ctx,
         {
         ctx->si->entries[index-1].size =
           priv->mdats[priv->current_mdat].start +
-          priv->mdats[priv->current_mdat].size - ctx->si->entries[index-1].offset;
+          priv->mdats[priv->current_mdat].size - ctx->si->entries[index-1].position;
         }
       while(offset >= priv->mdats[priv->current_mdat].start +
             priv->mdats[priv->current_mdat].size)
@@ -396,7 +395,7 @@ static void add_packet(bgav_demuxer_context_t * ctx,
       if(!ctx->si->entries[index-1].size)
         {
         ctx->si->entries[index-1].size =
-        offset - ctx->si->entries[index-1].offset;
+        offset - ctx->si->entries[index-1].position;
         }
       }
     }
@@ -810,7 +809,7 @@ static void build_index(bgav_demuxer_context_t * ctx)
     ctx->si->entries[ctx->si->num_entries-1].size =
       priv->mdats[priv->current_mdat].start +
       priv->mdats[priv->current_mdat].size -
-      ctx->si->entries[ctx->si->num_entries-1].offset;
+      ctx->si->entries[ctx->si->num_entries-1].position;
   
   free(chunk_indices);
   }
@@ -1970,7 +1969,6 @@ static void fix_index(bgav_demuxer_context_t * ctx)
         gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
                  "Dirac stream has no ctts");
         ctx->index_mode = INDEX_MODE_SI_PARSE;
-        s->index_mode = INDEX_MODE_SIMPLE;
         bgav_stream_set_parse_frame(s);
         }
       }
@@ -2107,7 +2105,8 @@ static int open_quicktime(bgav_demuxer_context_t * ctx)
     return 0;
 
   /* Quicktime is almost always sample accurate */
-  ctx->index_mode = INDEX_MODE_SI_SA;
+  
+  ctx->flags |= BGAV_DEMUXER_SAMPLE_ACCURATE;
   
   /* Fix index (probably changing index mode) */
   fix_index(ctx);
@@ -2118,33 +2117,21 @@ static int open_quicktime(bgav_demuxer_context_t * ctx)
   
   priv->current_mdat = 0;
 
-#if 0
-  if((ctx->input->position != priv->mdats[priv->current_mdat].start) &&
-     (ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
-    bgav_input_seek(ctx->input, priv->mdats[priv->current_mdat].start, SEEK_SET);
-  
-  /* Skip until first chunk */
-  
-  if(priv->mdats && (priv->mdats[priv->current_mdat].start < ctx->si->entries[0].offset))
-    bgav_input_skip(ctx->input,
-                    ctx->si->entries[0].offset -
-                    priv->mdats[priv->current_mdat].start);
-#else
 
   if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
     {
-    bgav_input_seek(ctx->input, ctx->si->entries[0].offset, SEEK_SET);
+    bgav_input_seek(ctx->input, ctx->si->entries[0].position, SEEK_SET);
     }
-  else if(ctx->input->position < ctx->si->entries[0].offset)
-    bgav_input_skip(ctx->input, ctx->si->entries[0].offset - ctx->input->position);
-  
-#endif
+  else if(ctx->input->position < ctx->si->entries[0].position)
+    bgav_input_skip(ctx->input, ctx->si->entries[0].position - ctx->input->position);
 
+#if 0 // ?
   if(priv->fragmented)
     {
     /* Read first mdat */
     }
-
+#endif
+  
   i = 0;
 
   while(ftyps[i].format)
@@ -2330,7 +2317,6 @@ const bgav_demuxer_t bgav_demuxer_quicktime =
     .probe =       probe_quicktime,
     .open =        open_quicktime,
     .next_packet = next_packet_quicktime,
-    //    .seek =        seek_quicktime,
     .close =       close_quicktime
   };
 

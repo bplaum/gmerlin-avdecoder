@@ -363,7 +363,6 @@ static void init_stream(bgav_stream_t * s, uint32_t fourcc,
                         int stream_id)
   {
   s->timescale = 90000;
-  s->index_mode = INDEX_MODE_SIMPLE;
   s->fourcc = fourcc;
   s->stream_id = stream_id;
   }
@@ -496,7 +495,6 @@ static int next_packet(bgav_demuxer_context_t * ctx,
           if(!stream && priv->find_streams)
             {
             stream = bgav_track_add_audio_stream(ctx->tt->cur, ctx->opt);
-            stream->index_mode = INDEX_MODE_SIMPLE;
             stream->timescale = 90000;
             stream->fourcc = BGAV_MK_FOURCC('L', 'P', 'C', 'M');
             stream->stream_id = priv->pes_header.stream_id;
@@ -1025,7 +1023,7 @@ static int open_mpegps(bgav_demuxer_context_t * ctx)
     bgav_stream_set_parse_full(s);
     }
     
-  ctx->index_mode = INDEX_MODE_MIXED;
+  ctx->index_mode = INDEX_MODE_SIMPLE;
 
   return 1;
   }

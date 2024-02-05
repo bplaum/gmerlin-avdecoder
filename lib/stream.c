@@ -126,7 +126,7 @@ void bgav_stream_stop(bgav_stream_t * s)
     }
 
   bgav_stream_clear(s);
-  s->index_position = s->first_index_position;
+  s->index_position = 0;
   
   }
 
@@ -279,10 +279,7 @@ void bgav_stream_init(bgav_stream_t * stream, const bgav_options_t * opt)
   {
   memset(stream, 0, sizeof(*stream));
   STREAM_UNSET_SYNC(stream);
-  stream->first_index_position = INT_MAX;
 
-  /* need to set this to -1 so we know, if this stream has packets at all */
-  stream->last_index_position = -1; 
   stream->index_position = -1;
   stream->opt = opt;
 
@@ -299,8 +296,6 @@ void bgav_stream_free(bgav_stream_t * s)
   if(s->cleanup)
     s->cleanup(s);
 
-  gavl_seek_index_free(&s->index);
-  
   if(s->pbuffer)
     gavl_packet_buffer_destroy(s->pbuffer);
   
@@ -431,6 +426,8 @@ void bgav_stream_done_packet_write(bgav_stream_t * s, bgav_packet_t * p)
   bgav_packet_dump(p);
 #endif
 
+  p->id = s->stream_id;
+  
   s->in_position++;
 
   if(!(s->flags & STREAM_WRITE_STARTED))
@@ -460,6 +457,9 @@ void bgav_stream_done_packet_write(bgav_stream_t * s, bgav_packet_t * p)
       s->data.video.pal_sent = 1;
       }
     }
+  else // All non-video streams have only I-frames (hopefully)
+    p->flags |= GAVL_PACKET_KEYFRAME;
+  
   /* Padding (if fourcc != gavl) */
   if(p->buf.buf)
     {
@@ -653,6 +653,8 @@ gavl_sink_status_t bgav_stream_put_packet_parse(void * priv, gavl_packet_t * p)
   {
   bgav_stream_t * s = priv;
   gavl_stream_stats_update(&s->stats, p);
-  gavl_seek_index_append_packet(&s->index, p, s->ci->flags);
+  
+  gavl_packet_index_add_packet(s->demuxer->si, p);
+  
   return GAVL_SINK_OK;
   }

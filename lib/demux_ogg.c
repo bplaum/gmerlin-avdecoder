@@ -1893,10 +1893,10 @@ static gavl_source_status_t next_packet_ogg(bgav_demuxer_context_t * ctx)
           if(!(priv->op.packet[0] & 0x40))
             {
             PACKET_SET_KEYFRAME(p);
-            PACKET_SET_CODING_TYPE(p, BGAV_CODING_TYPE_I);
+            PACKET_SET_CODING_TYPE(p, GAVL_PACKET_TYPE_I);
             }
           else
-            PACKET_SET_CODING_TYPE(p, BGAV_CODING_TYPE_P);
+            PACKET_SET_CODING_TYPE(p, GAVL_PACKET_TYPE_P);
 
           // fprintf(stderr, "Granulepos: %lld\n", priv->op.granulepos);
           

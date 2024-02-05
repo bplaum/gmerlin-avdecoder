@@ -122,7 +122,6 @@ static int open_mpegvideo(bgav_demuxer_context_t * ctx)
   ctx->tt = bgav_track_table_create(1);
   
   s = bgav_track_add_video_stream(ctx->tt->cur, ctx->opt);
-  s->index_mode = INDEX_MODE_SIMPLE;
   s->stream_id = BGAV_DEMUXER_STREAM_ID_RAW;
   
   /*
@@ -140,7 +139,7 @@ static int open_mpegvideo(bgav_demuxer_context_t * ctx)
   bgav_track_set_format(ctx->tt->cur, "Elementary video stream",
                         "video/mpeg");
   
-  ctx->index_mode = INDEX_MODE_MIXED;
+  ctx->index_mode = INDEX_MODE_SIMPLE;
   bgav_stream_set_parse_full(s);
   
   

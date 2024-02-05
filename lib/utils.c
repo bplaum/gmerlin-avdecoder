@@ -610,18 +610,6 @@ int bgav_match_regexp(const char * str, const char * regexp)
   return ret;
   }
 
-static const char * coding_type_strings[4] =
-  {
-  "?",
-  "I",
-  "P",
-  "B"
-  };
-
-const char * bgav_coding_type_to_string(int type)
-  {
-  return coding_type_strings[type & GAVL_PACKET_TYPE_MASK];
-  }
 
 static const struct
   {

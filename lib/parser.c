@@ -163,7 +163,7 @@ static int do_parse_frame(bgav_packet_parser_t * p, gavl_packet_t * pkt)
     }
 
   /* Set keyframe flag */
-  if(PACKET_GET_CODING_TYPE(pkt) == BGAV_CODING_TYPE_I)
+  if(PACKET_GET_CODING_TYPE(pkt) == GAVL_PACKET_TYPE_I)
     PACKET_SET_KEYFRAME(pkt);
 
   //  fprintf(stderr, "Parsed frame\n");
@@ -224,7 +224,9 @@ static gavl_sink_status_t sink_put_func_full(void * priv, gavl_packet_t * pkt)
   
   pi->position = pkt->position;
   pi->size = pkt->buf.len;
-
+  
+  p->stream_id = pkt->id;
+  
   if(p->raw_position < 0)
     p->raw_position = pkt->position;
   
@@ -253,18 +255,20 @@ static gavl_sink_status_t sink_put_func_full(void * priv, gavl_packet_t * pkt)
       gavl_packet_t * pkt = gavl_packet_sink_get_packet(p->next);
       gavl_buffer_append_data_pad(&pkt->buf, p->buf.buf, p->buf.pos, GAVL_PACKET_PADDING);
       
+      pkt->id = p->stream_id;
+      
       /* Set pts */
       if(p->packets[0].pts != GAVL_TIME_UNDEFINED)
         {
         pkt->pes_pts = p->packets[0].pts;
 
-        pkt->position = p->packets[0].position;
         
         /* Don't use this pts for other frames */
         p->packets[0].pts = GAVL_TIME_UNDEFINED;
-        p->packets[0].position = -1;
+        // p->packets[0].position = -1;
         }
 
+      pkt->position = p->packets[0].position;
       
       /* Parse frame (must be done *after* pes_pts is set) */
       if(!do_parse_frame(p, pkt))
@@ -273,6 +277,9 @@ static gavl_sink_status_t sink_put_func_full(void * priv, gavl_packet_t * pkt)
         }
       if(p->stream_flags & STREAM_RAW_PACKETS)
         pkt->position = p->raw_position;
+
+      if(!(p->ci.flags & GAVL_COMPRESSION_HAS_P_FRAMES))
+        PACKET_SET_KEYFRAME(pkt);
       
       if(gavl_packet_sink_put_packet(p->next, pkt) != GAVL_SINK_OK)
         return GAVL_SINK_ERROR;

@@ -43,8 +43,9 @@ struct bgav_packet_parser_s
   gavl_dictionary_t * m;
   int packet_timescale;
   gavl_buffer_t buf;
-
+  
   int fourcc;
+  int stream_id;
   
   packet_info_t * packets;
   int num_packets;

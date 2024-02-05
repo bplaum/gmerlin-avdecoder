@@ -171,7 +171,6 @@ static int init_audio_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
       {
       case 0: /* Uncompressed, Big endian */
         s->fourcc = BGAV_MK_FOURCC('t', 'w', 'o', 's');
-        s->index_mode = INDEX_MODE_SIMPLE;
         s->data.audio.block_align = s->data.audio.format->num_channels *
           (s->data.audio.bits_per_sample / 8);
         s->stats.pts_end = 0;
@@ -187,14 +186,12 @@ static int init_audio_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
         break;
       case 2: /* MP3 */
         s->fourcc = BGAV_MK_FOURCC('.', 'm', 'p', '3');
-        s->index_mode = INDEX_MODE_SIMPLE;
 
         bgav_stream_set_parse_full(s);
         s->stats.pts_end = 0;
         break;
       case 3: /* Uncompressed, Little endian */
         s->fourcc = BGAV_MK_FOURCC('s', 'o', 'w', 't');
-        s->index_mode = INDEX_MODE_SIMPLE;
         s->data.audio.block_align = s->data.audio.format->num_channels *
           (s->data.audio.bits_per_sample / 8);
         s->stats.pts_end = 0;
@@ -213,7 +210,6 @@ static int init_audio_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
       case 10:
         s->fourcc = FOURCC_AAC;
         
-        s->index_mode = INDEX_MODE_SIMPLE;
         // ctx->index_mode = 0;
         s->stats.pts_end = 0;
         priv->need_audio_extradata = 1;
@@ -893,7 +889,7 @@ static int open_flv(bgav_demuxer_context_t * ctx)
 
   ctx->tt->cur->data_start = ctx->input->position;
 
-  ctx->index_mode = INDEX_MODE_MIXED;
+  ctx->index_mode = INDEX_MODE_SIMPLE;
   
   /* Get packets until we saw each stream at least once */
   priv->init = 1;
@@ -940,7 +936,6 @@ static int open_flv(bgav_demuxer_context_t * ctx)
     {
     if(duration != GAVL_TIME_UNDEFINED)
       {
-      vs->index_mode = INDEX_MODE_SIMPLE;
       vs->stats.pts_end = 0;
       }
     else
