@@ -24,25 +24,14 @@
 
 #include <avdec_private.h>
 
-
 bgav_packet_t * bgav_packet_create()
   {
   bgav_packet_t * ret = calloc(1, sizeof(*ret));
   return ret;
   }
 
-
 void bgav_packet_destroy(bgav_packet_t * p)
   {
   gavl_packet_free(p);
   free(p);
   }
-
-
-void gavl_packet_dump_data(bgav_packet_t * p, int bytes)
-  {
-  if(bytes > p->buf.len)
-    bytes = p->buf.len;
-  gavl_hexdump(p->buf.buf, bytes, 16);
-  }
-

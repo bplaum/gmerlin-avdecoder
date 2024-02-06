@@ -160,8 +160,6 @@ bgav_packet_t * bgav_packet_create();
 
 void bgav_packet_destroy(bgav_packet_t*);
 
-void gavl_packet_dump_data(bgav_packet_t * p, int bytes);
-
 
 /* Stream structure */ 
 
