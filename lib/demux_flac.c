@@ -82,8 +82,11 @@ static void import_seek_table(bgav_flac_seektable_t * tab,
   for(i = 0; i < tab->num_entries; i++)
     {
     ctx->si->entries[i].position = tab->entries[i].offset + offset;
-    ctx->si->entries[i].pts = tab->entries[i].sample_number;
+    ctx->si->entries[i].pts       = tab->entries[i].sample_number;
+    ctx->si->entries[i].stream_id = BGAV_DEMUXER_STREAM_ID_RAW;
+    ctx->si->entries[i].flags     = GAVL_PACKET_KEYFRAME;
     }
+  ctx->si->num_entries = tab->num_entries;
   }
 
 static int open_flac(bgav_demuxer_context_t * ctx)
