@@ -416,7 +416,7 @@ init_stream(bgav_demuxer_context_t * ctx,
     return 0;
     }
   tmp_string = NULL;
-  if(bgav_url_split(control,
+  if(gavl_url_split(control,
                     &tmp_string,
                     NULL,
                     NULL,

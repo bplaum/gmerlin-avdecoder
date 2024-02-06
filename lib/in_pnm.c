@@ -43,7 +43,7 @@ static int open_pnm(bgav_input_context_t * ctx, const char * url, char ** r)
   ctx->priv = priv;
   priv->url = gavl_sprintf("%s", url);
   
-  if(!bgav_url_split(url, NULL,
+  if(!gavl_url_split(url, NULL,
                      NULL, /* User */
                      NULL, /* Pass */
                      &host, &port, &path))

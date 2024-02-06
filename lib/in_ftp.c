@@ -152,7 +152,7 @@ static int open_ftp(bgav_input_context_t * ctx, const char * url, char ** r)
   ftp_priv_t * p;
   int ret = 0;
   
-  if(!bgav_url_split(url,
+  if(!gavl_url_split(url,
                      NULL, /* Protocol */
                      &user, /* User */
                      &pass, /* Pass */

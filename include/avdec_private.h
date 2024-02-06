@@ -1360,13 +1360,6 @@ void bgav_dprintf(const char * format, ...) __attribute__ ((format (printf, 1, 2
 void bgav_diprintf(int indent, const char * format, ...)
   __attribute__ ((format (printf, 2, 3)));
 
-int bgav_url_split(const char * url,
-                   char ** protocol,
-                   char ** user,
-                   char ** password,
-                   char ** hostname,
-                   int * port,
-                   char ** path);
 
 // char ** bgav_stringbreak(const char * str, char sep);
 // void bgav_stringbreak_free(char ** str);

@@ -251,7 +251,7 @@ static int do_connect(bgav_rtsp_t * rtsp,
   char * host = NULL;
   char * protocol = NULL;
   int ret = 0;
-  if(!bgav_url_split(rtsp->url,
+  if(!gavl_url_split(rtsp->url,
                      &protocol,
                      NULL, /* User */
                      NULL, /* Pass */

@@ -425,7 +425,7 @@ bgav_mms_t * bgav_mms_open(const bgav_options_t * opt,
   utf16_2_utf8  = bgav_charset_converter_create("UTF-16LE", BGAV_UTF8);
   
   
-  if(!bgav_url_split(url,
+  if(!gavl_url_split(url,
                      &protocol,
                      NULL, /* User */
                      NULL, /* Pass */

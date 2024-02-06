@@ -801,7 +801,7 @@ static int input_open(bgav_input_context_t * ctx,
   
   tmp_url = gavl_strdup(url);
   
-  if(bgav_url_split(tmp_url,
+  if(gavl_url_split(tmp_url,
                     &protocol,
                     NULL, /* User */
                     NULL, /* Pass */

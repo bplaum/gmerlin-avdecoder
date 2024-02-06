@@ -243,7 +243,7 @@ static bgav_http_t * http_open(bgav_http_t * ret,
 
   
   port = -1;
-  if(!bgav_url_split(url,
+  if(!gavl_url_split(url,
                      &protocol,
                      &user, /* User */
                      &pass, /* Pass */
