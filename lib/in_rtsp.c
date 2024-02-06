@@ -175,7 +175,7 @@ static int next_packet_rdt(bgav_input_context_t * ctx, int block)
 
       bgav_tcp_send(ctx->opt, fd, (uint8_t*)"RTSP/1.0 451 Parameter Not Understood\r\n",
                     strlen("RTSP/1.0 451 Parameter Not Understood\r\n"));
-      buf = bgav_sprintf("CSeq: %u\r\n\r\n", seq);
+      buf = gavl_sprintf("CSeq: %u\r\n\r\n", seq);
       bgav_tcp_send(ctx->opt, fd, (uint8_t*)buf, strlen(buf));
       free(buf);
       }
@@ -442,13 +442,13 @@ static int init_real(bgav_input_context_t * ctx, bgav_sdp_t * sdp, char * sessio
   
   real_calc_response_and_checksum(challenge2, checksum, priv->challenge1);
 
-  field = bgav_sprintf("RealChallenge2: %s, sd=%s", challenge2, checksum);
+  field = gavl_sprintf("RealChallenge2: %s, sd=%s", challenge2, checksum);
   bgav_rtsp_schedule_field(priv->r, field);free(field);
   
-  field = bgav_sprintf("If-Match: %s", session_id);
+  field = gavl_sprintf("If-Match: %s", session_id);
   bgav_rtsp_schedule_field(priv->r, field);free(field);
   bgav_rtsp_schedule_field(priv->r, "Transport: x-pn-tng/tcp;mode=play,rtp/avp/tcp;unicast;mode=play");
-  field = bgav_sprintf("%s/streamid=0", ctx->url);
+  field = gavl_sprintf("%s/streamid=0", ctx->url);
 
   if(!bgav_rtsp_request_setup(priv->r,field))
     {
@@ -459,10 +459,10 @@ static int init_real(bgav_input_context_t * ctx, bgav_sdp_t * sdp, char * sessio
   
   if(priv->rmff_header && (priv->rmff_header->prop.num_streams > 1))
     {
-    field = bgav_sprintf("If-Match: %s", session_id);
+    field = gavl_sprintf("If-Match: %s", session_id);
     bgav_rtsp_schedule_field(priv->r, field);free(field);
     bgav_rtsp_schedule_field(priv->r, "Transport: x-pn-tng/tcp;mode=play,rtp/avp/tcp;unicast;mode=play");
-    field = bgav_sprintf("%s/streamid=1", ctx->url);
+    field = gavl_sprintf("%s/streamid=1", ctx->url);
     if(!bgav_rtsp_request_setup(priv->r,field))
       {
       free(field);
@@ -473,7 +473,7 @@ static int init_real(bgav_input_context_t * ctx, bgav_sdp_t * sdp, char * sessio
 
   /* Set Parameter */
 
-  field = bgav_sprintf("Subscribe: %s", stream_rules);
+  field = gavl_sprintf("Subscribe: %s", stream_rules);
   bgav_rtsp_schedule_field(priv->r, field);free(field);
   if(!bgav_rtsp_request_setparameter(priv->r))
     goto fail;
@@ -620,12 +620,12 @@ static int init_stream_generic(bgav_input_context_t * ctx,
     sp->rtcp_fd = bgav_udp_open(ctx->opt, (*port)+1);
     if(sp->rtcp_fd < 0)
       return 0;
-    field = bgav_sprintf("Transport: RTP/AVP/UDP;unicast;client_port=%d-%d",
+    field = gavl_sprintf("Transport: RTP/AVP/UDP;unicast;client_port=%d-%d",
                          *port, (*port)+1);
     }
   else
     {
-    field = bgav_sprintf("Transport: RTP/AVP/TCP;unicast;interleaved=%d-%d",
+    field = gavl_sprintf("Transport: RTP/AVP/TCP;unicast;interleaved=%d-%d",
                          *port, (*port)+1);
     
     sp->interleave_base = *port;
@@ -807,7 +807,7 @@ static int init_generic(bgav_input_context_t * ctx, bgav_sdp_t * sdp, int tcp)
   /* Play */
   if(session_id)
     {
-    field = bgav_sprintf("Session: %s", session_id);
+    field = gavl_sprintf("Session: %s", session_id);
     bgav_rtsp_schedule_field(priv->r, field);free(field);
     }
 

@@ -76,7 +76,7 @@ static int init_vpx(bgav_stream_t * s)
   
   s->data.video.format.pixelformat = GAVL_YUV_420_P;
   priv->frame = gavl_video_frame_create(NULL);
-  s->description = bgav_sprintf("VP8");
+  s->description = gavl_sprintf("VP8");
   return 1;
   }
 

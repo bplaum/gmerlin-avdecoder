@@ -107,7 +107,7 @@ bgav_input_open_callbacks(int (*read_callback)(void * priv, uint8_t * data, int 
     bgav_md5_buffer(ret->location, strlen(ret->location),
                     md5sum);
     ret->index_file =
-      bgav_sprintf("%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+      gavl_sprintf("%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
                    md5sum[0], md5sum[1], md5sum[2], md5sum[3], 
                    md5sum[4], md5sum[5], md5sum[6], md5sum[7], 
                    md5sum[8], md5sum[9], md5sum[10], md5sum[11], 

@@ -89,7 +89,7 @@ static int open_file(bgav_input_context_t * ctx, const char * url, char ** r)
   bgav_md5_buffer(ctx->location, strlen(ctx->location),
                   md5sum);
   
-  ctx->index_file = bgav_sprintf("%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+  ctx->index_file = gavl_sprintf("%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
                                  md5sum[0], md5sum[1], md5sum[2], md5sum[3], 
                                  md5sum[4], md5sum[5], md5sum[6], md5sum[7], 
                                  md5sum[8], md5sum[9], md5sum[10], md5sum[11], 

@@ -488,7 +488,7 @@ read_picture(uint8_t * data, int data_size)
   if(strchr((char*)data, '/'))
     ret->mimetype = gavl_strdup((char*)data);
   else
-    ret->mimetype = bgav_sprintf("image/%s", (char*)data);
+    ret->mimetype = gavl_sprintf("image/%s", (char*)data);
 
   data += strlen((char*)data); // Mimetype
   data++;                      // "\0"

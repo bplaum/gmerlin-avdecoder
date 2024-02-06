@@ -1518,13 +1518,13 @@ static int open_ogg(bgav_demuxer_context_t * ctx)
         title = gavl_dictionary_get_string(ctx->tt->tracks[i]->metadata, GAVL_META_TITLE);
         
         if(artist && title)
-          name = bgav_sprintf("%s - %s",
+          name = gavl_sprintf("%s - %s",
                                                  artist,
                                                  title);
         else if(title)
-          name = bgav_sprintf("%s", title);
+          name = gavl_sprintf("%s", title);
         else
-          name = bgav_sprintf("Track %d", i+1);
+          name = gavl_sprintf("Track %d", i+1);
         gavl_dictionary_set_string_nocopy(ctx->tt->tracks[i]->metadata, GAVL_META_LABEL, name);
         }
       }
@@ -1632,9 +1632,9 @@ static char * get_name(gavl_dictionary_t * m)
   title = gavl_dictionary_get_string(m, GAVL_META_TITLE);
   
   if(artist && title)
-    return bgav_sprintf("%s - %s", artist, title);
+    return gavl_sprintf("%s - %s", artist, title);
   else if(title)
-    return bgav_sprintf("%s", title);
+    return gavl_sprintf("%s", title);
   return NULL;
   }
 

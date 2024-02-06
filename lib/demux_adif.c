@@ -161,7 +161,7 @@ static int open_adif(bgav_demuxer_context_t * ctx)
      (title = gavl_dictionary_get_string(&ctx->input->metadata, GAVL_META_TITLE)))
     ctx->tt->tracks[0].name =  gavl_strdup(title);
 #endif
-  //  ctx->stream_description = bgav_sprintf("AAC");
+  //  ctx->stream_description = gavl_sprintf("AAC");
   return 1;
   
   fail:

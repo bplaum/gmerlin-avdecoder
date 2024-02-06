@@ -986,7 +986,7 @@ static int open_mpegps(bgav_demuxer_context_t * ctx)
   else
     priv->have_pts = 1;
   
-  format = bgav_sprintf("MPEG-%d", priv->pack_header.version);
+  format = gavl_sprintf("MPEG-%d", priv->pack_header.version);
 
   if(priv->pack_header.version == 1)
     mimetype = "video/MP1S";

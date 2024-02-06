@@ -262,7 +262,7 @@ static void toc_2_tt(bgav_input_context_t * ctx, char * disk_name)
     if(priv->tracks[i].mode == TRACK_SVCD)
       {
       gavl_dictionary_set_string_nocopy(track->metadata, GAVL_META_LABEL,
-                              bgav_sprintf("SVCD Track %d", i));
+                              gavl_sprintf("SVCD Track %d", i));
       format = "MPEG-2";
 
       if(!mimetype)
@@ -271,7 +271,7 @@ static void toc_2_tt(bgav_input_context_t * ctx, char * disk_name)
     else if(priv->tracks[i].mode == TRACK_CVD)
       {
       gavl_dictionary_set_string_nocopy(track->metadata, GAVL_META_LABEL,
-                              bgav_sprintf("CVD Track %d", i));
+                              gavl_sprintf("CVD Track %d", i));
 
       format = "MPEG-2";
       
@@ -281,7 +281,7 @@ static void toc_2_tt(bgav_input_context_t * ctx, char * disk_name)
     else
       {
       gavl_dictionary_set_string_nocopy(track->metadata, GAVL_META_LABEL,
-                                        bgav_sprintf("VCD Track %d", i));
+                                        gavl_sprintf("VCD Track %d", i));
       format = "MPEG-1";
       if(!mimetype)
         mimetype = "video/MP1S";

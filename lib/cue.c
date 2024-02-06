@@ -99,7 +99,7 @@ get_cue_file(bgav_input_context_t * audio_file)
     }
   *pos = '\0';
   
-  filename = bgav_sprintf("%s.%s", tmp_string, "cue");
+  filename = gavl_sprintf("%s.%s", tmp_string, "cue");
   free(tmp_string);
   
   if(access(filename, R_OK))
@@ -111,7 +111,7 @@ get_cue_file(bgav_input_context_t * audio_file)
 
   /* Adding file:// prevents the .cue files being
      opened with the vcd module */
-  tmp_string = bgav_sprintf("file://%s", filename);
+  tmp_string = gavl_sprintf("file://%s", filename);
   
   if(!bgav_input_open(ret, tmp_string))
     {
@@ -478,7 +478,7 @@ gavl_dictionary_t * bgav_cue_get_edl(bgav_cue_t * cue,
          cue->tracks[i].title)
         {
         gavl_dictionary_set_string_nocopy(tm, GAVL_META_LABEL,
-                                          bgav_sprintf("%02d %s - %s",
+                                          gavl_sprintf("%02d %s - %s",
                                                        cue->tracks[i].number,
                                                        cue->tracks[i].performer,
                                                        cue->tracks[i].title));
@@ -486,14 +486,14 @@ gavl_dictionary_t * bgav_cue_get_edl(bgav_cue_t * cue,
       else if(cue->tracks[i].title)
         {
         gavl_dictionary_set_string_nocopy(tm, GAVL_META_LABEL,
-                                          bgav_sprintf("%02d %s",
+                                          gavl_sprintf("%02d %s",
                                                        cue->tracks[i].number,
                                                        cue->tracks[i].title));
         }
       else
         {
         gavl_dictionary_set_string_nocopy(tm, GAVL_META_LABEL,
-                                          bgav_sprintf("Track %02d",
+                                          gavl_sprintf("Track %02d",
                                                        cue->tracks[i].number));
         }
       

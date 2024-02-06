@@ -73,7 +73,7 @@ static bgav_track_table_t * parse_ref(bgav_input_context_t * input)
         
         gavl_dictionary_set_string_nocopy(t->metadata,
                                 GAVL_META_LABEL,
-                                bgav_sprintf("Stream %d (%s)",
+                                gavl_sprintf("Stream %d (%s)",
                                              ret->num_tracks,
                                              pos));
 
@@ -82,7 +82,7 @@ static bgav_track_table_t * parse_ref(bgav_input_context_t * input)
         
         if(!strncasecmp(pos, "http://", 7))
           {
-          char * uri = bgav_sprintf("mmsh%s", pos+4);
+          char * uri = gavl_sprintf("mmsh%s", pos+4);
           gavl_metadata_add_src(ret->tracks[0]->metadata, GAVL_META_SRC, NULL, uri);
           free(uri);
           }

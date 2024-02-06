@@ -41,7 +41,7 @@ static int open_pnm(bgav_input_context_t * ctx, const char * url, char ** r)
   pnm_priv_t * priv = NULL;
   priv = calloc(1, sizeof(*priv));
   ctx->priv = priv;
-  priv->url = bgav_sprintf("%s", url);
+  priv->url = gavl_sprintf("%s", url);
   
   if(!bgav_url_split(url, NULL,
                      NULL, /* User */

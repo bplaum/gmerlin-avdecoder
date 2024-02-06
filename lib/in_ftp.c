@@ -115,7 +115,7 @@ static char * parse_address(const char * server_msg, int * port)
   pos = rest+1;
 
   *port = (po[0] << 8) | po[1];
-  return bgav_sprintf("%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+  return gavl_sprintf("%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
   }
 
 /* Open Funktion: Gibt 1 bei Erfolg zurueck */
@@ -206,7 +206,7 @@ static int open_ftp(bgav_input_context_t * ctx, const char * url, char ** r)
     }
   
   /* Server login */
-  server_cmd = bgav_sprintf("USER %s\r\n", user);
+  server_cmd = gavl_sprintf("USER %s\r\n", user);
   if(!bgav_tcp_send(&ctx->opt, p->control_fd, (uint8_t*)server_cmd, strlen(server_cmd)))
     goto fail;
   FREE(server_cmd);
@@ -218,7 +218,7 @@ static int open_ftp(bgav_input_context_t * ctx, const char * url, char ** r)
              "Could not read answer");
     goto fail;
     }
-  server_cmd = bgav_sprintf("PASS %s\r\n", pass);
+  server_cmd = gavl_sprintf("PASS %s\r\n", pass);
   
   if(!bgav_tcp_send(&ctx->opt, p->control_fd, (uint8_t*)server_cmd, strlen(server_cmd)))
     goto fail;
@@ -244,7 +244,7 @@ static int open_ftp(bgav_input_context_t * ctx, const char * url, char ** r)
 
   
   /* Change Directory */
-  server_cmd = bgav_sprintf("CWD %s\r\n",path);
+  server_cmd = gavl_sprintf("CWD %s\r\n",path);
   if(!bgav_tcp_send(&ctx->opt, p->control_fd, (uint8_t*)server_cmd, strlen(server_cmd)))
     goto fail;
   FREE(server_cmd);
@@ -260,7 +260,7 @@ static int open_ftp(bgav_input_context_t * ctx, const char * url, char ** r)
 
   
   /* Find size of File */
-  server_cmd = bgav_sprintf("SIZE %s\r\n",file_name);
+  server_cmd = gavl_sprintf("SIZE %s\r\n",file_name);
   if(!bgav_tcp_send(&ctx->opt,
                     p->control_fd, (uint8_t*)server_cmd, strlen(server_cmd)))
     goto fail;
@@ -288,7 +288,7 @@ static int open_ftp(bgav_input_context_t * ctx, const char * url, char ** r)
   /* done */
   
   /* Set Binaer */
-  server_cmd = bgav_sprintf("TYPE I\r\n");
+  server_cmd = gavl_sprintf("TYPE I\r\n");
 
   if(!bgav_tcp_send(&ctx->opt,
                     p->control_fd, (uint8_t*)server_cmd, strlen(server_cmd)))
@@ -307,7 +307,7 @@ static int open_ftp(bgav_input_context_t * ctx, const char * url, char ** r)
 
   
   /* Set PASV */
-  server_cmd = bgav_sprintf("PASV\r\n");
+  server_cmd = gavl_sprintf("PASV\r\n");
 
   if(!bgav_tcp_send(&ctx->opt, p->control_fd, (uint8_t*)server_cmd, strlen(server_cmd)))
     goto fail;
@@ -328,7 +328,7 @@ static int open_ftp(bgav_input_context_t * ctx, const char * url, char ** r)
   /* done */
 
   /* open data connection */ 
-  server_cmd = bgav_sprintf("RETR %s\r\n", file_name);
+  server_cmd = gavl_sprintf("RETR %s\r\n", file_name);
 
   if(!bgav_tcp_send(&ctx->opt, p->control_fd, (uint8_t*)server_cmd, strlen(server_cmd)))
     goto fail;
@@ -399,7 +399,7 @@ static void close_ftp(bgav_input_context_t * ctx)
   ftp_priv_t * p;
   p = ctx->priv;
   
-  server_cmd = bgav_sprintf("QUIT\r\n");
+  server_cmd = gavl_sprintf("QUIT\r\n");
   bgav_tcp_send(&ctx->opt, p->control_fd, (uint8_t*)server_cmd,
                 strlen(server_cmd));
   free(server_cmd);

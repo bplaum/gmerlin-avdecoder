@@ -428,7 +428,7 @@ init_stream(bgav_demuxer_context_t * ctx,
       sp->control_url = gavl_strdup(control);
     }
   if(!sp->control_url)
-    sp->control_url = bgav_sprintf("%s/%s", ctx->input->location, control);
+    sp->control_url = gavl_sprintf("%s/%s", ctx->input->location, control);
   return 1;
   }
 

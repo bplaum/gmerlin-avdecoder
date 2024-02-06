@@ -959,7 +959,7 @@ int bgav_input_open(bgav_input_context_t * ctx,
       pos = strstr(url, "://");
       if(!pos)
         return 0;
-      new_url = bgav_sprintf("http%s", pos);
+      new_url = gavl_sprintf("http%s", pos);
       gavl_log(GAVL_LOG_INFO, LOG_DOMAIN,
                "mms connection failed, trying http");
       ret = do_open(ctx, new_url);

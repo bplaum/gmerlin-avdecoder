@@ -152,7 +152,7 @@ bgav_dvb_channels_seek(const bgav_options_t * opt,
     
     if(type == FE_QPSK)
       {
-      filename = bgav_sprintf("%s/.szap/channels.conf", home_dir);
+      filename = gavl_sprintf("%s/.szap/channels.conf", home_dir);
       
       if(!bgav_check_file_read(filename))
         {
@@ -162,7 +162,7 @@ bgav_dvb_channels_seek(const bgav_options_t * opt,
       }
     else if(type == FE_OFDM)
       {
-      filename = bgav_sprintf("%s/.tzap/channels.conf", home_dir);
+      filename = gavl_sprintf("%s/.tzap/channels.conf", home_dir);
       
       if(!bgav_check_file_read(filename))
         {
@@ -172,7 +172,7 @@ bgav_dvb_channels_seek(const bgav_options_t * opt,
       }
     else if(type == FE_QAM)
       {
-      filename = bgav_sprintf("%s/.czap/channels.conf", home_dir);
+      filename = gavl_sprintf("%s/.czap/channels.conf", home_dir);
       
       if(!bgav_check_file_read(filename))
         {
@@ -182,7 +182,7 @@ bgav_dvb_channels_seek(const bgav_options_t * opt,
       }
     else if(type == FE_ATSC)
       {
-      filename = bgav_sprintf("%s/.azap/channels.conf", home_dir);
+      filename = gavl_sprintf("%s/.azap/channels.conf", home_dir);
       
       if(!bgav_check_file_read(filename))
         {
@@ -193,7 +193,7 @@ bgav_dvb_channels_seek(const bgav_options_t * opt,
     
     if(!filename)
       {
-      filename = bgav_sprintf("%s/.mplayer/channels.conf", home_dir);
+      filename = gavl_sprintf("%s/.mplayer/channels.conf", home_dir);
       if(!bgav_check_file_read(filename))
         {
         free(filename);
@@ -203,7 +203,7 @@ bgav_dvb_channels_seek(const bgav_options_t * opt,
 
     if(!filename)
       {
-      filename = bgav_sprintf("%s/.xine/channels.conf", home_dir);
+      filename = gavl_sprintf("%s/.xine/channels.conf", home_dir);
       if(!bgav_check_file_read(filename))
         {
         free(filename);

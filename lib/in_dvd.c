@@ -330,10 +330,10 @@ static int setup_track(bgav_input_context_t * ctx,
 
   if(ttsrpt->title[title].nr_of_angles > 1)
     gavl_dictionary_set_string_nocopy(new_track->metadata, GAVL_META_LABEL,
-                            bgav_sprintf("Title %02d Angle %d", title+1, angle+1));
+                            gavl_sprintf("Title %02d Angle %d", title+1, angle+1));
   else
     gavl_dictionary_set_string_nocopy(new_track->metadata, GAVL_META_LABEL,
-                                      bgav_sprintf("Title %02d", title+1));
+                                      gavl_sprintf("Title %02d", title+1));
   
   gavl_dictionary_set_string(new_track->metadata, GAVL_META_MEDIA_CLASS,
                              GAVL_META_MEDIA_CLASS_VIDEO_DISK_TRACK);
@@ -542,27 +542,27 @@ static int setup_track(bgav_input_context_t * ctx,
       {
       case 0:
         gavl_dictionary_set_string_nocopy(s->m, GAVL_META_LABEL,
-                                bgav_sprintf("Unspecified (%s, %dch)",
+                                gavl_sprintf("Unspecified (%s, %dch)",
                                              audio_codec, audio_attr->channels+1));
         break;
       case 1:
         gavl_dictionary_set_string_nocopy(s->m, GAVL_META_LABEL,
-                                bgav_sprintf("Audio stream (%s, %dch)",
+                                gavl_sprintf("Audio stream (%s, %dch)",
                                              audio_codec, audio_attr->channels+1));
         break;
       case 2:
         gavl_dictionary_set_string_nocopy(s->m, GAVL_META_LABEL,
-                                bgav_sprintf("Audio for visually impaired (%s, %dch)",
+                                gavl_sprintf("Audio for visually impaired (%s, %dch)",
                                              audio_codec, audio_attr->channels+1));
         break;
       case 3:
         gavl_dictionary_set_string_nocopy(s->m, GAVL_META_LABEL,
-                                bgav_sprintf("Director's comments 1 (%s, %dch)",
+                                gavl_sprintf("Director's comments 1 (%s, %dch)",
                                              audio_codec, audio_attr->channels+1));
         break;
       case 4:
         gavl_dictionary_set_string_nocopy(s->m, GAVL_META_LABEL,
-                                bgav_sprintf("Director's comments 2 (%s, %dch)",
+                                gavl_sprintf("Director's comments 2 (%s, %dch)",
                                              audio_codec, audio_attr->channels+1));
         break;
       }
@@ -1222,22 +1222,22 @@ static char * get_device_name(CdIo_t * cdio,
   if(cdio_get_hwinfo(cdio, &driveid) &&
      (driveid.psz_model[0] != '\0'))
     {
-    return bgav_sprintf("%s %s", driveid.psz_vendor, driveid.psz_model);
+    return gavl_sprintf("%s %s", driveid.psz_vendor, driveid.psz_model);
     }
   
   if(write_cap & CDIO_DRIVE_CAP_WRITE_DVD_R)
     {
-    return bgav_sprintf("DVD Writer (%s)", device);
+    return gavl_sprintf("DVD Writer (%s)", device);
     }
   else if(write_cap & CDIO_DRIVE_CAP_WRITE_CD_R)
     {
-    return bgav_sprintf("CD Writer (%s)", device);
+    return gavl_sprintf("CD Writer (%s)", device);
     }
   else if(read_cap & CDIO_DRIVE_CAP_READ_DVD_ROM)
     {
-    return bgav_sprintf("DVD Drive (%s)", device);
+    return gavl_sprintf("DVD Drive (%s)", device);
     }
-  return bgav_sprintf("CDrom Drive (%s)", device);
+  return gavl_sprintf("CDrom Drive (%s)", device);
   }
 
 int bgav_check_device_dvd(const char * device, char ** name)
@@ -1309,7 +1309,7 @@ bgav_input_context_t * bgav_input_open_dvd(const char * device,
   ret->b = b;
   b->input = ret;
 
-  tmp_string = bgav_sprintf("dvd://%s", device);
+  tmp_string = gavl_sprintf("dvd://%s", device);
   gavl_metadata_add_src(&ret->m, GAVL_META_SRC, NULL, tmp_string);
   free(tmp_string);
 

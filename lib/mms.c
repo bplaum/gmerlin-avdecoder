@@ -471,9 +471,9 @@ bgav_mms_t * bgav_mms_open(const bgav_options_t * opt,
 
   /* C->S: 0x01 Send player, version, guid and hostname */
 
-  //  buf = bgav_sprintf("\x1c\x03NSPlayer/7.0.0.1956; {%s}; Host: %s",
+  //  buf = gavl_sprintf("\x1c\x03NSPlayer/7.0.0.1956; {%s}; Host: %s",
   //                     guid, host);
-  buf = bgav_sprintf("\034\003NSPlayer/7.0.0.1956; {33715801-BAB3-9D85-24E9-03B90328270A}; Host: %s",
+  buf = gavl_sprintf("\034\003NSPlayer/7.0.0.1956; {33715801-BAB3-9D85-24E9-03B90328270A}; Host: %s",
                      host);
   
   utf16 = bgav_convert_string(ascii_2_utf16, buf, -1, &len_out);

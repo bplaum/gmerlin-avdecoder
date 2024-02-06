@@ -757,9 +757,9 @@ static int open_dvb(bgav_input_context_t * ctx, const char * url, char ** redire
     url += 6;
   
   priv->device_directory  = gavl_strdup(url);
-  priv->filter_filename   = bgav_sprintf("%s/demux0", url);
-  priv->dvr_filename      = bgav_sprintf("%s/dvr0", url);
-  priv->frontend_filename = bgav_sprintf("%s/frontend0", url);
+  priv->filter_filename   = gavl_sprintf("%s/demux0", url);
+  priv->dvr_filename      = gavl_sprintf("%s/dvr0", url);
+  priv->frontend_filename = gavl_sprintf("%s/frontend0", url);
   
   /* Open frontend */
   priv->fe_fd = open(priv->frontend_filename, O_RDWR | O_NONBLOCK);
@@ -1444,7 +1444,7 @@ int bgav_check_device_dvb(const char * device, char ** name)
   int fd;
   char * tmp_string;
 
-  tmp_string = bgav_sprintf("%s/frontend0", device);
+  tmp_string = gavl_sprintf("%s/frontend0", device);
   fd = open(tmp_string, O_RDONLY);
   free(tmp_string);
   
@@ -1475,7 +1475,7 @@ bgav_device_info_t * bgav_find_devices_dvb()
     {
     device_name = NULL;
     
-    directory = bgav_sprintf("/dev/dvb/adapter%d", i);
+    directory = gavl_sprintf("/dev/dvb/adapter%d", i);
     
     if(bgav_check_device_dvb(directory, &device_name))
       {

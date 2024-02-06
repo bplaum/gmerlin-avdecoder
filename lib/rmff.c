@@ -859,7 +859,7 @@ bgav_rmff_header_create_from_sdp(const bgav_options_t * opt, bgav_sdp_t * sdp,
       }
     for(j = 0; j < num_matches; j++)
       {
-      buf = bgav_sprintf("stream=%u;rule=%u,", ret->streams[i].mdpr.stream_number, matches[j]);
+      buf = gavl_sprintf("stream=%u;rule=%u,", ret->streams[i].mdpr.stream_number, matches[j]);
       *stream_rules = gavl_strcat(*stream_rules, buf);
       free(buf);
       }

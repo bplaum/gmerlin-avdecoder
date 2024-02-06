@@ -202,7 +202,7 @@ static char * encode_user_pass(const char * user, const char * pass)
   char * userpass;
   char * ret;
 
-  userpass = bgav_sprintf("%s:%s", user, pass);
+  userpass = gavl_sprintf("%s:%s", user, pass);
   
   userpass_len = strlen(userpass);
   userpass_enc_len = (userpass_len * 4)/3+4;
@@ -286,7 +286,7 @@ static bgav_http_t * http_open(bgav_http_t * ret,
   if(default_port)
     gavl_dictionary_set_string(&request_header, "Host", host);
   else
-    gavl_dictionary_set_string_nocopy(&request_header, "Host", bgav_sprintf("%s:%d", host, port));
+    gavl_dictionary_set_string_nocopy(&request_header, "Host", gavl_sprintf("%s:%d", host, port));
   
   ret = do_connect(ret, real_host, real_port, opt, &request_header, extra_header, use_tls);
   if(!ret)

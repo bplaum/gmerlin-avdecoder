@@ -994,7 +994,7 @@ static int init_pcm(bgav_stream_t * s)
         priv->decode_func = decode_s_24_be;
 
       gavl_dictionary_set_string_nocopy(s->m, GAVL_META_FORMAT,
-                              bgav_sprintf("PCM (%s endian)",
+                              gavl_sprintf("PCM (%s endian)",
                                            ((s->data.audio.endianess == BGAV_ENDIANESS_LITTLE) ? "little" : "big" )));
       
       s->data.audio.format->sample_format = GAVL_SAMPLE_S32;
@@ -1018,7 +1018,7 @@ static int init_pcm(bgav_stream_t * s)
 #endif
         }
       gavl_dictionary_set_string_nocopy(s->m, GAVL_META_FORMAT,
-                              bgav_sprintf("PCM (%s endian)",
+                              gavl_sprintf("PCM (%s endian)",
                                            ((s->data.audio.endianess == BGAV_ENDIANESS_LITTLE) ? "little" : "big" )));
       
       s->data.audio.format->sample_format = GAVL_SAMPLE_S32;
@@ -1055,7 +1055,7 @@ static int init_pcm(bgav_stream_t * s)
       s->data.audio.format->sample_format = GAVL_SAMPLE_FLOAT;
 
       gavl_dictionary_set_string_nocopy(s->m, GAVL_META_FORMAT,
-                              bgav_sprintf("PCM float (%s endian)",
+                              gavl_sprintf("PCM float (%s endian)",
                                            (s->data.audio.endianess == BGAV_ENDIANESS_LITTLE) ? "little" : "big" ));
       
       priv->block_align = s->data.audio.format->num_channels * 4;
@@ -1126,7 +1126,7 @@ static int init_pcm(bgav_stream_t * s)
             s->data.audio.format->sample_format = GAVL_SAMPLE_FLOAT;
 
             gavl_dictionary_set_string_nocopy(s->m, GAVL_META_FORMAT,
-                                    bgav_sprintf("PCM float (%s endian)",
+                                    gavl_sprintf("PCM float (%s endian)",
                                                  (!(formatSpecificFlags &
                                                     kAudioFormatFlagIsBigEndian) ?
                                                   "little" : "big" )));
@@ -1141,7 +1141,7 @@ static int init_pcm(bgav_stream_t * s)
             s->data.audio.format->sample_format = GAVL_SAMPLE_DOUBLE;
 
             gavl_dictionary_set_string_nocopy(s->m, GAVL_META_FORMAT,
-                                    bgav_sprintf("PCM float (%s endian)",
+                                    gavl_sprintf("PCM float (%s endian)",
                                                  (!(formatSpecificFlags &
                                                     kAudioFormatFlagIsBigEndian) ?
                                                   "little" : "big" )));
@@ -1168,7 +1168,7 @@ static int init_pcm(bgav_stream_t * s)
             s->data.audio.format->sample_format = GAVL_SAMPLE_S16;
 
             gavl_dictionary_set_string_nocopy(s->m, GAVL_META_FORMAT,
-                                    bgav_sprintf("PCM (%s endian)",
+                                    gavl_sprintf("PCM (%s endian)",
                                                  (!(formatSpecificFlags &
                                                     kAudioFormatFlagIsBigEndian) ?
                                                   "little" : "big" )));
@@ -1187,7 +1187,7 @@ static int init_pcm(bgav_stream_t * s)
             s->data.audio.format->sample_format = GAVL_SAMPLE_S32;
 
             gavl_dictionary_set_string_nocopy(s->m, GAVL_META_FORMAT,
-                                    bgav_sprintf("PCM (%s endian)",
+                                    gavl_sprintf("PCM (%s endian)",
                                                  (!(formatSpecificFlags &
                                                     kAudioFormatFlagIsBigEndian) ?
                                                   "little" : "big" )));
@@ -1206,7 +1206,7 @@ static int init_pcm(bgav_stream_t * s)
             s->data.audio.format->sample_format = GAVL_SAMPLE_S32;
 
             gavl_dictionary_set_string_nocopy(s->m, GAVL_META_FORMAT,
-                                    bgav_sprintf("PCM (%s endian)",
+                                    gavl_sprintf("PCM (%s endian)",
                                                  (!(formatSpecificFlags &
                                                     kAudioFormatFlagIsBigEndian) ?
                                                   "little" : "big" )));

@@ -59,7 +59,7 @@ static void smb_auth_fn(const char *server, const char *share,
   char *password= NULL;
   char *username= NULL;
 
-  server_share = bgav_sprintf("%s/%s", server, share);
+  server_share = gavl_sprintf("%s/%s", server, share);
   if(!auth_ctx->opt->user_pass_callback ||
      !auth_ctx->opt->user_pass_callback(auth_ctx->opt->user_pass_callback_data,
                                         server_share, &username, &password))

@@ -108,9 +108,9 @@ static void get_url(bgav_yml_node_t * n, bgav_track_t * ret,
     char * uri;
     
     if(url_base[strlen(url_base)-1] == '/')
-      uri = bgav_sprintf("%s%s", url_base, location);
+      uri = gavl_sprintf("%s%s", url_base, location);
     else
-      uri = bgav_sprintf("%s/%s", url_base, location);
+      uri = gavl_sprintf("%s/%s", url_base, location);
 
     gavl_metadata_add_src(ret->metadata, GAVL_META_SRC, NULL, uri);
     
@@ -124,10 +124,10 @@ static void get_url(bgav_yml_node_t * n, bgav_track_t * ret,
 
   if(title)
     gavl_dictionary_set_string_nocopy(ret->metadata, GAVL_META_LABEL,
-                            bgav_sprintf("%s Stream %d", title, (*index)+1));
+                            gavl_sprintf("%s Stream %d", title, (*index)+1));
   else
     gavl_dictionary_set_string_nocopy(ret->metadata, GAVL_META_LABEL,
-                            bgav_sprintf("%s Stream %d", location, (*index)+1));
+                            gavl_sprintf("%s Stream %d", location, (*index)+1));
 
 
   if(bitrate)

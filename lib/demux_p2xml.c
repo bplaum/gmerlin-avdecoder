@@ -42,7 +42,7 @@ static char * find_file_nocase(const char * dir, const char * file)
     /* Check, if the filenames match */
     if(!strcasecmp(res->d_name, file))
       {
-      ret = bgav_sprintf("%s/%s", dir, res->d_name);
+      ret = gavl_sprintf("%s/%s", dir, res->d_name);
       closedir(d);
       return ret;
       }
@@ -76,7 +76,7 @@ static char * find_audio_file(const char * dir, const char * name_root, int stre
          (i != stream) ||
          strcasecmp(rest, ".mxf"))
         continue;
-      ret = bgav_sprintf("%s/%s", dir, res->d_name);
+      ret = gavl_sprintf("%s/%s", dir, res->d_name);
       closedir(d);
       return ret;
       }
@@ -229,7 +229,7 @@ static int open_p2xml(bgav_demuxer_context_t * ctx)
       
       if(root_name && video_directory)
         {
-        tmp_string = bgav_sprintf("%s.mxf", root_name);
+        tmp_string = gavl_sprintf("%s.mxf", root_name);
         filename = find_file_nocase(video_directory, tmp_string);
         if(filename)
           {

@@ -128,7 +128,7 @@ bgav_hostbyname(const bgav_options_t * opt,
   
   if(!hostname)
     {
-    service = bgav_sprintf("%d", port);
+    service = gavl_sprintf("%d", port);
     hints.ai_flags |= AI_NUMERICSERV;
     }
   

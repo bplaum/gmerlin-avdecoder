@@ -75,27 +75,6 @@ int bgav_check_fourcc(uint32_t fourcc, const uint32_t * fourccs)
   return 0;
   }
 
-char * bgav_sprintf(const char * format,...)
-  {
-  va_list argp; /* arg ptr */
-#ifndef HAVE_VASPRINTF
-  int len;
-#else
-#endif
-  char * ret;
-  va_start( argp, format);
-
-#ifndef HAVE_VASPRINTF
-  len = vsnprintf(NULL, 0, format, argp);
-  ret = malloc(len+1);
-  vsnprintf(ret, len+1, format, argp);
-#else
-  vasprintf(&ret, format, argp);
-#endif
-  va_end(argp);
-  return ret;
-  }
-
 void bgav_dprintf(const char * format, ...)
   {
   va_list argp; /* arg ptr */
@@ -116,40 +95,6 @@ void bgav_diprintf(int indent, const char * format, ...)
   va_end(argp);
   }
 
-#if 0
-char * bgav_strndup(const char * start, const char * end)
-  {
-  char * ret;
-  int len;
-
-  if(!start)
-    return NULL;
-
-  len = (end) ? (end - start) : strlen(start);
-  ret = malloc(len+1);
-  strncpy(ret, start, len);
-  ret[len] = '\0';
-  return ret;
-  }
-
-char * bgav_strdup(const char * str)
-  {
-  return (bgav_strndup(str, NULL));
-  }
-#endif
-#if 0
-char * bgav_strncat(char * old, const char * start, const char * end)
-  {
-  int len, old_len;
-  old_len = old ? strlen(old) : 0;
-  
-  len = (end) ? (end - start) : strlen(start);
-  old = realloc(old, len + old_len + 1);
-  strncpy(old + old_len, start, len);
-  old[old_len + len] = '\0';
-  return old;
-  }
-#endif
 static char * remove_spaces(char * old)
   {
   char * pos1, *pos2, *ret;

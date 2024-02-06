@@ -338,27 +338,27 @@ static int open_dvd(bgav_input_context_t * ctx, const char * url, char ** r)
           {
           case 0:
             gavl_dictionary_set_string_nocopy(s->m, GAVL_META_LABEL,
-                                              bgav_sprintf("Unspecified (%s, %dch)",
+                                              gavl_sprintf("Unspecified (%s, %dch)",
                                                            audio_codec, attr.channels+1));
             break;
           case 1:
             gavl_dictionary_set_string_nocopy(s->m, GAVL_META_LABEL,
-                                              bgav_sprintf("Audio stream (%s, %dch)",
+                                              gavl_sprintf("Audio stream (%s, %dch)",
                                                            audio_codec, attr.channels+1));
             break;
           case 2:
             gavl_dictionary_set_string_nocopy(s->m, GAVL_META_LABEL,
-                                              bgav_sprintf("Audio for visually impaired (%s, %dch)",
+                                              gavl_sprintf("Audio for visually impaired (%s, %dch)",
                                                            audio_codec, attr.channels+1));
             break;
           case 3:
             gavl_dictionary_set_string_nocopy(s->m, GAVL_META_LABEL,
-                                              bgav_sprintf("Director's comments 1 (%s, %dch)",
+                                              gavl_sprintf("Director's comments 1 (%s, %dch)",
                                                            audio_codec, attr.channels+1));
             break;
           case 4:
             gavl_dictionary_set_string_nocopy(s->m, GAVL_META_LABEL,
-                                              bgav_sprintf("Director's comments 2 (%s, %dch)",
+                                              gavl_sprintf("Director's comments 2 (%s, %dch)",
                                                            audio_codec, attr.channels+1));
             break;
           }

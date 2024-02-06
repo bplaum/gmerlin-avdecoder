@@ -560,7 +560,7 @@ static int open_ffmpeg(bgav_demuxer_context_t * ctx)
   /* With the current implementation in ffmpeg, this can be
      called multiple times */
 
-  tmp_string = bgav_sprintf("bgav:%s", ctx->input->location);
+  tmp_string = gavl_sprintf("bgav:%s", ctx->input->location);
   
   priv->buffer = av_malloc(BUFFER_SIZE);
   priv->pb =
@@ -647,7 +647,7 @@ static int open_ffmpeg(bgav_demuxer_context_t * ctx)
     GET_METADATA_INT(GAVL_META_TRACKNUMBER,  "track");
     }
   
-  tmp_string = bgav_sprintf(TRD("%s (via ffmpeg)"),
+  tmp_string = gavl_sprintf(TRD("%s (via ffmpeg)"),
                                 priv->avfc->iformat->long_name);
   bgav_track_set_format(ctx->tt->cur, tmp_string, NULL);
   free(tmp_string);

@@ -75,13 +75,13 @@ static int extract_header(bgav_packet_parser_t * parser, bgav_packet_t * p,
       {
       parser->fourcc = BGAV_MK_FOURCC('m','p','v','2');
       gavl_dictionary_set_string_nocopy(parser->m, GAVL_META_FORMAT,
-                                        bgav_sprintf("MPEG-2"));
+                                        gavl_sprintf("MPEG-2"));
       }
     else
       {
       parser->fourcc = BGAV_MK_FOURCC('m','p','v','1');
       gavl_dictionary_set_string_nocopy(parser->m, GAVL_META_FORMAT,
-                                        bgav_sprintf("MPEG-1"));
+                                        gavl_sprintf("MPEG-1"));
       }
     }
 

@@ -181,7 +181,7 @@ static int init_theora(bgav_stream_t * s)
   s->vframe = priv->frame;
   
   gavl_dictionary_set_string_nocopy(s->m, GAVL_META_FORMAT,
-                           bgav_sprintf("Theora (Version %d.%d.%d)",
+                           gavl_sprintf("Theora (Version %d.%d.%d)",
                                         priv->ti.version_major,
                                         priv->ti.version_minor,
                                         priv->ti.version_subminor));

@@ -147,7 +147,7 @@ static int get_format(bgav_stream_t * s)
     }
   
   gavl_dictionary_set_string_nocopy(s->m, GAVL_META_FORMAT,
-                          bgav_sprintf("MPEG-%s layer %d",
+                          gavl_sprintf("MPEG-%s layer %d",
                                        version_string, h.layer));
   
   priv->audio_frame = gavl_audio_frame_create(s->data.audio.format);
