@@ -690,7 +690,7 @@ static int next_packet(bgav_demuxer_context_t * ctx,
             stream->packet->position = priv->position;
             stream->packet->pes_pts = priv->pes_header.pts;
             }
-          bgav_packet_alloc(stream->packet, stream->packet->buf.len + priv->pes_header.payload_size);
+          gavl_packet_alloc(stream->packet, stream->packet->buf.len + priv->pes_header.payload_size);
           
           if(bgav_input_read_data(input, stream->packet->buf.buf + stream->packet->buf.len,
                                   priv->pes_header.payload_size) <

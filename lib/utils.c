@@ -199,7 +199,7 @@ int bgav_slurp_file(const char * location,
     return 0;
     }
 
-  bgav_packet_alloc(p, input->total_bytes);
+  gavl_packet_alloc(p, input->total_bytes);
   
   if(bgav_input_read_data(input, p->buf.buf, input->total_bytes) <
      input->total_bytes)

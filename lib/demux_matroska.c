@@ -982,7 +982,7 @@ static void set_packet_data(bgav_stream_t * s,
       /* zlib decompression (probably the dumbest possible routine,
          but it seems that this is used just for subtitles) */
 
-      bgav_packet_alloc(p, len * 5); // Optimistically assume 1:5 ratio
+      gavl_packet_alloc(p, len * 5); // Optimistically assume 1:5 ratio
     
       while(1)
         {
@@ -996,7 +996,7 @@ static void set_packet_data(bgav_stream_t * s,
           break;
           }
         else if(err == Z_BUF_ERROR)
-          bgav_packet_alloc(p, p->buf.alloc * 2); // Double the compression ratio
+          gavl_packet_alloc(p, p->buf.alloc * 2); // Double the compression ratio
         else
           {
           gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
@@ -1009,7 +1009,7 @@ static void set_packet_data(bgav_stream_t * s,
     else if((t->encodings[0].ContentEncodingType == MKV_CONTENT_ENCODING_COMPRESSION) &&
             (t->encodings[0].ContentCompression.ContentCompAlgo == MKV_CONTENT_COMP_ALGO_HEADER_STRIPPING))
       {
-      bgav_packet_alloc(p, len + t->encodings[0].ContentCompression.ContentCompSettingsLen);
+      gavl_packet_alloc(p, len + t->encodings[0].ContentCompression.ContentCompSettingsLen);
       memcpy(p->buf.buf,
              t->encodings[0].ContentCompression.ContentCompSettings,
              t->encodings[0].ContentCompression.ContentCompSettingsLen);
@@ -1020,7 +1020,7 @@ static void set_packet_data(bgav_stream_t * s,
   else if(t->num_encodings == 0)
     {
     /* Plain packet */
-    bgav_packet_alloc(p, len);
+    gavl_packet_alloc(p, len);
     memcpy(p->buf.buf, data, len);
     p->buf.len = len;
     }

@@ -562,7 +562,7 @@ static gavl_source_status_t next_packet_gxf(bgav_demuxer_context_t * ctx)
     else
       {
       p = bgav_stream_get_packet_write(s);
-      bgav_packet_alloc(p,length);
+      gavl_packet_alloc(p,length);
       
       p->pts = (mh.field_nr - priv->first_field) / priv->num_fields *
             priv->frame_duration ;

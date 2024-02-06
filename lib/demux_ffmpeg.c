@@ -708,7 +708,7 @@ static gavl_source_status_t next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
   avs = priv->avfc->streams[priv->pkt->stream_index];
   
   p = bgav_stream_get_packet_write(s);
-  bgav_packet_alloc(p, priv->pkt->size);
+  gavl_packet_alloc(p, priv->pkt->size);
   memcpy(p->buf.buf, priv->pkt->data, priv->pkt->size);
   p->buf.len = priv->pkt->size;
   

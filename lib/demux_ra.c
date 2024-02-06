@@ -281,7 +281,7 @@ static gavl_source_status_t next_packet_ra(bgav_demuxer_context_t * ctx)
   p = bgav_stream_get_packet_write(s);
 
   len = s->data.audio.block_align * priv->sub_packet_h;
-  bgav_packet_alloc(p, len);
+  gavl_packet_alloc(p, len);
   if(bgav_input_read_data(ctx->input, p->buf.buf, len) < len)
     return GAVL_SOURCE_EOF;
   

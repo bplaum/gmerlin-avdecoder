@@ -332,7 +332,7 @@ static gavl_source_status_t next_packet_sphere(bgav_demuxer_context_t * ctx)
   if(bytes_to_read <= 0)
     return GAVL_SOURCE_EOF;
   
-  bgav_packet_alloc(p, bytes_to_read);
+  gavl_packet_alloc(p, bytes_to_read);
   
   p->pts = (ctx->input->position - HEADERSIZE) / s->data.audio.block_align;
   PACKET_SET_KEYFRAME(p);

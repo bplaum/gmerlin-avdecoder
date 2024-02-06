@@ -135,7 +135,7 @@ static gavl_source_status_t next_packet_a52(bgav_demuxer_context_t * ctx)
   PACKET_SET_KEYFRAME(p);
   p->position = ctx->input->position;
   
-  bgav_packet_alloc(p, packet_size);
+  gavl_packet_alloc(p, packet_size);
 
   p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, packet_size);
   

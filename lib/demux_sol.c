@@ -143,7 +143,7 @@ static gavl_source_status_t next_packet_sol(bgav_demuxer_context_t * ctx)
   s = bgav_track_find_stream(ctx, 0);
   p = bgav_stream_get_packet_write(s);
 
-  bgav_packet_alloc(p, MAX_SIZE);
+  gavl_packet_alloc(p, MAX_SIZE);
 
   p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, MAX_SIZE);
 

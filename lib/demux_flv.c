@@ -712,7 +712,7 @@ static gavl_source_status_t next_packet_flv(bgav_demuxer_context_t * ctx)
   if(!priv->init)
     {
     p = bgav_stream_get_packet_write(s);
-    bgav_packet_alloc(p, packet_size);
+    gavl_packet_alloc(p, packet_size);
     p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, packet_size);
     p->position = position;
     if(p->buf.len < packet_size) /* Got EOF in the middle of a packet */

@@ -258,7 +258,7 @@ static gavl_source_status_t next_packet_thp(bgav_demuxer_context_t * ctx)
   if(s)
     {
     p = bgav_stream_get_packet_write(s);
-    bgav_packet_alloc(p, video_size);
+    gavl_packet_alloc(p, video_size);
     p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, video_size);
 
     if(p->buf.len < video_size)
@@ -281,7 +281,7 @@ static gavl_source_status_t next_packet_thp(bgav_demuxer_context_t * ctx)
   if(s)
     {
     p = bgav_stream_get_packet_write(s);
-    bgav_packet_alloc(p, audio_size);
+    gavl_packet_alloc(p, audio_size);
     p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, audio_size);
 
     if(p->buf.len < audio_size)

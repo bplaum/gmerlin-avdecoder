@@ -66,7 +66,7 @@ filter_adts(bgav_bsf_t* bsf, bgav_packet_t * in, bgav_packet_t * out)
   if(!h.protection_absent)
     header_len += 2;
 
-  bgav_packet_alloc(out, in->buf.len - header_len);
+  gavl_packet_alloc(out, in->buf.len - header_len);
   memcpy(out->buf.buf, in->buf.buf + header_len, in->buf.len - header_len);
   out->buf.len = in->buf.len - header_len;
   }

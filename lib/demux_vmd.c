@@ -262,7 +262,7 @@ static gavl_source_status_t next_packet_vmd(bgav_demuxer_context_t * ctx)
     bgav_input_seek(ctx->input, frame->frame_offset, SEEK_SET);
     p = bgav_stream_get_packet_write(s);
 
-    bgav_packet_alloc(p, frame->frame_size + BYTES_PER_FRAME_RECORD);
+    gavl_packet_alloc(p, frame->frame_size + BYTES_PER_FRAME_RECORD);
     memcpy(p->buf.buf, frame->frame_record, BYTES_PER_FRAME_RECORD);
     if(bgav_input_read_data(ctx->input, p->buf.buf + BYTES_PER_FRAME_RECORD,
                             frame->frame_size) < frame->frame_size)

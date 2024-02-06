@@ -1886,7 +1886,7 @@ static gavl_source_status_t next_packet_ogg(bgav_demuxer_context_t * ctx)
             break;
         
           p = bgav_stream_get_packet_write(s);
-          bgav_packet_alloc(p, priv->op.bytes);
+          gavl_packet_alloc(p, priv->op.bytes);
           memcpy(p->buf.buf, priv->op.packet, priv->op.bytes);
           p->buf.len = priv->op.bytes;
 
@@ -1936,7 +1936,7 @@ static gavl_source_status_t next_packet_ogg(bgav_demuxer_context_t * ctx)
             break;
         
           p = bgav_stream_get_packet_write(s);
-          bgav_packet_alloc(p, priv->op.bytes);
+          gavl_packet_alloc(p, priv->op.bytes);
           memcpy(p->buf.buf, priv->op.packet, priv->op.bytes);
           p->buf.len = priv->op.bytes;
 
@@ -1999,7 +1999,7 @@ static gavl_source_status_t next_packet_ogg(bgav_demuxer_context_t * ctx)
         
           p = bgav_stream_get_packet_write(s);
         
-          bgav_packet_alloc(p, priv->op.bytes - 1 - len_bytes);
+          gavl_packet_alloc(p, priv->op.bytes - 1 - len_bytes);
           memcpy(p->buf.buf, priv->op.packet + 1 + len_bytes,
                  priv->op.bytes - 1 - len_bytes);
           p->buf.len = priv->op.bytes - 1 - len_bytes;
@@ -2052,7 +2052,7 @@ static gavl_source_status_t next_packet_ogg(bgav_demuxer_context_t * ctx)
           set_packet_pos(priv, stream_priv, &page_continued, p);
           PACKET_SET_KEYFRAME(p);
                     
-          bgav_packet_alloc(p, priv->op.bytes);
+          gavl_packet_alloc(p, priv->op.bytes);
           memcpy(p->buf.buf, priv->op.packet, priv->op.bytes);
           p->buf.len = priv->op.bytes;
           
@@ -2091,7 +2091,7 @@ static gavl_source_status_t next_packet_ogg(bgav_demuxer_context_t * ctx)
             break;
           
           p = bgav_stream_get_packet_write(s);
-          bgav_packet_alloc(p, priv->op.bytes);
+          gavl_packet_alloc(p, priv->op.bytes);
           memcpy(p->buf.buf, priv->op.packet, priv->op.bytes);
           p->buf.len = priv->op.bytes;
 
@@ -2137,7 +2137,7 @@ static gavl_source_status_t next_packet_ogg(bgav_demuxer_context_t * ctx)
 
           pos = (char*)(priv->op.packet + 1 + len_bytes);
           len = strlen(pos);
-          bgav_packet_alloc(p, len);
+          gavl_packet_alloc(p, len);
           memcpy(p->buf.buf, pos, len);
           p->buf.len = len;
           PACKET_SET_KEYFRAME(p);

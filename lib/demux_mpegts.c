@@ -1705,7 +1705,7 @@ static int process_packet(bgav_demuxer_context_t * ctx)
         //        priv->packet_size - (priv->ptr - priv->packet_start);
         188 - (priv->ptr - priv->packet_start);
       
-      bgav_packet_alloc(s->packet, 1024);
+      gavl_packet_alloc(s->packet, 1024);
 
       /* Read data */
       
@@ -1724,7 +1724,7 @@ static int process_packet(bgav_demuxer_context_t * ctx)
       {
       /* Read data */
       
-      bgav_packet_alloc(s->packet,
+      gavl_packet_alloc(s->packet,
                         s->packet->buf.len +
                         priv->packet.payload_size);
       

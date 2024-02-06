@@ -271,7 +271,7 @@ static gavl_source_status_t next_packet_nuv(bgav_demuxer_context_t * ctx)
         }
         
       p = bgav_stream_get_packet_write(s);
-      bgav_packet_alloc(p, size + HDRSIZE);
+      gavl_packet_alloc(p, size + HDRSIZE);
       memcpy(p->buf.buf, hdr, HDRSIZE);
 
       if(bgav_input_read_data(ctx->input, p->buf.buf + HDRSIZE,
@@ -292,7 +292,7 @@ static gavl_source_status_t next_packet_nuv(bgav_demuxer_context_t * ctx)
         }
       
       p = bgav_stream_get_packet_write(s);
-      bgav_packet_alloc(p, size);
+      gavl_packet_alloc(p, size);
 
       if(bgav_input_read_data(ctx->input, p->buf.buf,
                               size) < size)

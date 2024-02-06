@@ -618,7 +618,7 @@ static gavl_source_status_t next_packet_vivo(bgav_demuxer_context_t * ctx)
     }
 
   /* Append data */
-  bgav_packet_alloc(stream->packet,
+  gavl_packet_alloc(stream->packet,
                     stream->packet->buf.len + len);
   if(bgav_input_read_data(ctx->input,
                           stream->packet->buf.buf + stream->packet->buf.len,

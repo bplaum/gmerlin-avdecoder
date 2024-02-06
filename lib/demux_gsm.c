@@ -80,7 +80,7 @@ static gavl_source_status_t next_packet_gsm(bgav_demuxer_context_t * ctx)
   s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
   p = bgav_stream_get_packet_write(s);
 
-  bgav_packet_alloc(p, s->data.audio.block_align);
+  gavl_packet_alloc(p, s->data.audio.block_align);
 
   p->pts = bytes_2_samples(ctx->input->position);
   PACKET_SET_KEYFRAME(p);

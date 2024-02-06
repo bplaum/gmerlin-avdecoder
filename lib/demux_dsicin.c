@@ -192,7 +192,7 @@ static gavl_source_status_t next_packet_dsicin(bgav_demuxer_context_t * ctx)
     {
     p = bgav_stream_get_packet_write(s);
     
-    bgav_packet_alloc(p, pkt_size + 4);
+    gavl_packet_alloc(p, pkt_size + 4);
     
     p->buf.buf[0] = palette_type;
     p->buf.buf[1] = frame_header.num_palette_colors & 0xFF;
@@ -219,7 +219,7 @@ static gavl_source_status_t next_packet_dsicin(bgav_demuxer_context_t * ctx)
     {
     p = bgav_stream_get_packet_write(s);
 
-    bgav_packet_alloc(p, pkt_size + frame_header.audio_size);
+    gavl_packet_alloc(p, pkt_size + frame_header.audio_size);
     
     if(bgav_input_read_data(ctx->input, p->buf.buf, frame_header.audio_size) < frame_header.audio_size)
       return GAVL_SOURCE_EOF;

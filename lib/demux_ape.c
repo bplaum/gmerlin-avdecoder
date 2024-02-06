@@ -362,7 +362,7 @@ static gavl_source_status_t next_packet_ape(bgav_demuxer_context_t * ctx)
 
   p->position = ctx->input->position;
   
-  bgav_packet_alloc(p, priv->index[s->in_position].size + EXTRA_SIZE);
+  gavl_packet_alloc(p, priv->index[s->in_position].size + EXTRA_SIZE);
   
   if(s->in_position < priv->h.totalframes-1)
     p->duration = priv->h.blocksperframe;

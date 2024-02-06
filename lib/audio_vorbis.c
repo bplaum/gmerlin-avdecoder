@@ -609,7 +609,7 @@ static void close_vorbis(bgav_stream_t * s)
   vorbis_comment_clear(&priv->dec_vc);
   vorbis_info_clear(&priv->dec_vi);
 
-  bgav_packet_free(&priv->p);
+  gavl_packet_free(&priv->p);
   
   free(priv);
   }

@@ -231,7 +231,7 @@ static gavl_source_status_t next_packet_wavpack(bgav_demuxer_context_t * ctx)
     
   size = h.block_size - 24;
   
-  bgav_packet_alloc(p, size + HEADER_SIZE);
+  gavl_packet_alloc(p, size + HEADER_SIZE);
   
   memcpy(p->buf.buf, header, HEADER_SIZE);
   
@@ -250,7 +250,7 @@ static gavl_source_status_t next_packet_wavpack(bgav_demuxer_context_t * ctx)
 
     parse_header(&h, header);
 
-    bgav_packet_alloc(p, p->buf.len + h.block_size - 24 + HEADER_SIZE);
+    gavl_packet_alloc(p, p->buf.len + h.block_size - 24 + HEADER_SIZE);
 
     memcpy(p->buf.buf + p->buf.len, header, HEADER_SIZE);
     p->buf.len += HEADER_SIZE;

@@ -387,7 +387,7 @@ static gavl_source_status_t next_packet_ircam(bgav_demuxer_context_t * ctx)
   if(bytes_to_read <= 0)
     return GAVL_SOURCE_EOF;
   
-  bgav_packet_alloc(p, bytes_to_read);
+  gavl_packet_alloc(p, bytes_to_read);
   PACKET_SET_KEYFRAME(p);
   bytes_read = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
   p->buf.len = bytes_read;

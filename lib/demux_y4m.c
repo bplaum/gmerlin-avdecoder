@@ -251,7 +251,7 @@ static gavl_source_status_t next_packet_y4m(bgav_demuxer_context_t * ctx)
   if(strncmp((char*)priv->line_buf.buf, "FRAME", 5))
     return GAVL_SOURCE_EOF;
   
-  bgav_packet_alloc(p, priv->buf_size);
+  gavl_packet_alloc(p, priv->buf_size);
 
   if(bgav_input_read_data(ctx->input, p->buf.buf, priv->buf_size) < priv->buf_size)
     return GAVL_SOURCE_EOF;

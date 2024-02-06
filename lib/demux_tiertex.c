@@ -245,7 +245,7 @@ static gavl_source_status_t next_packet_tiertex(bgav_demuxer_context_t * ctx)
       {
       p = bgav_stream_get_packet_write(s);
 
-      bgav_packet_alloc(p, video_size + palette_size + 1);
+      gavl_packet_alloc(p, video_size + palette_size + 1);
       p->buf.buf[0] = 0;
 
       if(palette_size)
@@ -279,7 +279,7 @@ static gavl_source_status_t next_packet_tiertex(bgav_demuxer_context_t * ctx)
       {
       p = bgav_stream_get_packet_write(s);
       
-      bgav_packet_alloc(p, SEQ_AUDIO_BUFFER_SIZE);
+      gavl_packet_alloc(p, SEQ_AUDIO_BUFFER_SIZE);
       memcpy(p->buf.buf, buf + fh.sound_data_offset, SEQ_AUDIO_BUFFER_SIZE);
       p->buf.len = SEQ_AUDIO_BUFFER_SIZE;
       bgav_stream_done_packet_write(s, p);

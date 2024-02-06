@@ -269,7 +269,7 @@ static gavl_source_status_t next_packet_gif(bgav_demuxer_context_t * ctx)
   p = bgav_stream_get_packet_write(s);
   p->position = ctxposition;
 
-  bgav_packet_alloc(p, GLOBAL_HEADER_LEN + priv->global_cmap_bytes +
+  gavl_packet_alloc(p, GLOBAL_HEADER_LEN + priv->global_cmap_bytes +
                     GCE_LEN + // GCE length
                     IMAGE_DESCRIPTOR_LEN); // Image Descriptor length
 
@@ -302,7 +302,7 @@ static gavl_source_status_t next_packet_gif(bgav_demuxer_context_t * ctx)
     local_cmap_len =
       3*(1 << ((image_descriptor[IMAGE_DESCRIPTOR_LEN-1] & 0x07) + 1));
 
-    bgav_packet_alloc(p, p->buf.len + local_cmap_len);
+    gavl_packet_alloc(p, p->buf.len + local_cmap_len);
     
     if(bgav_input_read_data(ctx->input, p->buf.buf + p->buf.len,
                             local_cmap_len) < local_cmap_len)
@@ -314,7 +314,7 @@ static gavl_source_status_t next_packet_gif(bgav_demuxer_context_t * ctx)
 
   /* Initial code length */
 
-  bgav_packet_alloc(p, p->buf.len + 1);
+  gavl_packet_alloc(p, p->buf.len + 1);
   if(!bgav_input_read_data(ctx->input, p->buf.buf + p->buf.len, 1))
     return GAVL_SOURCE_EOF;
   p->buf.len++;
@@ -324,7 +324,7 @@ static gavl_source_status_t next_packet_gif(bgav_demuxer_context_t * ctx)
     if(!bgav_input_get_data(ctx->input, buf, 1))
       return GAVL_SOURCE_EOF;
 
-    bgav_packet_alloc(p, p->buf.len + buf[0]+1);
+    gavl_packet_alloc(p, p->buf.len + buf[0]+1);
 
     if(bgav_input_read_data(ctx->input, p->buf.buf +
                             p->buf.len, buf[0]+1) < buf[0]+1)
@@ -335,7 +335,7 @@ static gavl_source_status_t next_packet_gif(bgav_demuxer_context_t * ctx)
     }
   
   /* Trailer */
-  bgav_packet_alloc(p, p->buf.len + 1);
+  gavl_packet_alloc(p, p->buf.len + 1);
   p->buf.buf[p->buf.len] = ';';
   p->buf.len++;
   

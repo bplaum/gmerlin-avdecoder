@@ -179,7 +179,7 @@ static gavl_source_status_t next_packet_adif(bgav_demuxer_context_t * ctx)
      aac frame boundaries or timestamps here */
 
   p = bgav_stream_get_packet_write(s);
-  bgav_packet_alloc(p, BYTES_TO_READ);
+  gavl_packet_alloc(p, BYTES_TO_READ);
   
   bytes_read = bgav_input_read_data(ctx->input, p->buf.buf, BYTES_TO_READ);
   if(!bytes_read)

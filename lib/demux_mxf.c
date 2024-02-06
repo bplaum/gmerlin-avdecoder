@@ -132,7 +132,7 @@ static int next_packet_clip_wrapped_const(bgav_demuxer_context_t * ctx, bgav_str
 
   p = bgav_stream_get_packet_write(s);
   p->position = ctx->input->position;
-  bgav_packet_alloc(p, bytes_to_read);
+  gavl_packet_alloc(p, bytes_to_read);
   p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
 
   sp->pos += bytes_to_read;
@@ -187,7 +187,7 @@ static int process_packet_frame_wrapped(bgav_demuxer_context_t * ctx)
 
     num_samples = (end_pos - ctx->input->position) / 32; /* 8 channels*4 bytes/channel */
     
-    bgav_packet_alloc(p, num_samples * s->data.audio.block_align);
+    gavl_packet_alloc(p, num_samples * s->data.audio.block_align);
     ptr = p->buf.buf;
     p->buf.len = 0;
     for(i = 0; i < num_samples; i++)
@@ -217,7 +217,7 @@ static int process_packet_frame_wrapped(bgav_demuxer_context_t * ctx)
     }
   else
     {
-    bgav_packet_alloc(p, klv.length);
+    gavl_packet_alloc(p, klv.length);
     if((p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, klv.length)) < klv.length)
       return 0;
 

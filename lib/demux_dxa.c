@@ -265,7 +265,7 @@ static gavl_source_status_t next_packet_dxa(bgav_demuxer_context_t * ctx)
       bytes_to_read = priv->audio_end - priv->audio_position;
     
     p = bgav_stream_get_packet_write(s);
-    bgav_packet_alloc(p, bytes_to_read);
+    gavl_packet_alloc(p, bytes_to_read);
 
     bgav_input_seek(ctx->input, priv->audio_position, SEEK_SET);
     p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
@@ -296,7 +296,7 @@ static gavl_source_status_t next_packet_dxa(bgav_demuxer_context_t * ctx)
         {
         case BGAV_MK_FOURCC('N','U','L','L'):
           p = bgav_stream_get_packet_write(s);
-          bgav_packet_alloc(p, 4 + pal_size);
+          gavl_packet_alloc(p, 4 + pal_size);
           if(pal_size)
             memcpy(p->buf.buf, pal, pal_size);
           bgav_input_read_data(ctx->input, p->buf.buf + pal_size, 4);
@@ -320,7 +320,7 @@ static gavl_source_status_t next_packet_dxa(bgav_demuxer_context_t * ctx)
 
           p = bgav_stream_get_packet_write(s);
 
-          bgav_packet_alloc(p, size + DXA_EXTRA_SIZE + pal_size);
+          gavl_packet_alloc(p, size + DXA_EXTRA_SIZE + pal_size);
 
           if(pal_size)
             memcpy(p->buf.buf, pal, pal_size);

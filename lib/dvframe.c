@@ -637,7 +637,7 @@ int bgav_dv_dec_get_audio_packet(bgav_dv_dec_t * d, bgav_packet_t * p)
     {
     int buf_len = gavl_audio_format_buffer_size(&d->audio_format);
     
-    bgav_packet_alloc(p, buf_len);
+    gavl_packet_alloc(p, buf_len);
     
     if(!d->audio_frame)
       d->audio_frame = gavl_audio_frame_create(NULL);
@@ -668,7 +668,7 @@ void bgav_dv_dec_get_video_packet(bgav_dv_dec_t * d, bgav_packet_t * p)
     if(p->duration <= 0)
       p->duration = d->video_format.frame_duration;
     
-    bgav_packet_alloc(p, d->profile->frame_size);
+    gavl_packet_alloc(p, d->profile->frame_size);
     memcpy(p->buf.buf, d->buffer, d->profile->frame_size);
     p->buf.len = d->profile->frame_size;
     }

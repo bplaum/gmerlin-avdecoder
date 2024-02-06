@@ -31,25 +31,11 @@ bgav_packet_t * bgav_packet_create()
   return ret;
   }
 
-void bgav_packet_free(bgav_packet_t * p)
-  {
-  gavl_buffer_free(&p->buf);
-  
-  memset(p, 0, sizeof(*p));
-  }
 
 void bgav_packet_destroy(bgav_packet_t * p)
   {
-  bgav_packet_free(p);
+  gavl_packet_free(p);
   free(p);
-  }
-
-void bgav_packet_alloc(bgav_packet_t * p, int size)
-  {
-  gavl_buffer_alloc(&p->buf, size + GAVL_PACKET_PADDING);
-  
-  /* Pad in advance */
-  memset(p->buf.buf + size, 0, GAVL_PACKET_PADDING);
   }
 
 void bgav_packet_pad(bgav_packet_t * p)
@@ -58,62 +44,6 @@ void bgav_packet_pad(bgav_packet_t * p)
   memset(p->buf.buf + p->buf.len, 0, GAVL_PACKET_PADDING);
   }
 
-#if 0
-void bgav_packet_dump(const bgav_packet_t * p)
-  {
-  gavl_dprintf("pos: %"PRId64", K: %d, ", p->position, !!PACKET_GET_KEYFRAME(p));
-
-  if(p->field2_offset)
-    gavl_dprintf("f2: %d, ", p->field2_offset);
-  
-  gavl_dprintf("T: %s ", bgav_coding_type_to_string(p->flags));
-  
-  if(p->dts != GAVL_TIME_UNDEFINED)
-    gavl_dprintf("dts: %"PRId64", ", p->dts);
-
-  if(p->pts == GAVL_TIME_UNDEFINED)
-    gavl_dprintf("pts: (none), ");
-  else
-    gavl_dprintf("pts: %"PRId64", ", p->pts);
-  
-  gavl_dprintf("Len: %d, dur: %"PRId64, p->buf.len, p->duration);
-
-  if(p->header_size)
-    gavl_dprintf(", head: %d", p->header_size);
-
-  if(p->sequence_end_pos)
-    gavl_dprintf(", end: %d", p->sequence_end_pos);
-
-  if(PACKET_GET_SKIP(p))
-    gavl_dprintf(", skip");
-
-  if(p->flags & GAVL_PACKET_NOOUTPUT)
-    gavl_dprintf(", nooutput");
-
-  if(p->flags & GAVL_PACKET_REF)
-    gavl_dprintf(", ref");
-
-  if(p->flags & GAVL_PACKET_FIELD_PIC)
-    gavl_dprintf(", field-pic");
-  
-  if(p->timecode != GAVL_TIMECODE_UNDEFINED)
-    {
-    gavl_dprintf(", TC: ");
-    gavl_timecode_dump(NULL, p->timecode);
-    }
-  
-  if(p->interlace_mode == GAVL_INTERLACE_TOP_FIRST)
-    gavl_dprintf(", il: t");
-  else if(p->interlace_mode == GAVL_INTERLACE_BOTTOM_FIRST)
-    gavl_dprintf(", il: b");
-
-  //  if(p->end_pts != GAVL_TIME_UNDEFINED)
-  //    gavl_dprintf(" end_pts: %"PRId64", ", p->end_pts);
-  
-  gavl_dprintf("\n");
-  //  gavl_hexdump(p->data, p->data_size < 16 ? p->data_size : 16, 16);
-  }
-#endif
 
 void bgav_packet_dump_data(bgav_packet_t * p, int bytes)
   {
@@ -140,54 +70,3 @@ void bgav_packet_copy(bgav_packet_t * dst,
   gavl_buffer_copy(&dst->buf, &src->buf);
   }
 
-#if 0
-void bgav_packet_source_copy(bgav_packet_source_t * dst,
-                             const bgav_packet_source_t * src)
-  {
-  memcpy(dst, src, sizeof(*dst));
-  }
-
-void bgav_packet_2_gavl(bgav_packet_t * src,
-                        gavl_packet_t * dst)
-  {
-  dst->pts      = src->pts;
-  dst->duration = src->duration;
-
-  dst->header_size      = src->header_size;
-  dst->field2_offset    = src->field2_offset;
-  dst->sequence_end_pos = src->sequence_end_pos;
-
-  dst->flags    = src->flags & 0xFFFF;
-
-  dst->buf.buf = src->buf.buf;
-  dst->buf.len = src->buf.len;
-  dst->buf.alloc = src->buf.alloc;
-  
-  dst->interlace_mode = src->interlace_mode;
-  dst->timecode = src->timecode;
-
-  dst->dst_x = src->dst_x;
-  dst->dst_y = src->dst_y;
-
-  gavl_rectangle_i_copy(&dst->src_rect, &src->src_rect);
-  }
-
-void bgav_packet_from_gavl(gavl_packet_t * src,
-                           bgav_packet_t * dst)
-  {
-  dst->pts      = src->pts;
-  dst->duration = src->duration;
-  dst->flags    = src->flags;
-
-  dst->header_size      = src->header_size;
-  dst->field2_offset    = src->field2_offset;
-  dst->sequence_end_pos = src->sequence_end_pos;
-  dst->interlace_mode = src->interlace_mode;
-  dst->timecode = src->timecode;
-
-  dst->dst_x = src->dst_x;
-  dst->dst_y = src->dst_y;
-
-  gavl_rectangle_i_copy(&dst->src_rect, &src->src_rect);
-  }
-#endif

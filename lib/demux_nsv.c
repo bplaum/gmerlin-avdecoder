@@ -686,7 +686,7 @@ static gavl_source_status_t next_packet_nsv(bgav_demuxer_context_t * ctx)
     if(s && !priv->need_pcm_format)
       {
       p = bgav_stream_get_packet_write(s);
-      bgav_packet_alloc(p, video_len);
+      gavl_packet_alloc(p, video_len);
       if(bgav_input_read_data(ctx->input, p->buf.buf, video_len) < video_len)
         return GAVL_SOURCE_EOF;
       p->buf.len = video_len;
@@ -739,7 +739,7 @@ static gavl_source_status_t next_packet_nsv(bgav_demuxer_context_t * ctx)
       if(audio_len && !priv->need_pcm_format)
         {
         p = bgav_stream_get_packet_write(s);
-        bgav_packet_alloc(p, audio_len);
+        gavl_packet_alloc(p, audio_len);
         if(bgav_input_read_data(ctx->input, p->buf.buf, audio_len) < audio_len)
           return GAVL_SOURCE_EOF;
         p->buf.len = audio_len;

@@ -159,9 +159,6 @@ dst[0] = pal.b >> 8;
 bgav_packet_t * bgav_packet_create();
 
 void bgav_packet_destroy(bgav_packet_t*);
-void bgav_packet_free(bgav_packet_t*);
-
-#define bgav_packet_alloc(p, s) gavl_packet_alloc(p, s)
 
 #define bgav_packet_dump(p) gavl_packet_dump(p)
 
@@ -169,7 +166,7 @@ void bgav_packet_dump_data(bgav_packet_t * p, int bytes);
 
 void bgav_packet_pad(bgav_packet_t * p);
 
-// void bgav_packet_alloc_palette(bgav_packet_t * p, int size);
+// void gavl_packet_alloc_palette(bgav_packet_t * p, int size);
 void bgav_packet_copy_metadata(bgav_packet_t * dst,
                                const bgav_packet_t * src);
 

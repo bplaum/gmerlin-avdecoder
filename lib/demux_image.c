@@ -165,7 +165,7 @@ static gavl_source_status_t next_packet_image(bgav_demuxer_context_t * ctx)
   p = bgav_stream_get_packet_write(s);
   p->position = 0;
 
-  bgav_packet_alloc(p, ctx->input->total_bytes);
+  gavl_packet_alloc(p, ctx->input->total_bytes);
 
   if(bgav_input_read_data(ctx->input, p->buf.buf, ctx->input->total_bytes) < ctx->input->total_bytes)
     return GAVL_SOURCE_EOF;

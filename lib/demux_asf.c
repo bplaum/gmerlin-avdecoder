@@ -1031,7 +1031,7 @@ static void add_packet(bgav_demuxer_context_t * ctx,
         gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "data_size %d, Offset: %d",
                 s->packet->buf.len, offs);
 
-      bgav_packet_alloc(s->packet,
+      gavl_packet_alloc(s->packet,
                         s->packet->buf.len + len);
       memcpy(s->packet->buf.buf + s->packet->buf.len, data, len);
       s->packet->buf.len += len;
@@ -1040,7 +1040,7 @@ static void add_packet(bgav_demuxer_context_t * ctx,
     }
   
   s->packet = bgav_stream_get_packet_write(s);
-  bgav_packet_alloc(s->packet, len);
+  gavl_packet_alloc(s->packet, len);
   
 
   if(s->type == GAVL_STREAM_AUDIO)

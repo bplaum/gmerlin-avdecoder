@@ -1164,7 +1164,7 @@ static int process_video_chunk(bgav_demuxer_context_t * ctx,
       /* 1 byte slice count + 8 bytes per slice */
       packet_size = frame_size + 1 + 8;
     
-      bgav_packet_alloc(s->packet, packet_size);
+      gavl_packet_alloc(s->packet, packet_size);
 
       if(bgav_input_read_data(ctx->input, s->packet->buf.buf + 9, frame_size) < frame_size)
         return 0;
@@ -1194,7 +1194,7 @@ static int process_video_chunk(bgav_demuxer_context_t * ctx,
         if(!num_chunks)
           s->packet->pts = h->timestamp;
         
-        bgav_packet_alloc(s->packet, bytes_to_read + 9);
+        gavl_packet_alloc(s->packet, bytes_to_read + 9);
 
         s->packet->buf.buf[0] = 0;
         GAVL_32LE_2_PTR(1, s->packet->buf.buf+1);
@@ -1213,7 +1213,7 @@ static int process_video_chunk(bgav_demuxer_context_t * ctx,
         }
       else /* Append slice */
         {
-        bgav_packet_alloc(s->packet, s->packet->buf.len + bytes_to_read + 8);
+        gavl_packet_alloc(s->packet, s->packet->buf.len + bytes_to_read + 8);
 
         /* Move payload up by 8 bytes */
         memmove(s->packet->buf.buf + 1 + (sp->num_slices+1) * 8,
@@ -1342,7 +1342,7 @@ static int process_audio_chunk(bgav_demuxer_context_t * ctx,
       for (x = 0; x < sph*w/apk_usize; x++)
         {
         p = bgav_stream_get_packet_write(stream);
-        bgav_packet_alloc(p, apk_usize);
+        gavl_packet_alloc(p, apk_usize);
         p->buf.len = apk_usize;
         memcpy(p->buf.buf, as->audio_buf + x * apk_usize, apk_usize);
         if(!x)
@@ -1355,7 +1355,7 @@ static int process_audio_chunk(bgav_demuxer_context_t * ctx,
   else if(stream->fourcc == BGAV_MK_FOURCC('d', 'n', 'e', 't')) 
     {
     p = bgav_stream_get_packet_write(stream);
-    bgav_packet_alloc(p, packet_size);
+    gavl_packet_alloc(p, packet_size);
     if(bgav_input_read_data(ctx->input, p->buf.buf, packet_size) < packet_size)
       return 0;
 
@@ -1384,7 +1384,7 @@ static int process_audio_chunk(bgav_demuxer_context_t * ctx,
     for(x = 0; x < num_aac_packets; x++)
       {
       p = bgav_stream_get_packet_write(stream);
-      bgav_packet_alloc(p, packet_size);
+      gavl_packet_alloc(p, packet_size);
       
       bgav_input_read_data(ctx->input, p->buf.buf, aac_packet_lengths[x]);
       p->buf.len = aac_packet_lengths[x];
@@ -1394,7 +1394,7 @@ static int process_audio_chunk(bgav_demuxer_context_t * ctx,
   else /* No reordering needed */
     {
     p = bgav_stream_get_packet_write(stream);
-    bgav_packet_alloc(p, packet_size);
+    gavl_packet_alloc(p, packet_size);
     
     bgav_input_read_data(ctx->input, p->buf.buf, packet_size);
     p->buf.len = packet_size;

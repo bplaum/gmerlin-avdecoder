@@ -229,7 +229,7 @@ static gavl_source_status_t next_packet_wav(bgav_demuxer_context_t * ctx)
     ((ctx->input->position - ctx->tt->cur->data_start) * s->data.audio.format->samplerate) /
     (s->codec_bitrate / 8);
   
-  bgav_packet_alloc(p, priv->packet_size);
+  gavl_packet_alloc(p, priv->packet_size);
     
   p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
 

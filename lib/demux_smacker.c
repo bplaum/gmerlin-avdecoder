@@ -386,7 +386,7 @@ static gavl_source_status_t next_packet_smacker(bgav_demuxer_context_t * ctx)
 #endif
         p = bgav_stream_get_packet_write(s);
 
-        bgav_packet_alloc(p, size);
+        gavl_packet_alloc(p, size);
         p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, size);
         if(!p->buf.len)
           return GAVL_SOURCE_EOF;
@@ -407,7 +407,7 @@ static gavl_source_status_t next_packet_smacker(bgav_demuxer_context_t * ctx)
   
   p = bgav_stream_get_packet_write(s);
 
-  bgav_packet_alloc(p, frame_end - ctx->input->position + 769);
+  gavl_packet_alloc(p, frame_end - ctx->input->position + 769);
 
   p->buf.buf[0] = 0;
   if(palette_change)

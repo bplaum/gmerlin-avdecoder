@@ -436,7 +436,7 @@ static gavl_source_status_t next_packet_mpegts(bgav_demuxer_context_t * ctx)
       
       len = 188 - (ptr - priv->buf.buf);
       
-      bgav_packet_alloc(s->packet, len);
+      gavl_packet_alloc(s->packet, len);
       memcpy(s->packet->buf.buf, ptr, len);
       s->packet->buf.len = len;
 
@@ -455,7 +455,7 @@ static gavl_source_status_t next_packet_mpegts(bgav_demuxer_context_t * ctx)
       /* Append to packet */
       else
         {
-        bgav_packet_alloc(s->packet,
+        gavl_packet_alloc(s->packet,
                           s->packet->buf.len +
                           pkt.payload_size);
         

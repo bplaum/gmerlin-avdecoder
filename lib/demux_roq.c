@@ -215,7 +215,7 @@ static gavl_source_status_t next_packet_roq(bgav_demuxer_context_t * ctx)
           break;
           }
         video_packet = bgav_stream_get_packet_write(s);
-        bgav_packet_alloc(video_packet, h.size + PREAMBLE_SIZE);
+        gavl_packet_alloc(video_packet, h.size + PREAMBLE_SIZE);
         video_packet->buf.len = 0;
         
         memcpy(video_packet->buf.buf, preamble, PREAMBLE_SIZE);
@@ -242,7 +242,7 @@ static gavl_source_status_t next_packet_roq(bgav_demuxer_context_t * ctx)
           video_packet = bgav_stream_get_packet_write(s);
           video_packet->buf.len = 0;
           }
-        bgav_packet_alloc(video_packet,
+        gavl_packet_alloc(video_packet,
                           video_packet->buf.len + h.size + PREAMBLE_SIZE);
 
         memcpy(video_packet->buf.buf + video_packet->buf.len, preamble, PREAMBLE_SIZE);
@@ -269,7 +269,7 @@ static gavl_source_status_t next_packet_roq(bgav_demuxer_context_t * ctx)
           }
         audio_packet = bgav_stream_get_packet_write(s);
 
-        bgav_packet_alloc(audio_packet, h.size + PREAMBLE_SIZE);
+        gavl_packet_alloc(audio_packet, h.size + PREAMBLE_SIZE);
         memcpy(audio_packet->buf.buf, preamble, 8);
         
         if(bgav_input_read_data(ctx->input,

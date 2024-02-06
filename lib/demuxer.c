@@ -427,7 +427,7 @@ static int read_packet_superindex(bgav_demuxer_context_t * ctx, bgav_stream_t * 
     }
   
   p->buf.len = ctx->si->entries[pos].size;
-  bgav_packet_alloc(p, p->buf.len);
+  gavl_packet_alloc(p, p->buf.len);
   if(bgav_input_read_data(ctx->input, p->buf.buf, p->buf.len) < p->buf.len)
     return 0;
   
@@ -881,7 +881,7 @@ gavl_source_status_t bgav_demuxer_next_packet_raw(bgav_demuxer_context_t * ctx)
   
   p = bgav_stream_get_packet_write(s);
   
-  bgav_packet_alloc(p, RAW_BUFFER_LEN);
+  gavl_packet_alloc(p, RAW_BUFFER_LEN);
   p->position = ctx->input->position;
   p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, RAW_BUFFER_LEN);
   

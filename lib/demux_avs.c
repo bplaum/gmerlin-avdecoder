@@ -143,7 +143,7 @@ static gavl_source_status_t next_packet_avs(bgav_demuxer_context_t * ctx)
           vs->packet->buf.len = 0;
           }
 
-        bgav_packet_alloc(vs->packet, vs->packet->buf.len + block_size);
+        gavl_packet_alloc(vs->packet, vs->packet->buf.len + block_size);
 
         memcpy(vs->packet->buf.buf + vs->packet->buf.len, block_header, 4);
         vs->packet->buf.len += 4;
@@ -174,7 +174,7 @@ static gavl_source_status_t next_packet_avs(bgav_demuxer_context_t * ctx)
           bgav_stream_get_packet_write(vs);
         vs->packet->buf.len = 0;
         
-        bgav_packet_alloc(vs->packet, block_size);
+        gavl_packet_alloc(vs->packet, block_size);
         
         memcpy(vs->packet->buf.buf + vs->packet->buf.len, block_header, 4);
         vs->packet->buf.len += 4;
@@ -235,7 +235,7 @@ static gavl_source_status_t next_packet_avs(bgav_demuxer_context_t * ctx)
 
           if(as->packet)
             {
-            bgav_packet_alloc(as->packet,
+            gavl_packet_alloc(as->packet,
                               as->packet->buf.len + bytes_to_read);
             if(bgav_input_read_data(ctx->input,
                                     as->packet->buf.buf + as->packet->buf.len,

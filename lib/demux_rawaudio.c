@@ -170,7 +170,7 @@ static gavl_source_status_t next_packet_rawaudio(bgav_demuxer_context_t * ctx)
   
   p->pts = ctx->input->position / s->data.audio.block_align;
 
-  bgav_packet_alloc(p, bytes_to_read);
+  gavl_packet_alloc(p, bytes_to_read);
   p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
   p->duration = p->buf.len/s->data.audio.block_align;
   

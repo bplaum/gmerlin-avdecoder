@@ -415,7 +415,7 @@ static gavl_source_status_t next_packet_aiff(bgav_demuxer_context_t * ctx)
     (s->data.audio.format->samples_per_frame * s->data.audio.block_align) /
     priv->samples_per_block;
   
-  bgav_packet_alloc(p, bytes_to_read);
+  gavl_packet_alloc(p, bytes_to_read);
   
   bytes_read = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
   

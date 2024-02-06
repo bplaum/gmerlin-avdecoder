@@ -345,7 +345,7 @@ static gavl_source_status_t next_packet_mpegaudio(bgav_demuxer_context_t * ctx)
   
   s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
   p = bgav_stream_get_packet_write(s);
-  bgav_packet_alloc(p, bytes_left);
+  gavl_packet_alloc(p, bytes_left);
 
   p->position = ctx->input->position;
   

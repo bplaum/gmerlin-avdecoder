@@ -268,7 +268,7 @@ get_data(bgav_stream_t * s, bgav_packet_t ** ret_p)
     if(!priv->p)
       priv->p = bgav_packet_create();
     
-    bgav_packet_alloc(priv->p, ret->buf.len);
+    gavl_packet_alloc(priv->p, ret->buf.len);
 
     priv->p->field2_offset =
       ret->buf.len - ret->field2_offset;
@@ -351,8 +351,6 @@ static void update_palette(bgav_stream_t * s, gavl_palette_t * palette)
   for(i = imax; i < AVPALETTE_COUNT; i++)
     pal_i[i] = 0;
   
-  // bgav_packet_free_palette(p);
-
   }
 
 static gavl_source_status_t get_packet(bgav_stream_t * s)

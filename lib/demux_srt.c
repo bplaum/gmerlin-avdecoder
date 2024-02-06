@@ -197,7 +197,7 @@ static gavl_source_status_t next_packet_srt(bgav_demuxer_context_t * ctx)
       }
     
     lines_read++;
-    bgav_packet_alloc(p, p->buf.len + srt->line_buf.len + 2);
+    gavl_packet_alloc(p, p->buf.len + srt->line_buf.len + 2);
     gavl_buffer_append(&p->buf, &srt->line_buf);
     }
   /* Never get here */

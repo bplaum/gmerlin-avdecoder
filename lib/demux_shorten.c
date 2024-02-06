@@ -56,7 +56,7 @@ static gavl_source_status_t next_packet_shorten(bgav_demuxer_context_t * ctx)
     return GAVL_SOURCE_OK;
 
   p = bgav_stream_get_packet_write(s);
-  bgav_packet_alloc(p, DATA_SIZE);
+  gavl_packet_alloc(p, DATA_SIZE);
   p->buf.len = bgav_input_read_data(ctx->input, p->buf.buf, DATA_SIZE);
   if(!p->buf.len)
     return GAVL_SOURCE_EOF;

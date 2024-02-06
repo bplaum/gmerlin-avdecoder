@@ -170,7 +170,7 @@ static gavl_source_status_t read_srt(bgav_stream_t * s, bgav_packet_t * p)
       }
     
     lines_read++;
-    bgav_packet_alloc(p, p->buf.len + ctx->line_buf.len + 2);
+    gavl_packet_alloc(p, p->buf.len + ctx->line_buf.len + 2);
     gavl_buffer_append(&p->buf, &ctx->line_buf);
     }
   
@@ -485,7 +485,7 @@ read_vobsub(bgav_stream_t * s, bgav_packet_t * p)
           continue;
           }
 
-        bgav_packet_alloc(p, p->buf.len + pes_header.payload_size);
+        gavl_packet_alloc(p, p->buf.len + pes_header.payload_size);
         if(bgav_input_read_data(priv->sub,
                                 p->buf.buf + p->buf.len,
                                 pes_header.payload_size) <
