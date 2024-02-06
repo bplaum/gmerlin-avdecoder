@@ -164,12 +164,6 @@ void gavl_packet_dump_data(bgav_packet_t * p, int bytes);
 
 void bgav_packet_pad(bgav_packet_t * p);
 
-// void gavl_packet_alloc_palette(bgav_packet_t * p, int size);
-void bgav_packet_copy_metadata(bgav_packet_t * dst,
-                               const bgav_packet_t * src);
-
-void bgav_packet_copy(bgav_packet_t * dst,
-                      const bgav_packet_t * src);
 
 /* Stream structure */ 
 

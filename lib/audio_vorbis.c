@@ -137,7 +137,7 @@ static gavl_source_status_t next_packet(bgav_stream_t * s)
       gavl_packet_dump(p);
 #endif    
       gavl_packet_reset(&priv->p);
-      bgav_packet_copy(&priv->p, p);
+      gavl_packet_copy(&priv->p, p);
     
       memset(&priv->dec_op, 0, sizeof(priv->dec_op));
       priv->dec_op.bytes  = priv->p.buf.len;

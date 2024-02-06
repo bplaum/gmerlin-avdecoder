@@ -52,21 +52,3 @@ void gavl_packet_dump_data(bgav_packet_t * p, int bytes)
   gavl_hexdump(p->buf.buf, bytes, 16);
   }
 
-void bgav_packet_copy_metadata(bgav_packet_t * dst,
-                               const bgav_packet_t * src)
-  {
-  dst->pts      = src->pts;
-  dst->dts      = src->dts;
-  dst->duration = src->duration;
-  dst->flags    = src->flags;
-  dst->timecode       = src->timecode;
-  }
-
-void bgav_packet_copy(bgav_packet_t * dst,
-                      const bgav_packet_t * src)
-  {
-  memcpy(dst, src, sizeof(*dst));
-  memset(&dst->buf, 0, sizeof(dst->buf));
-  gavl_buffer_copy(&dst->buf, &src->buf);
-  }
-

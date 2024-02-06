@@ -282,7 +282,7 @@ get_data(bgav_stream_t * s, bgav_packet_t ** ret_p)
     memcpy(priv->p->buf.buf + priv->p->field2_offset,
            ret->buf.buf,
            ret->field2_offset);
-    bgav_packet_copy_metadata(priv->p, ret);
+    gavl_packet_copy_metadata(priv->p, ret);
     priv->p->buf.len = ret->buf.len;
     bgav_stream_done_packet_read(s, ret);
     *ret_p = priv->p;

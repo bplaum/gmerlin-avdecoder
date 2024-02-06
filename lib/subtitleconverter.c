@@ -103,7 +103,7 @@ source_func(void * priv, bgav_packet_t ** ret_p)
                                     &ret->buf))
       return GAVL_SOURCE_EOF;
     
-    bgav_packet_copy_metadata(ret, in_packet);
+    gavl_packet_copy_metadata(ret, in_packet);
     }
   else
     {
