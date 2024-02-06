@@ -129,14 +129,14 @@ static void free_urls(bgav_hls_t * h)
 static void dump_urls(bgav_hls_t * h)
   {
   int i;
-  bgav_dprintf("HLS url list\n");
+  gavl_dprintf("HLS url list\n");
   for(i = 0; i < h->num_urls; i++)
     {
-    bgav_dprintf("  URL %d\n", i+1);
-    bgav_dprintf("    Duration %f\n", h->urls[i].duration);
-    bgav_dprintf("    Title    %s\n", h->urls[i].title);
-    bgav_dprintf("    Sequence %d\n", h->urls[i].seq);
-    bgav_dprintf("    URL      %s\n", h->urls[i].url);
+    gavl_dprintf("  URL %d\n", i+1);
+    gavl_dprintf("    Duration %f\n", h->urls[i].duration);
+    gavl_dprintf("    Title    %s\n", h->urls[i].title);
+    gavl_dprintf("    Sequence %d\n", h->urls[i].seq);
+    gavl_dprintf("    URL      %s\n", h->urls[i].url);
     }
   }
 #endif

@@ -80,21 +80,21 @@ static void parse_header(wvpk_header_t * ret, uint8_t * data)
 
 static void dump_header(wvpk_header_t * h)
   {
-  bgav_dprintf("wavpack header\n");
+  gavl_dprintf("wavpack header\n");
   
-  bgav_dprintf("  fourcc:          ");
+  gavl_dprintf("  fourcc:          ");
   bgav_dump_fourcc(h->fourcc);
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
 
-  bgav_dprintf("  block_size:       %d\n", h->block_size);
-  bgav_dprintf("  version:          %d\n", h->version);
-  bgav_dprintf("  block_index_u8:   %d\n", h->block_index_u8);
-  bgav_dprintf("  total_samples_u8: %d\n", h->total_samples_u8);
-  bgav_dprintf("  total_samples:    %d\n", h->total_samples);
-  bgav_dprintf("  block_index:      %d\n", h->block_index);
-  bgav_dprintf("  block_samples:    %d\n", h->block_samples);
-  bgav_dprintf("  flags:            %08x\n", h->flags);
-  bgav_dprintf("  crc:              %08x\n", h->crc);
+  gavl_dprintf("  block_size:       %d\n", h->block_size);
+  gavl_dprintf("  version:          %d\n", h->version);
+  gavl_dprintf("  block_index_u8:   %d\n", h->block_index_u8);
+  gavl_dprintf("  total_samples_u8: %d\n", h->total_samples_u8);
+  gavl_dprintf("  total_samples:    %d\n", h->total_samples);
+  gavl_dprintf("  block_index:      %d\n", h->block_index);
+  gavl_dprintf("  block_samples:    %d\n", h->block_samples);
+  gavl_dprintf("  flags:            %08x\n", h->flags);
+  gavl_dprintf("  crc:              %08x\n", h->crc);
   }
 
 static int probe_wavpack(bgav_input_context_t * input)

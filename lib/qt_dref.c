@@ -121,7 +121,7 @@ void bgav_qt_dref_dump(int indent, qt_dref_t * c)
     bgav_diprintf(indent+4, "size:    %d\n", c->table[i].size);
     bgav_diprintf(indent+4, "type:    ");
     bgav_dump_fourcc(c->table[i].type);
-    bgav_dprintf("\n");
+    gavl_dprintf("\n");
 
     bgav_diprintf(indent+4, "version: %d\n", c->table[i].version);
     bgav_diprintf(indent+4, "flags:   %08x\n", c->table[i].flags);

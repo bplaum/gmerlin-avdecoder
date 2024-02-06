@@ -79,17 +79,17 @@ static int read_mtv_header(bgav_input_context_t * input,
 #if 0
 static void dump_mtv_header(mtv_header_t * h)
   {
-  bgav_dprintf("MTV header\n");
-  bgav_dprintf("  file_size:         %d\n", h->file_size);
-  bgav_dprintf("  segments:          %d\n", h->segments);
-  bgav_dprintf("  audio_id:          %06x\n", h->audio_id);
-  bgav_dprintf("  audio_br:          %d\n", h->audio_br);
-  bgav_dprintf("  color_format:      %06x\n", h->color_format);
-  bgav_dprintf("  bpp:               %d\n", h->bpp);
-  bgav_dprintf("  width:             %d\n", h->width);
-  bgav_dprintf("  height:            %d\n", h->height);
-  bgav_dprintf("  img_segment_size:  %d\n", h->img_segment_size);
-  bgav_dprintf("  audio_subsegments: %d\n", h->audio_subsegments);
+  gavl_dprintf("MTV header\n");
+  gavl_dprintf("  file_size:         %d\n", h->file_size);
+  gavl_dprintf("  segments:          %d\n", h->segments);
+  gavl_dprintf("  audio_id:          %06x\n", h->audio_id);
+  gavl_dprintf("  audio_br:          %d\n", h->audio_br);
+  gavl_dprintf("  color_format:      %06x\n", h->color_format);
+  gavl_dprintf("  bpp:               %d\n", h->bpp);
+  gavl_dprintf("  width:             %d\n", h->width);
+  gavl_dprintf("  height:            %d\n", h->height);
+  gavl_dprintf("  img_segment_size:  %d\n", h->img_segment_size);
+  gavl_dprintf("  audio_subsegments: %d\n", h->audio_subsegments);
   }
 #endif
 

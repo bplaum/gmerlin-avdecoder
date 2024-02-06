@@ -152,7 +152,7 @@ static void set_keyframe_rv2(bgav_stream_t * s,
 #if 0
 static void dump_frame_info(frame_info_t * info)
   {
-  bgav_dprintf("  Frame info: type: %c, PTS: %d\n",
+  gavl_dprintf("  Frame info: type: %c, PTS: %d\n",
                info->pict_type, info->pts);
   }
 #endif
@@ -273,12 +273,12 @@ typedef struct
 #if 0
 static void dump_audio(rm_audio_stream_t*s)
   {
-  bgav_dprintf( "Audio stream:\n");
-  bgav_dprintf( "coded_framesize: %d\n", s->coded_framesize);
-  bgav_dprintf( "sub_packet_h      %d\n", s->sub_packet_h);
-  bgav_dprintf( "audiopk_size      %d\n", s->audiopk_size);
-  bgav_dprintf( "sub_packet_size   %d\n", s->sub_packet_size);
-  //  bgav_dprintf( "Bytes to read     %d\n", s->bytes_to_read);
+  gavl_dprintf( "Audio stream:\n");
+  gavl_dprintf( "coded_framesize: %d\n", s->coded_framesize);
+  gavl_dprintf( "sub_packet_h      %d\n", s->sub_packet_h);
+  gavl_dprintf( "audiopk_size      %d\n", s->audiopk_size);
+  gavl_dprintf( "sub_packet_size   %d\n", s->sub_packet_size);
+  //  gavl_dprintf( "Bytes to read     %d\n", s->bytes_to_read);
   
   //  uint8_t * extradata;
 

@@ -160,13 +160,13 @@ void bgav_subtitle_dump(bgav_stream_t * s)
   {
   if(s->type == GAVL_STREAM_TEXT)
     {
-    bgav_dprintf( "  Character set:     %s\n",
+    gavl_dprintf( "  Character set:     %s\n",
                   (s->data.subtitle.charset ? s->data.subtitle.charset :
                    BGAV_UTF8));
     }
   else
     {
-    bgav_dprintf( "  Format:\n");
+    gavl_dprintf( "  Format:\n");
     gavl_video_format_dump(s->data.subtitle.video.format);
     }
   }
@@ -192,7 +192,7 @@ static gavl_source_status_t read_video_copy(void * sp,
       return st;
     }
 #ifdef DUMP_TIMESTAMPS
-  bgav_dprintf("Overlay timestamp: %"PRId64"\n", s->vframe->timestamp);
+  gavl_dprintf("Overlay timestamp: %"PRId64"\n", s->vframe->timestamp);
 #endif
   // s->flags &= ~STREAM_HAVE_FRAME;
   return GAVL_SOURCE_OK;
@@ -213,7 +213,7 @@ read_video_nocopy(void * sp,
   if(frame)
     *frame = s->vframe;
 #ifdef DUMP_TIMESTAMPS
-  bgav_dprintf("Overlay timestamp: %"PRId64"\n", s->vframe->timestamp);
+  gavl_dprintf("Overlay timestamp: %"PRId64"\n", s->vframe->timestamp);
 #endif    
   s->out_time = s->vframe->timestamp + s->vframe->duration;
   //  s->flags &= ~STREAM_HAVE_FRAME;

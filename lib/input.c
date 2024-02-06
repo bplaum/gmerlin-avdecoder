@@ -706,37 +706,37 @@ extern const bgav_input_t bgav_input_smb;
 
 void bgav_inputs_dump()
   {
-  bgav_dprintf( "<h2>Input modules</h2>\n");
-  bgav_dprintf( "<ul>\n");
-  bgav_dprintf( "<li>%s\n", bgav_input_file.name);
-  bgav_dprintf( "<li>%s\n", bgav_input_stdin.name);
-  //  bgav_dprintf( "<li>%s\n", bgav_input_rtsp.name);
-  bgav_dprintf( "<li>%s\n", bgav_input_pnm.name);
-  bgav_dprintf( "<li>%s\n", bgav_input_mms.name);
-  //  bgav_dprintf( "<li>%s\n", bgav_input_mmsh.name);
-  bgav_dprintf( "<li>%s\n", bgav_input_http.name);
-  bgav_dprintf( "<li>%s\n", bgav_input_hls.name);
-  bgav_dprintf( "<li>%s\n", bgav_input_ftp.name);
+  gavl_dprintf( "<h2>Input modules</h2>\n");
+  gavl_dprintf( "<ul>\n");
+  gavl_dprintf( "<li>%s\n", bgav_input_file.name);
+  gavl_dprintf( "<li>%s\n", bgav_input_stdin.name);
+  //  gavl_dprintf( "<li>%s\n", bgav_input_rtsp.name);
+  gavl_dprintf( "<li>%s\n", bgav_input_pnm.name);
+  gavl_dprintf( "<li>%s\n", bgav_input_mms.name);
+  //  gavl_dprintf( "<li>%s\n", bgav_input_mmsh.name);
+  gavl_dprintf( "<li>%s\n", bgav_input_http.name);
+  gavl_dprintf( "<li>%s\n", bgav_input_hls.name);
+  gavl_dprintf( "<li>%s\n", bgav_input_ftp.name);
 
 #ifdef HAVE_CDIO
 
-  bgav_dprintf( "<li>%s\n", bgav_input_vcd.name);
+  gavl_dprintf( "<li>%s\n", bgav_input_vcd.name);
 
 #ifdef HAVE_DVDREAD
-  //  bgav_dprintf( "<li>%s\n", bgav_input_dvd.name);
+  //  gavl_dprintf( "<li>%s\n", bgav_input_dvd.name);
 #endif
 
 #endif // HAVE_CDIO
 
 #ifdef HAVE_SAMBA
-  bgav_dprintf( "<li>%s\n", bgav_input_smb.name);
+  gavl_dprintf( "<li>%s\n", bgav_input_smb.name);
 #endif
 
 #ifdef HAVE_LINUXDVB
-  bgav_dprintf( "<li>%s\n", bgav_input_dvb.name);
+  gavl_dprintf( "<li>%s\n", bgav_input_dvb.name);
 #endif
 
-  bgav_dprintf( "</ul>\n");
+  gavl_dprintf( "</ul>\n");
   }
 
 #define DVD_PATH "/video_ts/video_ts.ifo"
@@ -1070,7 +1070,7 @@ void bgav_input_skip_dump(bgav_input_context_t * ctx, int bytes)
     free(buf);
     return;
     }
-  bgav_dprintf( "Skipping %d bytes:\n", bytes);
+  gavl_dprintf( "Skipping %d bytes:\n", bytes);
   gavl_hexdump(buf, bytes, 16);
   free(buf);
   }

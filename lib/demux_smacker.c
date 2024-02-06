@@ -119,30 +119,30 @@ static int read_header(bgav_input_context_t * input,
 static void dump_header(smacker_header_t * h)
   {
   int i;
-  bgav_dprintf("Smacker header:\n");
-  bgav_dprintf("  Signature:    ");
+  gavl_dprintf("Smacker header:\n");
+  gavl_dprintf("  Signature:    ");
   bgav_dump_fourcc(h->Signature);
-  bgav_dprintf("\n");
-  bgav_dprintf("  Width:        %d\n", h->Width);
-  bgav_dprintf("  Height:       %d\n", h->Height);
-  bgav_dprintf("  Frames:       %d\n", h->Frames);
-  bgav_dprintf("  FrameRate:    %d\n", h->FrameRate);
-  bgav_dprintf("  Flags:        %08x\n", h->Flags);
+  gavl_dprintf("\n");
+  gavl_dprintf("  Width:        %d\n", h->Width);
+  gavl_dprintf("  Height:       %d\n", h->Height);
+  gavl_dprintf("  Frames:       %d\n", h->Frames);
+  gavl_dprintf("  FrameRate:    %d\n", h->FrameRate);
+  gavl_dprintf("  Flags:        %08x\n", h->Flags);
   for(i = 0; i < 7; i++)
     {
-    bgav_dprintf("  AudioSize[%d]: %d\n", i, h->AudioSize[i]);
+    gavl_dprintf("  AudioSize[%d]: %d\n", i, h->AudioSize[i]);
     }
-  bgav_dprintf("  TreesSize:    %d\n", h->TreesSize);
-  bgav_dprintf("  MMap_Size:    %d\n", h->MMap_Size);
-  bgav_dprintf("  MClr_Size:    %d\n", h->MClr_Size);
-  bgav_dprintf("  Full_Size:    %d\n", h->Full_Size);
-  bgav_dprintf("  Type_Size:    %d\n", h->Type_Size);
+  gavl_dprintf("  TreesSize:    %d\n", h->TreesSize);
+  gavl_dprintf("  MMap_Size:    %d\n", h->MMap_Size);
+  gavl_dprintf("  MClr_Size:    %d\n", h->MClr_Size);
+  gavl_dprintf("  Full_Size:    %d\n", h->Full_Size);
+  gavl_dprintf("  Type_Size:    %d\n", h->Type_Size);
   for(i = 0; i < 7; i++)
     {
-    bgav_dprintf("  AudioRate[%d]: %08x\n", i, h->AudioRate[i]);
+    gavl_dprintf("  AudioRate[%d]: %08x\n", i, h->AudioRate[i]);
     }
   
-  bgav_dprintf("  Dummy:        %d\n", h->Dummy);
+  gavl_dprintf("  Dummy:        %d\n", h->Dummy);
   }
 #endif
 

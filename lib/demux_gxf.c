@@ -70,12 +70,12 @@ static void flt_free(flt_t * flt)
 static void flt_dump(flt_t * flt)
   {
   uint32_t i;
-  bgav_dprintf("GXF field locator table\n");
-  bgav_dprintf("  fields_per_entry: %d\n", flt->fields_per_entry);
-  bgav_dprintf("  num_offsets:      %d\n", flt->num_offsets);
+  gavl_dprintf("GXF field locator table\n");
+  gavl_dprintf("  fields_per_entry: %d\n", flt->fields_per_entry);
+  gavl_dprintf("  num_offsets:      %d\n", flt->num_offsets);
   for(i = 0; i < flt->num_offsets; i++)
     {
-    bgav_dprintf("  offsets[%04d]:  %d\n", i, flt->offsets[i]);
+    gavl_dprintf("  offsets[%04d]:  %d\n", i, flt->offsets[i]);
     }
   }
 #endif
@@ -106,14 +106,14 @@ static int read_media_header(bgav_input_context_t * input,
 #if 0
 static void dump_media_header(media_header_t * h)
   {
-  bgav_dprintf("GXF media header\n");
-  bgav_dprintf("  type:              %d\n", h->type);
-  bgav_dprintf("  id:                %d\n", h->id);
-  bgav_dprintf("  field_nr:          %d\n", h->field_nr);
-  bgav_dprintf("  field_information: %08x\n", h->field_information);
-  bgav_dprintf("  timeline_field_nr: %d\n", h->timeline_field_nr);
-  bgav_dprintf("  flags:             %d\n", h->flags);
-  bgav_dprintf("  reserved:          %d\n", h->reserved);
+  gavl_dprintf("GXF media header\n");
+  gavl_dprintf("  type:              %d\n", h->type);
+  gavl_dprintf("  id:                %d\n", h->id);
+  gavl_dprintf("  field_nr:          %d\n", h->field_nr);
+  gavl_dprintf("  field_information: %08x\n", h->field_information);
+  gavl_dprintf("  timeline_field_nr: %d\n", h->timeline_field_nr);
+  gavl_dprintf("  flags:             %d\n", h->flags);
+  gavl_dprintf("  reserved:          %d\n", h->reserved);
   
   }
 #endif

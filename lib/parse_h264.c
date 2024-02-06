@@ -130,7 +130,7 @@ handle_sei_new(bgav_packet_parser_t * parser, bgav_packet_t * p)
     ptr = ptr_start;
 
 #ifdef DUMP_SEI
-    bgav_dprintf("Got SEI: %d (%d bytes)\n", sei_type, sei_size);
+    gavl_dprintf("Got SEI: %d (%d bytes)\n", sei_type, sei_size);
     gavl_hexdump(ptr, sei_size, 16);
 #endif    
     switch(sei_type)
@@ -218,7 +218,7 @@ handle_sei_new(bgav_packet_parser_t * parser, bgav_packet_t * p)
           int tag, num_tags, i;
           int year = -1, month = -1, day = -1, hour = -1, minute = -1, second = -1;
 #ifdef DUMP_AVCHD_SEI
-          bgav_dprintf( "Got AVCHD SEI message\n");
+          gavl_dprintf( "Got AVCHD SEI message\n");
 #endif
           
           /* Skip GUID + MDPM */
@@ -236,7 +236,7 @@ handle_sei_new(bgav_packet_parser_t * parser, bgav_packet_t * p)
             tag = *ptr; ptr++;
 
 #ifdef DUMP_AVCHD_SEI
-            bgav_dprintf( "Tag: 0x%02x, Data: %02x %02x %02x %02x\n",
+            gavl_dprintf( "Tag: 0x%02x, Data: %02x %02x %02x %02x\n",
                     tag, ptr[0], ptr[1], ptr[2], ptr[3]);
 #endif
             switch(tag)

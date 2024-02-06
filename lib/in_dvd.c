@@ -706,8 +706,8 @@ static int setup_track(bgav_input_context_t * ctx,
 #if 0
 static void dump_vmg_ifo(ifo_handle_t * vmg_ifo)
   {
-  bgav_dprintf( "VMG IFO:\n");
-  bgav_dprintf( "  Title sets: %d\n",
+  gavl_dprintf( "VMG IFO:\n");
+  gavl_dprintf( "  Title sets: %d\n",
           vmg_ifo->vmgi_mat->vmg_nr_of_title_sets);
   }
 #endif

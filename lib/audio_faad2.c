@@ -89,7 +89,7 @@ static gavl_source_status_t decode_frame_faad2(bgav_stream_t * s)
   while(1)
     {
 #ifdef DUMP_DECODE
-    bgav_dprintf("faacDecDecode %d bytes\n", priv->buf.size);
+    gavl_dprintf("faacDecDecode %d bytes\n", priv->buf.size);
     gavl_hexdump(priv->buf.buffer, 7, 7);
 #endif
     
@@ -99,7 +99,7 @@ static gavl_source_status_t decode_frame_faad2(bgav_stream_t * s)
                                                    priv->buf.size);
     
 #ifdef DUMP_DECODE
-    bgav_dprintf("Used %ld bytes, ptr: %p, samples: %ld\n",
+    gavl_dprintf("Used %ld bytes, ptr: %p, samples: %ld\n",
                  frame_info.bytesconsumed, s->data.audio.frame->samples.f,
                  frame_info.samples);
 #endif

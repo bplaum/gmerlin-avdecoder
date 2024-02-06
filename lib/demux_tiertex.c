@@ -74,15 +74,15 @@ static void parse_frame_header(uint8_t * data,
 static void dump_frame_header(frame_header_t * h)
   {
   int i;
-  bgav_dprintf("Tiertex header\n");
-  bgav_dprintf("  sound_data_offset: %d\n", h->sound_data_offset);
-  bgav_dprintf("  palette_offset:    %d\n", h->palette_offset);
+  gavl_dprintf("Tiertex header\n");
+  gavl_dprintf("  sound_data_offset: %d\n", h->sound_data_offset);
+  gavl_dprintf("  palette_offset:    %d\n", h->palette_offset);
 
   for(i = 0; i < 4; i++)
-    bgav_dprintf("  buffer[%d]:        %d\n", i, h->buffer_num[i]);
+    gavl_dprintf("  buffer[%d]:        %d\n", i, h->buffer_num[i]);
 
   for(i = 0; i < 4; i++)
-    bgav_dprintf("  offset_table[%d]:  %d\n", i, h->offset_table[i]);
+    gavl_dprintf("  offset_table[%d]:  %d\n", i, h->offset_table[i]);
   }
 #endif
 

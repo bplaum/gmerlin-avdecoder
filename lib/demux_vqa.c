@@ -88,26 +88,26 @@ static int read_file_header(bgav_input_context_t * input, VQAHeader * ret)
 #if 0
 static void dump_file_header(VQAHeader * h)
   {
-  bgav_dprintf("Version:     %d\n",   h->Version);   /* VQA version number                         */
-  bgav_dprintf("Flags:       %d\n",     h->Flags);   /* VQA flags                                  */
-  bgav_dprintf("NumFrames:   %d\n", h->NumFrames);   /* Number of frames                           */
-  bgav_dprintf("Width:       %d\n",     h->Width);   /* Movie width (pixels)                       */
-  bgav_dprintf("Height:      %d\n",    h->Height);   /* Movie height (pixels)                      */
-  bgav_dprintf("BlockW:      %d\n",    h->BlockW);   /* Width of each image block (pixels)         */
-  bgav_dprintf("BlockH:      %d\n",    h->BlockH);   /* Height of each image block (pixels)        */
-  bgav_dprintf("FrameRate:   %d\n", h->FrameRate);   /* Frame rate of the VQA                      */
-  bgav_dprintf("CBParts:     %d\n",   h->CBParts);   /* How many images use the same lookup table  */
-  bgav_dprintf("Colors:      %d\n",    h->Colors);   /* Maximum number of colors used in VQA       */
-  bgav_dprintf("MaxBlocks:   %d\n", h->MaxBlocks);   /* Maximum number of image blocks             */
-  bgav_dprintf("Unknown1:    %d\n",  h->Unknown1);   /* Always 0 ???                               */
-  bgav_dprintf("Unknown2:    %d\n",  h->Unknown2);   /* Some kind of size ???                      */
-  bgav_dprintf("Freq:        %d\n",      h->Freq);   /* Sound sampling frequency                   */
-  bgav_dprintf("Channels:    %d\n",  h->Channels);   /* Number of sound channels                   */
-  bgav_dprintf("Bits:        %d\n",      h->Bits);   /* Sound resolution                           */
-  bgav_dprintf("Unknown3:    %d\n",  h->Unknown3);   /* Always 0 ???                               */
-  bgav_dprintf("Unknown4:    %d\n",  h->Unknown4);   /* 0 in old VQAs, 4 in HiColor ones ???       */
-  bgav_dprintf("MaxCBFZSize: %d\n", h->MaxCBFZSize); /* 0 in old VQAs, max. CBFZ size in HiColor   */
-  bgav_dprintf("Unknown5:    %d\n",  h->Unknown5);   /* Always 0 ???                               */
+  gavl_dprintf("Version:     %d\n",   h->Version);   /* VQA version number                         */
+  gavl_dprintf("Flags:       %d\n",     h->Flags);   /* VQA flags                                  */
+  gavl_dprintf("NumFrames:   %d\n", h->NumFrames);   /* Number of frames                           */
+  gavl_dprintf("Width:       %d\n",     h->Width);   /* Movie width (pixels)                       */
+  gavl_dprintf("Height:      %d\n",    h->Height);   /* Movie height (pixels)                      */
+  gavl_dprintf("BlockW:      %d\n",    h->BlockW);   /* Width of each image block (pixels)         */
+  gavl_dprintf("BlockH:      %d\n",    h->BlockH);   /* Height of each image block (pixels)        */
+  gavl_dprintf("FrameRate:   %d\n", h->FrameRate);   /* Frame rate of the VQA                      */
+  gavl_dprintf("CBParts:     %d\n",   h->CBParts);   /* How many images use the same lookup table  */
+  gavl_dprintf("Colors:      %d\n",    h->Colors);   /* Maximum number of colors used in VQA       */
+  gavl_dprintf("MaxBlocks:   %d\n", h->MaxBlocks);   /* Maximum number of image blocks             */
+  gavl_dprintf("Unknown1:    %d\n",  h->Unknown1);   /* Always 0 ???                               */
+  gavl_dprintf("Unknown2:    %d\n",  h->Unknown2);   /* Some kind of size ???                      */
+  gavl_dprintf("Freq:        %d\n",      h->Freq);   /* Sound sampling frequency                   */
+  gavl_dprintf("Channels:    %d\n",  h->Channels);   /* Number of sound channels                   */
+  gavl_dprintf("Bits:        %d\n",      h->Bits);   /* Sound resolution                           */
+  gavl_dprintf("Unknown3:    %d\n",  h->Unknown3);   /* Always 0 ???                               */
+  gavl_dprintf("Unknown4:    %d\n",  h->Unknown4);   /* 0 in old VQAs, 4 in HiColor ones ???       */
+  gavl_dprintf("MaxCBFZSize: %d\n", h->MaxCBFZSize); /* 0 in old VQAs, max. CBFZ size in HiColor   */
+  gavl_dprintf("Unknown5:    %d\n",  h->Unknown5);   /* Always 0 ???                               */
   }
 #endif
 

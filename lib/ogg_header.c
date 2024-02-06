@@ -36,32 +36,32 @@ int bgav_ogg_page_read_header(bgav_input_context_t * ctx,
 void bgav_ogg_page_dump_header(const bgav_ogg_page_t * p)
   {
   int i, num;
-  bgav_dprintf("Ogg Page:\n");
-  bgav_dprintf("  file position: %"PRId64":\n", p->position);
+  gavl_dprintf("Ogg Page:\n");
+  gavl_dprintf("  file position: %"PRId64":\n", p->position);
 
-  bgav_dprintf("  stream_structure_version: %d:\n", p->stream_structure_version);
-  bgav_dprintf("  header_type_flags:        %d: (Continued: %d, BOS: %d EOS: %d)\n",
+  gavl_dprintf("  stream_structure_version: %d:\n", p->stream_structure_version);
+  gavl_dprintf("  header_type_flags:        %d: (Continued: %d, BOS: %d EOS: %d)\n",
                p->header_type_flags,
                p->header_type_flags & BGAV_OGG_HEADER_TYPE_CONTINUED,
                p->header_type_flags & BGAV_OGG_HEADER_TYPE_BOS,
                p->header_type_flags & BGAV_OGG_HEADER_TYPE_EOS);
-  bgav_dprintf("  granulepos:               %"PRId64"\n", p->granulepos);
-  bgav_dprintf("  serialno:                 %d\n", p->serialno);
+  gavl_dprintf("  granulepos:               %"PRId64"\n", p->granulepos);
+  gavl_dprintf("  serialno:                 %d\n", p->serialno);
 
-  bgav_dprintf("  sequenceno:               %d\n", p->sequenceno);
-  bgav_dprintf("  crc:                      %08x\n", p->crc);
-  bgav_dprintf("  num_page_segments:        %d\n", p->num_page_segments);
+  gavl_dprintf("  sequenceno:               %d\n", p->sequenceno);
+  gavl_dprintf("  crc:                      %08x\n", p->crc);
+  gavl_dprintf("  num_page_segments:        %d\n", p->num_page_segments);
 
   num = bgav_ogg_page_num_packets(p);
   
-  bgav_dprintf("  (partial) packets:        %d\n", num);
-  bgav_dprintf("  Page segments:\n");
+  gavl_dprintf("  (partial) packets:        %d\n", num);
+  gavl_dprintf("  Page segments:\n");
 
   //  for(i = 0; i < p->num_page_segments; i++)
-  //    bgav_dprintf("    %d\n", p->page_segments[i]);
+  //    gavl_dprintf("    %d\n", p->page_segments[i]);
 
   for(i = 0; i < num; i++)
-    bgav_dprintf("    %d\n", bgav_ogg_page_get_packet_size(p, i));
+    gavl_dprintf("    %d\n", bgav_ogg_page_get_packet_size(p, i));
   
   }
 
@@ -179,27 +179,27 @@ int bgav_ogm_header_read(bgav_input_context_t * input, bgav_ogm_header_t * ret)
 
 void bgav_ogm_header_dump(bgav_ogm_header_t * h)
   {
-  bgav_dprintf( "OGM Header\n");
-  bgav_dprintf( "  Type              %.8s\n", h->type);
-  bgav_dprintf( "  Subtype:          ");
+  gavl_dprintf( "OGM Header\n");
+  gavl_dprintf( "  Type              %.8s\n", h->type);
+  gavl_dprintf( "  Subtype:          ");
   bgav_dump_fourcc(h->subtype);
-  bgav_dprintf( "\n");
+  gavl_dprintf( "\n");
 
-  bgav_dprintf( "  Size:             %d\n", h->size);
-  bgav_dprintf( "  Time unit:        %" PRId64 "\n", h->time_unit);
-  bgav_dprintf( "  Samples per unit: %" PRId64 "\n", h->samples_per_unit);
-  bgav_dprintf( "  Default len:      %d\n", h->default_len);
-  bgav_dprintf( "  Buffer size:      %d\n", h->buffersize);
-  bgav_dprintf( "  Bits per sample:  %d\n", h->bits_per_sample);
+  gavl_dprintf( "  Size:             %d\n", h->size);
+  gavl_dprintf( "  Time unit:        %" PRId64 "\n", h->time_unit);
+  gavl_dprintf( "  Samples per unit: %" PRId64 "\n", h->samples_per_unit);
+  gavl_dprintf( "  Default len:      %d\n", h->default_len);
+  gavl_dprintf( "  Buffer size:      %d\n", h->buffersize);
+  gavl_dprintf( "  Bits per sample:  %d\n", h->bits_per_sample);
   if(gavl_string_starts_with(h->type, "video"))
     {
-    bgav_dprintf( "  Width:            %d\n", h->data.video.width);
-    bgav_dprintf( "  Height:           %d\n", h->data.video.height);
+    gavl_dprintf( "  Width:            %d\n", h->data.video.width);
+    gavl_dprintf( "  Height:           %d\n", h->data.video.height);
     }
   if(gavl_string_starts_with(h->type, "audio"))
     {
-    bgav_dprintf( "  Channels:         %d\n", h->data.audio.channels);
-    bgav_dprintf( "  Block align:      %d\n", h->data.audio.blockalign);
-    bgav_dprintf( "  Avg bytes per sec: %d\n", h->data.audio.avgbytespersec);
+    gavl_dprintf( "  Channels:         %d\n", h->data.audio.channels);
+    gavl_dprintf( "  Block align:      %d\n", h->data.audio.blockalign);
+    gavl_dprintf( "  Avg bytes per sec: %d\n", h->data.audio.avgbytespersec);
     }
   }

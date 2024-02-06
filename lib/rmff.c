@@ -82,19 +82,19 @@ int bgav_rmff_chunk_header_read(bgav_rmff_chunk_t * c, bgav_input_context_t * in
 
 void bgav_rmff_prop_dump(bgav_rmff_prop_t * p)
   {
-  bgav_dprintf( "PROP: %p\n", p);
+  gavl_dprintf( "PROP: %p\n", p);
   
-  bgav_dprintf( "  max_bit_rate:    %d\n", p->max_bit_rate);
-  bgav_dprintf( "  avg_bit_rate:    %d\n", p->avg_bit_rate);
-  bgav_dprintf( "  max_packet_size: %d\n", p->max_packet_size);
-  bgav_dprintf( "  avg_packet_size: %d\n", p->avg_packet_size);
-  bgav_dprintf( "  num_packets:     %d\n", p->num_packets);
-  bgav_dprintf( "  duration:        %d\n", p->duration);
-  bgav_dprintf( "  preroll:         %d\n", p->preroll);
-  bgav_dprintf( "  index_offset:    %d\n", p->index_offset);
-  bgav_dprintf( "  data_offset:     %d\n", p->data_offset);
-  bgav_dprintf( "  num_streams:     %d\n", p->num_streams);
-  bgav_dprintf( "  flags:           %d\n", p->flags);
+  gavl_dprintf( "  max_bit_rate:    %d\n", p->max_bit_rate);
+  gavl_dprintf( "  avg_bit_rate:    %d\n", p->avg_bit_rate);
+  gavl_dprintf( "  max_packet_size: %d\n", p->max_packet_size);
+  gavl_dprintf( "  avg_packet_size: %d\n", p->avg_packet_size);
+  gavl_dprintf( "  num_packets:     %d\n", p->num_packets);
+  gavl_dprintf( "  duration:        %d\n", p->duration);
+  gavl_dprintf( "  preroll:         %d\n", p->preroll);
+  gavl_dprintf( "  index_offset:    %d\n", p->index_offset);
+  gavl_dprintf( "  data_offset:     %d\n", p->data_offset);
+  gavl_dprintf( "  num_streams:     %d\n", p->num_streams);
+  gavl_dprintf( "  flags:           %d\n", p->flags);
   }
 
 int bgav_rmff_prop_read(bgav_rmff_chunk_t * c,
@@ -205,28 +205,28 @@ int bgav_rmff_logical_stream_read(bgav_input_context_t * input,
 void bgav_rmff_logical_stream_dump(bgav_rmff_logical_stream_t * l)
   {
   int i;
-  bgav_dprintf( "logical_stream:\n");
-  bgav_dprintf( "  physical streams: %d\n", l->num_physical_streams);
+  gavl_dprintf( "logical_stream:\n");
+  gavl_dprintf( "  physical streams: %d\n", l->num_physical_streams);
 
   for(i = 0; i < l->num_physical_streams; i++)
     {
-    bgav_dprintf( "    stream: %d, stream_number: %d, data_offset: %d\n",
+    gavl_dprintf( "    stream: %d, stream_number: %d, data_offset: %d\n",
             i, l->physical_stream_numbers[i], l->data_offsets[i]);
     }
-  bgav_dprintf( "  num_rules: %d\n", l->num_rules);
+  gavl_dprintf( "  num_rules: %d\n", l->num_rules);
   for(i = 0; i < l->num_rules; i++)
     {
-    bgav_dprintf( "    rule_to_physical_stream_number_map: %d\n",
+    gavl_dprintf( "    rule_to_physical_stream_number_map: %d\n",
             l->rule_to_physical_stream_number_map[i]);
     }
 
-  bgav_dprintf( "  num_properties: %d\n", l->num_properties);
+  gavl_dprintf( "  num_properties: %d\n", l->num_properties);
   for(i = 0; i < l->num_properties; i++)
     {
-    bgav_dprintf( "  Property %d\n", i);
-    bgav_dprintf( "    name:  %s\n", l->properties[i].name);
-    bgav_dprintf( "    type:  %d\n", l->properties[i].type);
-    bgav_dprintf( "    value, %d bytes\n", l->properties[i].value_length);
+    gavl_dprintf( "  Property %d\n", i);
+    gavl_dprintf( "    name:  %s\n", l->properties[i].name);
+    gavl_dprintf( "    type:  %d\n", l->properties[i].type);
+    gavl_dprintf( "    value, %d bytes\n", l->properties[i].value_length);
     gavl_hexdump(l->properties[i].value_data, l->properties[i].value_length, 16);
     }
   }
@@ -254,29 +254,29 @@ void bgav_rmff_logical_stream_free(bgav_rmff_logical_stream_t * l)
 
 void bgav_rmff_mdpr_dump(bgav_rmff_mdpr_t * m)
   {
-  bgav_dprintf( "MDPR:\n");
-  bgav_dprintf( "  stream_number:    %d\n", m->stream_number);
-  bgav_dprintf( "  max_bit_rate:     %d\n", m->max_bit_rate);
-  bgav_dprintf( "  avg_bit_rate:     %d\n", m->avg_bit_rate);
-  bgav_dprintf( "  max_packet_size:  %d\n", m->max_packet_size);
-  bgav_dprintf( "  avg_packet_size:  %d\n", m->avg_packet_size);
-  bgav_dprintf( "  start_time:       %d\n", m->start_time);
-  bgav_dprintf( "  preroll:          %d\n", m->preroll);
-  bgav_dprintf( "  duration:         %d\n", m->duration);
-  bgav_dprintf( "  stream_name:      ");
+  gavl_dprintf( "MDPR:\n");
+  gavl_dprintf( "  stream_number:    %d\n", m->stream_number);
+  gavl_dprintf( "  max_bit_rate:     %d\n", m->max_bit_rate);
+  gavl_dprintf( "  avg_bit_rate:     %d\n", m->avg_bit_rate);
+  gavl_dprintf( "  max_packet_size:  %d\n", m->max_packet_size);
+  gavl_dprintf( "  avg_packet_size:  %d\n", m->avg_packet_size);
+  gavl_dprintf( "  start_time:       %d\n", m->start_time);
+  gavl_dprintf( "  preroll:          %d\n", m->preroll);
+  gavl_dprintf( "  duration:         %d\n", m->duration);
+  gavl_dprintf( "  stream_name:      ");
   dump_string(m->stream_name, m->stream_name_size);
-  bgav_dprintf( "\n  mime_type:        ");
+  gavl_dprintf( "\n  mime_type:        ");
   dump_string(m->mime_type, m->mime_type_size);
-  bgav_dprintf( "\n  type_specific_len:  %d", m->type_specific_len);
+  gavl_dprintf( "\n  type_specific_len:  %d", m->type_specific_len);
   
   if(m->is_logical_stream)
     {
-    bgav_dprintf( "\n");
+    gavl_dprintf( "\n");
     bgav_rmff_logical_stream_dump(&m->logical_stream);
     }
   else
     {
-    bgav_dprintf( "\n  type_specific_data:\n");
+    gavl_dprintf( "\n  type_specific_data:\n");
     gavl_hexdump(m->type_specific_data, m->type_specific_len, 16);
     }
   }
@@ -390,16 +390,16 @@ int bgav_rmff_cont_read(bgav_rmff_chunk_t * c,
 
 void bgav_rmff_cont_dump(bgav_rmff_cont_t * cont)
   {
-  bgav_dprintf( "CONT:");
-  bgav_dprintf( "\n  Title:     ");
+  gavl_dprintf( "CONT:");
+  gavl_dprintf( "\n  Title:     ");
   dump_string(cont->title, cont->title_len);
-  bgav_dprintf( "\n  Author:    ");
+  gavl_dprintf( "\n  Author:    ");
   dump_string(cont->author, cont->author_len);
-  bgav_dprintf( "\n  Copyright: ");
+  gavl_dprintf( "\n  Copyright: ");
   dump_string(cont->copyright, cont->copyright_len);
-  bgav_dprintf( "\n  Comment:   ");
+  gavl_dprintf( "\n  Comment:   ");
   dump_string(cont->comment, cont->comment_len);
-  bgav_dprintf( "\n");
+  gavl_dprintf( "\n");
   }
 
 #define MY_FREE(ptr) if(ptr)free(ptr)
@@ -459,9 +459,9 @@ void bgav_rmff_indx_free(bgav_rmff_indx_t * ret)
 void bgav_rmff_indx_dump(bgav_rmff_indx_t * indx)
   {
   int i;
-  bgav_dprintf( "  num_indices:       %d\n",   indx->num_indices);
-  bgav_dprintf( "  stream_number:     %d\n", indx->stream_number);
-  bgav_dprintf( "  next_index_header: %d\n", indx->next_index_header);
+  gavl_dprintf( "  num_indices:       %d\n",   indx->num_indices);
+  gavl_dprintf( "  stream_number:     %d\n", indx->stream_number);
+  gavl_dprintf( "  next_index_header: %d\n", indx->next_index_header);
   /*
     uint32_t timestamp;
     uint32_t offset;
@@ -470,7 +470,7 @@ void bgav_rmff_indx_dump(bgav_rmff_indx_t * indx)
 
   for(i = 0; i < indx->num_indices; i++)
     {
-    bgav_dprintf( "  Time: %d, offset: %d, count: %d\n",
+    gavl_dprintf( "  Time: %d, offset: %d, count: %d\n",
             indx->records[i].timestamp,
             indx->records[i].offset,
             indx->records[i].packet_count_for_this_packet);
@@ -492,11 +492,11 @@ int bgav_rmff_data_header_read(bgav_input_context_t * input,
 void bgav_rmff_header_dump(bgav_rmff_header_t * header)
   {
   int i;
-  bgav_dprintf( "rmff_header:\n");
+  gavl_dprintf( "rmff_header:\n");
   bgav_rmff_prop_dump(&header->prop);
   bgav_rmff_cont_dump(&header->cont);
 
-  bgav_dprintf( "Number of streams: %d\n", header->num_streams);
+  gavl_dprintf( "Number of streams: %d\n", header->num_streams);
   
   for(i = 0; i < header->num_streams; i++)
     {
@@ -931,22 +931,22 @@ int bgav_rmff_packet_header_read(bgav_input_context_t * input,
 
 void bgav_rmff_packet_header_dump(bgav_rmff_packet_header_t * h)
   {
-  bgav_dprintf( "Packet V: %d, ", h->object_version);
-  bgav_dprintf( "L: %d, ",        h->length);
-  bgav_dprintf( "S: %d, ",        h->stream_number);
-  bgav_dprintf( "T: %d, ",        h->timestamp);
+  gavl_dprintf( "Packet V: %d, ", h->object_version);
+  gavl_dprintf( "L: %d, ",        h->length);
+  gavl_dprintf( "S: %d, ",        h->stream_number);
+  gavl_dprintf( "T: %d, ",        h->timestamp);
   if(h->object_version == 0)
     {
-    bgav_dprintf( "F: 0x%02x\n", h->flags);
+    gavl_dprintf( "F: 0x%02x\n", h->flags);
     }
   else if(h->object_version == 1)
     {
-    bgav_dprintf( "asm_rule: %d, asm_flags: 0x%02x\n", h->asm_rule, h->asm_flags);
+    gavl_dprintf( "asm_rule: %d, asm_flags: 0x%02x\n", h->asm_rule, h->asm_flags);
     
     }
   else
     {
-    bgav_dprintf("Error: packet header version: %d\n", h->object_version);
+    gavl_dprintf("Error: packet header version: %d\n", h->object_version);
     }
   }
 

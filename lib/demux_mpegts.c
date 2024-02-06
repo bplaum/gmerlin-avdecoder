@@ -67,29 +67,29 @@ typedef struct
 #ifdef DUMP_HDV_AUX
 static void dump_vaux(const hdv_vaux_t * vaux)
   {
-  bgav_dprintf("HDV VAUX packet\n");
+  gavl_dprintf("HDV VAUX packet\n");
 
-  bgav_dprintf("  Timecode: ");
+  gavl_dprintf("  Timecode: ");
   if(vaux->tc != GAVL_TIMECODE_UNDEFINED)
     {
     gavl_timecode_dump(NULL, vaux->tc);
-    bgav_dprintf("\n");
+    gavl_dprintf("\n");
     }
   else
-    bgav_dprintf("None\n");
+    gavl_dprintf("None\n");
 
-  bgav_dprintf("  Date/Time: ");
+  gavl_dprintf("  Date/Time: ");
   if(vaux->rd != GAVL_TIMECODE_UNDEFINED)
     {
     gavl_timecode_dump(NULL, vaux->rd);
-    bgav_dprintf("\n");
+    gavl_dprintf("\n");
     }
   else
-    bgav_dprintf("None\n");
+    gavl_dprintf("None\n");
   
-  bgav_dprintf("  Framerate: %d/%d\n",
+  gavl_dprintf("  Framerate: %d/%d\n",
                vaux->timescale, vaux->frame_duration); 
-  bgav_dprintf("  Timecode rate: %d\n", vaux->int_framerate);
+  gavl_dprintf("  Timecode rate: %d\n", vaux->int_framerate);
   }
 #endif
 

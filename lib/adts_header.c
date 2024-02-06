@@ -61,25 +61,25 @@ int bgav_adts_header_read(const uint8_t * data,
 
 void bgav_adts_header_dump(const bgav_adts_header_t * adts)
   {
-  bgav_dprintf( "ADTS\n");
-  bgav_dprintf( "  MPEG Version:          %d\n", adts->mpeg_version);
-  bgav_dprintf( "  Profile:               ");
+  gavl_dprintf( "ADTS\n");
+  gavl_dprintf( "  MPEG Version:          %d\n", adts->mpeg_version);
+  gavl_dprintf( "  Profile:               ");
   
   if(adts->mpeg_version == 2)
     {
     switch(adts->profile)
       {
       case 0:
-        bgav_dprintf( "MPEG-2 AAC Main profile\n");
+        gavl_dprintf( "MPEG-2 AAC Main profile\n");
         break;
       case 1:
-        bgav_dprintf( "MPEG-2 AAC Low Complexity profile (LC)\n");
+        gavl_dprintf( "MPEG-2 AAC Low Complexity profile (LC)\n");
         break;
       case 2:
-        bgav_dprintf( "MPEG-2 AAC Scalable Sample Rate profile (SSR)\n");
+        gavl_dprintf( "MPEG-2 AAC Scalable Sample Rate profile (SSR)\n");
         break;
       case 3:
-        bgav_dprintf( "MPEG-2 AAC (reserved)\n");
+        gavl_dprintf( "MPEG-2 AAC (reserved)\n");
         break;
       }
     }
@@ -88,24 +88,24 @@ void bgav_adts_header_dump(const bgav_adts_header_t * adts)
     switch(adts->profile)
       {
       case 0:
-        bgav_dprintf( "MPEG-4 AAC Main profile\n");
+        gavl_dprintf( "MPEG-4 AAC Main profile\n");
         break;
       case 1:
-        bgav_dprintf( "MPEG-4 AAC Low Complexity profile (LC)\n");
+        gavl_dprintf( "MPEG-4 AAC Low Complexity profile (LC)\n");
         break;
       case 2:
-        bgav_dprintf( "MPEG-4 AAC Scalable Sample Rate profile (SSR)\n");
+        gavl_dprintf( "MPEG-4 AAC Scalable Sample Rate profile (SSR)\n");
         break;
       case 3:
-        bgav_dprintf( "MPEG-4 AAC Long Term Prediction (LTP)\n");
+        gavl_dprintf( "MPEG-4 AAC Long Term Prediction (LTP)\n");
         break;
       }
     }
-  bgav_dprintf( "  Samplerate:            %d\n", adts->samplerate);
-  bgav_dprintf( "  Channel configuration: %d\n", adts->channel_configuration);
-  bgav_dprintf( "  Frame bytes:           %d\n", adts->frame_bytes);
-  bgav_dprintf( "  Num blocks:            %d\n", adts->num_blocks);
-  bgav_dprintf( "  Protection absent:     %d\n", adts->protection_absent);
+  gavl_dprintf( "  Samplerate:            %d\n", adts->samplerate);
+  gavl_dprintf( "  Channel configuration: %d\n", adts->channel_configuration);
+  gavl_dprintf( "  Frame bytes:           %d\n", adts->frame_bytes);
+  gavl_dprintf( "  Num blocks:            %d\n", adts->num_blocks);
+  gavl_dprintf( "  Protection absent:     %d\n", adts->protection_absent);
   }
 
 void bgav_adts_header_get_format(const bgav_adts_header_t * adts,

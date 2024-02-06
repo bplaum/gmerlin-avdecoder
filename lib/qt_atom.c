@@ -114,5 +114,5 @@ void bgav_qt_atom_dump_header(int indent, qt_atom_header_t * h)
   bgav_diprintf(indent, "Start Position: %" PRId64 "\n", h->start_position);
   bgav_diprintf(indent, "Fourcc:         ");
   bgav_dump_fourcc(h->fourcc);
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
   }

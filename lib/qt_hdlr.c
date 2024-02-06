@@ -48,14 +48,14 @@ void bgav_qt_hdlr_dump(int indent, qt_hdlr_t * ret)
   bgav_diprintf(indent+2, "component_type:         ");
   bgav_dump_fourcc(ret->component_type);
   
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
   bgav_diprintf(indent+2, "component_subtype:      ");
   bgav_dump_fourcc(ret->component_subtype);
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
 
   bgav_diprintf(indent+2, "component_manufacturer: ");
   bgav_dump_fourcc(ret->component_manufacturer);
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
 
   bgav_diprintf(indent+2, "component_flags:        0x%08x\n",
                 ret->component_flags);

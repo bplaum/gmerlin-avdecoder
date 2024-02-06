@@ -55,15 +55,15 @@ static int read_file_header(bgav_input_context_t * input,
 #if 0
 static void dump_file_header(file_header_t * fh)
   {
-  bgav_dprintf("Delphine CIN file header\n");
-  bgav_dprintf("  signature:            %08x\n", fh->signature);
-  bgav_dprintf("  max_video_frame_size: %d\n", fh->max_video_frame_size);
-  bgav_dprintf("  video_width:          %d\n", fh->video_width);
-  bgav_dprintf("  video_height:         %d\n", fh->video_height);
-  bgav_dprintf("  samplerate:           %d\n", fh->samplerate);
-  bgav_dprintf("  bits_per_sample:      %d\n", fh->bits_per_sample);
-  bgav_dprintf("  stereo:               %d\n", fh->stereo);
-  bgav_dprintf("  max_audio_frame_size: %d\n", fh->max_audio_frame_size);
+  gavl_dprintf("Delphine CIN file header\n");
+  gavl_dprintf("  signature:            %08x\n", fh->signature);
+  gavl_dprintf("  max_video_frame_size: %d\n", fh->max_video_frame_size);
+  gavl_dprintf("  video_width:          %d\n", fh->video_width);
+  gavl_dprintf("  video_height:         %d\n", fh->video_height);
+  gavl_dprintf("  samplerate:           %d\n", fh->samplerate);
+  gavl_dprintf("  bits_per_sample:      %d\n", fh->bits_per_sample);
+  gavl_dprintf("  stereo:               %d\n", fh->stereo);
+  gavl_dprintf("  max_audio_frame_size: %d\n", fh->max_audio_frame_size);
   }
 #endif
 
@@ -91,13 +91,13 @@ static int read_frame_header(bgav_input_context_t * input, frame_header_t * fram
 #if 0
 static void dump_frame_header(frame_header_t * frame_header)
   {
-  bgav_dprintf("Delphine CIN frame header\n");
-  bgav_dprintf("  video_type: %d\n",         frame_header->video_type);
-  bgav_dprintf("  audio_type: %d\n",         frame_header->audio_type);
-  bgav_dprintf("  num_palette_colors: %d\n", frame_header->num_palette_colors);
-  bgav_dprintf("  video_size: %d\n",         frame_header->video_size);
-  bgav_dprintf("  audio_size: %d\n",         frame_header->audio_size);
-  bgav_dprintf("  marker: %08x\n",           frame_header->marker);
+  gavl_dprintf("Delphine CIN frame header\n");
+  gavl_dprintf("  video_type: %d\n",         frame_header->video_type);
+  gavl_dprintf("  audio_type: %d\n",         frame_header->audio_type);
+  gavl_dprintf("  num_palette_colors: %d\n", frame_header->num_palette_colors);
+  gavl_dprintf("  video_size: %d\n",         frame_header->video_size);
+  gavl_dprintf("  audio_size: %d\n",         frame_header->audio_size);
+  gavl_dprintf("  marker: %08x\n",           frame_header->marker);
   }
 #endif
 

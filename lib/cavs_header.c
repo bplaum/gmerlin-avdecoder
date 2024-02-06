@@ -77,20 +77,20 @@ int bgav_cavs_sequence_header_read(bgav_cavs_sequence_header_t * ret,
 
 void bgav_cavs_sequence_header_dump(const bgav_cavs_sequence_header_t * h)
   {
-  bgav_dprintf("CAVS Sequence header\n");
-  bgav_dprintf("  profile_id:           %d\n", h->profile_id);
-  bgav_dprintf("  level_id:             %d\n", h->level_id);
-  bgav_dprintf("  progressive_sequence: %d\n", h->progressive_sequence);
-  bgav_dprintf("  horizontal_size:      %d\n", h->horizontal_size);
-  bgav_dprintf("  vertical_size:        %d\n", h->vertical_size);
-  bgav_dprintf("  chromat_fromat:       %d\n", h->chromat_fromat);
-  bgav_dprintf("  sample_precision:     %d\n", h->sample_precision);
-  bgav_dprintf("  aspect_ratio:         %d\n", h->aspect_ratio);
-  bgav_dprintf("  frame_rate_code:      %d\n", h->frame_rate_code);
-  bgav_dprintf("  bit_rate_lower:       %d\n", h->bit_rate_lower);
+  gavl_dprintf("CAVS Sequence header\n");
+  gavl_dprintf("  profile_id:           %d\n", h->profile_id);
+  gavl_dprintf("  level_id:             %d\n", h->level_id);
+  gavl_dprintf("  progressive_sequence: %d\n", h->progressive_sequence);
+  gavl_dprintf("  horizontal_size:      %d\n", h->horizontal_size);
+  gavl_dprintf("  vertical_size:        %d\n", h->vertical_size);
+  gavl_dprintf("  chromat_fromat:       %d\n", h->chromat_fromat);
+  gavl_dprintf("  sample_precision:     %d\n", h->sample_precision);
+  gavl_dprintf("  aspect_ratio:         %d\n", h->aspect_ratio);
+  gavl_dprintf("  frame_rate_code:      %d\n", h->frame_rate_code);
+  gavl_dprintf("  bit_rate_lower:       %d\n", h->bit_rate_lower);
   /* market_bit */
-  bgav_dprintf("  bit_rate_upper:       %d\n", h->bit_rate_upper);
-  bgav_dprintf("  low_delay:            %d\n", h->low_delay);
+  gavl_dprintf("  bit_rate_upper:       %d\n", h->bit_rate_upper);
+  gavl_dprintf("  low_delay:            %d\n", h->low_delay);
   }
 
 
@@ -162,35 +162,35 @@ int bgav_cavs_picture_header_read(bgav_cavs_picture_header_t * ret,
 void bgav_cavs_picture_header_dump(const bgav_cavs_picture_header_t * h,
                                    const bgav_cavs_sequence_header_t * seq)
   {
-  bgav_dprintf("CAVS Picture header\n");
-  bgav_dprintf("  coding_type:                %s\n", gavl_coding_type_to_string(h->coding_type));
+  gavl_dprintf("CAVS Picture header\n");
+  gavl_dprintf("  coding_type:                %s\n", gavl_coding_type_to_string(h->coding_type));
 
-  bgav_dprintf("  bbv_delay:                  %d\n", h->bbv_delay);       /* I/PB, 16 */
+  gavl_dprintf("  bbv_delay:                  %d\n", h->bbv_delay);       /* I/PB, 16 */
 
   if(h->coding_type == GAVL_PACKET_TYPE_I)
     {
-    bgav_dprintf("  time_code_flag:             %d\n", h->time_code_flag);  /* I, 1 */
+    gavl_dprintf("  time_code_flag:             %d\n", h->time_code_flag);  /* I, 1 */
     if(h->time_code_flag)
       {
-      bgav_dprintf("  time_code:                  %d\n", h->time_code);       /* I, 24 */
+      gavl_dprintf("  time_code:                  %d\n", h->time_code);       /* I, 24 */
       }
     }
   else
     {
-    bgav_dprintf("  picture_coding_type:        %d\n", h->picture_coding_type); /* PB, 2 */
+    gavl_dprintf("  picture_coding_type:        %d\n", h->picture_coding_type); /* PB, 2 */
     }
-  bgav_dprintf("  picture_distance:           %d\n", h->picture_distance);    /* I/PB, 8 */
-  bgav_dprintf("  bbv_check_times:            %d\n", h->bbv_check_times);     /* I/PB, ue */
-  bgav_dprintf("  progressive_frame:          %d\n", h->progressive_frame);   /* I/PB, 1 */
+  gavl_dprintf("  picture_distance:           %d\n", h->picture_distance);    /* I/PB, 8 */
+  gavl_dprintf("  bbv_check_times:            %d\n", h->bbv_check_times);     /* I/PB, ue */
+  gavl_dprintf("  progressive_frame:          %d\n", h->progressive_frame);   /* I/PB, 1 */
   if(!h->progressive_frame)
     {
-    bgav_dprintf("  picture_structure:          %d\n", h->picture_structure);
+    gavl_dprintf("  picture_structure:          %d\n", h->picture_structure);
     if(h->coding_type != GAVL_PACKET_TYPE_I)
       {
-      bgav_dprintf("  advanced_pred_mode_disable: %d\n", h->advanced_pred_mode_disable );
+      gavl_dprintf("  advanced_pred_mode_disable: %d\n", h->advanced_pred_mode_disable );
       }
     }
-  bgav_dprintf("  top_field_first:            %d\n", h->top_field_first);
-  bgav_dprintf("  repeat_first_field:         %d\n", h->repeat_first_field);
+  gavl_dprintf("  top_field_first:            %d\n", h->top_field_first);
+  gavl_dprintf("  repeat_first_field:         %d\n", h->repeat_first_field);
   }
 

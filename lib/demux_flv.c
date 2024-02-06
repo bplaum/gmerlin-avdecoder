@@ -125,11 +125,11 @@ static int flv_tag_read(bgav_input_context_t * ctx, flv_tag * ret)
 #if 0
 static void flv_tag_dump(flv_tag * t)
   {
-  bgav_dprintf("FLVTAG\n");
-  bgav_dprintf("  type:      %d\n", t->type);
-  bgav_dprintf("  data_size: %d\n", t->data_size);
-  bgav_dprintf("  timestamp: %d\n", t->timestamp);
-  bgav_dprintf("  reserved:  %d\n", t->reserved);
+  gavl_dprintf("FLVTAG\n");
+  gavl_dprintf("  type:      %d\n", t->type);
+  gavl_dprintf("  data_size: %d\n", t->data_size);
+  gavl_dprintf("  timestamp: %d\n", t->timestamp);
+  gavl_dprintf("  reserved:  %d\n", t->reserved);
   }
 #endif
 
@@ -298,39 +298,39 @@ static void dump_meta_object(meta_object_t * obj, int num_spaces)
   {
   int i;
   for(i = 0; i < num_spaces; i++)
-    bgav_dprintf(" ");
-  if(obj->name) bgav_dprintf("N: %s, ", obj->name);
+    gavl_dprintf(" ");
+  if(obj->name) gavl_dprintf("N: %s, ", obj->name);
   switch(obj->type)
     {
     case TYPE_NUMBER:
-      bgav_dprintf("%f\n", obj->data.number);
+      gavl_dprintf("%f\n", obj->data.number);
       break;
     case TYPE_BOOL:
-      bgav_dprintf("%s\n", (obj->data.bool ? "True" : "False"));
+      gavl_dprintf("%s\n", (obj->data.bool ? "True" : "False"));
       break;
     case TYPE_STRING:
-      bgav_dprintf("%s\n", obj->data.string);
+      gavl_dprintf("%s\n", obj->data.string);
       break;
     case TYPE_OBJECT:
-      bgav_dprintf("\n");
+      gavl_dprintf("\n");
       for(i = 0; i < obj->data.object.num_children; i++)
         dump_meta_object(&obj->data.object.children[i], num_spaces + 2);
       break;
     case TYPE_MIXED_ARRAY:
-      bgav_dprintf("\n");
+      gavl_dprintf("\n");
       for(i = 0; i < obj->data.array.num_elements; i++)
         dump_meta_object(&obj->data.array.elements[i], num_spaces + 2);
       break;
     case TYPE_ARRAY:
-      bgav_dprintf("\n");
+      gavl_dprintf("\n");
       for(i = 0; i < obj->data.array.num_elements; i++)
         dump_meta_object(&obj->data.array.elements[i], num_spaces + 2);
       break;
     case TYPE_DATE:
-      bgav_dprintf("%f %d\n", obj->data.date.date1, obj->data.date.date2);
+      gavl_dprintf("%f %d\n", obj->data.date.date1, obj->data.date.date2);
       break;
     case TYPE_TERMINATOR:
-      bgav_dprintf("TERMINATOR\n");
+      gavl_dprintf("TERMINATOR\n");
       break;
     }
   }

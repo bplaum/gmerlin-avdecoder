@@ -287,7 +287,7 @@ static gavl_source_status_t decode_frame_ffmpeg(bgav_stream_t * s)
 #ifdef DUMP_PACKET
       if(p)
         {
-        bgav_dprintf("Got packet\n");
+        gavl_dprintf("Got packet\n");
         gavl_packet_dump(p);
         }
 #endif
@@ -349,7 +349,7 @@ static gavl_source_status_t decode_frame_ffmpeg(bgav_stream_t * s)
     }
   
 #ifdef DUMP_DECODE
-  bgav_dprintf("Got %d samples\n", priv->frame->valid_samples);
+  gavl_dprintf("Got %d samples\n", priv->frame->valid_samples);
 #endif
 
   s->flags |= STREAM_HAVE_FRAME;
@@ -391,7 +391,7 @@ static int init_ffmpeg_audio(bgav_stream_t * s)
     }
   
 #ifdef DUMP_EXTRADATA
-  bgav_dprintf("Adding extradata %d bytes\n", priv->ctx->extradata_size);
+  gavl_dprintf("Adding extradata %d bytes\n", priv->ctx->extradata_size);
   gavl_hexdump(priv->ctx->extradata, priv->ctx->extradata_size, 16);
 #endif    
   priv->ctx->channels        = s->data.audio.format->num_channels;

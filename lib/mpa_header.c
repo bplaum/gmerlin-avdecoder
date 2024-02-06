@@ -117,28 +117,28 @@ int bgav_mpa_header_equal(bgav_mpa_header_t * h1, bgav_mpa_header_t * h2)
 
 void bgav_mpa_header_dump(bgav_mpa_header_t * h)
   {
-  bgav_dprintf( "Header:\n");
-  bgav_dprintf( "  Version:     %s\n",
+  gavl_dprintf( "Header:\n");
+  gavl_dprintf( "  Version:     %s\n",
           (h->version == MPEG_VERSION_1 ? "1" :
            (h->version == MPEG_VERSION_2 ? "2" : "2.5")));
-  bgav_dprintf( "  Layer:       %d\n", h->layer);
-  bgav_dprintf( "  Bitrate:     %d\n", h->bitrate);
-  bgav_dprintf( "  Samplerate:  %d\n", h->samplerate);
-  bgav_dprintf( "  Frame bytes: %d\n", h->frame_bytes);
+  gavl_dprintf( "  Layer:       %d\n", h->layer);
+  gavl_dprintf( "  Bitrate:     %d\n", h->bitrate);
+  gavl_dprintf( "  Samplerate:  %d\n", h->samplerate);
+  gavl_dprintf( "  Frame bytes: %d\n", h->frame_bytes);
 
   switch(h->channel_mode)
     {
     case CHANNEL_STEREO:
-      bgav_dprintf( "  Channel mode: Stereo\n");
+      gavl_dprintf( "  Channel mode: Stereo\n");
       break;
     case CHANNEL_JSTEREO:
-      bgav_dprintf( "  Channel mode: Joint Stereo\n");
+      gavl_dprintf( "  Channel mode: Joint Stereo\n");
       break;
     case CHANNEL_DUAL:
-      bgav_dprintf( "  Channel mode: Dual\n");
+      gavl_dprintf( "  Channel mode: Dual\n");
       break;
     case CHANNEL_MONO:
-      bgav_dprintf( "  Channel mode: Mono\n");
+      gavl_dprintf( "  Channel mode: Mono\n");
       break;
     }
   

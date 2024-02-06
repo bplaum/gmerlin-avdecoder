@@ -593,12 +593,12 @@ gavl_source_status_t bgav_demuxer_next_packet(bgav_demuxer_context_t * demuxer)
 void bgav_formats_dump()
   {
   int i;
-  bgav_dprintf("<h2>Formats</h2>\n<ul>");
+  gavl_dprintf("<h2>Formats</h2>\n<ul>");
   for(i = 0; i < num_demuxers; i++)
-    bgav_dprintf("<li>%s\n", demuxers[i].format_name);
+    gavl_dprintf("<li>%s\n", demuxers[i].format_name);
   for(i = 0; i < num_sync_demuxers; i++)
-    bgav_dprintf("<li>%s\n", sync_demuxers[i].format_name);
-  bgav_dprintf("</ul>\n");
+    gavl_dprintf("<li>%s\n", sync_demuxers[i].format_name);
+  gavl_dprintf("</ul>\n");
   }
 
 static void parse_start(bgav_demuxer_context_t * ctx, int type_mask, int dur)

@@ -399,10 +399,10 @@ static int read_chunk_header(bgav_input_context_t * input,
 
 static void dump_chunk_header(chunk_header_t * chunk)
   {
-  bgav_dprintf("chunk header:\n");
-  bgav_dprintf("  ckID: ");
+  gavl_dprintf("chunk header:\n");
+  gavl_dprintf("  ckID: ");
   bgav_dump_fourcc(chunk->ckID);
-  bgav_dprintf("\n  ckSize %d\n", chunk->ckSize);
+  gavl_dprintf("\n  ckSize %d\n", chunk->ckSize);
   }
 
 #ifdef DUMP_AUDIO_TYPE
@@ -524,20 +524,20 @@ static int read_riff_header(bgav_input_context_t * input,
 
 static void dump_avih(avih_t * h)
   {
-  bgav_dprintf("avih:\n");
-  bgav_dprintf("  dwMicroSecPerFrame: %d\n",    h->dwMicroSecPerFrame);
-  bgav_dprintf("  dwMaxBytesPerSec: %d\n",      h->dwMaxBytesPerSec);
-  bgav_dprintf("  dwReserved1: %d\n",           h->dwReserved1);
-  bgav_dprintf("  dwFlags: %08x\n",             h->dwFlags);
-  bgav_dprintf("  dwTotalFrames: %d\n",         h->dwTotalFrames);
-  bgav_dprintf("  dwInitialFrames: %d\n",       h->dwInitialFrames);
-  bgav_dprintf("  dwStreams: %d\n",             h->dwStreams);
-  bgav_dprintf("  dwSuggestedBufferSize: %d\n", h->dwSuggestedBufferSize);
-  bgav_dprintf("  dwWidth: %d\n",               h->dwWidth);
-  bgav_dprintf("  dwHeight: %d\n",              h->dwHeight);
-  bgav_dprintf("  dwScale: %d\n",               h->dwScale);
-  bgav_dprintf("  dwRate: %d\n",                h->dwRate);
-  bgav_dprintf("  dwLength: %d\n",              h->dwLength);
+  gavl_dprintf("avih:\n");
+  gavl_dprintf("  dwMicroSecPerFrame: %d\n",    h->dwMicroSecPerFrame);
+  gavl_dprintf("  dwMaxBytesPerSec: %d\n",      h->dwMaxBytesPerSec);
+  gavl_dprintf("  dwReserved1: %d\n",           h->dwReserved1);
+  gavl_dprintf("  dwFlags: %08x\n",             h->dwFlags);
+  gavl_dprintf("  dwTotalFrames: %d\n",         h->dwTotalFrames);
+  gavl_dprintf("  dwInitialFrames: %d\n",       h->dwInitialFrames);
+  gavl_dprintf("  dwStreams: %d\n",             h->dwStreams);
+  gavl_dprintf("  dwSuggestedBufferSize: %d\n", h->dwSuggestedBufferSize);
+  gavl_dprintf("  dwWidth: %d\n",               h->dwWidth);
+  gavl_dprintf("  dwHeight: %d\n",              h->dwHeight);
+  gavl_dprintf("  dwScale: %d\n",               h->dwScale);
+  gavl_dprintf("  dwRate: %d\n",                h->dwRate);
+  gavl_dprintf("  dwLength: %d\n",              h->dwLength);
   }
 
 static int read_avih(bgav_input_context_t* input,
@@ -582,14 +582,14 @@ static void free_idx1(idx1_t * idx1)
 static void dump_idx1(idx1_t * idx1)
   {
   int i;
-  bgav_dprintf("idx1, %d entries\n", idx1->num_entries);
+  gavl_dprintf("idx1, %d entries\n", idx1->num_entries);
   for(i = 0; i < idx1->num_entries; i++)
     {
-    bgav_dprintf("ID: ");
+    gavl_dprintf("ID: ");
     bgav_dump_fourcc(idx1->entries[i].ckid);
-    bgav_dprintf(" Flags: %08x", idx1->entries[i].dwFlags);
-    bgav_dprintf(" Offset: %d", idx1->entries[i].dwChunkOffset);
-    bgav_dprintf(" Size: %d\n", idx1->entries[i].dwChunkLength);
+    gavl_dprintf(" Flags: %08x", idx1->entries[i].dwFlags);
+    gavl_dprintf(" Offset: %d", idx1->entries[i].dwChunkOffset);
+    gavl_dprintf(" Size: %d\n", idx1->entries[i].dwChunkLength);
     }
   }
 
@@ -630,25 +630,25 @@ static int read_idx1(bgav_input_context_t * input, idx1_t * ret)
 
 static void dump_strh(strh_t * ret)
   {
-  bgav_dprintf("strh\n  fccType: ");
+  gavl_dprintf("strh\n  fccType: ");
   bgav_dump_fourcc(ret->fccType);
-  bgav_dprintf("\n  fccHandler: ");
+  gavl_dprintf("\n  fccHandler: ");
   bgav_dump_fourcc(ret->fccHandler);
-  bgav_dprintf("\n  dwFlags: %d (%08x)\n",
+  gavl_dprintf("\n  dwFlags: %d (%08x)\n",
           ret->dwFlags, ret->dwFlags);
-  bgav_dprintf("  dwReserved1: %d (%08x)\n",
+  gavl_dprintf("  dwReserved1: %d (%08x)\n",
           ret->dwReserved1, ret->dwReserved1);
-  bgav_dprintf("  dwInitialFrames: %d (%08x)\n",
+  gavl_dprintf("  dwInitialFrames: %d (%08x)\n",
           ret->dwInitialFrames, ret->dwInitialFrames);
-  bgav_dprintf("  dwScale: %d (%08x)\n", ret->dwScale, ret->dwScale);
-  bgav_dprintf("  dwRate: %d (%08x)\n", ret->dwRate, ret->dwRate);
-  bgav_dprintf("  dwStart: %d (%08x)\n", ret->dwStart, ret->dwStart);
-  bgav_dprintf("  dwLength: %d (%08x)\n", ret->dwLength, ret->dwLength);
-  bgav_dprintf("  dwSuggestedBufferSize: %d (%08x)\n",
+  gavl_dprintf("  dwScale: %d (%08x)\n", ret->dwScale, ret->dwScale);
+  gavl_dprintf("  dwRate: %d (%08x)\n", ret->dwRate, ret->dwRate);
+  gavl_dprintf("  dwStart: %d (%08x)\n", ret->dwStart, ret->dwStart);
+  gavl_dprintf("  dwLength: %d (%08x)\n", ret->dwLength, ret->dwLength);
+  gavl_dprintf("  dwSuggestedBufferSize: %d (%08x)\n",
           ret->dwSuggestedBufferSize,
           ret->dwSuggestedBufferSize);
-  bgav_dprintf("  dwQuality: %d (%08x)\n", ret->dwQuality, ret->dwQuality);
-  bgav_dprintf("  dwSampleSize: %d (%08x)\n", ret->dwSampleSize, ret->dwSampleSize);
+  gavl_dprintf("  dwQuality: %d (%08x)\n", ret->dwQuality, ret->dwQuality);
+  gavl_dprintf("  dwSampleSize: %d (%08x)\n", ret->dwSampleSize, ret->dwSampleSize);
   }
 
 static int read_strh(bgav_input_context_t * input, strh_t * ret,
@@ -689,8 +689,8 @@ static int read_strh(bgav_input_context_t * input, strh_t * ret,
 
 static void dump_dmlh(dmlh_t * dmlh)
   {
-  bgav_dprintf("dmlh:\n");
-  bgav_dprintf("  dwTotalFrames: %d\n", dmlh->dwTotalFrames);
+  gavl_dprintf("dmlh:\n");
+  gavl_dprintf("  dwTotalFrames: %d\n", dmlh->dwTotalFrames);
   }
 
 static int read_dmlh(bgav_input_context_t * input, dmlh_t * ret,
@@ -712,7 +712,7 @@ static int read_dmlh(bgav_input_context_t * input, dmlh_t * ret,
 
 static void dump_odml(odml_t * odml)
   {
-  bgav_dprintf("odml:\n");
+  gavl_dprintf("odml:\n");
   if(odml->has_dmlh)
     dump_dmlh(&odml->dmlh);
   }
@@ -856,31 +856,31 @@ static int read_indx(bgav_input_context_t * input, indx_t * ret,
 static void dump_indx(indx_t * indx)
   {
   int i;
-  bgav_dprintf("indx:\n");
-  bgav_dprintf("wLongsPerEntry: %d\n", indx->wLongsPerEntry);
-  bgav_dprintf("bIndexSubType:  0x%02x\n", indx->bIndexSubType);
-  bgav_dprintf("bIndexType:     0x%02x\n", indx->bIndexType);
-  bgav_dprintf("nEntriesInUse:  %d\n", indx->nEntriesInUse);
-  bgav_dprintf("dwChunkID:      ");
+  gavl_dprintf("indx:\n");
+  gavl_dprintf("wLongsPerEntry: %d\n", indx->wLongsPerEntry);
+  gavl_dprintf("bIndexSubType:  0x%02x\n", indx->bIndexSubType);
+  gavl_dprintf("bIndexType:     0x%02x\n", indx->bIndexType);
+  gavl_dprintf("nEntriesInUse:  %d\n", indx->nEntriesInUse);
+  gavl_dprintf("dwChunkID:      ");
   bgav_dump_fourcc(indx->dwChunkID);
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
   
   switch(indx->bIndexType)
     {
     case AVI_INDEX_OF_INDEXES:
       for(i = 0; i < 3; i++)
-        bgav_dprintf("dwReserved[%d]: %d\n", i,
+        gavl_dprintf("dwReserved[%d]: %d\n", i,
                 indx->i.index.dwReserved[i]);
 
       for(i = 0; i < indx->nEntriesInUse; i++)
         {
-        bgav_dprintf("%d qwOffset: %" PRId64 " dwSize: %d dwDuration: %d\n", i,
+        gavl_dprintf("%d qwOffset: %" PRId64 " dwSize: %d dwDuration: %d\n", i,
                 indx->i.index.entries[i].qwOffset,
                 indx->i.index.entries[i].dwSize,
                 indx->i.index.entries[i].dwDuration);
         if(indx->i.index.entries[i].subindex)
           {
-          bgav_dprintf("Subindex follows:\n");
+          gavl_dprintf("Subindex follows:\n");
           dump_indx(indx->i.index.entries[i].subindex);
           }
         }
@@ -889,14 +889,14 @@ static void dump_indx(indx_t * indx)
       
       if(indx->bIndexSubType == AVI_INDEX_2FIELD)
         {
-        bgav_dprintf("qwBaseOffset:  %" PRId64 "\n",
+        gavl_dprintf("qwBaseOffset:  %" PRId64 "\n",
                 indx->i.field_chunk.qwBaseOffset);
-        bgav_dprintf("dwReserved3:   %d\n",
+        gavl_dprintf("dwReserved3:   %d\n",
                 indx->i.field_chunk.dwReserved3);
         
         for(i = 0; i < indx->nEntriesInUse; i++)
           {
-          bgav_dprintf("%d dwOffset: %d dwSize: %d dwOffsetField2: %d Keyframe: %d\n", i,
+          gavl_dprintf("%d dwOffset: %d dwSize: %d dwOffsetField2: %d Keyframe: %d\n", i,
                   indx->i.field_chunk.entries[i].dwOffset,
                   indx->i.field_chunk.entries[i].dwSize & 0x7FFFFFFF,
                   indx->i.field_chunk.entries[i].dwOffsetField2,
@@ -905,14 +905,14 @@ static void dump_indx(indx_t * indx)
         }
       else
         {
-        bgav_dprintf("qwBaseOffset:  %" PRId64 "\n",
+        gavl_dprintf("qwBaseOffset:  %" PRId64 "\n",
                 indx->i.chunk.qwBaseOffset);
-        bgav_dprintf("dwReserved3:   %d\n",
+        gavl_dprintf("dwReserved3:   %d\n",
                 indx->i.chunk.dwReserved3);
         
         for(i = 0; i < indx->nEntriesInUse; i++)
           {
-          bgav_dprintf("%d dwOffset: %d dwSize: 0x%08x Keyframe: %d\n", i,
+          gavl_dprintf("%d dwOffset: %d dwSize: 0x%08x Keyframe: %d\n", i,
                   indx->i.chunk.entries[i].dwOffset,
                   indx->i.chunk.entries[i].dwSize & 0x7FFFFFFF,
                   // indx->i.chunk.entries[i].dwSize,
@@ -1616,7 +1616,7 @@ static int open_avi(bgav_demuxer_context_t * ctx)
     }
   if(ctx->opt->dump_headers)
     {
-    bgav_dprintf("movi:\n");
+    gavl_dprintf("movi:\n");
     dump_chunk_header(&ch);
     }
   ctx->tt->cur->data_start = ctx->input->position;

@@ -64,10 +64,10 @@ static void parse_chunk_header(uint8_t * data, chunk_header_t * h)
 #if 0
 static void dump_chunk_header(chunk_header_t * h)
   {
-  bgav_dprintf("Roq chunk header\n");
-  bgav_dprintf("  id:   %04x\n", h->id);
-  bgav_dprintf("  size: %d\n", h->size);
-  bgav_dprintf("  .arg =  %04x\n", h->arg);
+  gavl_dprintf("Roq chunk header\n");
+  gavl_dprintf("  id:   %04x\n", h->id);
+  gavl_dprintf("  size: %d\n", h->size);
+  gavl_dprintf("  .arg =  %04x\n", h->arg);
   }
 #endif
 

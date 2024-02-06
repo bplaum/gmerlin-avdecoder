@@ -243,5 +243,5 @@ void bgav_http_header_dump(bgav_http_header_t*h)
   {
   int i;
   for(i = 0; i < h->num_lines; i++)
-    bgav_dprintf( "  %s\n", h->lines[i]);
+    gavl_dprintf( "  %s\n", h->lines[i]);
   }

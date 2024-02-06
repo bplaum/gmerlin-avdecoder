@@ -64,18 +64,18 @@ static void parse_header(tta_header_t * ret, uint8_t * data)
 
 static void dump_header(tta_header_t * h)
   {
-  bgav_dprintf("tta header\n");
+  gavl_dprintf("tta header\n");
   
-  bgav_dprintf("  .fourcc =          ");
+  gavl_dprintf("  .fourcc =          ");
   bgav_dump_fourcc(h->fourcc);
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
 
-  bgav_dprintf("  audio_format:    %d\n", h->audio_format);
-  bgav_dprintf("  num_channels:    %d\n", h->num_channels);
-  bgav_dprintf("  bits_per_sample: %d\n", h->bits_per_sample);
-  bgav_dprintf("  samplerate:      %d\n", h->samplerate);
-  bgav_dprintf("  data_length:     %d\n", h->data_length);
-  bgav_dprintf("  crc:             %08x\n", h->crc);
+  gavl_dprintf("  audio_format:    %d\n", h->audio_format);
+  gavl_dprintf("  num_channels:    %d\n", h->num_channels);
+  gavl_dprintf("  bits_per_sample: %d\n", h->bits_per_sample);
+  gavl_dprintf("  samplerate:      %d\n", h->samplerate);
+  gavl_dprintf("  data_length:     %d\n", h->data_length);
+  gavl_dprintf("  crc:             %08x\n", h->crc);
   }
 #endif
 

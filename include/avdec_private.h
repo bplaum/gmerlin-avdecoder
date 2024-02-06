@@ -1356,7 +1356,6 @@ int bgav_check_fourcc(uint32_t fourcc, const uint32_t * fourccs);
 
 // char * bgav_strncat(char * old, const char * start, const char * end);
 
-void bgav_dprintf(const char * format, ...) __attribute__ ((format (printf, 1, 2)));
 void bgav_diprintf(int indent, const char * format, ...)
   __attribute__ ((format (printf, 2, 3)));
 

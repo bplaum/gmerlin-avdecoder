@@ -50,15 +50,15 @@ int bgav_flac_streaminfo_read(const uint8_t * ptr, bgav_flac_streaminfo_t * ret)
 
 void bgav_flac_streaminfo_dump(bgav_flac_streaminfo_t * s)
   {
-  bgav_dprintf("FLAC Streaminfo\n");
-  bgav_dprintf("  Blocksize [%d/%d]\n", s->min_blocksize,
+  gavl_dprintf("FLAC Streaminfo\n");
+  gavl_dprintf("  Blocksize [%d/%d]\n", s->min_blocksize,
                s->max_blocksize);
-  bgav_dprintf("  Framesize [%d/%d]\n", s->min_framesize,
+  gavl_dprintf("  Framesize [%d/%d]\n", s->min_framesize,
                s->max_framesize);
-  bgav_dprintf("  Samplerate:      %d\n", s->samplerate);
-  bgav_dprintf("  Num channels:    %d\n", s->num_channels);
-  bgav_dprintf("  Bits per sample: %d\n", s->bits_per_sample);
-  bgav_dprintf("  Total samples:   %" PRId64 "\n", s->total_samples);
+  gavl_dprintf("  Samplerate:      %d\n", s->samplerate);
+  gavl_dprintf("  Num channels:    %d\n", s->num_channels);
+  gavl_dprintf("  Bits per sample: %d\n", s->bits_per_sample);
+  gavl_dprintf("  Total samples:   %" PRId64 "\n", s->total_samples);
   }
 
 void bgav_flac_streaminfo_init_stream(bgav_flac_streaminfo_t * si, gavl_dictionary_t * s)
@@ -517,10 +517,10 @@ int bgav_flac_seektable_read(bgav_input_context_t * input,
 void bgav_flac_seektable_dump(bgav_flac_seektable_t * t)
   {
   int i;
-  bgav_dprintf("Seektable: %d entries\n", t->num_entries);
+  gavl_dprintf("Seektable: %d entries\n", t->num_entries);
   for(i = 0; i < t->num_entries; i++)
     {
-    bgav_dprintf("Sample: %" PRId64 ", Position: %" PRId64 ", Num samples: %d\n",
+    gavl_dprintf("Sample: %" PRId64 ", Position: %" PRId64 ", Num samples: %d\n",
             t->entries[i].sample_number,
             t->entries[i].offset,
             t->entries[i].num_samples);

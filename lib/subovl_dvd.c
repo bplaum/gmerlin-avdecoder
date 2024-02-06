@@ -267,25 +267,25 @@ static gavl_source_status_t decode_dvdsub(bgav_stream_t * s, gavl_overlay_t * ov
   
   /* Dump the information we have right now */
 #if 0
-  bgav_dprintf("Subtitle packet %d bytes\n", priv->packet_size);
-  bgav_dprintf("Coords:  [%d,%d] -> [%d,%d]\n", x1, y1, x2, y2);
-  bgav_dprintf("Palette: [ %02x, %02x, %02x, %02x ]\n",
+  gavl_dprintf("Subtitle packet %d bytes\n", priv->packet_size);
+  gavl_dprintf("Coords:  [%d,%d] -> [%d,%d]\n", x1, y1, x2, y2);
+  gavl_dprintf("Palette: [ %02x, %02x, %02x, %02x ]\n",
           palette[0], palette[1], palette[2], palette[3]);
-  bgav_dprintf("Alpha:   [ %02x, %02x, %02x, %02x ]\n",
+  gavl_dprintf("Alpha:   [ %02x, %02x, %02x, %02x ]\n",
           alpha[0], alpha[1], alpha[2], alpha[3]);
-  bgav_dprintf("PTS:     %" PRId64 "\n", priv->pts);
-  bgav_dprintf("Time:    %d -> %d\n", start_date, end_date);
-  bgav_dprintf("Offsets: %d %d\n", offset1, offset2);
-  bgav_dprintf("IFO Palette:\n");
+  gavl_dprintf("PTS:     %" PRId64 "\n", priv->pts);
+  gavl_dprintf("Time:    %d -> %d\n", start_date, end_date);
+  gavl_dprintf("Offsets: %d %d\n", offset1, offset2);
+  gavl_dprintf("IFO Palette:\n");
   for(i = 0; i < 16; i++)
     {
-    bgav_dprintf("%08x\n", ifo_palette[i]);
+    gavl_dprintf("%08x\n", ifo_palette[i]);
     }
   
-  bgav_dprintf("Local Palette:\n");
+  gavl_dprintf("Local Palette:\n");
   for(i = 0; i < 4; i++)
     {
-    bgav_dprintf("%08x\n", local_palette[i]);
+    gavl_dprintf("%08x\n", local_palette[i]);
     }
 #endif
   /* Decode the image */

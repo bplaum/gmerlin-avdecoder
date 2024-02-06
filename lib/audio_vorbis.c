@@ -133,7 +133,7 @@ static gavl_source_status_t next_packet(bgav_stream_t * s)
       if((st = bgav_stream_get_packet_read(s, &p)) != GAVL_SOURCE_OK)
         return st;
 #ifdef DUMP_PACKET
-      bgav_dprintf("vorbis: Got packet: %p ", p);
+      gavl_dprintf("vorbis: Got packet: %p ", p);
       bgav_packet_dump(p);
 #endif    
       bgav_packet_reset(&priv->p);
@@ -526,7 +526,7 @@ static gavl_source_status_t decode_frame_vorbis(bgav_stream_t * s)
     s->data.audio.frame->valid_samples = priv->p.duration;
 
 #ifdef DUMP_OUTPUT
-  bgav_dprintf("Vorbis samples decoded: %d\n",
+  gavl_dprintf("Vorbis samples decoded: %d\n",
                s->data.audio.frame->valid_samples);
 #endif
   

@@ -77,25 +77,25 @@ void bgav_codecs_dump()
   /* Print */
   ad = audio_decoders;
 
-  bgav_dprintf("<h2>Audio codecs</h2>\n");
+  gavl_dprintf("<h2>Audio codecs</h2>\n");
 
-  bgav_dprintf("<ul>\n");
+  gavl_dprintf("<ul>\n");
   for(i = 0; i < num_audio_codecs; i++)
     {
-    bgav_dprintf("<li>%s\n", ad->name);
+    gavl_dprintf("<li>%s\n", ad->name);
     ad = ad->next;
     }
-  bgav_dprintf("</ul>\n");
+  gavl_dprintf("</ul>\n");
   
-  bgav_dprintf("<h2>Video codecs</h2>\n");
-  bgav_dprintf("<ul>\n");
+  gavl_dprintf("<h2>Video codecs</h2>\n");
+  gavl_dprintf("<ul>\n");
   vd = video_decoders;
   for(i = 0; i < num_video_codecs; i++)
     {
-    bgav_dprintf("<li>%s\n", vd->name);
+    gavl_dprintf("<li>%s\n", vd->name);
     vd = vd->next;
     }
-  bgav_dprintf("</ul>\n");
+  gavl_dprintf("</ul>\n");
   
   }
 

@@ -551,14 +551,14 @@ static void dump_attribute(bgav_yml_attr_t * a)
   {
   char * pos;
 
-  bgav_dprintf( "%s=", a->name);
+  gavl_dprintf( "%s=", a->name);
   
   pos = strchr(a->value, '"');
 
   if(pos)
-    bgav_dprintf( "'%s'", a->value);
+    gavl_dprintf( "'%s'", a->value);
   else
-    bgav_dprintf( "\"%s\"", a->value);
+    gavl_dprintf( "\"%s\"", a->value);
   
   }
 
@@ -570,44 +570,44 @@ static void dump_node(bgav_yml_node_t * n)
   if(n->name || n->pi)
     {
     if(n->name)
-      bgav_dprintf( "<%s", n->name);
+      gavl_dprintf( "<%s", n->name);
     else if(n->pi)
-      bgav_dprintf( "<?%s", n->pi);
+      gavl_dprintf( "<?%s", n->pi);
     if(n->attributes)
       {
-      bgav_dprintf( " ");
+      gavl_dprintf( " ");
       attr = n->attributes;
       while(attr)
         {
         dump_attribute(attr);
         if(attr->next)
-          bgav_dprintf( " ");
+          gavl_dprintf( " ");
         attr = attr->next;
         }
       }
     if(!n->children)
       {
       if(n->name)
-        bgav_dprintf( "/>");
+        gavl_dprintf( "/>");
       else if(n->pi)
-        bgav_dprintf( "?>");
+        gavl_dprintf( "?>");
       }
     else
       {
-      bgav_dprintf( ">");
+      gavl_dprintf( ">");
       child = n->children;
       while(child)
         {
         dump_node(child);
         child = child->next;
         }
-      bgav_dprintf( "</%s>", n->name);
+      gavl_dprintf( "</%s>", n->name);
       }
 
     }
   
   else if(n->str)
-    bgav_dprintf( "%s", n->str);
+    gavl_dprintf( "%s", n->str);
   }
 
 void bgav_yml_dump(bgav_yml_node_t * n)
@@ -615,7 +615,7 @@ void bgav_yml_dump(bgav_yml_node_t * n)
   while(n)
     {
     dump_node(n);
-    bgav_dprintf( "\n");
+    gavl_dprintf( "\n");
     n = n->next;
     }
   }

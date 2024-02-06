@@ -180,7 +180,7 @@ static int mkv_read_float(bgav_input_context_t * ctx, double * ret, int bytes)
 
 static void mkv_dump_uid(const uint8_t * uid)
   {
-  bgav_dprintf("%02x %02x %02x %02x %02x %02x %02x %02x",
+  gavl_dprintf("%02x %02x %02x %02x %02x %02x %02x %02x",
                uid[0], uid[1], uid[2], uid[3],
                uid[4], uid[5], uid[6], uid[7]);
   }
@@ -210,10 +210,10 @@ int bgav_mkv_element_read(bgav_input_context_t * ctx, bgav_mkv_element_t * ret)
 
 void bgav_mkv_element_dump(const bgav_mkv_element_t * ret)
   {
-  bgav_dprintf("Matroska element\n");
-  bgav_dprintf("  ID:   %x\n", ret->id);
-  bgav_dprintf("  Size: %"PRId64"\n", ret->size);
-  bgav_dprintf("  End:  %"PRId64"\n", ret->end);
+  gavl_dprintf("Matroska element\n");
+  gavl_dprintf("  ID:   %x\n", ret->id);
+  gavl_dprintf("  Size: %"PRId64"\n", ret->size);
+  gavl_dprintf("  End:  %"PRId64"\n", ret->end);
   }
 
 void bgav_mkv_element_skip(bgav_input_context_t * ctx,
@@ -306,14 +306,14 @@ int bgav_mkv_ebml_header_read(bgav_input_context_t * ctx,
 
 void bgav_mkv_ebml_header_dump(const bgav_mkv_ebml_header_t * ret)
   {
-  bgav_dprintf("EBML Header\n");
-  bgav_dprintf("  EBMLVersion:        %d\n", ret->EBMLVersion);
-  bgav_dprintf("  EBMLReadVersion:    %d\n", ret->EBMLReadVersion);
-  bgav_dprintf("  EBMLMaxIDLength:    %d\n", ret->EBMLMaxIDLength);
-  bgav_dprintf("  EBMLMaxSizeLength:  %d\n", ret->EBMLMaxSizeLength);
-  bgav_dprintf("  DocType:            %s\n", ret->DocType);
-  bgav_dprintf("  DocTypeVersion:     %d\n", ret->DocTypeVersion);
-  bgav_dprintf("  DocTypeReadVersion: %d\n", ret->DocTypeReadVersion);
+  gavl_dprintf("EBML Header\n");
+  gavl_dprintf("  EBMLVersion:        %d\n", ret->EBMLVersion);
+  gavl_dprintf("  EBMLReadVersion:    %d\n", ret->EBMLReadVersion);
+  gavl_dprintf("  EBMLMaxIDLength:    %d\n", ret->EBMLMaxIDLength);
+  gavl_dprintf("  EBMLMaxSizeLength:  %d\n", ret->EBMLMaxSizeLength);
+  gavl_dprintf("  DocType:            %s\n", ret->DocType);
+  gavl_dprintf("  DocTypeVersion:     %d\n", ret->DocTypeVersion);
+  gavl_dprintf("  DocTypeReadVersion: %d\n", ret->DocTypeReadVersion);
   
   }
 
@@ -378,12 +378,12 @@ int bgav_mkv_meta_seek_info_read(bgav_input_context_t * ctx,
 void bgav_mkv_meta_seek_info_dump(const bgav_mkv_meta_seek_info_t * info)
   {
   int i;
-  bgav_dprintf("Meta seek information (%d entries)\n", info->num_entries);
+  gavl_dprintf("Meta seek information (%d entries)\n", info->num_entries);
   for(i = 0; i < info->num_entries; i++)
     {
-    bgav_dprintf("  Entry:\n");
-    bgav_dprintf("    ID: %x\n", info->entries[i].SeekID);
-    bgav_dprintf("    Position: %"PRId64"\n", info->entries[i].SeekPosition);
+    gavl_dprintf("  Entry:\n");
+    gavl_dprintf("    ID: %x\n", info->entries[i].SeekID);
+    gavl_dprintf("    Position: %"PRId64"\n", info->entries[i].SeekPosition);
     }
   }
 
@@ -428,10 +428,10 @@ int bgav_mkv_chapter_display_read(bgav_input_context_t * ctx,
 
 void bgav_mkv_chapter_display_dump(bgav_mkv_chapter_display_t * cd)
   {
-  bgav_dprintf("      ChapterDisplay:\n");
-  bgav_dprintf("        ChapString:    %s\n", cd->ChapString);
-  bgav_dprintf("        ChapLanguage:  %s\n", cd->ChapLanguage);
-  bgav_dprintf("        ChapCountry:   %s\n", cd->ChapCountry);
+  gavl_dprintf("      ChapterDisplay:\n");
+  gavl_dprintf("        ChapString:    %s\n", cd->ChapString);
+  gavl_dprintf("        ChapLanguage:  %s\n", cd->ChapLanguage);
+  gavl_dprintf("        ChapCountry:   %s\n", cd->ChapCountry);
   }
 
 void bgav_mkv_chapter_display_free(bgav_mkv_chapter_display_t * cd)
@@ -469,8 +469,8 @@ int bgav_mkv_chapter_track_read(bgav_input_context_t * ctx,
 
 void bgav_mkv_chapter_track_dump(bgav_mkv_chapter_track_t * ct)
   {
-  bgav_dprintf("      ChapterTrack:\n");
-  bgav_dprintf("        Chapter track: %"PRId64"\n", ct->ChapterTrackNumber);
+  gavl_dprintf("      ChapterTrack:\n");
+  gavl_dprintf("        Chapter track: %"PRId64"\n", ct->ChapterTrackNumber);
   }
 
 void bgav_mkv_chapter_track_free(bgav_mkv_chapter_track_t * ct)
@@ -548,16 +548,16 @@ int bgav_mkv_chapter_atom_read(bgav_input_context_t * ctx,
 void bgav_mkv_chapter_atom_dump(bgav_mkv_chapter_atom_t * ca)
   {
   int i;
-  bgav_dprintf("    ChapterAtom:\n");
-  bgav_dprintf("      ChapterUID:           %"PRId64"\n", ca->ChapterUID);
-  bgav_dprintf("      ChapterTimeStart:     %"PRId64"\n", ca->ChapterTimeStart);
-  bgav_dprintf("      ChapterTimeEnd:       %"PRId64"\n", ca->ChapterTimeEnd);
-  bgav_dprintf("      ChapterFlagHidden:    %d\n", ca->ChapterFlagHidden);
-  bgav_dprintf("      ChapterFlagEnabled:   %d\n", ca->ChapterFlagEnabled);
-  bgav_dprintf("      ChapterSegmentUIDLen: %d\n", ca->ChapterSegmentUIDLen);
+  gavl_dprintf("    ChapterAtom:\n");
+  gavl_dprintf("      ChapterUID:           %"PRId64"\n", ca->ChapterUID);
+  gavl_dprintf("      ChapterTimeStart:     %"PRId64"\n", ca->ChapterTimeStart);
+  gavl_dprintf("      ChapterTimeEnd:       %"PRId64"\n", ca->ChapterTimeEnd);
+  gavl_dprintf("      ChapterFlagHidden:    %d\n", ca->ChapterFlagHidden);
+  gavl_dprintf("      ChapterFlagEnabled:   %d\n", ca->ChapterFlagEnabled);
+  gavl_dprintf("      ChapterSegmentUIDLen: %d\n", ca->ChapterSegmentUIDLen);
   if(ca->ChapterSegmentUIDLen)
     gavl_hexdump(ca->ChapterSegmentUID, ca->ChapterSegmentUIDLen, 16);
-  bgav_dprintf("      ChapterSegmentEditionLen: %d\n", ca->ChapterSegmentEditionUIDLen);
+  gavl_dprintf("      ChapterSegmentEditionLen: %d\n", ca->ChapterSegmentEditionUIDLen);
   if(ca->ChapterSegmentEditionUIDLen)
     gavl_hexdump(ca->ChapterSegmentEditionUID, ca->ChapterSegmentEditionUIDLen, 16);
 
@@ -636,11 +636,11 @@ int bgav_mkv_edition_entry_read(bgav_input_context_t * ctx,
 void bgav_mkv_edition_entry_dump(bgav_mkv_edition_entry_t * ee)
   {
   int i;
-  bgav_dprintf("  EditionEntry:\n");
-  bgav_dprintf("    EditionUID: %"PRId64"\n", ee->EditionUID);
-  bgav_dprintf("    EditionFlagHidden: %d\n", ee->EditionFlagHidden);
-  bgav_dprintf("    EditionFlagDefault: %d\n", ee->EditionFlagDefault);
-  bgav_dprintf("    EditionFlagOrdered: %d\n", ee->EditionFlagOrdered);
+  gavl_dprintf("  EditionEntry:\n");
+  gavl_dprintf("    EditionUID: %"PRId64"\n", ee->EditionUID);
+  gavl_dprintf("    EditionFlagHidden: %d\n", ee->EditionFlagHidden);
+  gavl_dprintf("    EditionFlagDefault: %d\n", ee->EditionFlagDefault);
+  gavl_dprintf("    EditionFlagOrdered: %d\n", ee->EditionFlagOrdered);
 
   for(i = 0; i < ee->num_atoms; i++)
     bgav_mkv_chapter_atom_dump(&ee->atoms[i]);
@@ -690,7 +690,7 @@ int bgav_mkv_chapters_read(bgav_input_context_t * ctx,
 void bgav_mkv_chapters_dump(bgav_mkv_chapters_t * cd)
   {
   int i;
-  bgav_dprintf("Chapters:\n");
+  gavl_dprintf("Chapters:\n");
   
   for(i = 0; i < cd->num_editions; i++)
     bgav_mkv_edition_entry_dump(&cd->editions[i]);
@@ -773,17 +773,17 @@ int bgav_mkv_targets_read(bgav_input_context_t * ctx,
 void bgav_mkv_targets_dump(bgav_mkv_targets_t * t)
   {
   int i;
-  bgav_dprintf("  Targets\n");
-  bgav_dprintf("    TargetTypeValue:  %d\n",        t->TargetTypeValue);
-  bgav_dprintf("    TargetType:       %s\n",        t->TargetType);
+  gavl_dprintf("  Targets\n");
+  gavl_dprintf("    TargetTypeValue:  %d\n",        t->TargetTypeValue);
+  gavl_dprintf("    TargetType:       %s\n",        t->TargetType);
   for(i = 0; i < t->num_TagTrackUID; i++)
-    bgav_dprintf("    TagTrackUID:      %"PRId64"\n", t->TagTrackUID[i]);
+    gavl_dprintf("    TagTrackUID:      %"PRId64"\n", t->TagTrackUID[i]);
   for(i = 0; i < t->num_TagEditionUID; i++)
-    bgav_dprintf("    TagEditionUID:    %"PRId64"\n", t->TagEditionUID[i]);
+    gavl_dprintf("    TagEditionUID:    %"PRId64"\n", t->TagEditionUID[i]);
   for(i = 0; i < t->num_TagChapterUID; i++)
-    bgav_dprintf("    TagChapterUID:    %"PRId64"\n", t->TagChapterUID[i]);
+    gavl_dprintf("    TagChapterUID:    %"PRId64"\n", t->TagChapterUID[i]);
   for(i = 0; i < t->num_TagAttachmentUID; i++)
-    bgav_dprintf("    TagAttachmentUID: %"PRId64"\n", t->TagAttachmentUID[i]);
+    gavl_dprintf("    TagAttachmentUID: %"PRId64"\n", t->TagAttachmentUID[i]);
   }
 
 void bgav_mkv_targets_free(bgav_mkv_targets_t * t)
@@ -840,12 +840,12 @@ int bgav_mkv_simple_tag_read(bgav_input_context_t * ctx,
 
 void bgav_mkv_simple_tag_dump(bgav_mkv_simple_tag_t * t)
   {
-  bgav_dprintf("  SimpleTag\n");
-  bgav_dprintf("    TagName:      %s\n", t->TagName);
-  bgav_dprintf("    TagLanguage:  %s\n", t->TagLanguage);
-  bgav_dprintf("    TagDefault:   %d\n", t->TagDefault);
-  bgav_dprintf("    TagString:    %s\n", t->TagString);
-  bgav_dprintf("    TagBinaryLen: %d\n", t->TagBinaryLen);
+  gavl_dprintf("  SimpleTag\n");
+  gavl_dprintf("    TagName:      %s\n", t->TagName);
+  gavl_dprintf("    TagLanguage:  %s\n", t->TagLanguage);
+  gavl_dprintf("    TagDefault:   %d\n", t->TagDefault);
+  gavl_dprintf("    TagString:    %s\n", t->TagString);
+  gavl_dprintf("    TagBinaryLen: %d\n", t->TagBinaryLen);
   if(t->TagBinaryLen)
     gavl_hexdump(t->TagBinary, t->TagBinaryLen, 16);
   }
@@ -894,7 +894,7 @@ int bgav_mkv_tag_read(bgav_input_context_t * ctx,
 void bgav_mkv_tag_dump(bgav_mkv_tag_t * t)
   {
   int i;
-  bgav_dprintf("Tag:\n");
+  gavl_dprintf("Tag:\n");
   
   bgav_mkv_targets_dump(&t->targets);
   
@@ -1047,36 +1047,36 @@ int bgav_mkv_segment_info_read(bgav_input_context_t * ctx,
 
 void  bgav_mkv_segment_info_dump(const bgav_mkv_segment_info_t * si)
   {
-  bgav_dprintf("SegmentInfo:\n");
+  gavl_dprintf("SegmentInfo:\n");
 
-  bgav_dprintf("  SegmentUID:      ");
+  gavl_dprintf("  SegmentUID:      ");
   mkv_dump_uid(si->SegmentUID);
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
 
-  bgav_dprintf("  SegmentFilename: %s\n", si->SegmentFilename);
+  gavl_dprintf("  SegmentFilename: %s\n", si->SegmentFilename);
 
-  bgav_dprintf("  PrevUID:         ");
+  gavl_dprintf("  PrevUID:         ");
   mkv_dump_uid(si->PrevUID);
-  bgav_dprintf("\n");
-  bgav_dprintf("  PrevFilename:    %s\n", si->PrevFilename);
+  gavl_dprintf("\n");
+  gavl_dprintf("  PrevFilename:    %s\n", si->PrevFilename);
   
-  bgav_dprintf("  NextUID:         ");
+  gavl_dprintf("  NextUID:         ");
   mkv_dump_uid(si->NextUID);
-  bgav_dprintf("\n");
-  bgav_dprintf("  NextFilename:    %s\n", si->NextFilename);
+  gavl_dprintf("\n");
+  gavl_dprintf("  NextFilename:    %s\n", si->NextFilename);
 
-  bgav_dprintf("  SegmentFamily:   ");
+  gavl_dprintf("  SegmentFamily:   ");
   mkv_dump_uid(si->SegmentFamily);
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
   
   /* TODO: Chapter translate */
 
-  bgav_dprintf("  TimecodeScale:   %"PRId64"\n", si->TimecodeScale);
-  bgav_dprintf("  Duration:        %f\n", si->Duration);
-  bgav_dprintf("  DateUTC:         %"PRId64"\n", si->DateUTC);
-  bgav_dprintf("  Title:           %s\n", si->Title);
-  bgav_dprintf("  MuxingApp:       %s\n", si->MuxingApp);
-  bgav_dprintf("  WritingApp:      %s\n", si->WritingApp);
+  gavl_dprintf("  TimecodeScale:   %"PRId64"\n", si->TimecodeScale);
+  gavl_dprintf("  Duration:        %f\n", si->Duration);
+  gavl_dprintf("  DateUTC:         %"PRId64"\n", si->DateUTC);
+  gavl_dprintf("  Title:           %s\n", si->Title);
+  gavl_dprintf("  MuxingApp:       %s\n", si->MuxingApp);
+  gavl_dprintf("  WritingApp:      %s\n", si->WritingApp);
   }
 
 void  bgav_mkv_segment_info_free(bgav_mkv_segment_info_t * si)
@@ -1123,29 +1123,29 @@ int bgav_mkv_content_compression_read(bgav_input_context_t * ctx,
 
 void bgav_mkv_content_compression_dump(bgav_mkv_content_compression_t * cc)
   {
-  bgav_dprintf("    ContentCompression:\n");
-  bgav_dprintf("      ContentCompAlgo: %d ", cc->ContentCompAlgo);
+  gavl_dprintf("    ContentCompression:\n");
+  gavl_dprintf("      ContentCompAlgo: %d ", cc->ContentCompAlgo);
   switch(cc->ContentCompAlgo)
     {
     case MKV_CONTENT_COMP_ALGO_ZLIB:
-      bgav_dprintf("(zlib)");
+      gavl_dprintf("(zlib)");
       break;
     case MKV_CONTENT_COMP_ALGO_BZLIB:
-      bgav_dprintf("(bzlib)");
+      gavl_dprintf("(bzlib)");
       break;
     case MKV_CONTENT_COMP_ALGO_LZO1X:
-      bgav_dprintf("(lzo1x)");
+      gavl_dprintf("(lzo1x)");
       break;
     case MKV_CONTENT_COMP_ALGO_HEADER_STRIPPING:
-      bgav_dprintf("(header stripping)");
+      gavl_dprintf("(header stripping)");
       break;
     default:
-      bgav_dprintf("(unknown)");
+      gavl_dprintf("(unknown)");
       break;
     }
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
 
-  bgav_dprintf("      ContentCompSettingsLen: %d\n", cc->ContentCompSettingsLen);
+  gavl_dprintf("      ContentCompSettingsLen: %d\n", cc->ContentCompSettingsLen);
   
   if(cc->ContentCompSettingsLen)
     gavl_hexdump(cc->ContentCompSettings, cc->ContentCompSettingsLen, 16);
@@ -1208,73 +1208,73 @@ int bgav_mkv_content_encryption_read(bgav_input_context_t * ctx,
 
 void bgav_mkv_content_encryption_dump(bgav_mkv_content_encryption_t * ce)
   {
-  bgav_dprintf("    ContentEncryption:\n");
-  bgav_dprintf("      ContentEncAlgo: %d ", ce->ContentEncAlgo);
+  gavl_dprintf("    ContentEncryption:\n");
+  gavl_dprintf("      ContentEncAlgo: %d ", ce->ContentEncAlgo);
   switch(ce->ContentEncAlgo)
     {
     case MKV_CONTENT_ENC_ALGO_NONE: // Only signed
-      bgav_dprintf("(sig only)");
+      gavl_dprintf("(sig only)");
       break;
     case MKV_CONTENT_ENC_ALGO_DES:
-      bgav_dprintf("(des)");
+      gavl_dprintf("(des)");
       break;
     case MKV_CONTENT_ENC_ALGO_3DES:
-      bgav_dprintf("(3des)");
+      gavl_dprintf("(3des)");
       break;
     case MKV_CONTENT_ENC_ALGO_TWOFISH:
-      bgav_dprintf("(twofish)");
+      gavl_dprintf("(twofish)");
       break;
     case MKV_CONTENT_ENC_ALGO_BLOWFISH:
-      bgav_dprintf("(blowfish)");
+      gavl_dprintf("(blowfish)");
       break;
     case MKV_CONTENT_ENC_ALGO_AES:
-      bgav_dprintf("(aes)");
+      gavl_dprintf("(aes)");
       break;
     default:
-      bgav_dprintf("(unknown)");
+      gavl_dprintf("(unknown)");
       break;
     }
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
 
-  bgav_dprintf("      ContentEncKeyIDLen: %d\n", ce->ContentEncKeyIDLen);
+  gavl_dprintf("      ContentEncKeyIDLen: %d\n", ce->ContentEncKeyIDLen);
   if(ce->ContentEncKeyIDLen)
     gavl_hexdump(ce->ContentEncKeyID, ce->ContentEncKeyIDLen, 16);
 
-  bgav_dprintf("      ContentSigAlgo: %d ", ce->ContentSigAlgo);
+  gavl_dprintf("      ContentSigAlgo: %d ", ce->ContentSigAlgo);
   switch(ce->ContentSigAlgo)
     {
     case MKV_CONTENT_SIG_ALGO_NONE: // Only encrypted
-      bgav_dprintf("(enc only)");
+      gavl_dprintf("(enc only)");
       break;
     case MKV_CONTENT_SIG_ALGO_RSA:
-      bgav_dprintf("(rsa)");
+      gavl_dprintf("(rsa)");
       break;
     default:
-      bgav_dprintf("(unknown)");
+      gavl_dprintf("(unknown)");
       break;
     }
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
 
-  bgav_dprintf("      ContentSigHashAlgo: %d ", ce->ContentSigHashAlgo);
+  gavl_dprintf("      ContentSigHashAlgo: %d ", ce->ContentSigHashAlgo);
   switch(ce->ContentSigHashAlgo)
     {
     case MKV_CONTENT_SIG_HASH_ALGO_NONE:     // Only encrypted
-      bgav_dprintf("(enc only)");
+      gavl_dprintf("(enc only)");
       break;
     case MKV_CONTENT_SIG_HASH_ALGO_SHA1_160:
-      bgav_dprintf("(sha1-160)");
+      gavl_dprintf("(sha1-160)");
       break;
     case MKV_CONTENT_SIG_HASH_ALGO_MD5:
-      bgav_dprintf("(md5)");
+      gavl_dprintf("(md5)");
       break;
     }
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
   
-  bgav_dprintf("      ContentSignatureLen: %d\n", ce->ContentSignatureLen);
+  gavl_dprintf("      ContentSignatureLen: %d\n", ce->ContentSignatureLen);
   if(ce->ContentSignatureLen)
     gavl_hexdump(ce->ContentSignature, ce->ContentSignatureLen, 16);
 
-  bgav_dprintf("      ContentSigKeyIDLen: %d\n", ce->ContentSigKeyIDLen);
+  gavl_dprintf("      ContentSigKeyIDLen: %d\n", ce->ContentSigKeyIDLen);
   if(ce->ContentSigKeyIDLen)
     gavl_hexdump(ce->ContentSigKeyID, ce->ContentSigKeyIDLen, 16);
 
@@ -1334,19 +1334,19 @@ int bgav_mkv_content_encoding_read(bgav_input_context_t * ctx,
 
 void bgav_mkv_content_encoding_dump(bgav_mkv_content_encoding_t * ce)
   {
-  bgav_dprintf("  ContentEncoding:\n");
-  bgav_dprintf("    ContentEncodingOrder: %d\n", ce->ContentEncodingOrder);
-  bgav_dprintf("    ContentEncodingScope: %d\n", ce->ContentEncodingScope);
-  bgav_dprintf("    ContentEncodingType:  %d ", ce->ContentEncodingType);
+  gavl_dprintf("  ContentEncoding:\n");
+  gavl_dprintf("    ContentEncodingOrder: %d\n", ce->ContentEncodingOrder);
+  gavl_dprintf("    ContentEncodingScope: %d\n", ce->ContentEncodingScope);
+  gavl_dprintf("    ContentEncodingType:  %d ", ce->ContentEncodingType);
 
   switch(ce->ContentEncodingType)
     {
     case MKV_CONTENT_ENCODING_COMPRESSION:
-      bgav_dprintf("(compression)\n");
+      gavl_dprintf("(compression)\n");
       bgav_mkv_content_compression_dump(&ce->ContentCompression);
       break;
     case MKV_CONTENT_ENCODING_ENCRYPTION:
-      bgav_dprintf("(encryption)\n");
+      gavl_dprintf("(encryption)\n");
       bgav_mkv_content_encryption_dump(&ce->ContentEncryption);
       break;
     }
@@ -1640,87 +1640,87 @@ int bgav_mkv_track_read(bgav_input_context_t * ctx,
 
 static void track_dump_audio(const bgav_mkv_track_audio_t * a)
   {
-  bgav_dprintf("  Audio\n");
-  bgav_dprintf("    SamplingFrequency:       %f\n", a->SamplingFrequency);
-  bgav_dprintf("    OutputSamplingFrequency: %f\n", a->OutputSamplingFrequency);
-  bgav_dprintf("    Channels:                %d\n", a->Channels);
-  bgav_dprintf("    BitDepth:                %d\n", a->BitDepth);
+  gavl_dprintf("  Audio\n");
+  gavl_dprintf("    SamplingFrequency:       %f\n", a->SamplingFrequency);
+  gavl_dprintf("    OutputSamplingFrequency: %f\n", a->OutputSamplingFrequency);
+  gavl_dprintf("    Channels:                %d\n", a->Channels);
+  gavl_dprintf("    BitDepth:                %d\n", a->BitDepth);
   }
 
 static void track_dump_video(const bgav_mkv_track_video_t * v)
   {
-  bgav_dprintf("  Video\n");
-  bgav_dprintf("    flags:           %d\n", v->flags);
-  bgav_dprintf("    StereoMode:      %d\n", v->StereoMode);
-  bgav_dprintf("    PixelWidth:      %d\n", v->PixelWidth);
-  bgav_dprintf("    PixelHeight:     %d\n", v->PixelHeight );
-  bgav_dprintf("    PixelCropBottom: %d\n", v->PixelCropBottom);
-  bgav_dprintf("    PixelCropTop:    %d\n", v->PixelCropTop );
-  bgav_dprintf("    PixelCropLeft:   %d\n", v->PixelCropLeft );
-  bgav_dprintf("    PixelCropRight:  %d\n", v->PixelCropRight );
-  bgav_dprintf("    DisplayWidth:    %d\n", v->DisplayWidth );
-  bgav_dprintf("    DisplayHeight:   %d\n", v->DisplayHeight );
-  bgav_dprintf("    DisplayUnit:     %d\n", v->DisplayUnit );
-  bgav_dprintf("    AspectRatioType: %d\n", v->AspectRatioType );
-  bgav_dprintf("    ColourSpace:     %d bytes\n", v->ColourSpaceLen );
-  bgav_dprintf("    FrameRate:       %f\n", v->FrameRate);
+  gavl_dprintf("  Video\n");
+  gavl_dprintf("    flags:           %d\n", v->flags);
+  gavl_dprintf("    StereoMode:      %d\n", v->StereoMode);
+  gavl_dprintf("    PixelWidth:      %d\n", v->PixelWidth);
+  gavl_dprintf("    PixelHeight:     %d\n", v->PixelHeight );
+  gavl_dprintf("    PixelCropBottom: %d\n", v->PixelCropBottom);
+  gavl_dprintf("    PixelCropTop:    %d\n", v->PixelCropTop );
+  gavl_dprintf("    PixelCropLeft:   %d\n", v->PixelCropLeft );
+  gavl_dprintf("    PixelCropRight:  %d\n", v->PixelCropRight );
+  gavl_dprintf("    DisplayWidth:    %d\n", v->DisplayWidth );
+  gavl_dprintf("    DisplayHeight:   %d\n", v->DisplayHeight );
+  gavl_dprintf("    DisplayUnit:     %d\n", v->DisplayUnit );
+  gavl_dprintf("    AspectRatioType: %d\n", v->AspectRatioType );
+  gavl_dprintf("    ColourSpace:     %d bytes\n", v->ColourSpaceLen );
+  gavl_dprintf("    FrameRate:       %f\n", v->FrameRate);
   }
 
 void  bgav_mkv_track_dump(const bgav_mkv_track_t * t)
   {
   int i;
-  bgav_dprintf("Matroska track\n");
-  bgav_dprintf("  TrackNumber:        %"PRId64"\n", t->TrackNumber);
-  bgav_dprintf("  TrackUID:           %"PRId64"\n", t->TrackUID);
-  bgav_dprintf("  TrackType:          %d ",        t->TrackType);
+  gavl_dprintf("Matroska track\n");
+  gavl_dprintf("  TrackNumber:        %"PRId64"\n", t->TrackNumber);
+  gavl_dprintf("  TrackUID:           %"PRId64"\n", t->TrackUID);
+  gavl_dprintf("  TrackType:          %d ",        t->TrackType);
   switch(t->TrackType)
     {
     case MKV_TRACK_VIDEO:
-      bgav_dprintf("(video)\n");
+      gavl_dprintf("(video)\n");
       break;
     case MKV_TRACK_AUDIO:
-      bgav_dprintf("(audio)\n");
+      gavl_dprintf("(audio)\n");
       break;
     case MKV_TRACK_COMPLEX:
-      bgav_dprintf("(complex)\n");
+      gavl_dprintf("(complex)\n");
       break;
     case MKV_TRACK_LOGO:
-      bgav_dprintf("(logo)\n");
+      gavl_dprintf("(logo)\n");
       break;
     case MKV_TRACK_SUBTITLE:
-      bgav_dprintf("(subtitle)\n");
+      gavl_dprintf("(subtitle)\n");
       break;
     case MKV_TRACK_BUTTONS:
-      bgav_dprintf("(buttons)\n");
+      gavl_dprintf("(buttons)\n");
       break;
     case MKV_TRACK_CONTROL:
-      bgav_dprintf("(control)\n");
+      gavl_dprintf("(control)\n");
       break;
     default:
-      bgav_dprintf("(unknown)\n");
+      gavl_dprintf("(unknown)\n");
       break;
     }
   
-  bgav_dprintf("  flags:              %x\n", t->flags);
-  bgav_dprintf("  MinCache:           %"PRId64"\n", t->MinCache);
-  bgav_dprintf("  MaxCache:           %"PRId64"\n", t->MaxCache);
-  bgav_dprintf("  DefaultDuration:    %"PRId64"\n", t->DefaultDuration);
-  bgav_dprintf("  TrackTimecodeScale: %f\n", t->TrackTimecodeScale);
-  bgav_dprintf("  MaxBlockAdditionID: %"PRId64"\n", t->MaxBlockAdditionID);
-  bgav_dprintf("  Name:               %s\n", t->Name);
-  bgav_dprintf("  Language:           %s\n", t->Language);
-  bgav_dprintf("  CodecID:            %s\n", t->CodecID);
-  bgav_dprintf("  CodecPrivate        %d bytes\n", t->CodecPrivateLen);
+  gavl_dprintf("  flags:              %x\n", t->flags);
+  gavl_dprintf("  MinCache:           %"PRId64"\n", t->MinCache);
+  gavl_dprintf("  MaxCache:           %"PRId64"\n", t->MaxCache);
+  gavl_dprintf("  DefaultDuration:    %"PRId64"\n", t->DefaultDuration);
+  gavl_dprintf("  TrackTimecodeScale: %f\n", t->TrackTimecodeScale);
+  gavl_dprintf("  MaxBlockAdditionID: %"PRId64"\n", t->MaxBlockAdditionID);
+  gavl_dprintf("  Name:               %s\n", t->Name);
+  gavl_dprintf("  Language:           %s\n", t->Language);
+  gavl_dprintf("  CodecID:            %s\n", t->CodecID);
+  gavl_dprintf("  CodecPrivate        %d bytes\n", t->CodecPrivateLen);
 
   if(t->CodecPrivateLen)
     gavl_hexdump(t->CodecPrivate, t->CodecPrivateLen, 16);
 
-  bgav_dprintf("  CodecName:          %s\n", t->CodecName);
-  bgav_dprintf("  AttachmentLink:     %"PRId64"\n", t->AttachmentLink);
-  bgav_dprintf("  CodecDecodeAll:     %d\n", t->CodecDecodeAll);
-  bgav_dprintf("  TrackOverlay:       %"PRId64"\n", t->TrackOverlay);
-  bgav_dprintf("  CodecDelay:         %"PRId64"\n", t->CodecDelay);
-  bgav_dprintf("  SeekPreroll:        %"PRId64"\n", t->SeekPreroll);
+  gavl_dprintf("  CodecName:          %s\n", t->CodecName);
+  gavl_dprintf("  AttachmentLink:     %"PRId64"\n", t->AttachmentLink);
+  gavl_dprintf("  CodecDecodeAll:     %d\n", t->CodecDecodeAll);
+  gavl_dprintf("  TrackOverlay:       %"PRId64"\n", t->TrackOverlay);
+  gavl_dprintf("  CodecDelay:         %"PRId64"\n", t->CodecDelay);
+  gavl_dprintf("  SeekPreroll:        %"PRId64"\n", t->SeekPreroll);
   
   for(i = 0; i < t->num_encodings; i++)
     bgav_mkv_content_encoding_dump(&t->encodings[i]);
@@ -1926,21 +1926,21 @@ int bgav_mkv_cues_read(bgav_input_context_t * ctx,
 void bgav_mkv_cues_dump(const bgav_mkv_cues_t * cues)
   {
   int i, j;
-  bgav_dprintf("Cues\n");
+  gavl_dprintf("Cues\n");
   for(i = 0; i < cues->num_points; i++)
     {
-    bgav_dprintf("  Cue point, time: %"PRId64"\n", cues->points[i].CueTime);
+    gavl_dprintf("  Cue point, time: %"PRId64"\n", cues->points[i].CueTime);
     
     for(j = 0; j < cues->points[i].num_tracks; j++)
       {
-      bgav_dprintf("    Track: %"PRId64"\n", cues->points[i].tracks[j].CueTrack);
-      bgav_dprintf("      CueClusterPosition:  %"PRId64"\n",
+      gavl_dprintf("    Track: %"PRId64"\n", cues->points[i].tracks[j].CueTrack);
+      gavl_dprintf("      CueClusterPosition:  %"PRId64"\n",
                    cues->points[i].tracks[j].CueClusterPosition);
-      bgav_dprintf("      CueRelativePosition: %"PRId64"\n",
+      gavl_dprintf("      CueRelativePosition: %"PRId64"\n",
                    cues->points[i].tracks[j].CueRelativePosition);
-      bgav_dprintf("      CueBlockNumber:      %"PRId64"\n",
+      gavl_dprintf("      CueBlockNumber:      %"PRId64"\n",
                    cues->points[i].tracks[j].CueBlockNumber);
-      bgav_dprintf("      CueCodecState:       %"PRId64"\n",
+      gavl_dprintf("      CueCodecState:       %"PRId64"\n",
                    cues->points[i].tracks[j].CueCodecState);
       }
     }
@@ -2043,13 +2043,13 @@ int bgav_mkv_cluster_read(bgav_input_context_t * ctx,
 void bgav_mkv_cluster_dump(const bgav_mkv_cluster_t * c)
   {
   int i;
-  bgav_dprintf("Cluster\n");
-  bgav_dprintf("  Timecode: %"PRId64"\n", c->Timecode);
-  bgav_dprintf("  PrevSize: %"PRId64"\n", c->PrevSize);
-  bgav_dprintf("  Position: %"PRId64"\n", c->Position);
-  bgav_dprintf("  SilentTracks: %d tracks\n", c->num_silent_tracks);
+  gavl_dprintf("Cluster\n");
+  gavl_dprintf("  Timecode: %"PRId64"\n", c->Timecode);
+  gavl_dprintf("  PrevSize: %"PRId64"\n", c->PrevSize);
+  gavl_dprintf("  Position: %"PRId64"\n", c->Position);
+  gavl_dprintf("  SilentTracks: %d tracks\n", c->num_silent_tracks);
   for(i = 0; i < c->num_silent_tracks; i++)
-    bgav_dprintf("    SilentTrack: %"PRId64"\n", c->silent_tracks[i]);
+    gavl_dprintf("    SilentTrack: %"PRId64"\n", c->silent_tracks[i]);
   }
 
 void bgav_mkv_cluster_free(bgav_mkv_cluster_t * c)
@@ -2181,9 +2181,9 @@ int bgav_mkv_block_group_read(bgav_input_context_t * ctx,
 
 void bgav_mkv_block_group_dump(bgav_mkv_block_group_t * g)
   {
-  bgav_dprintf("BlockGroup\n");
-  bgav_dprintf("  BlockDuration:     %"PRId64"\n", g->BlockDuration);
-  bgav_dprintf("  ReferencePriority: %d\n", g->ReferencePriority);
+  gavl_dprintf("BlockGroup\n");
+  gavl_dprintf("  BlockDuration:     %"PRId64"\n", g->BlockDuration);
+  gavl_dprintf("  ReferencePriority: %d\n", g->ReferencePriority);
   bgav_mkv_block_dump(2, &g->block);
   }
 

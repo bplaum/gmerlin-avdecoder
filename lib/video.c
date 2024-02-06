@@ -267,7 +267,7 @@ read_video_nocopy(void * sp,
   if(frame)
     *frame = s->vframe;
 #ifdef DUMP_TIMESTAMPS
-  bgav_dprintf("Video timestamp: %"PRId64"\n", s->vframe->timestamp);
+  gavl_dprintf("Video timestamp: %"PRId64"\n", s->vframe->timestamp);
 #endif    
   s->out_time = s->vframe->timestamp + s->vframe->duration;
   s->flags &= ~STREAM_HAVE_FRAME;
@@ -303,7 +303,7 @@ static gavl_source_status_t read_video_copy(void * sp,
     }
 #ifdef DUMP_TIMESTAMPS
   if(frame)
-    bgav_dprintf("Video timestamp: %"PRId64"\n", (*frame)->timestamp);
+    gavl_dprintf("Video timestamp: %"PRId64"\n", (*frame)->timestamp);
 #endif    
   s->flags &= ~STREAM_HAVE_FRAME;
   return GAVL_SOURCE_OK;
@@ -486,8 +486,8 @@ int bgav_read_video(bgav_t * b, gavl_video_frame_t * frame, int stream)
 
 void bgav_video_dump(bgav_stream_t * s)
   {
-  bgav_dprintf("  Depth:             %d\n", s->data.video.depth);
-  bgav_dprintf("Format:\n");
+  gavl_dprintf("  Depth:             %d\n", s->data.video.depth);
+  gavl_dprintf("Format:\n");
   gavl_video_format_dump(s->data.video.format);
   }
 

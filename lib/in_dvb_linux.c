@@ -151,43 +151,43 @@ dvb_caps[] =
 static void dump_frontend_info(struct dvb_frontend_info * info)
   {
   int i;
-  bgav_dprintf("DVB frontend info\n");
-  bgav_dprintf("  .name = %s\n", info->name);
-  bgav_dprintf("  .type = ");
+  gavl_dprintf("DVB frontend info\n");
+  gavl_dprintf("  .name = %s\n", info->name);
+  gavl_dprintf("  .type = ");
   
   switch(info->type)
     {
     case FE_QPSK:
-      bgav_dprintf("QPSK (DVB-S)\n");
+      gavl_dprintf("QPSK (DVB-S)\n");
       break;
     case FE_QAM:
-      bgav_dprintf("QAM (DVB-C)\n");
+      gavl_dprintf("QAM (DVB-C)\n");
       break;
     case FE_OFDM:
-      bgav_dprintf("QFDM (DVB-T)\n");
+      gavl_dprintf("QFDM (DVB-T)\n");
       break;
     case FE_ATSC:
-      bgav_dprintf("ATSC (DBV-A)\n");
+      gavl_dprintf("ATSC (DBV-A)\n");
       break;
     }
-  bgav_dprintf("  Frequency range: [%d..%d] (step: %d, tol: %d)\n",
+  gavl_dprintf("  Frequency range: [%d..%d] (step: %d, tol: %d)\n",
                info->frequency_min,
                info->frequency_max,
                info->frequency_stepsize,
                info->frequency_tolerance);
   
-  bgav_dprintf("  Symbol rate range: [%d..%d] (tol: %d)\n",
+  gavl_dprintf("  Symbol rate range: [%d..%d] (tol: %d)\n",
                info->symbol_rate_min,
                info->symbol_rate_max,
                info->symbol_rate_tolerance);
   
-  bgav_dprintf("  capabilities: ");
+  gavl_dprintf("  capabilities: ");
   for(i = 0; i < sizeof(dvb_caps)/sizeof(dvb_caps[0]); i++)
     {
     if(info->caps & dvb_caps[i].cap)
-      bgav_dprintf("%s ", dvb_caps[i].name);
+      gavl_dprintf("%s ", dvb_caps[i].name);
     }
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
   }
 
 #endif
@@ -786,7 +786,7 @@ static int open_dvb(bgav_input_context_t * ctx, const char * url, char ** redire
     return 0;
     }
 
-  //  bgav_dprintf("Frontend status: 0x%02x\n", status);
+  //  gavl_dprintf("Frontend status: 0x%02x\n", status);
   
   filename = strrchr(priv->device_directory, '/');
   filename++;

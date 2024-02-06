@@ -120,124 +120,124 @@ static bgav_id3v2_frame_t * bgav_id3v2_find_frame(bgav_id3v2_tag_t*t,
 static void dump_frame(bgav_id3v2_frame_t * frame)
   {
   int i;
-  bgav_dprintf( "Header:\n");
-  bgav_dprintf( "  Fourcc:      ");
+  gavl_dprintf( "Header:\n");
+  gavl_dprintf( "  Fourcc:      ");
   bgav_dump_fourcc(frame->header.fourcc);
-  bgav_dprintf( "\n");
+  gavl_dprintf( "\n");
   
-  bgav_dprintf( "  Start:       %"PRId64"\n", frame->header.start);
-  bgav_dprintf( "  Data Size:   %d\n", frame->header.data_size);
-  bgav_dprintf( "  Header Size: %d\n", frame->header.header_size);
+  gavl_dprintf( "  Start:       %"PRId64"\n", frame->header.start);
+  gavl_dprintf( "  Data Size:   %d\n", frame->header.data_size);
+  gavl_dprintf( "  Header Size: %d\n", frame->header.header_size);
 
-  bgav_dprintf( "  Flags:       ");
+  gavl_dprintf( "  Flags:       ");
 
   if(frame->header.flags & ID3V2_FRAME_TAG_ALTER_PRESERVATION)
-    bgav_dprintf( "ALTER_PRESERVATION ");
+    gavl_dprintf( "ALTER_PRESERVATION ");
   if(frame->header.flags & ID3V2_FRAME_READ_ONLY)
-    bgav_dprintf( "READ_ONLY ");
+    gavl_dprintf( "READ_ONLY ");
   if(frame->header.flags & ID3V2_FRAME_GROUPING)
-    bgav_dprintf( "GOUPING ");
+    gavl_dprintf( "GOUPING ");
   if(frame->header.flags & ID3V2_FRAME_COMPRESSION)
-    bgav_dprintf( "COMPRESSION ");
+    gavl_dprintf( "COMPRESSION ");
   if(frame->header.flags & ID3V2_FRAME_ENCRYPTION)
-    bgav_dprintf( "ENCRYPTION ");
+    gavl_dprintf( "ENCRYPTION ");
   if(frame->header.flags & ID3V2_FRAME_UNSYNCHRONIZED)
-    bgav_dprintf( "UNSYNCHRONIZED ");
+    gavl_dprintf( "UNSYNCHRONIZED ");
   if(frame->header.flags & ID3V2_FRAME_DATA_LENGTH)
-    bgav_dprintf( "DATA_LENGTH");
+    gavl_dprintf( "DATA_LENGTH");
 
-  bgav_dprintf( "\n");
+  gavl_dprintf( "\n");
 
   if(frame->data)
     {
-    bgav_dprintf( "Raw data:\n");
+    gavl_dprintf( "Raw data:\n");
     gavl_hexdump(frame->data, frame->header.data_size, 16);
     }
   if(frame->strings)
     {
-    bgav_dprintf( "Strings:\n");
+    gavl_dprintf( "Strings:\n");
     i = 0;
     while(frame->strings[i])
       {
-      bgav_dprintf( "%02x: %s\n", i, frame->strings[i]);
+      gavl_dprintf( "%02x: %s\n", i, frame->strings[i]);
       i++;
       }
     }
   if(frame->picture)
     {
-    bgav_dprintf("Picture:\n");
-    bgav_dprintf("  Mimetype: %s\n", frame->picture->mimetype);
-    bgav_dprintf("  Size:     %d\n", frame->picture->data_size);
-    bgav_dprintf("  Offset:   %d\n", frame->picture->data_offset);
-    bgav_dprintf("  Type:     ");
+    gavl_dprintf("Picture:\n");
+    gavl_dprintf("  Mimetype: %s\n", frame->picture->mimetype);
+    gavl_dprintf("  Size:     %d\n", frame->picture->data_size);
+    gavl_dprintf("  Offset:   %d\n", frame->picture->data_offset);
+    gavl_dprintf("  Type:     ");
     switch(frame->picture->picture_type)
       {
       case 0x00:  
-        bgav_dprintf("Other\n");
+        gavl_dprintf("Other\n");
         break;
       case 0x01:  
-        bgav_dprintf("32x32 pixels 'file icon' (PNG only)\n");
+        gavl_dprintf("32x32 pixels 'file icon' (PNG only)\n");
         break;
       case 0x02:  
-        bgav_dprintf("Other file icon\n");
+        gavl_dprintf("Other file icon\n");
         break;
       case 0x03:  
-        bgav_dprintf("Cover (front)\n");
+        gavl_dprintf("Cover (front)\n");
         break;
       case 0x04:  
-        bgav_dprintf("Cover (back)\n");
+        gavl_dprintf("Cover (back)\n");
         break;
       case 0x05:  
-        bgav_dprintf("Leaflet page\n");
+        gavl_dprintf("Leaflet page\n");
         break;
       case 0x06:  
-        bgav_dprintf("Media (e.g. label side of CD)\n");
+        gavl_dprintf("Media (e.g. label side of CD)\n");
         break;
       case 0x07:  
-        bgav_dprintf("Lead artist/lead performer/soloist\n");
+        gavl_dprintf("Lead artist/lead performer/soloist\n");
         break;
       case 0x08:  
-        bgav_dprintf("Artist/performer\n");
+        gavl_dprintf("Artist/performer\n");
         break;
       case 0x09:  
-        bgav_dprintf("Conductor\n");
+        gavl_dprintf("Conductor\n");
         break;
       case 0x0A:  
-        bgav_dprintf("Band/Orchestra\n");
+        gavl_dprintf("Band/Orchestra\n");
         break;
       case 0x0B:  
-        bgav_dprintf("Composer\n");
+        gavl_dprintf("Composer\n");
         break;
       case 0x0C:  
-        bgav_dprintf("Lyricist/text writer\n");
+        gavl_dprintf("Lyricist/text writer\n");
         break;
       case 0x0D:  
-        bgav_dprintf("Recording Location\n");
+        gavl_dprintf("Recording Location\n");
         break;
       case 0x0E:  
-        bgav_dprintf("During recording\n");
+        gavl_dprintf("During recording\n");
         break;
       case 0x0F:  
-        bgav_dprintf("During performance\n");
+        gavl_dprintf("During performance\n");
         break;
       case 0x10:  
-        bgav_dprintf("Movie/video screen capture\n");
+        gavl_dprintf("Movie/video screen capture\n");
         break;
       case 0x11:  
-        bgav_dprintf("A bright coloured fish\n");
+        gavl_dprintf("A bright coloured fish\n");
         break;
       case 0x12:  
-        bgav_dprintf("Illustration\n");
+        gavl_dprintf("Illustration\n");
         break;
       case 0x13:  
-        bgav_dprintf("Band/artist logotype\n");
+        gavl_dprintf("Band/artist logotype\n");
         break;
       case 0x14:  
-        bgav_dprintf("Publisher/Studio logotype\n");
+        gavl_dprintf("Publisher/Studio logotype\n");
         break;
       }
     if(frame->picture->description)
-      bgav_dprintf("  Description: %s\n", frame->picture->description);
+      gavl_dprintf("  Description: %s\n", frame->picture->description);
 //    gavl_hexdump(frame->picture->data, frame->header.data_size, 16);
     }
   }
@@ -273,28 +273,28 @@ static void free_frame(bgav_id3v2_frame_t * frame)
 void bgav_id3v2_dump(bgav_id3v2_tag_t * t)
   {
   int i;
-  bgav_dprintf( "============= ID3V2 tag =============\n");
+  gavl_dprintf( "============= ID3V2 tag =============\n");
   
   /* Dump header */
 
-  bgav_dprintf( "Header:\n");
-  bgav_dprintf( "  Major version: %d\n", t->header.major_version);
-  bgav_dprintf( "  Minor version: %d\n", t->header.minor_version);
-  bgav_dprintf( "  Flags:         ");
+  gavl_dprintf( "Header:\n");
+  gavl_dprintf( "  Major version: %d\n", t->header.major_version);
+  gavl_dprintf( "  Minor version: %d\n", t->header.minor_version);
+  gavl_dprintf( "  Flags:         ");
   if(t->header.flags & ID3V2_TAG_UNSYNCHRONIZED)
-    bgav_dprintf( "UNSYNCHRONIZED ");
+    gavl_dprintf( "UNSYNCHRONIZED ");
   if(t->header.flags & ID3V2_TAG_EXTENDED_HEADER)
-    bgav_dprintf( " EXTENDED_HEADER");
+    gavl_dprintf( " EXTENDED_HEADER");
   if(t->header.flags & ID3V2_TAG_EXPERIMENTAL)
-    bgav_dprintf( " EXPERIMENTAL");
+    gavl_dprintf( " EXPERIMENTAL");
   if(t->header.flags & ID3V2_TAG_EXPERIMENTAL)
-    bgav_dprintf( " FOOTER_PRESENT");
-  bgav_dprintf( "\n");
-  bgav_dprintf( "  Size: %d\n", t->header.data_size);
+    gavl_dprintf( " FOOTER_PRESENT");
+  gavl_dprintf( "\n");
+  gavl_dprintf( "  Size: %d\n", t->header.data_size);
   
   for(i = 0; i < t->num_frames; i++)
     {
-    bgav_dprintf( "========== Frame %d ==========\n", i+1);
+    gavl_dprintf( "========== Frame %d ==========\n", i+1);
     dump_frame(&t->frames[i]);
     }
   }

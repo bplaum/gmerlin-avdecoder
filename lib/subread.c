@@ -871,13 +871,13 @@ static const bgav_subtitle_reader_t subtitle_readers[] =
 void bgav_subreaders_dump()
   {
   int i = 0;
-  bgav_dprintf( "<h2>Subtitle readers</h2>\n<ul>\n");
+  gavl_dprintf( "<h2>Subtitle readers</h2>\n<ul>\n");
   while(subtitle_readers[i].name)
     {
-    bgav_dprintf( "<li>%s\n", subtitle_readers[i].name);
+    gavl_dprintf( "<li>%s\n", subtitle_readers[i].name);
     i++;
     }
-  bgav_dprintf( "</ul>\n");
+  gavl_dprintf( "</ul>\n");
   }
 
 static char const * const extensions[] =

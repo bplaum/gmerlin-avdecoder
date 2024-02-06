@@ -46,11 +46,11 @@ static int read_chunk_header(bgav_input_context_t * input,
 #if 0
 static void dump_chunk_header(chunk_header_t * ch)
   {
-  bgav_dprintf("SMAF Chunk header\n");
-  bgav_dprintf("  .fourcc = ");
+  gavl_dprintf("SMAF Chunk header\n");
+  gavl_dprintf("  .fourcc = ");
   bgav_dump_fourcc(ch->fourcc);
-  bgav_dprintf("\n");
-  bgav_dprintf("  size:   %d\n", ch->size);
+  gavl_dprintf("\n");
+  gavl_dprintf("  size:   %d\n", ch->size);
   }
 #endif
 

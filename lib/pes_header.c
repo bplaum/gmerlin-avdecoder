@@ -229,18 +229,18 @@ int bgav_pes_header_read(bgav_input_context_t * input,
 static void dump_timestamp(int64_t ts)
   {
   if(ts > 0)
-    bgav_dprintf("%"PRId64" (%f)", ts, (float)ts / 90000.0);
+    gavl_dprintf("%"PRId64" (%f)", ts, (float)ts / 90000.0);
   else
-    bgav_dprintf("Unknown");
+    gavl_dprintf("Unknown");
   }
 
 void bgav_pes_header_dump(bgav_pes_header_t * p)
   {
-  bgav_dprintf("PES Header: PTS: ");
+  gavl_dprintf("PES Header: PTS: ");
   dump_timestamp(p->pts);
-  bgav_dprintf(" DTS: ");
+  gavl_dprintf(" DTS: ");
   dump_timestamp(p->dts);
-  bgav_dprintf(" Stream ID: %02x, payload_size: %d\n",
+  gavl_dprintf(" Stream ID: %02x, payload_size: %d\n",
                p->stream_id, p->payload_size);
   }
 
@@ -248,7 +248,7 @@ void bgav_pes_header_dump(bgav_pes_header_t * p)
 
 void bgav_pack_header_dump(bgav_pack_header_t * h)
   {
-  bgav_dprintf(
+  gavl_dprintf(
           "Pack header: MPEG-%d, SCR: %" PRId64 " (%f secs), Mux rate: %d bits/s\n",
           h->version, h->scr, (float)(h->scr)/90000.0,
           h->mux_rate * 400);

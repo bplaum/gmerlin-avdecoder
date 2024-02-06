@@ -209,9 +209,9 @@ typedef struct
 #if 0
 static void dump_audio_stream(asf_audio_stream_t * as)
   {
-  bgav_dprintf( "descramble_h: %d\n", as->descramble_h);
-  bgav_dprintf( "descramble_w: %d\n", as->descramble_w);
-  bgav_dprintf( "descramble_b: %d\n", as->descramble_b);
+  gavl_dprintf( "descramble_h: %d\n", as->descramble_h);
+  gavl_dprintf( "descramble_w: %d\n", as->descramble_w);
+  gavl_dprintf( "descramble_b: %d\n", as->descramble_b);
   }
 #endif
 static void asf_descramble(asf_audio_stream_t * as,
@@ -777,16 +777,16 @@ typedef struct
 #if 0
 static void dump_packet_header(asf_packet_header_t * h)
   {
-  bgav_dprintf( "asf packet header\n");
-  bgav_dprintf( "  packet_flags:    0x%02x\n", h->flags);
-  bgav_dprintf( "  packet_property: 0x%02x\n", h->segtype);
-  bgav_dprintf( "  packet_length:   %d\n",     h->plen);
-  bgav_dprintf( "  sequence:        %d\n",     h->sequence);
-  bgav_dprintf( "  padsize:         %d\n",     h->padding);
-  bgav_dprintf( "  timestamp:       %d\n",     h->time);
-  bgav_dprintf( "  duration:        %d\n",     h->duration);
-  bgav_dprintf( "  segsizetype:     0x%02x\n", h->segsizetype);
-  bgav_dprintf( "  segments:        %d\n",     h->segs);
+  gavl_dprintf( "asf packet header\n");
+  gavl_dprintf( "  packet_flags:    0x%02x\n", h->flags);
+  gavl_dprintf( "  packet_property: 0x%02x\n", h->segtype);
+  gavl_dprintf( "  packet_length:   %d\n",     h->plen);
+  gavl_dprintf( "  sequence:        %d\n",     h->sequence);
+  gavl_dprintf( "  padsize:         %d\n",     h->padding);
+  gavl_dprintf( "  timestamp:       %d\n",     h->time);
+  gavl_dprintf( "  duration:        %d\n",     h->duration);
+  gavl_dprintf( "  segsizetype:     0x%02x\n", h->segsizetype);
+  gavl_dprintf( "  segments:        %d\n",     h->segs);
   }
 #endif
 /* Returns the number of bytes used or -1 */
@@ -877,14 +877,14 @@ typedef struct
 #if 0
 static void dump_segment_header(asf_segment_header_t*h)
   {
-  bgav_dprintf( "Segment header:\n");
-  bgav_dprintf( "  Stream number: %d\n", h->streamno);
-  bgav_dprintf( "  Seq:           %d\n", h->seq);
-  bgav_dprintf( "  x:             %d\n", h->x);   // offset or timestamp
-  bgav_dprintf( "  rlen:          %d\n", h->rlen);
-  bgav_dprintf( "  len:           %d\n", h->len);
-  bgav_dprintf( "  time2:         %d\n", h->time2);
-  bgav_dprintf( "  keyframe:      %d\n", h->keyframe);
+  gavl_dprintf( "Segment header:\n");
+  gavl_dprintf( "  Stream number: %d\n", h->streamno);
+  gavl_dprintf( "  Seq:           %d\n", h->seq);
+  gavl_dprintf( "  x:             %d\n", h->x);   // offset or timestamp
+  gavl_dprintf( "  rlen:          %d\n", h->rlen);
+  gavl_dprintf( "  len:           %d\n", h->len);
+  gavl_dprintf( "  time2:         %d\n", h->time2);
+  gavl_dprintf( "  keyframe:      %d\n", h->keyframe);
   }
 #endif
 static int read_segment_header(const bgav_options_t * opt,

@@ -71,7 +71,7 @@ do_connect(bgav_http_t * ret, const char * host, int port, const bgav_options_t 
   
   if(opt->dump_headers)
     {
-    bgav_dprintf("Sending header\n");
+    gavl_dprintf("Sending header\n");
     gavl_dictionary_dump(request_header, 2);
     if(extra_header)
       gavl_dictionary_dump(extra_header, 2);
@@ -154,7 +154,7 @@ do_connect(bgav_http_t * ret, const char * host, int port, const bgav_options_t 
 
   if(opt->dump_headers)
     {
-    bgav_dprintf("Got response\n");
+    gavl_dprintf("Got response\n");
     gavl_dictionary_dump(&ret->header, 2);
     }
 

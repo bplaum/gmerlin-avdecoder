@@ -144,7 +144,7 @@ static int system_header_read(bgav_input_context_t * input,
 #if 0
 static void system_header_dump(system_header_t * h)
   {
-  bgav_dprintf( "System header (skipped %d bytes)\n", h->size);
+  gavl_dprintf( "System header (skipped %d bytes)\n", h->size);
   }
 #endif
 /* Demuxer structure */

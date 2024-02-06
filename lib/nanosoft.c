@@ -287,51 +287,51 @@ void bgav_WAVEFORMAT_dump(bgav_WAVEFORMAT_t * ret)
   switch(ret->type)
     {
     case BGAV_WAVEFORMAT_WAVEFORMAT:
-      bgav_dprintf( "WAVEFORMAT\n");
+      gavl_dprintf( "WAVEFORMAT\n");
       break;
     case BGAV_WAVEFORMAT_PCMWAVEFORMAT:
-      bgav_dprintf( "PCMWAVEFORMAT\n");
+      gavl_dprintf( "PCMWAVEFORMAT\n");
       break;
     case BGAV_WAVEFORMAT_WAVEFORMATEX:
-      bgav_dprintf( "WAVEFORMATEX\n");
+      gavl_dprintf( "WAVEFORMATEX\n");
       break;
     case BGAV_WAVEFORMAT_WAVEFORMATEXTENSIBLE:
-      bgav_dprintf( "WAVEFORMATEXTENSIBLE\n");
+      gavl_dprintf( "WAVEFORMATEXTENSIBLE\n");
       break;
     }
-  bgav_dprintf( "  wFormatTag:      %04x\n", ret->f.WAVEFORMAT.wFormatTag);
-  bgav_dprintf( "  nChannels:       %d\n",   ret->f.WAVEFORMAT.nChannels);
-  bgav_dprintf( "  nSamplesPerSec:  %d\n",   ret->f.WAVEFORMAT.nSamplesPerSec);
-  bgav_dprintf( "  nAvgBytesPerSec: %d\n",   ret->f.WAVEFORMAT.nAvgBytesPerSec);
-  bgav_dprintf( "  nBlockAlign:     %d\n",   ret->f.WAVEFORMAT.nBlockAlign);
+  gavl_dprintf( "  wFormatTag:      %04x\n", ret->f.WAVEFORMAT.wFormatTag);
+  gavl_dprintf( "  nChannels:       %d\n",   ret->f.WAVEFORMAT.nChannels);
+  gavl_dprintf( "  nSamplesPerSec:  %d\n",   ret->f.WAVEFORMAT.nSamplesPerSec);
+  gavl_dprintf( "  nAvgBytesPerSec: %d\n",   ret->f.WAVEFORMAT.nAvgBytesPerSec);
+  gavl_dprintf( "  nBlockAlign:     %d\n",   ret->f.WAVEFORMAT.nBlockAlign);
 
   switch(ret->type)
     {
     case BGAV_WAVEFORMAT_WAVEFORMAT:
       break;
     case BGAV_WAVEFORMAT_PCMWAVEFORMAT:
-      bgav_dprintf( "  wBitsPerSample:  %d\n",   ret->f.PCMWAVEFORMAT.wBitsPerSample);
+      gavl_dprintf( "  wBitsPerSample:  %d\n",   ret->f.PCMWAVEFORMAT.wBitsPerSample);
       break;
     case BGAV_WAVEFORMAT_WAVEFORMATEX:
-      bgav_dprintf( "  wBitsPerSample:  %d\n",   ret->f.PCMWAVEFORMAT.wBitsPerSample);
-      bgav_dprintf( "  cbSize:          %d\n",   ret->f.WAVEFORMATEX.cbSize);
+      gavl_dprintf( "  wBitsPerSample:  %d\n",   ret->f.PCMWAVEFORMAT.wBitsPerSample);
+      gavl_dprintf( "  cbSize:          %d\n",   ret->f.WAVEFORMATEX.cbSize);
       if(ret->f.WAVEFORMATEX.ext_size)
         {
-        bgav_dprintf( "Extradata %d bytes, hexdump follows\n", ret->f.WAVEFORMATEX.ext_size);
+        gavl_dprintf( "Extradata %d bytes, hexdump follows\n", ret->f.WAVEFORMATEX.ext_size);
         gavl_hexdump(ret->f.WAVEFORMATEX.ext_data, ret->f.WAVEFORMATEX.ext_size, 16);
         }
       break;
     case BGAV_WAVEFORMAT_WAVEFORMATEXTENSIBLE:
-      bgav_dprintf( "  wBitsPerSample:  %d\n",   ret->f.PCMWAVEFORMAT.wBitsPerSample);
-      bgav_dprintf( "  cbSize:          %d\n",   ret->f.WAVEFORMATEX.cbSize);
+      gavl_dprintf( "  wBitsPerSample:  %d\n",   ret->f.PCMWAVEFORMAT.wBitsPerSample);
+      gavl_dprintf( "  cbSize:          %d\n",   ret->f.WAVEFORMATEX.cbSize);
       
-      bgav_dprintf( "  wValidBitsPerSample: %d\n", ret->f.WAVEFORMATEXTENSIBLE.Samples.wValidBitsPerSample);
-      bgav_dprintf( "  dwChannelMask:       %08x\n", ret->f.WAVEFORMATEXTENSIBLE.dwChannelMask);
-      bgav_dprintf( "  SubFormat:           ");
+      gavl_dprintf( "  wValidBitsPerSample: %d\n", ret->f.WAVEFORMATEXTENSIBLE.Samples.wValidBitsPerSample);
+      gavl_dprintf( "  dwChannelMask:       %08x\n", ret->f.WAVEFORMATEXTENSIBLE.dwChannelMask);
+      gavl_dprintf( "  SubFormat:           ");
       bgav_GUID_dump(&ret->f.WAVEFORMATEXTENSIBLE.SubFormat);
       if(ret->f.WAVEFORMATEX.ext_size)
         {
-        bgav_dprintf( "Extradata %d bytes, hexdump follows\n", ret->f.WAVEFORMATEX.ext_size);
+        gavl_dprintf( "Extradata %d bytes, hexdump follows\n", ret->f.WAVEFORMATEX.ext_size);
         gavl_hexdump(ret->f.WAVEFORMATEX.ext_data, ret->f.WAVEFORMATEX.ext_size, 16);
         }
       break;
@@ -413,21 +413,21 @@ void bgav_BITMAPINFOHEADER_set_format(bgav_BITMAPINFOHEADER_t * bh,
 void bgav_BITMAPINFOHEADER_dump(bgav_BITMAPINFOHEADER_t * ret)
   {
   uint32_t fourcc_be;
-  bgav_dprintf( "BITMAPINFOHEADER:\n");
-  bgav_dprintf( "  biSize: %d\n", ret->biSize); /* sizeof(BITMAPINFOHEADER) */
-  bgav_dprintf( "  biWidth: %d\n", ret->biWidth);
-  bgav_dprintf( "  biHeight: %d\n", ret->biHeight);
-  bgav_dprintf( "  biPlanes: %d\n", ret->biPlanes);
-  bgav_dprintf( "  biBitCount: %d\n", ret->biBitCount);
+  gavl_dprintf( "BITMAPINFOHEADER:\n");
+  gavl_dprintf( "  biSize: %d\n", ret->biSize); /* sizeof(BITMAPINFOHEADER) */
+  gavl_dprintf( "  biWidth: %d\n", ret->biWidth);
+  gavl_dprintf( "  biHeight: %d\n", ret->biHeight);
+  gavl_dprintf( "  biPlanes: %d\n", ret->biPlanes);
+  gavl_dprintf( "  biBitCount: %d\n", ret->biBitCount);
   fourcc_be = swap_endian(ret->biCompression);
-  bgav_dprintf( "  biCompression: ");
+  gavl_dprintf( "  biCompression: ");
   bgav_dump_fourcc(fourcc_be);
-  bgav_dprintf( "\n");
-  bgav_dprintf( "  biSizeImage: %d\n", ret->biSizeImage);
-  bgav_dprintf( "  biXPelsPerMeter: %d\n", ret->biXPelsPerMeter);
-  bgav_dprintf( "  biYPelsPerMeter: %d\n", ret->biXPelsPerMeter);
-  bgav_dprintf( "  biClrUsed: %d\n", ret->biClrUsed);
-  bgav_dprintf( "  biClrImportant: %d\n", ret->biClrImportant);
+  gavl_dprintf( "\n");
+  gavl_dprintf( "  biSizeImage: %d\n", ret->biSizeImage);
+  gavl_dprintf( "  biXPelsPerMeter: %d\n", ret->biXPelsPerMeter);
+  gavl_dprintf( "  biYPelsPerMeter: %d\n", ret->biXPelsPerMeter);
+  gavl_dprintf( "  biClrUsed: %d\n", ret->biClrUsed);
+  gavl_dprintf( "  biClrImportant: %d\n", ret->biClrImportant);
   }
 
 /* RIFF INFO chunk */
@@ -542,11 +542,11 @@ bgav_RIFFINFO_t * bgav_RIFFINFO_read(bgav_input_context_t * input)
 
 /* DS == dump_string */
 
-#define DS(tag) if(info->tag) bgav_dprintf( "  %s: %s\n", #tag, info->tag)
+#define DS(tag) if(info->tag) gavl_dprintf( "  %s: %s\n", #tag, info->tag)
 
 void bgav_RIFFINFO_dump(bgav_RIFFINFO_t * info)
   {
-  bgav_dprintf( "INFO\n");
+  gavl_dprintf( "INFO\n");
 
   DS(IARL);
   DS(IART);
@@ -637,7 +637,7 @@ void bgav_RIFFINFO_get_metadata(bgav_RIFFINFO_t * info, bgav_metadata_t * m)
 
 void bgav_GUID_dump(bgav_GUID_t * g)
   {
-  bgav_dprintf(
+  gavl_dprintf(
           "%08x-%04x-%04x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n",
           g->v1, g->v2, g->v3, g->v4[0], g->v4[1], g->v4[2], g->v4[3],
           g->v4[4], g->v4[5], g->v4[6], g->v4[7]);

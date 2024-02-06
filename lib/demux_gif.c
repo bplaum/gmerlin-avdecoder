@@ -57,12 +57,12 @@ static void parse_screen_descriptor(uint8_t * data,
 #if 0
 static void dump_screen_descriptor(screen_descriptor_t * sd)
   {
-  bgav_dprintf("GIF Screen descriptor\n");
-  bgav_dprintf("  width:              %d\n",  sd->width);
-  bgav_dprintf("  height:             %d\n", sd->height);
-  bgav_dprintf("  .flags =              %02x\n", sd->flags);
-  bgav_dprintf("  bg_color:           %d\n", sd->bg_color);
-  bgav_dprintf("  pixel_aspect_ratio: %d\n", sd->pixel_aspect_ratio);
+  gavl_dprintf("GIF Screen descriptor\n");
+  gavl_dprintf("  width:              %d\n",  sd->width);
+  gavl_dprintf("  height:             %d\n", sd->height);
+  gavl_dprintf("  .flags =              %02x\n", sd->flags);
+  gavl_dprintf("  bg_color:           %d\n", sd->bg_color);
+  gavl_dprintf("  pixel_aspect_ratio: %d\n", sd->pixel_aspect_ratio);
   }
 #endif
 

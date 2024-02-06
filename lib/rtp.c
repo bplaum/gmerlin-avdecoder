@@ -104,18 +104,18 @@ static int rtp_header_read(bgav_input_context_t * ctx,
 static void rtp_header_dump(rtp_header_t * h)
   {
   int i;
-  bgav_dprintf("RTP Header\n");
-  bgav_dprintf("  version:      %d\n", h->version);
-  bgav_dprintf("  padding:      %d\n", h->padding);
-  bgav_dprintf("  extension:    %d\n", h->extension);
-  bgav_dprintf("  csrc_count:   %d\n", h->csrc_count);
-  bgav_dprintf("  marker:       %d\n", h->marker);
-  bgav_dprintf("  payload_type: %d\n", h->payload_type);
-  bgav_dprintf("  seq:          %d\n", h->sequence_number);
-  bgav_dprintf("  timestamp:    %"PRId64"\n", h->timestamp);
+  gavl_dprintf("RTP Header\n");
+  gavl_dprintf("  version:      %d\n", h->version);
+  gavl_dprintf("  padding:      %d\n", h->padding);
+  gavl_dprintf("  extension:    %d\n", h->extension);
+  gavl_dprintf("  csrc_count:   %d\n", h->csrc_count);
+  gavl_dprintf("  marker:       %d\n", h->marker);
+  gavl_dprintf("  payload_type: %d\n", h->payload_type);
+  gavl_dprintf("  seq:          %d\n", h->sequence_number);
+  gavl_dprintf("  timestamp:    %"PRId64"\n", h->timestamp);
   for(i = 0; i < h->csrc_count; i++)
     {
-    bgav_dprintf("  csrc[%d]:    %d\n", i, h->csrc_list[i]);
+    gavl_dprintf("  csrc[%d]:    %d\n", i, h->csrc_list[i]);
     }
   }
 #endif
@@ -1091,10 +1091,10 @@ static int mpeg4_aus_read(bgav_stream_t * s,
 static void dump_aus(mpeg4_au_t * aus, int num)
   {
   int i;
-  bgav_dprintf("Access units: %d\n", num);
+  gavl_dprintf("Access units: %d\n", num);
   for(i = 0; i < num; i++)
     {
-    bgav_dprintf("  AU %d, size: %d, delta: %d\n",
+    gavl_dprintf("  AU %d, size: %d, delta: %d\n",
                  i, aus[i].size, aus[i].delta);
     }
   }

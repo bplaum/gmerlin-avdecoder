@@ -54,11 +54,11 @@ static int read_audio_header(bgav_input_context_t * input,
 #if 0
 static void dump_audio_header(audio_header_t * ah)
   {
-  bgav_dprintf("AVS audio header\n");
-  bgav_dprintf("  .type =              %d\n", ah->type);
-  bgav_dprintf("  size:              %d\n", ah->size);
-  bgav_dprintf("  frequency_divisor: %d\n", ah->frequency_divisor);
-  bgav_dprintf("  data_packing:      %d\n", ah->data_packing);
+  gavl_dprintf("AVS audio header\n");
+  gavl_dprintf("  .type =              %d\n", ah->type);
+  gavl_dprintf("  size:              %d\n", ah->size);
+  gavl_dprintf("  frequency_divisor: %d\n", ah->frequency_divisor);
+  gavl_dprintf("  data_packing:      %d\n", ah->data_packing);
   }
 #endif
 static const uint8_t avs_sig[10] =

@@ -135,14 +135,14 @@ int bgav_a52_header_read(bgav_a52_header_t * ret, uint8_t * buf)
 
 void bgav_a52_header_dump(bgav_a52_header_t * h)
   {
-  bgav_dprintf("A52 header:\n");
-  bgav_dprintf("  Frame bytes: %d\n", h->total_bytes);
-  bgav_dprintf("  Samplerate:  %d\n", h->samplerate);
-  bgav_dprintf("  acmod:  0x%0x\n",   h->acmod);
+  gavl_dprintf("A52 header:\n");
+  gavl_dprintf("  Frame bytes: %d\n", h->total_bytes);
+  gavl_dprintf("  Samplerate:  %d\n", h->samplerate);
+  gavl_dprintf("  acmod:  0x%0x\n",   h->acmod);
   if(h->smixlev >= 0.0)
-    bgav_dprintf("  smixlev: %f\n", h->smixlev);
+    gavl_dprintf("  smixlev: %f\n", h->smixlev);
   if(h->cmixlev >= 0.0)
-    bgav_dprintf("  cmixlev: %f\n", h->cmixlev);
+    gavl_dprintf("  cmixlev: %f\n", h->cmixlev);
   }
 
 void bgav_a52_header_get_format(const bgav_a52_header_t * h,

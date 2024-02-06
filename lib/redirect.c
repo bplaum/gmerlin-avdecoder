@@ -36,16 +36,16 @@ extern const bgav_redirector_t bgav_redirector_qtl;
 
 void bgav_redirectors_dump()
   {
-  bgav_dprintf( "<h2>Redirectors</h2>\n");
-  bgav_dprintf( "<ul>\n");
-  bgav_dprintf( "<li>%s\n", bgav_redirector_asx.name);
-  bgav_dprintf( "<li>%s\n", bgav_redirector_m3u.name);
-  bgav_dprintf( "<li>%s\n", bgav_redirector_pls.name);
-  bgav_dprintf( "<li>%s\n", bgav_redirector_ref.name);
-  bgav_dprintf( "<li>%s\n", bgav_redirector_smil.name);
-  bgav_dprintf( "<li>%s\n", bgav_redirector_rtsptext.name);
-  bgav_dprintf( "<li>%s\n", bgav_redirector_qtl.name);
-  bgav_dprintf( "</ul>\n");
+  gavl_dprintf( "<h2>Redirectors</h2>\n");
+  gavl_dprintf( "<ul>\n");
+  gavl_dprintf( "<li>%s\n", bgav_redirector_asx.name);
+  gavl_dprintf( "<li>%s\n", bgav_redirector_m3u.name);
+  gavl_dprintf( "<li>%s\n", bgav_redirector_pls.name);
+  gavl_dprintf( "<li>%s\n", bgav_redirector_ref.name);
+  gavl_dprintf( "<li>%s\n", bgav_redirector_smil.name);
+  gavl_dprintf( "<li>%s\n", bgav_redirector_rtsptext.name);
+  gavl_dprintf( "<li>%s\n", bgav_redirector_qtl.name);
+  gavl_dprintf( "</ul>\n");
   }
 
 typedef struct

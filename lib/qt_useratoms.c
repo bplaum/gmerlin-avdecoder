@@ -72,7 +72,7 @@ void bgav_qt_user_atoms_dump(int indent, qt_user_atoms_t * a)
     fourcc = BGAV_PTR_2_FOURCC(a->atoms[i]+4);
     bgav_diprintf(indent, "User atom: ");
     bgav_dump_fourcc(fourcc);
-    bgav_dprintf( " (size: %d)\n", size);
+    gavl_dprintf( " (size: %d)\n", size);
     gavl_hexdump(a->atoms[i], size, 16);
     }
 

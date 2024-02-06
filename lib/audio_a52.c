@@ -68,7 +68,7 @@ static gavl_source_status_t decode_frame_a52(bgav_stream_t * s)
     return st;
     }
 #ifdef DUMP_PACKET
-  bgav_dprintf("a52 packet: ");
+  gavl_dprintf("a52 packet: ");
   bgav_packet_dump(p);
   gavl_hexdump((uint8_t*)p->buf.buf, 16, 16);
 #endif

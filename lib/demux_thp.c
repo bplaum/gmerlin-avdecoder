@@ -79,26 +79,26 @@ static int read_header(bgav_input_context_t * input, ThpHeader * ret)
 
 static void dump_header(ThpHeader * h)
   {
-  bgav_dprintf("ThpHeader\n");
-  bgav_dprintf("  tag:                 %c%c%c%c (%02x%02x%02x%02x)\n",
+  gavl_dprintf("ThpHeader\n");
+  gavl_dprintf("  tag:                 %c%c%c%c (%02x%02x%02x%02x)\n",
                h->tag[0], h->tag[1], h->tag[2], h->tag[3],
                h->tag[0], h->tag[1], h->tag[2], h->tag[3]);
-  bgav_dprintf("  .version =             0x%08x\n", h->version);
+  gavl_dprintf("  .version =             0x%08x\n", h->version);
   
-  bgav_dprintf("  maxBufferSize:       %d\n", h->maxBufferSize);
-  bgav_dprintf("  maxAudioSamples:     %d\n", h->maxAudioSamples);
+  gavl_dprintf("  maxBufferSize:       %d\n", h->maxBufferSize);
+  gavl_dprintf("  maxAudioSamples:     %d\n", h->maxAudioSamples);
    
-  bgav_dprintf("  fps:                 %f\n", h->fps);
-  bgav_dprintf("  numFrames:           %d\n", h->numFrames);
-  bgav_dprintf("  firstFrameSize:      %d\n", h->firstFrameSize);
+  gavl_dprintf("  fps:                 %f\n", h->fps);
+  gavl_dprintf("  numFrames:           %d\n", h->numFrames);
+  gavl_dprintf("  firstFrameSize:      %d\n", h->firstFrameSize);
   
-  bgav_dprintf("  dataSize:            %d\n", h->dataSize);
+  gavl_dprintf("  dataSize:            %d\n", h->dataSize);
   
-  bgav_dprintf("  componentDataOffset: %d\n", h->componentDataOffset);
-  bgav_dprintf("  offsetsDataOffset:   %d\n", h->offsetsDataOffset);
+  gavl_dprintf("  componentDataOffset: %d\n", h->componentDataOffset);
+  gavl_dprintf("  offsetsDataOffset:   %d\n", h->offsetsDataOffset);
   
-  bgav_dprintf("  firstFrameOffset:    %d\n", h->firstFrameOffset);
-  bgav_dprintf("  lastFrameOffset:     %d\n", h->lastFrameOffset);
+  gavl_dprintf("  firstFrameOffset:    %d\n", h->firstFrameOffset);
+  gavl_dprintf("  lastFrameOffset:     %d\n", h->lastFrameOffset);
   }
 
 static int probe_thp(bgav_input_context_t * input)

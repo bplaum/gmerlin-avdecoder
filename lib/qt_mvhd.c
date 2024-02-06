@@ -140,15 +140,15 @@ void bgav_qt_mvhd_dump(int indent, qt_mvhd_t * c)
   bgav_diprintf(indent+2, "preferred_volume:   %f\n", c->preferred_volume);
   bgav_diprintf(indent+2, "reserved:           ");
   gavl_hexdump(c->reserved, 10, 10);
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
   bgav_diprintf(indent+2, "Matrix:\n");
 
   for(i = 0; i < 3; i++)
     {
     bgav_diprintf(indent, "    ");
     for(j = 0; j < 3; j++)
-      bgav_dprintf( "%f ", c->matrix[3*i+j]);
-    bgav_dprintf( "\n");
+      gavl_dprintf( "%f ", c->matrix[3*i+j]);
+    gavl_dprintf( "\n");
     }
   bgav_diprintf(indent+2, "preview_time:       %d\n", c->preview_time);
   bgav_diprintf(indent+2, "preview_duration:   %d\n", c->preview_duration);

@@ -100,17 +100,17 @@ static void skip_chunk(bgav_input_context_t * input,
 #if 0
 static void dump_chunk_header(fourxm_chunk_t * ch)
   {
-  bgav_dprintf("4xm chunk header\n");
-  bgav_dprintf("  fourcc: ");
+  gavl_dprintf("4xm chunk header\n");
+  gavl_dprintf("  fourcc: ");
   bgav_dump_fourcc(ch->fourcc);
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
 
-  bgav_dprintf("  size:   %d\n", ch->size);
+  gavl_dprintf("  size:   %d\n", ch->size);
   if(ch->fourcc == ID_LIST)
     {
-    bgav_dprintf("  type:   ");
+    gavl_dprintf("  type:   ");
     bgav_dump_fourcc(ch->type);
-    bgav_dprintf("\n");
+    gavl_dprintf("\n");
     }
   }
 #endif

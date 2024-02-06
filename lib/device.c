@@ -82,13 +82,13 @@ void bgav_device_info_dump(bgav_device_info_t * arr)
 
   if(!arr || !arr->device)
     {
-    bgav_dprintf( "No devices\n");
+    gavl_dprintf( "No devices\n");
     return;
     }
   while(arr[i].device)
     {
-    bgav_dprintf( "Name:   %s\n", (arr[i].name ? arr[i].name : "Unknown"));
-    bgav_dprintf( "Device: %s\n", arr[i].device);
+    gavl_dprintf( "Name:   %s\n", (arr[i].name ? arr[i].name : "Unknown"));
+    gavl_dprintf( "Device: %s\n", arr[i].device);
     i++;
     }
 

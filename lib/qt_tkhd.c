@@ -71,8 +71,8 @@ void bgav_qt_tkhd_dump(int indent, qt_tkhd_t * c)
     {
     bgav_diprintf(indent+2, "  ");
     for(j = 0; j < 3; j++)
-      bgav_dprintf( "%f ", c->matrix[3*i+j]);
-    bgav_dprintf( "\n");
+      gavl_dprintf( "%f ", c->matrix[3*i+j]);
+    gavl_dprintf( "\n");
     }
   bgav_diprintf(indent+2, "Track width:       %f\n", c->track_width);
   bgav_diprintf(indent+2, "Track height:      %f\n", c->track_height);

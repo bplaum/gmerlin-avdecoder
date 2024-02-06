@@ -76,7 +76,7 @@ void bgav_qt_tref_dump(int indent, qt_tref_t * c)
     {
     bgav_diprintf(indent+2, "track reference: ");
     bgav_dump_fourcc(c->references[i].type);
-    bgav_dprintf(" (%d tracks)\n", c->references[i].num_tracks);
+    gavl_dprintf(" (%d tracks)\n", c->references[i].num_tracks);
     for(j = 0; j < c->references[i].num_tracks; j++)
       bgav_diprintf(indent+2, "Track %d\n", c->references[i].tracks[j]);
     }

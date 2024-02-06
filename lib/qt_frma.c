@@ -43,5 +43,5 @@ void bgav_qt_frma_dump(int indent, qt_frma_t * f)
   bgav_diprintf(indent, "frma:\n");
   bgav_diprintf(indent+2, "fourcc: ");
   bgav_dump_fourcc(f->fourcc);
-  bgav_dprintf( "\n");
+  gavl_dprintf( "\n");
   }

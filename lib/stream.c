@@ -252,7 +252,7 @@ read_packet_continuous(void * priv, bgav_packet_t ** ret)
 
   if((st == GAVL_SOURCE_OK) && s->opt->dump_packets)
     {
-    bgav_dprintf("Packet out (stream %d): ", s->stream_id);
+    gavl_dprintf("Packet out (stream %d): ", s->stream_id);
     bgav_packet_dump(*ret);
     //    gavl_hexdump((*ret)->buf.buf, (*ret)->buf.len < 16 ? (*ret)->buf.len : 16, 16);
     }
@@ -330,61 +330,61 @@ void bgav_stream_dump(bgav_stream_t * s)
   switch(s->type)
     {
     case GAVL_STREAM_AUDIO:
-      bgav_dprintf("============ Audio stream ============\n");
+      gavl_dprintf("============ Audio stream ============\n");
       break;
     case GAVL_STREAM_VIDEO:
-      bgav_dprintf("============ Video stream ============\n");
+      gavl_dprintf("============ Video stream ============\n");
       break;
     case GAVL_STREAM_TEXT:
-      bgav_dprintf("=========== Text subtitles ===========\n");
+      gavl_dprintf("=========== Text subtitles ===========\n");
       break;
     case GAVL_STREAM_OVERLAY:
-      bgav_dprintf("========= Overlay subtitles ===========\n");
+      gavl_dprintf("========= Overlay subtitles ===========\n");
       break;
     case GAVL_STREAM_MSG:
-      bgav_dprintf("==============  Messages  =============\n");
+      gavl_dprintf("==============  Messages  =============\n");
       break;
     case GAVL_STREAM_NONE:
       return;
     }
 
-  bgav_dprintf("  Metadata:\n");
+  gavl_dprintf("  Metadata:\n");
   gavl_dictionary_dump(s->m, 4);
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
   
-  bgav_dprintf("  Fourcc:            ");
+  gavl_dprintf("  Fourcc:            ");
   bgav_dump_fourcc(s->fourcc);
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
 
   gavl_stream_stats_dump(&s->stats, 4);
-  bgav_dprintf("\n");
+  gavl_dprintf("\n");
  
-  bgav_dprintf("  Stream ID:         %d (0x%x)\n",
+  gavl_dprintf("  Stream ID:         %d (0x%x)\n",
           s->stream_id,
           s->stream_id);
-  bgav_dprintf("  Codec bitrate:     ");
+  gavl_dprintf("  Codec bitrate:     ");
   if(s->codec_bitrate == GAVL_BITRATE_VBR)
-    bgav_dprintf("Variable\n");
+    gavl_dprintf("Variable\n");
   else if(s->codec_bitrate)
-    bgav_dprintf("%d\n", s->codec_bitrate);
+    gavl_dprintf("%d\n", s->codec_bitrate);
   else
-    bgav_dprintf("Unspecified\n");
+    gavl_dprintf("Unspecified\n");
 
-  bgav_dprintf("  Container bitrate: ");
+  gavl_dprintf("  Container bitrate: ");
   if(s->container_bitrate == GAVL_BITRATE_VBR)
-    bgav_dprintf("Variable\n");
+    gavl_dprintf("Variable\n");
   else if(s->container_bitrate)
-    bgav_dprintf("%d\n", s->container_bitrate);
+    gavl_dprintf("%d\n", s->container_bitrate);
   else
-    bgav_dprintf("Unspecified\n");
+    gavl_dprintf("Unspecified\n");
 
-  bgav_dprintf("  Timescale:         %d\n", s->timescale);
+  gavl_dprintf("  Timescale:         %d\n", s->timescale);
   
-  bgav_dprintf("  Compression info:\n");
+  gavl_dprintf("  Compression info:\n");
   gavl_compression_info_dumpi(s->ci, 0);
   
-  // bgav_dprintf("  Private data:      %p\n", s->priv);
-  //  bgav_dprintf("  Codec header:      %d bytes\n", s->ci->codec_header.len);
+  // gavl_dprintf("  Private data:      %p\n", s->priv);
+  //  gavl_dprintf("  Codec header:      %d bytes\n", s->ci->codec_header.len);
   }
 
 int bgav_stream_skipto(bgav_stream_t * s, gavl_time_t * time, int scale)
@@ -422,7 +422,7 @@ bgav_packet_t * bgav_stream_get_packet_write(bgav_stream_t * s)
 void bgav_stream_done_packet_write(bgav_stream_t * s, bgav_packet_t * p)
   {
 #ifdef DUMP_IN_PACKETS
-  bgav_dprintf("Packet in (stream %d): ", s->stream_id);
+  gavl_dprintf("Packet in (stream %d): ", s->stream_id);
   bgav_packet_dump(p);
 #endif
 
@@ -535,7 +535,7 @@ bgav_stream_get_packet_read(bgav_stream_t * s, bgav_packet_t ** ret)
      ((*ret)->pts + (*ret)->duration > s->stats.pts_end))
     {
     (*ret)->duration = s->stats.pts_end - (*ret)->pts;
-    bgav_dprintf("Limiting last duration: %"PRId64"\n", (*ret)->duration);
+    gavl_dprintf("Limiting last duration: %"PRId64"\n", (*ret)->duration);
     }
   
   //  fprintf(stderr, "bgav_stream_get_packet_read %p\n", *ret);

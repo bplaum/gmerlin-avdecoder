@@ -60,10 +60,10 @@ static int probe_y4m(bgav_input_context_t * input)
 /* For debugging only (incomplete) */
 static void dump_stream_header(y4m_stream_info_t * si)
   {
-  bgav_dprintf( "YUV4MPEG2 stream header\n");
-  bgav_dprintf( "  Image size: %dx%d\n", y4m_si_get_width(si), y4m_si_get_height(si));
-  bgav_dprintf( "  Interlace mode: %d\n", y4m_si_get_interlace(si));
-  bgav_dprintf( "  Chroma: %d\n", y4m_si_get_chroma(si));
+  gavl_dprintf( "YUV4MPEG2 stream header\n");
+  gavl_dprintf( "  Image size: %dx%d\n", y4m_si_get_width(si), y4m_si_get_height(si));
+  gavl_dprintf( "  Interlace mode: %d\n", y4m_si_get_interlace(si));
+  gavl_dprintf( "  Chroma: %d\n", y4m_si_get_chroma(si));
   }
 #endif
 

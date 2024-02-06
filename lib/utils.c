@@ -51,14 +51,14 @@
 void bgav_dump_fourcc(uint32_t fourcc)
   {
   if((fourcc & 0xffff0000) || !(fourcc))
-    bgav_dprintf( "%c%c%c%c (%08x)",
+    gavl_dprintf( "%c%c%c%c (%08x)",
             (fourcc & 0xFF000000) >> 24,
             (fourcc & 0x00FF0000) >> 16,
             (fourcc & 0x0000FF00) >> 8,
             (fourcc & 0x000000FF),
             fourcc);
   else
-    bgav_dprintf( "WavID: 0x%04x", fourcc);
+    gavl_dprintf( "WavID: 0x%04x", fourcc);
     
   }
 
@@ -75,25 +75,6 @@ int bgav_check_fourcc(uint32_t fourcc, const uint32_t * fourccs)
   return 0;
   }
 
-void bgav_dprintf(const char * format, ...)
-  {
-  va_list argp; /* arg ptr */
-  va_start( argp, format);
-  vfprintf(stderr, format, argp);
-  va_end(argp);
-  }
-
-void bgav_diprintf(int indent, const char * format, ...)
-  {
-  int i;
-  va_list argp; /* arg ptr */
-  for(i = 0; i < indent; i++)
-    bgav_dprintf( " ");
-  
-  va_start( argp, format);
-  vfprintf(stderr, format, argp);
-  va_end(argp);
-  }
 
 /*
  *  Read a single line from a filedescriptor

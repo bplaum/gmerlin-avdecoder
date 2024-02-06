@@ -176,29 +176,29 @@ static int ape_header_read(bgav_input_context_t * ctx,
 static void ape_header_dump(ape_header_t * h)
   {
   /* Descriptor */
-  bgav_dprintf("APE header\n");
-  bgav_dprintf("  fileversion:          %d\n", h->fileversion);
-  bgav_dprintf("  padding1              %d\n", h->padding1);
-  bgav_dprintf("  descriptorlength      %d\n", h->descriptorlength);
-  bgav_dprintf("  headerlength          %d\n", h->headerlength);
-  bgav_dprintf("  seektablelength       %d\n", h->seektablelength);
-  bgav_dprintf("  wavheaderlength       %d\n", h->wavheaderlength);
-  bgav_dprintf("  audiodatalength       %d\n", h->audiodatalength);
-  bgav_dprintf("  audiodatalength_high  %d\n", h->audiodatalength_high);
-  bgav_dprintf("  wavtaillength         %d\n", h->wavtaillength);
-  bgav_dprintf("  MD5:                  ");
+  gavl_dprintf("APE header\n");
+  gavl_dprintf("  fileversion:          %d\n", h->fileversion);
+  gavl_dprintf("  padding1              %d\n", h->padding1);
+  gavl_dprintf("  descriptorlength      %d\n", h->descriptorlength);
+  gavl_dprintf("  headerlength          %d\n", h->headerlength);
+  gavl_dprintf("  seektablelength       %d\n", h->seektablelength);
+  gavl_dprintf("  wavheaderlength       %d\n", h->wavheaderlength);
+  gavl_dprintf("  audiodatalength       %d\n", h->audiodatalength);
+  gavl_dprintf("  audiodatalength_high  %d\n", h->audiodatalength_high);
+  gavl_dprintf("  wavtaillength         %d\n", h->wavtaillength);
+  gavl_dprintf("  MD5:                  ");
   gavl_hexdump(h->md5, 16, 16);
   
   /* Header */
 
-  bgav_dprintf("  compressiontype       %d\n", h->compressiontype);
-  bgav_dprintf("  formatflags           %d\n", h->formatflags);
-  bgav_dprintf("  blocksperframe        %d\n", h->blocksperframe);
-  bgav_dprintf("  finalframeblocks      %d\n", h->finalframeblocks);
-  bgav_dprintf("  totalframes           %d\n", h->totalframes);
-  bgav_dprintf("  bps                   %d\n", h->bps);
-  bgav_dprintf("  channels              %d\n", h->channels);
-  bgav_dprintf("  samplerate            %d\n", h->samplerate);
+  gavl_dprintf("  compressiontype       %d\n", h->compressiontype);
+  gavl_dprintf("  formatflags           %d\n", h->formatflags);
+  gavl_dprintf("  blocksperframe        %d\n", h->blocksperframe);
+  gavl_dprintf("  finalframeblocks      %d\n", h->finalframeblocks);
+  gavl_dprintf("  totalframes           %d\n", h->totalframes);
+  gavl_dprintf("  bps                   %d\n", h->bps);
+  gavl_dprintf("  channels              %d\n", h->channels);
+  gavl_dprintf("  samplerate            %d\n", h->samplerate);
   }
 
 static int probe_ape(bgav_input_context_t * input)

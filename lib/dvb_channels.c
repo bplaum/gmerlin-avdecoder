@@ -407,68 +407,68 @@ void dvb_channels_dump(bgav_dvb_channel_info_t * channels, fe_type_t type, int n
   int i;
   for(i = 0; i < num; i++)
     {
-    bgav_dprintf("Channel %d:  %s\n", i+1, channels[i].name);
-    bgav_dprintf("  Frequency: %d\n", channels[i].front_param.frequency);
-    bgav_dprintf("  Inversion: %s\n", find_string(inversion_list,
+    gavl_dprintf("Channel %d:  %s\n", i+1, channels[i].name);
+    gavl_dprintf("  Frequency: %d\n", channels[i].front_param.frequency);
+    gavl_dprintf("  Inversion: %s\n", find_string(inversion_list,
                                                   channels[i].front_param.inversion));
     switch(type)
       {
       case FE_QPSK:
-        bgav_dprintf("  Polarization:     %s\n", (channels[i].pol ? "Vertical": "Horizontal"));
-        bgav_dprintf("  satellite number: %d\n", channels[i].sat_no);
-        bgav_dprintf("  Symbol rate:      %d\n", channels[i].front_param.u.qpsk.symbol_rate);
-        bgav_dprintf("  FEC:              %s\n",
+        gavl_dprintf("  Polarization:     %s\n", (channels[i].pol ? "Vertical": "Horizontal"));
+        gavl_dprintf("  satellite number: %d\n", channels[i].sat_no);
+        gavl_dprintf("  Symbol rate:      %d\n", channels[i].front_param.u.qpsk.symbol_rate);
+        gavl_dprintf("  FEC:              %s\n",
                      find_string(fec_list, channels[i].front_param.u.qpsk.fec_inner));
         
         break;
       case FE_QAM:
-        bgav_dprintf("  Symbol rate:      %d\n",
+        gavl_dprintf("  Symbol rate:      %d\n",
                      channels[i].front_param.u.qam.symbol_rate);
-        bgav_dprintf("  FEC:              %s\n",
+        gavl_dprintf("  FEC:              %s\n",
                      find_string(fec_list, channels[i].front_param.u.qam.fec_inner));
-        bgav_dprintf("  Modulation:       %s\n",
+        gavl_dprintf("  Modulation:       %s\n",
                      find_string(fec_list, channels[i].front_param.u.qam.modulation));
         break;
       case FE_OFDM:
         /* find out the bandwidth */
-        bgav_dprintf("  Bandwidth:         %s\n",
+        gavl_dprintf("  Bandwidth:         %s\n",
                      find_string(bw_list, channels[i].front_param.u.ofdm.bandwidth));
         
         /* find out the fec_hp */
-        bgav_dprintf("  Code Rate (HP):    %s\n",
+        gavl_dprintf("  Code Rate (HP):    %s\n",
                      find_string(fec_list, channels[i].front_param.u.ofdm.code_rate_HP));
         
         /* find out the fec_lp */
-        bgav_dprintf("  Code Rate (LP):    %s\n",
+        gavl_dprintf("  Code Rate (LP):    %s\n",
                      find_string(fec_list, channels[i].front_param.u.ofdm.code_rate_LP));
 
         /* find out the qam */
-        bgav_dprintf("  QAM:               %s\n",
+        gavl_dprintf("  QAM:               %s\n",
                      find_string(qam_list, channels[i].front_param.u.ofdm.constellation));
         
         /* find out the transmission mode */
-        bgav_dprintf("  Transmission mode: %s\n",
+        gavl_dprintf("  Transmission mode: %s\n",
                      find_string(transmissionmode_list,
                                  channels[i].front_param.u.ofdm.transmission_mode));
         
         /* guard list */
-        bgav_dprintf("  Guard interval:    %s\n",
+        gavl_dprintf("  Guard interval:    %s\n",
                      find_string(guard_list,
                                  channels[i].front_param.u.ofdm.guard_interval));
 
         /* hierarchy_information */
-        bgav_dprintf("  Hirarchy Info:     %s\n",
+        gavl_dprintf("  Hirarchy Info:     %s\n",
                      find_string(hierarchy_list,
                                  channels[i].front_param.u.ofdm.hierarchy_information));
         break;
       case FE_ATSC:
-        bgav_dprintf("  Modulation:        %s\n",
+        gavl_dprintf("  Modulation:        %s\n",
                      find_string(atsc_list, channels[i].front_param.u.vsb.modulation));
         break;
       }
-    bgav_dprintf("  Audio PID:  %d\n", channels[i].audio_pid);
-    bgav_dprintf("  Video PID:  %d\n", channels[i].video_pid);
-    bgav_dprintf("  Service ID: %d\n", channels[i].service_id);
+    gavl_dprintf("  Audio PID:  %d\n", channels[i].audio_pid);
+    gavl_dprintf("  Video PID:  %d\n", channels[i].video_pid);
+    gavl_dprintf("  Service ID: %d\n", channels[i].service_id);
     
     }
   

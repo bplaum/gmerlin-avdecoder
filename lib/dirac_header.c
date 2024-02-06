@@ -536,15 +536,15 @@ int bgav_dirac_sequence_header_parse(bgav_dirac_sequence_header_t * ret,
 
 void bgav_dirac_sequence_header_dump(const bgav_dirac_sequence_header_t * h)
   {
-  bgav_dprintf("Dirac sequence header:\n");
-  bgav_dprintf("  version_major:     %d\n", h->version_major);
-  bgav_dprintf("  version_minor:     %d\n", h->version_minor);
-  bgav_dprintf("  profile:           %d\n", h->profile);
-  bgav_dprintf("  level:             %d\n", h->level);
-  bgav_dprintf("  base_video_format: %d\n", h->base_video_format);
-  bgav_dprintf("  size:              %dx%d\n", h->width, h->height);
-  bgav_dprintf("  framerate:         %d:%d\n", h->timescale , h->frame_duration);
-  bgav_dprintf("  pixel_size:        %dx%d\n", h->pixel_width , h->pixel_height);
+  gavl_dprintf("Dirac sequence header:\n");
+  gavl_dprintf("  version_major:     %d\n", h->version_major);
+  gavl_dprintf("  version_minor:     %d\n", h->version_minor);
+  gavl_dprintf("  profile:           %d\n", h->profile);
+  gavl_dprintf("  level:             %d\n", h->level);
+  gavl_dprintf("  base_video_format: %d\n", h->base_video_format);
+  gavl_dprintf("  size:              %dx%d\n", h->width, h->height);
+  gavl_dprintf("  framerate:         %d:%d\n", h->timescale , h->frame_duration);
+  gavl_dprintf("  pixel_size:        %dx%d\n", h->pixel_width , h->pixel_height);
   }
 
 int bgav_dirac_picture_header_parse(bgav_dirac_picture_header_t * ret,
@@ -564,7 +564,7 @@ int bgav_dirac_picture_header_parse(bgav_dirac_picture_header_t * ret,
 
 void bgav_dirac_picture_header_dump(const bgav_dirac_picture_header_t * h)
   {
-  bgav_dprintf("Dirac picture header\n");
-  bgav_dprintf("  Num refs: %d\n", h->num_refs);
-  bgav_dprintf("  Pic num:  %d\n",     h->pic_num);
+  gavl_dprintf("Dirac picture header\n");
+  gavl_dprintf("  Num refs: %d\n", h->num_refs);
+  gavl_dprintf("  Pic num:  %d\n",     h->pic_num);
   }

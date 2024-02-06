@@ -55,7 +55,7 @@ static void stsd_dump_common(int indent, qt_sample_description_t * d)
   {
   bgav_diprintf(indent, "fourcc:                ");
   bgav_dump_fourcc(d->fourcc);
-  bgav_dprintf( "\n");
+  gavl_dprintf( "\n");
   
   bgav_diprintf(indent, "data_reference_index:  %d\n",
                 d->data_reference_index);
@@ -65,7 +65,7 @@ static void stsd_dump_common(int indent, qt_sample_description_t * d)
                 d->revision_level);
   bgav_diprintf(indent, "vendor:                ");
   bgav_dump_fourcc(d->vendor);
-  bgav_dprintf( "\n");
+  gavl_dprintf( "\n");
   }
 
 
@@ -109,29 +109,29 @@ static void stsd_dump_audio(int indent, qt_sample_description_t * d)
 static void stsd_dump_video(int indent, qt_sample_description_t * d)
   {
 
-  bgav_dprintf( "  temporal_quality:      %d\n",
+  gavl_dprintf( "  temporal_quality:      %d\n",
                 d->format.video.temporal_quality);
-  bgav_dprintf( "  spatial_quality:       %d\n",
+  gavl_dprintf( "  spatial_quality:       %d\n",
                 d->format.video.spatial_quality);
-  bgav_dprintf( "  width:                 %d\n",
+  gavl_dprintf( "  width:                 %d\n",
                 d->format.video.width);
-  bgav_dprintf( "  height:                %d\n",
+  gavl_dprintf( "  height:                %d\n",
                 d->format.video.height);
-  bgav_dprintf( "  horizontal_resolution: %f\n",
+  gavl_dprintf( "  horizontal_resolution: %f\n",
                 d->format.video.horizontal_resolution);
-  bgav_dprintf( "  vertical_resolution:   %f\n",
+  gavl_dprintf( "  vertical_resolution:   %f\n",
                 d->format.video.vertical_resolution);
-  bgav_dprintf( "  data_size:             %d\n",
+  gavl_dprintf( "  data_size:             %d\n",
                 d->format.video.data_size);
-  bgav_dprintf( "  frame_count:           %d\n",
+  gavl_dprintf( "  frame_count:           %d\n",
                 d->format.video.frame_count); /* Frames / sample */
-  bgav_dprintf( "  compressor_name:       %s\n",
+  gavl_dprintf( "  compressor_name:       %s\n",
                 d->format.video.compressor_name);
-  bgav_dprintf( "  depth:                 %d\n",
+  gavl_dprintf( "  depth:                 %d\n",
                 d->format.video.depth);
-  bgav_dprintf( "  ctab_id:               %d\n",
+  gavl_dprintf( "  ctab_id:               %d\n",
                 d->format.video.ctab_id);
-  bgav_dprintf( "  ctab_size:             %d\n",
+  gavl_dprintf( "  ctab_size:             %d\n",
                 d->format.video.ctab_size);
   }
 
@@ -139,7 +139,7 @@ static void stsd_dump_subtitle_qt(int indent, qt_sample_description_t * d)
   {
   bgav_diprintf(indent, "fourcc:                ");
   bgav_dump_fourcc(d->fourcc);
-  bgav_dprintf( "\n");
+  gavl_dprintf( "\n");
   bgav_diprintf(indent, "data_reference_index:  %d\n",
                 d->data_reference_index);
   bgav_diprintf(indent, "displayFlags:          %08x\n",
@@ -199,7 +199,7 @@ static void stsd_dump_subtitle_tx3g(int indent, qt_sample_description_t * d)
   {
   bgav_diprintf(indent, "fourcc:                   ");
   bgav_dump_fourcc(d->fourcc);
-  bgav_dprintf( "\n");
+  gavl_dprintf( "\n");
   bgav_diprintf(indent, "data_reference_index:     %d\n",
                 d->data_reference_index);
   bgav_diprintf(indent, "display_flags:            %08x\n",
@@ -241,7 +241,7 @@ static void stsd_dump_timecode(int indent, qt_sample_description_t * d)
   {
   bgav_diprintf(indent, "fourcc:       ");
   bgav_dump_fourcc(d->fourcc);
-  bgav_dprintf( "\n");
+  gavl_dprintf( "\n");
 
   bgav_diprintf(indent, "reserved2     %d\n",
                 d->format.timecode.reserved2);
@@ -844,7 +844,7 @@ static void stsd_dump_mp4s(int indent, qt_sample_description_t * d)
   {
   bgav_diprintf(indent, "fourcc:       ");
   bgav_dump_fourcc(d->fourcc);
-  bgav_dprintf( "\n");
+  gavl_dprintf( "\n");
   bgav_diprintf(indent, "data_reference_index:     %d\n",
                 d->data_reference_index);
   

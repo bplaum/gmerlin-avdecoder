@@ -203,43 +203,43 @@ static void nsv_file_header_free(nsv_file_header_t * h)
 static void nsv_file_header_dump(nsv_file_header_t * h)
   {
   int i;
-  bgav_dprintf( "file_header\n");
+  gavl_dprintf( "file_header\n");
 
-  bgav_dprintf( "  header_size:  %d\n", h->header_size);
-  bgav_dprintf( "  file_size:    %d\n", h->file_size);
-  bgav_dprintf( "  file_len:     %d\n", h->file_len); /* Milliseconds */
-  bgav_dprintf( "  metadata_len: %d\n", h->metadata_len);
-  bgav_dprintf( "  toc_alloc:    %d\n", h->toc_alloc);
-  bgav_dprintf( "  toc_size:     %d\n", h->toc_size);
-  bgav_dprintf( "  title:        %s\n",
+  gavl_dprintf( "  header_size:  %d\n", h->header_size);
+  gavl_dprintf( "  file_size:    %d\n", h->file_size);
+  gavl_dprintf( "  file_len:     %d\n", h->file_len); /* Milliseconds */
+  gavl_dprintf( "  metadata_len: %d\n", h->metadata_len);
+  gavl_dprintf( "  toc_alloc:    %d\n", h->toc_alloc);
+  gavl_dprintf( "  toc_size:     %d\n", h->toc_size);
+  gavl_dprintf( "  title:        %s\n",
           (h->metadata.title ? h->metadata.title : "[not set]"));
-  bgav_dprintf( "  url:          %s\n",
+  gavl_dprintf( "  url:          %s\n",
           (h->metadata.url ? h->metadata.url : "[not set]"));
-  bgav_dprintf( "  creator:      %s\n",
+  gavl_dprintf( "  creator:      %s\n",
           (h->metadata.creator ? h->metadata.creator : "[not set]"));
-  bgav_dprintf( "  aspect:       %s\n",
+  gavl_dprintf( "  aspect:       %s\n",
           (h->metadata.aspect ? h->metadata.aspect : "[not set]"));
-  bgav_dprintf( "  framerate:    %s\n",
+  gavl_dprintf( "  framerate:    %s\n",
           (h->metadata.framerate ? h->metadata.framerate : "[not set]"));
 
   if(h->toc_size)
     {
     if(h->toc.frames)
       {
-      bgav_dprintf( "  TOC version 2 (%d entries)\n", h->toc_size);
+      gavl_dprintf( "  TOC version 2 (%d entries)\n", h->toc_size);
       for(i = 0; i < h->toc_size; i++)
-        bgav_dprintf( "    frame: %d, offset: %d\n",
+        gavl_dprintf( "    frame: %d, offset: %d\n",
                 h->toc.frames[i], h->toc.offsets[i]);
       }
     else
       {
-      bgav_dprintf( "  TOC version 1 (%d entries)\n", h->toc_size);
+      gavl_dprintf( "  TOC version 1 (%d entries)\n", h->toc_size);
       for(i = 0; i < h->toc_size; i++)
-        bgav_dprintf( "    offset: %d\n", h->toc.offsets[i]);
+        gavl_dprintf( "    offset: %d\n", h->toc.offsets[i]);
       }
     }
   else
-    bgav_dprintf( "  No TOC\n");
+    gavl_dprintf( "  No TOC\n");
   }
 
 typedef struct
@@ -269,19 +269,19 @@ static int nsv_sync_header_read(bgav_input_context_t * ctx,
 
 static void nsv_sync_header_dump(nsv_sync_header_t * h)
   {
-  bgav_dprintf( "sync_header\n");
-  bgav_dprintf( "  vidfmt: ");
+  gavl_dprintf( "sync_header\n");
+  gavl_dprintf( "  vidfmt: ");
   bgav_dump_fourcc(h->vidfmt);
-  bgav_dprintf( "\n");
+  gavl_dprintf( "\n");
 
-  bgav_dprintf( "  audfmt: ");
+  gavl_dprintf( "  audfmt: ");
   bgav_dump_fourcc(h->audfmt);
-  bgav_dprintf( "\n");
+  gavl_dprintf( "\n");
 
-  bgav_dprintf( "  width:         %d\n", h->width);
-  bgav_dprintf( "  height:        %d\n", h->height);
-  bgav_dprintf( "  framerate_idx: %d\n", h->framerate);
-  bgav_dprintf( "  syncoffs:      %d\n", h->syncoffs);
+  gavl_dprintf( "  width:         %d\n", h->width);
+  gavl_dprintf( "  height:        %d\n", h->height);
+  gavl_dprintf( "  framerate_idx: %d\n", h->framerate);
+  gavl_dprintf( "  syncoffs:      %d\n", h->syncoffs);
   }
 
 typedef struct

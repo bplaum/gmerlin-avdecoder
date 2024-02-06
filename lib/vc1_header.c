@@ -153,46 +153,46 @@ int bgav_vc1_sequence_header_read(bgav_vc1_sequence_header_t * ret,
 
 void bgav_vc1_sequence_header_dump(const bgav_vc1_sequence_header_t * h)
   {
-  bgav_dprintf("VC-1 sequence header\n");
-  bgav_dprintf("  profile:         %d\n", h->profile);
+  gavl_dprintf("VC-1 sequence header\n");
+  gavl_dprintf("  profile:         %d\n", h->profile);
   if(h->profile == PROFILE_ADVANCED)
     {
-    bgav_dprintf("  level:             %d\n", h->h.adv.level);
-    bgav_dprintf("  chromaformat:      %d\n", h->h.adv.chromaformat);
-    bgav_dprintf("  frmrtq_postproc:   %d\n", h->h.adv.frmrtq_postproc);
-    bgav_dprintf("  bitrtq_postproc:   %d\n", h->h.adv.bitrtq_postproc);
-    bgav_dprintf("  postprocflag:      %d\n", h->h.adv.postprocflag);
-    bgav_dprintf("  width:             %d [%d]\n", h->h.adv.width, (h->h.adv.width+1)<<1);
-    bgav_dprintf("  height:            %d [%d]\n", h->h.adv.height, (h->h.adv.height+1)<<1);
-    bgav_dprintf("  broadcast:         %d\n", h->h.adv.broadcast);
-    bgav_dprintf("  interlace:         %d\n", h->h.adv.interlace);
-    bgav_dprintf("  tfcntrflag:        %d\n", h->h.adv.tfcntrflag);
-    bgav_dprintf("  finterpflag:       %d\n", h->h.adv.finterpflag);
-    bgav_dprintf("  reserved:          %d\n", h->h.adv.reserved);
-    bgav_dprintf("  psf:               %d\n", h->h.adv.psf);
-    bgav_dprintf("  display_info_flag: %d\n", h->h.adv.display_info_flag);
+    gavl_dprintf("  level:             %d\n", h->h.adv.level);
+    gavl_dprintf("  chromaformat:      %d\n", h->h.adv.chromaformat);
+    gavl_dprintf("  frmrtq_postproc:   %d\n", h->h.adv.frmrtq_postproc);
+    gavl_dprintf("  bitrtq_postproc:   %d\n", h->h.adv.bitrtq_postproc);
+    gavl_dprintf("  postprocflag:      %d\n", h->h.adv.postprocflag);
+    gavl_dprintf("  width:             %d [%d]\n", h->h.adv.width, (h->h.adv.width+1)<<1);
+    gavl_dprintf("  height:            %d [%d]\n", h->h.adv.height, (h->h.adv.height+1)<<1);
+    gavl_dprintf("  broadcast:         %d\n", h->h.adv.broadcast);
+    gavl_dprintf("  interlace:         %d\n", h->h.adv.interlace);
+    gavl_dprintf("  tfcntrflag:        %d\n", h->h.adv.tfcntrflag);
+    gavl_dprintf("  finterpflag:       %d\n", h->h.adv.finterpflag);
+    gavl_dprintf("  reserved:          %d\n", h->h.adv.reserved);
+    gavl_dprintf("  psf:               %d\n", h->h.adv.psf);
+    gavl_dprintf("  display_info_flag: %d\n", h->h.adv.display_info_flag);
 
     if(h->h.adv.display_info_flag)
       {
-      bgav_dprintf("  display_width:     %d [%d]\n",
+      gavl_dprintf("  display_width:     %d [%d]\n",
                    h->h.adv.display_width, h->h.adv.display_width+1);
-      bgav_dprintf("  display_height:    %d [%d]\n",
+      gavl_dprintf("  display_height:    %d [%d]\n",
                    h->h.adv.display_height, h->h.adv.display_height+1);
 
-      bgav_dprintf("  aspect_ratio_flag: %d\n", h->h.adv.aspect_ratio_flag);
+      gavl_dprintf("  aspect_ratio_flag: %d\n", h->h.adv.aspect_ratio_flag);
 
       if(h->h.adv.aspect_ratio_flag)
         {
-        bgav_dprintf("  aspect_ratio_code: %d\n", h->h.adv.aspect_ratio_code);
-        bgav_dprintf("  pixel_width:       %d\n", h->h.adv.pixel_width);
-        bgav_dprintf("  pixel_height:      %d\n", h->h.adv.pixel_height);
+        gavl_dprintf("  aspect_ratio_code: %d\n", h->h.adv.aspect_ratio_code);
+        gavl_dprintf("  pixel_width:       %d\n", h->h.adv.pixel_width);
+        gavl_dprintf("  pixel_height:      %d\n", h->h.adv.pixel_height);
         }
 
-      bgav_dprintf("  framerate_flag:    %d\n", h->h.adv.framerate_flag);
+      gavl_dprintf("  framerate_flag:    %d\n", h->h.adv.framerate_flag);
       if(h->h.adv.framerate_flag)
         {
-        bgav_dprintf("  timescale:         %d\n", h->h.adv.timescale);
-        bgav_dprintf("  frame_duration:    %d\n", h->h.adv.frame_duration);
+        gavl_dprintf("  timescale:         %d\n", h->h.adv.timescale);
+        gavl_dprintf("  frame_duration:    %d\n", h->h.adv.frame_duration);
         }
       }
     
@@ -244,8 +244,8 @@ int bgav_vc1_picture_header_adv_read(bgav_vc1_picture_header_adv_t * ret,
 
 void bgav_vc1_picture_header_adv_dump(bgav_vc1_picture_header_adv_t * ret)
   {
-  bgav_dprintf("VC-1 picture header\n");
-  bgav_dprintf("  fcm:  %d\n", ret->fcm);
-  bgav_dprintf("  type: %s\n", gavl_coding_type_to_string(ret->coding_type));
+  gavl_dprintf("VC-1 picture header\n");
+  gavl_dprintf("  fcm:  %d\n", ret->fcm);
+  gavl_dprintf("  type: %s\n", gavl_coding_type_to_string(ret->coding_type));
   
   }

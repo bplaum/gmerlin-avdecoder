@@ -465,7 +465,7 @@ static gavl_source_status_t get_packet(bgav_stream_t * s)
   avcodec_send_packet(priv->ctx, priv->pkt);
 
 #ifdef DUMP_DECODE
-  bgav_dprintf("Used %d bytes", priv->pkt->size);
+  gavl_dprintf("Used %d bytes", priv->pkt->size);
 #endif
 
   done_data(s, p);
@@ -521,7 +521,7 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
     }
   
 #ifdef DUMP_DECODE
-  bgav_dprintf("Got frame: Interlaced: %d TFF: %d Repeat: %d, framerate: %f\n",
+  gavl_dprintf("Got frame: Interlaced: %d TFF: %d Repeat: %d, framerate: %f\n",
                priv->frame->interlaced_frame,
                priv->frame->top_field_first,
                priv->frame->repeat_pict,
@@ -553,7 +553,7 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
     priv->pkt->size = p->buf.len - p->field2_offset;
     
 #ifdef DUMP_DECODE
-    bgav_dprintf("Decode (f2): out_time: %" PRId64 " len: %d\n", s->out_time,
+    gavl_dprintf("Decode (f2): out_time: %" PRId64 " len: %d\n", s->out_time,
                  priv->pkt.size);
     if(priv->pkt.data)
       gavl_hexdump(priv->pkt.data, 16, 16);
@@ -564,20 +564,20 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
                                        &have_picture,
                                        &priv->pkt);
 #ifdef DUMP_DECODE
-    bgav_dprintf("Used %d/%d bytes, got picture: %d ",
+    gavl_dprintf("Used %d/%d bytes, got picture: %d ",
                  bytes_used, priv->pkt.size, have_picture);
     if(!have_picture)
-      bgav_dprintf("\n");
+      gavl_dprintf("\n");
     else
       {
-      bgav_dprintf("Interlaced: %d TFF: %d Repeat: %d, framerate: %f",
+      gavl_dprintf("Interlaced: %d TFF: %d Repeat: %d, framerate: %f",
                    priv->frame->interlaced_frame,
                    priv->frame->top_field_first,
                    priv->frame->repeat_pict,
                    (float)(priv->ctx->time_base.den) / (float)(priv->ctx->time_base.num)
                    );
       
-      bgav_dprintf("\n");
+      gavl_dprintf("\n");
       }
 #endif
     }
@@ -770,7 +770,7 @@ static int init_ffmpeg(bgav_stream_t * s)
     priv->ctx->extradata_size = priv->extradata_size;
     
 #ifdef DUMP_EXTRADATA
-    bgav_dprintf("video_ffmpeg: Adding extradata %d bytes\n",
+    gavl_dprintf("video_ffmpeg: Adding extradata %d bytes\n",
                  priv->ctx->extradata_size);
     gavl_hexdump(priv->ctx->extradata, priv->ctx->extradata_size, 16);
 #endif

@@ -120,7 +120,7 @@ static int extract_user_data(bgav_packet_parser_t * parser,
   memcpy(priv->user_data, data+4, priv->user_data_size);
 
 #ifdef DUMP_HEADERS
-  bgav_dprintf("Got user data\n");
+  gavl_dprintf("Got user data\n");
   gavl_hexdump((uint8_t*)priv->user_data, priv->user_data_size, 16);
 #endif
 

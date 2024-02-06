@@ -100,7 +100,7 @@ static int rtsp_send_request(bgav_rtsp_t * rtsp,
   request = gavl_strcat(request, "\r\n");
 
 #ifdef DUMP_REQUESTS
-  bgav_dprintf("Sending request:\n%s", request);
+  gavl_dprintf("Sending request:\n%s", request);
 #endif  
   
   if(!bgav_tcp_send(rtsp->opt, rtsp->fd, (uint8_t*)request, strlen(request)))
@@ -141,7 +141,7 @@ static int rtsp_send_request(bgav_rtsp_t * rtsp,
   status = bgav_http_header_status_code(rtsp->res);
 
 #ifdef DUMP_REQUESTS
-  bgav_dprintf("Got answer %d:\n", status);
+  gavl_dprintf("Got answer %d:\n", status);
   bgav_http_header_dump(rtsp->res);
 #endif  
 

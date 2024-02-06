@@ -84,26 +84,26 @@ int bgav_opus_header_read(bgav_input_context_t * input,
 
 void bgav_opus_header_dump(const bgav_opus_header_t * h)
   {
-  bgav_dprintf("Opus header\n");
-  bgav_dprintf("  Version:         %d\n", h->version);
-  bgav_dprintf("  Channel count:   %d\n", h->channel_count);
-  bgav_dprintf("  Pre Skip:        %d\n", h->pre_skip);
-  bgav_dprintf("  Samplerate:      %d\n", h->samplerate);
-  bgav_dprintf("  Output Gain:     %d\n", h->output_gain);
-  bgav_dprintf("  Channel Mapping: %d\n", h->channel_mapping);
+  gavl_dprintf("Opus header\n");
+  gavl_dprintf("  Version:         %d\n", h->version);
+  gavl_dprintf("  Channel count:   %d\n", h->channel_count);
+  gavl_dprintf("  Pre Skip:        %d\n", h->pre_skip);
+  gavl_dprintf("  Samplerate:      %d\n", h->samplerate);
+  gavl_dprintf("  Output Gain:     %d\n", h->output_gain);
+  gavl_dprintf("  Channel Mapping: %d\n", h->channel_mapping);
   
   if(h->channel_mapping != 0)
     {
     int i;
-    bgav_dprintf("  Channel Mapping Table\n");
-    bgav_dprintf("    Stream Count:  %d\n", h->chtab.stream_count);
-    bgav_dprintf("    Coupled Count: %d\n", h->chtab.coupled_count);
+    gavl_dprintf("  Channel Mapping Table\n");
+    gavl_dprintf("    Stream Count:  %d\n", h->chtab.stream_count);
+    gavl_dprintf("    Coupled Count: %d\n", h->chtab.coupled_count);
 
-    bgav_dprintf("    Map\n");
+    gavl_dprintf("    Map\n");
     
     for(i = 0; i < h->channel_count; i++)
       {
-      bgav_dprintf("      Index %d: %d\n", i+1, h->chtab.map[i]);
+      gavl_dprintf("      Index %d: %d\n", i+1, h->chtab.map[i]);
       }
     }
   }

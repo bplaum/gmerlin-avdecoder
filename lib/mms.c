@@ -52,9 +52,9 @@
 
 #define   PRINT_STRING(label, str) \
 if(str)\
-bgav_dprintf("%s%s\n", label, str);\
+gavl_dprintf("%s%s\n", label, str);\
 else \
-bgav_dprintf("%sNULL\n", label);
+gavl_dprintf("%sNULL\n", label);
 
 #if 0
 static void dump_data(uint8_t * data, int len, const char * filename)
@@ -263,13 +263,13 @@ static int read_command_header(bgav_mms_t * mms)
 #if 0
 static void dump_command_header(bgav_mms_t * mms)
   {
-  bgav_dprintf("Got command header:\n");
-  bgav_dprintf("  Command:         0x%02x\n", mms->command_header.command);
-  bgav_dprintf("  Data len:        %d\n", mms->command_header.data_len);
-  bgav_dprintf("  Padded data len: %d\n", mms->command_header.padded_data_len);
-  bgav_dprintf("  Sequence number: %d\n", mms->command_header.seqnum);
-  bgav_dprintf("  Prefix1:         %d\n", mms->command_header.prefix1);
-  bgav_dprintf("  Prefix2:         %d\n", mms->command_header.prefix2);
+  gavl_dprintf("Got command header:\n");
+  gavl_dprintf("  Command:         0x%02x\n", mms->command_header.command);
+  gavl_dprintf("  Data len:        %d\n", mms->command_header.data_len);
+  gavl_dprintf("  Padded data len: %d\n", mms->command_header.padded_data_len);
+  gavl_dprintf("  Sequence number: %d\n", mms->command_header.seqnum);
+  gavl_dprintf("  Prefix1:         %d\n", mms->command_header.prefix1);
+  gavl_dprintf("  Prefix2:         %d\n", mms->command_header.prefix2);
   gavl_hexdump(mms->cmd_data_read, mms->command_header.data_len, 16);
   }
 #endif

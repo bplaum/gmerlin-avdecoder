@@ -273,97 +273,97 @@ static void vui_parse(bgav_bitstream_t * b, bgav_h264_vui_t * vui)
 
 static void vui_dump(bgav_h264_vui_t * vui)
   {
-  bgav_dprintf("    aspect_ratio_info_present_flag:        %d\n",
+  gavl_dprintf("    aspect_ratio_info_present_flag:        %d\n",
                vui->aspect_ratio_info_present_flag);
   if(vui->aspect_ratio_info_present_flag )
     {
-    bgav_dprintf("    aspect_ratio_idc:                      %d\n",
+    gavl_dprintf("    aspect_ratio_idc:                      %d\n",
                  vui->aspect_ratio_idc );
     if( vui->aspect_ratio_idc == 255 )
       {
-      bgav_dprintf("    sar_width:                             %d\n",
+      gavl_dprintf("    sar_width:                             %d\n",
                    vui->sar_width );
-      bgav_dprintf("    sar_height:                            %d\n",
+      gavl_dprintf("    sar_height:                            %d\n",
                    vui->sar_height );
       }
     }
-  bgav_dprintf("    overscan_info_present_flag:            %d\n",
+  gavl_dprintf("    overscan_info_present_flag:            %d\n",
                vui->overscan_info_present_flag );
   if( vui->overscan_info_present_flag )
-    bgav_dprintf("    overscan_appropriate_flag:           %d\n",
+    gavl_dprintf("    overscan_appropriate_flag:           %d\n",
                  vui->overscan_appropriate_flag );
 
-  bgav_dprintf("    video_signal_type_present_flag:        %d\n",
+  gavl_dprintf("    video_signal_type_present_flag:        %d\n",
                vui->video_signal_type_present_flag );
   if( vui->video_signal_type_present_flag )
     {
-    bgav_dprintf("    video_format:                          %d\n",
+    gavl_dprintf("    video_format:                          %d\n",
                  vui->video_format );
-    bgav_dprintf("    video_full_range_flag:                 %d\n",
+    gavl_dprintf("    video_full_range_flag:                 %d\n",
                  vui->video_full_range_flag );
-    bgav_dprintf("    colour_description_present_flag:       %d\n",
+    gavl_dprintf("    colour_description_present_flag:       %d\n",
                  vui->colour_description_present_flag );
     if( vui->colour_description_present_flag )
       {
-      bgav_dprintf("    colour_primaries:                  %d\n",
+      gavl_dprintf("    colour_primaries:                  %d\n",
                    vui->colour_primaries );
-      bgav_dprintf("    transfer_characteristics:          %d\n",
+      gavl_dprintf("    transfer_characteristics:          %d\n",
                    vui->transfer_characteristics );
-      bgav_dprintf("    matrix_coefficients:               %d\n",
+      gavl_dprintf("    matrix_coefficients:               %d\n",
                    vui->matrix_coefficients );
       }
     }
-  bgav_dprintf("    chroma_loc_info_present_flag:          %d\n",
+  gavl_dprintf("    chroma_loc_info_present_flag:          %d\n",
                vui->chroma_loc_info_present_flag );
   if( vui->chroma_loc_info_present_flag )
     {
-    bgav_dprintf("    chroma_sample_loc_type_top_field:    %d\n",
+    gavl_dprintf("    chroma_sample_loc_type_top_field:    %d\n",
                  vui->chroma_sample_loc_type_top_field  );
-    bgav_dprintf("    chroma_sample_loc_type_bottom_field: %d\n",
+    gavl_dprintf("    chroma_sample_loc_type_bottom_field: %d\n",
                  vui->chroma_sample_loc_type_bottom_field );
     }
-  bgav_dprintf("    timing_info_present_flag:              %d\n",
+  gavl_dprintf("    timing_info_present_flag:              %d\n",
                vui->timing_info_present_flag );
   if( vui->timing_info_present_flag )
     {
-    bgav_dprintf("    num_units_in_tick:                     %d\n",
+    gavl_dprintf("    num_units_in_tick:                     %d\n",
                  vui->num_units_in_tick );
-    bgav_dprintf("    time_scale:                            %d\n",
+    gavl_dprintf("    time_scale:                            %d\n",
                  vui->time_scale );
-    bgav_dprintf("    fixed_frame_rate_flag:                 %d\n",
+    gavl_dprintf("    fixed_frame_rate_flag:                 %d\n",
                  vui->fixed_frame_rate_flag );
     }
-  bgav_dprintf("    nal_hrd_present_flag:                  %d\n",
+  gavl_dprintf("    nal_hrd_present_flag:                  %d\n",
                vui->nal_hrd_parameters_present_flag );
-  bgav_dprintf("    vcl_hrd_present_flag:                  %d\n",
+  gavl_dprintf("    vcl_hrd_present_flag:                  %d\n",
                vui->vcl_hrd_parameters_present_flag );
 
   if(vui->nal_hrd_parameters_present_flag || vui->vcl_hrd_parameters_present_flag)
     {
-    bgav_dprintf("    low_delay_hrd_flag:                    %d\n",
+    gavl_dprintf("    low_delay_hrd_flag:                    %d\n",
                  vui->low_delay_hrd_flag);
     }
-  bgav_dprintf("    pic_struct_present_flag:               %d\n",
+  gavl_dprintf("    pic_struct_present_flag:               %d\n",
                vui->pic_struct_present_flag );
 
-  bgav_dprintf("    bitstream_restriction_flag:            %d\n",
+  gavl_dprintf("    bitstream_restriction_flag:            %d\n",
                vui->bitstream_restriction_flag );
 
   if(vui->bitstream_restriction_flag)
     {
-    bgav_dprintf("    motion_vectors_over_pic_boundaries_flag: %d\n",
+    gavl_dprintf("    motion_vectors_over_pic_boundaries_flag: %d\n",
                  vui->motion_vectors_over_pic_boundaries_flag );
-    bgav_dprintf("    max_bytes_per_pic_denom:               %d\n",
+    gavl_dprintf("    max_bytes_per_pic_denom:               %d\n",
                  vui->max_bytes_per_pic_denom);
-    bgav_dprintf("    max_bits_per_mb_denom:                 %d\n",
+    gavl_dprintf("    max_bits_per_mb_denom:                 %d\n",
                  vui->max_bits_per_mb_denom);
-    bgav_dprintf("    log2_max_mv_length_horizontal:         %d\n",
+    gavl_dprintf("    log2_max_mv_length_horizontal:         %d\n",
                  vui->log2_max_mv_length_horizontal);
-    bgav_dprintf("    log2_max_mv_length_vertical:           %d\n",
+    gavl_dprintf("    log2_max_mv_length_vertical:           %d\n",
                  vui->log2_max_mv_length_vertical);
-    bgav_dprintf("    num_reorder_frames:                    %d\n",
+    gavl_dprintf("    num_reorder_frames:                    %d\n",
                  vui->num_reorder_frames);
-    bgav_dprintf("    max_dec_frame_buffering:               %d\n",
+    gavl_dprintf("    max_dec_frame_buffering:               %d\n",
                  vui->max_dec_frame_buffering);
     
     }
@@ -529,14 +529,14 @@ void bgav_h264_sps_free(bgav_h264_sps_t * sps)
 void bgav_h264_sps_dump(bgav_h264_sps_t * sps)
   {
   int i;
-  bgav_dprintf("SPS:\n");
-  bgav_dprintf("  profile_idc:                             %d\n", sps->profile_idc);
-  bgav_dprintf("  constraint_set0_flag:                    %d\n", sps->constraint_set0_flag);
-  bgav_dprintf("  constraint_set1_flag:                    %d\n", sps->constraint_set1_flag);
-  bgav_dprintf("  constraint_set2_flag:                    %d\n", sps->constraint_set2_flag);
-  bgav_dprintf("  constraint_set3_flag:                    %d\n", sps->constraint_set3_flag);
-  bgav_dprintf("  level_idc:                               %d\n", sps->level_idc);
-  bgav_dprintf("  seq_parameter_set_id:                    %d\n", sps->seq_parameter_set_id);
+  gavl_dprintf("SPS:\n");
+  gavl_dprintf("  profile_idc:                             %d\n", sps->profile_idc);
+  gavl_dprintf("  constraint_set0_flag:                    %d\n", sps->constraint_set0_flag);
+  gavl_dprintf("  constraint_set1_flag:                    %d\n", sps->constraint_set1_flag);
+  gavl_dprintf("  constraint_set2_flag:                    %d\n", sps->constraint_set2_flag);
+  gavl_dprintf("  constraint_set3_flag:                    %d\n", sps->constraint_set3_flag);
+  gavl_dprintf("  level_idc:                               %d\n", sps->level_idc);
+  gavl_dprintf("  seq_parameter_set_id:                    %d\n", sps->seq_parameter_set_id);
 
   if(sps->profile_idc == 100 ||
      sps->profile_idc == 110 ||
@@ -546,52 +546,52 @@ void bgav_h264_sps_dump(bgav_h264_sps_t * sps)
      sps->profile_idc == 83 ||
      sps->profile_idc == 86 ) 
     {
-    bgav_dprintf("  chroma_format_idc:                       %d\n", sps->chroma_format_idc);
+    gavl_dprintf("  chroma_format_idc:                       %d\n", sps->chroma_format_idc);
     if(sps->chroma_format_idc == 3)
-      bgav_dprintf("  separate_colour_plane_flag:              %d\n", sps->separate_colour_plane_flag);
+      gavl_dprintf("  separate_colour_plane_flag:              %d\n", sps->separate_colour_plane_flag);
 
-    bgav_dprintf("  bit_depth_luma_minus8:                   %d\n", sps->bit_depth_luma_minus8);
-    bgav_dprintf("  bit_depth_chroma_minus8:                 %d\n", sps->bit_depth_chroma_minus8);
-    bgav_dprintf("  qpprime_y_zero_transform_bypass_flag:    %d\n", sps->qpprime_y_zero_transform_bypass_flag);
-    bgav_dprintf("  seq_scaling_matrix_present_flag:         %d\n", sps->seq_scaling_matrix_present_flag);
+    gavl_dprintf("  bit_depth_luma_minus8:                   %d\n", sps->bit_depth_luma_minus8);
+    gavl_dprintf("  bit_depth_chroma_minus8:                 %d\n", sps->bit_depth_chroma_minus8);
+    gavl_dprintf("  qpprime_y_zero_transform_bypass_flag:    %d\n", sps->qpprime_y_zero_transform_bypass_flag);
+    gavl_dprintf("  seq_scaling_matrix_present_flag:         %d\n", sps->seq_scaling_matrix_present_flag);
     }
   
-  bgav_dprintf("  log2_max_frame_num_minus4:               %d\n", sps->log2_max_frame_num_minus4);
-  bgav_dprintf("  pic_order_cnt_type:                      %d\n", sps->pic_order_cnt_type);
+  gavl_dprintf("  log2_max_frame_num_minus4:               %d\n", sps->log2_max_frame_num_minus4);
+  gavl_dprintf("  pic_order_cnt_type:                      %d\n", sps->pic_order_cnt_type);
 
   if( sps->pic_order_cnt_type == 0 )
-    bgav_dprintf("  log2_max_pic_order_cnt_lsb_minus4:       %d\n", sps->log2_max_pic_order_cnt_lsb_minus4);
+    gavl_dprintf("  log2_max_pic_order_cnt_lsb_minus4:       %d\n", sps->log2_max_pic_order_cnt_lsb_minus4);
   else if(sps->pic_order_cnt_type == 1)
     {
-    bgav_dprintf("  delta_pic_order_always_zero_flag:      %d\n", sps->delta_pic_order_always_zero_flag);
-    bgav_dprintf("  offset_for_non_ref_pic:                %d\n", sps->offset_for_non_ref_pic);
-    bgav_dprintf("  offset_for_top_to_bottom_field:        %d\n", sps->offset_for_top_to_bottom_field);
-    bgav_dprintf("  num_ref_frames_in_pic_order_cnt_cycle: %d\n", sps->num_ref_frames_in_pic_order_cnt_cycle);
+    gavl_dprintf("  delta_pic_order_always_zero_flag:      %d\n", sps->delta_pic_order_always_zero_flag);
+    gavl_dprintf("  offset_for_non_ref_pic:                %d\n", sps->offset_for_non_ref_pic);
+    gavl_dprintf("  offset_for_top_to_bottom_field:        %d\n", sps->offset_for_top_to_bottom_field);
+    gavl_dprintf("  num_ref_frames_in_pic_order_cnt_cycle: %d\n", sps->num_ref_frames_in_pic_order_cnt_cycle);
 
     for(i = 0; i < sps->num_ref_frames_in_pic_order_cnt_cycle; i++)
       {
-      bgav_dprintf("  offset_for_ref_frame[%d]:              %d\n", i, sps->offset_for_ref_frame[i]);
+      gavl_dprintf("  offset_for_ref_frame[%d]:              %d\n", i, sps->offset_for_ref_frame[i]);
       }
     }
 
-  bgav_dprintf("  num_ref_frames:                          %d\n", sps->num_ref_frames);
-  bgav_dprintf("  gaps_in_frame_num_value_allowed_flag:    %d\n", sps->gaps_in_frame_num_value_allowed_flag);
-  bgav_dprintf("  pic_width_in_mbs_minus1:                 %d\n", sps->pic_width_in_mbs_minus1);
-  bgav_dprintf("  pic_height_in_map_units_minus1:          %d\n", sps->pic_height_in_map_units_minus1);
-  bgav_dprintf("  frame_mbs_only_flag:                     %d\n", sps->frame_mbs_only_flag);
+  gavl_dprintf("  num_ref_frames:                          %d\n", sps->num_ref_frames);
+  gavl_dprintf("  gaps_in_frame_num_value_allowed_flag:    %d\n", sps->gaps_in_frame_num_value_allowed_flag);
+  gavl_dprintf("  pic_width_in_mbs_minus1:                 %d\n", sps->pic_width_in_mbs_minus1);
+  gavl_dprintf("  pic_height_in_map_units_minus1:          %d\n", sps->pic_height_in_map_units_minus1);
+  gavl_dprintf("  frame_mbs_only_flag:                     %d\n", sps->frame_mbs_only_flag);
   
   if( !sps->frame_mbs_only_flag )
-    bgav_dprintf("  mb_adaptive_frame_field_flag:            %d\n", sps->mb_adaptive_frame_field_flag);
-  bgav_dprintf("  direct_8x8_inference_flag:               %d\n", sps->direct_8x8_inference_flag);
-  bgav_dprintf("  frame_cropping_flag:                     %d\n", sps->frame_cropping_flag);
+    gavl_dprintf("  mb_adaptive_frame_field_flag:            %d\n", sps->mb_adaptive_frame_field_flag);
+  gavl_dprintf("  direct_8x8_inference_flag:               %d\n", sps->direct_8x8_inference_flag);
+  gavl_dprintf("  frame_cropping_flag:                     %d\n", sps->frame_cropping_flag);
   if( sps->frame_cropping_flag )
     {
-    bgav_dprintf("  frame_crop_left_offset:                  %d\n", sps->frame_crop_left_offset);
-    bgav_dprintf("  frame_crop_right_offset:                 %d\n", sps->frame_crop_right_offset);
-    bgav_dprintf("  frame_crop_top_offset:                   %d\n", sps->frame_crop_top_offset);
-    bgav_dprintf("  frame_crop_bottom_offset:                %d\n", sps->frame_crop_bottom_offset);
+    gavl_dprintf("  frame_crop_left_offset:                  %d\n", sps->frame_crop_left_offset);
+    gavl_dprintf("  frame_crop_right_offset:                 %d\n", sps->frame_crop_right_offset);
+    gavl_dprintf("  frame_crop_top_offset:                   %d\n", sps->frame_crop_top_offset);
+    gavl_dprintf("  frame_crop_bottom_offset:                %d\n", sps->frame_crop_bottom_offset);
     }
-  bgav_dprintf("  vui_parameters_present_flag:             %d\n", sps->vui_parameters_present_flag);
+  gavl_dprintf("  vui_parameters_present_flag:             %d\n", sps->vui_parameters_present_flag);
 
   if(sps->vui_parameters_present_flag)
     vui_dump(&sps->vui);
@@ -800,19 +800,19 @@ void bgav_h264_slice_header_parse(const uint8_t * data, int len,
 void bgav_h264_slice_header_dump(const bgav_h264_sps_t * sps,
                                  const bgav_h264_slice_header_t * ret)
   {
-  bgav_dprintf("Slice header\n");
-  bgav_dprintf("  first_mb_in_slice:    %d\n", ret->first_mb_in_slice);
-  bgav_dprintf("  slice_type:           %d\n", ret->slice_type);
-  bgav_dprintf("  pic_parameter_set_id: %d\n", ret->pic_parameter_set_id);
+  gavl_dprintf("Slice header\n");
+  gavl_dprintf("  first_mb_in_slice:    %d\n", ret->first_mb_in_slice);
+  gavl_dprintf("  slice_type:           %d\n", ret->slice_type);
+  gavl_dprintf("  pic_parameter_set_id: %d\n", ret->pic_parameter_set_id);
   if(sps->separate_colour_plane_flag)
-    bgav_dprintf("  colour_plane_id:      %d\n", ret->colour_plane_id);
-  bgav_dprintf("  frame_num:            %d\n", ret->frame_num);
+    gavl_dprintf("  colour_plane_id:      %d\n", ret->colour_plane_id);
+  gavl_dprintf("  frame_num:            %d\n", ret->frame_num);
 
   //  if(!sps->frame_mbs_only_flag)
   //    {
-    bgav_dprintf("  field_pic_flag:       %d\n", ret->field_pic_flag);
+    gavl_dprintf("  field_pic_flag:       %d\n", ret->field_pic_flag);
     if(ret->field_pic_flag)
-      bgav_dprintf("  bottom_field_flag:    %d\n", ret->bottom_field_flag);
+      gavl_dprintf("  bottom_field_flag:    %d\n", ret->bottom_field_flag);
     //    }
   }
 

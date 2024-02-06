@@ -49,7 +49,7 @@ static void dump_frames(vmd_frame_t * f, int num)
   int i;
   for(i = 0; i < num; i++)
     {
-    bgav_dprintf("ID: %d, O: %d, S: %d, PTS: %ld, rec: ",
+    gavl_dprintf("ID: %d, O: %d, S: %d, PTS: %ld, rec: ",
                  f[i].stream_index,
                  f[i].frame_offset,
                  f[i].frame_size,

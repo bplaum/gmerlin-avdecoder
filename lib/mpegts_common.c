@@ -166,45 +166,45 @@ void bgav_pmt_section_dump(pmt_section_t * pmts)
   int i;
   const stream_type_t * stream_type;
   
-  bgav_dprintf( "PMT section:\n");
-  bgav_dprintf( "  table_id:               %02x\n",   pmts->table_id);
-  bgav_dprintf( "  section_length:         %d\n",     pmts->section_length);
-  bgav_dprintf( "  program_number:         %d\n",     pmts->program_number);
-  bgav_dprintf( "  current_next_indicator: %d\n",     pmts->current_next_indicator);
-  bgav_dprintf( "  section_number:         %d\n",     pmts->section_number);
-  bgav_dprintf( "  last_section_number:    %d\n",     pmts->last_section_number);
-  bgav_dprintf( "  pcr_pid:                0x%04x (%d)\n",
+  gavl_dprintf( "PMT section:\n");
+  gavl_dprintf( "  table_id:               %02x\n",   pmts->table_id);
+  gavl_dprintf( "  section_length:         %d\n",     pmts->section_length);
+  gavl_dprintf( "  program_number:         %d\n",     pmts->program_number);
+  gavl_dprintf( "  current_next_indicator: %d\n",     pmts->current_next_indicator);
+  gavl_dprintf( "  section_number:         %d\n",     pmts->section_number);
+  gavl_dprintf( "  last_section_number:    %d\n",     pmts->last_section_number);
+  gavl_dprintf( "  pcr_pid:                0x%04x (%d)\n",
                 pmts->pcr_pid, pmts->pcr_pid);
-  bgav_dprintf( "  descriptor:             ");
+  gavl_dprintf( "  descriptor:             ");
   if(pmts->descriptor_len)
     gavl_hexdump((uint8_t*)pmts->descriptor, pmts->descriptor_len, pmts->descriptor_len);
   else
-    bgav_dprintf( "[none]\n");
-  bgav_dprintf( "  Number of streams:      %d\n",     pmts->num_streams);
+    gavl_dprintf( "[none]\n");
+  gavl_dprintf( "  Number of streams:      %d\n",     pmts->num_streams);
 
   for(i = 0; i < pmts->num_streams; i++)
     {
     stream_type = get_stream_type(pmts->streams[i].type);
     
-    bgav_dprintf( "  Stream %d, present: %d\n", i+1, pmts->streams[i].present);
+    gavl_dprintf( "  Stream %d, present: %d\n", i+1, pmts->streams[i].present);
 
     if(stream_type)
-      bgav_dprintf( "    type:       0x%02x (%s)\n",
+      gavl_dprintf( "    type:       0x%02x (%s)\n",
                     pmts->streams[i].type, stream_type->description);
     else
-      bgav_dprintf( "    type:       0x%02x (unknown)\n",
+      gavl_dprintf( "    type:       0x%02x (unknown)\n",
                     pmts->streams[i].type);
     
-    bgav_dprintf( "    PID:        0x%04x (%d)\n",
+    gavl_dprintf( "    PID:        0x%04x (%d)\n",
                   pmts->streams[i].pid, pmts->streams[i].pid);
-    bgav_dprintf( "    descriptor: ");
+    gavl_dprintf( "    descriptor: ");
     
     if(pmts->streams[i].descriptor_len)
       gavl_hexdump((uint8_t*)pmts->streams[i].descriptor,
                    pmts->streams[i].descriptor_len,
                    pmts->streams[i].descriptor_len);
     else
-      bgav_dprintf( "[none]\n");
+      gavl_dprintf( "[none]\n");
     }
   }
 
@@ -243,19 +243,19 @@ int bgav_pat_section_read(uint8_t * data, int size,
 void bgav_pat_section_dump(pat_section_t * pats)
   {
   int i;
-  bgav_dprintf( "PAT section:\n");
-  bgav_dprintf( "  table_id:               %d\n", pats->table_id);
-  bgav_dprintf( "  section_length:         %d\n", pats->section_length);
-  bgav_dprintf( "  transport_stream_id:    %d\n", pats->transport_stream_id);
-  bgav_dprintf( "  current_next_indicator: %d\n", pats->current_next_indicator);
-  bgav_dprintf( "  section_number:         %d\n", pats->section_number);
-  bgav_dprintf( "  last_section_number:    %d\n", pats->last_section_number);
+  gavl_dprintf( "PAT section:\n");
+  gavl_dprintf( "  table_id:               %d\n", pats->table_id);
+  gavl_dprintf( "  section_length:         %d\n", pats->section_length);
+  gavl_dprintf( "  transport_stream_id:    %d\n", pats->transport_stream_id);
+  gavl_dprintf( "  current_next_indicator: %d\n", pats->current_next_indicator);
+  gavl_dprintf( "  section_number:         %d\n", pats->section_number);
+  gavl_dprintf( "  last_section_number:    %d\n", pats->last_section_number);
   
-  bgav_dprintf( "  Number of programs: %d\n", pats->num_programs);
+  gavl_dprintf( "  Number of programs: %d\n", pats->num_programs);
   for(i = 0; i < pats->num_programs; i++)
     {
-    bgav_dprintf( "    Program: %d ", pats->programs[i].program_number);
-    bgav_dprintf( "Program map PID: 0x%04x (%d)\n",
+    gavl_dprintf( "    Program: %d ", pats->programs[i].program_number);
+    gavl_dprintf( "Program map PID: 0x%04x (%d)\n",
                   pats->programs[i].program_map_pid,
                   pats->programs[i].program_map_pid);
     }
@@ -263,26 +263,26 @@ void bgav_pat_section_dump(pat_section_t * pats)
 
 void bgav_transport_packet_dump(transport_packet_t * p)
   {
-  bgav_dprintf( "Transport packet:\n");
-  bgav_dprintf( "  Payload start:      %d\n", p->payload_start);
-  bgav_dprintf( "  PID:                0x%04x\n", p->pid);
-  bgav_dprintf( "  Adaption field:     %s\n",
+  gavl_dprintf( "Transport packet:\n");
+  gavl_dprintf( "  Payload start:      %d\n", p->payload_start);
+  gavl_dprintf( "  PID:                0x%04x\n", p->pid);
+  gavl_dprintf( "  Adaption field:     %s\n",
           (p->has_adaption_field ? "Yes" : "No"));
-  bgav_dprintf( "  Payload:            %s\n",
+  gavl_dprintf( "  Payload:            %s\n",
           (p->has_payload ? "Yes" : "No"));
-  bgav_dprintf( "  Continuity counter: %d\n", p->continuity_counter);
-  bgav_dprintf( "  Payload size: %d\n", p->payload_size);
+  gavl_dprintf( "  Continuity counter: %d\n", p->continuity_counter);
+  gavl_dprintf( "  Payload size: %d\n", p->payload_size);
   
   if(p->has_adaption_field)
     {
-    bgav_dprintf( "    Adaption field:\n");
+    gavl_dprintf( "    Adaption field:\n");
     if(p->adaption_field.pcr >= 0)
-      bgav_dprintf( "    PCR: %f\n",
+      gavl_dprintf( "    PCR: %f\n",
                     (float)p->adaption_field.pcr / 90000.0);
     else
-      bgav_dprintf( "    PCR: None\n");
+      gavl_dprintf( "    PCR: None\n");
 
-    bgav_dprintf( "    random_access_indicator: %d\n",
+    gavl_dprintf( "    random_access_indicator: %d\n",
                   p->adaption_field.random_access_indicator);
     }
   }

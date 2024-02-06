@@ -231,28 +231,28 @@ static int ogm_header_read(bgav_input_context_t * input, ogm_header_t * ret)
 #if 0
 static void ogm_header_dump(ogm_header_t * h)
   {
-  bgav_dprintf( "OGM Header\n");
-  bgav_dprintf( "  Type              %.8s\n", h->type);
-  bgav_dprintf( "  Subtype:          ");
+  gavl_dprintf( "OGM Header\n");
+  gavl_dprintf( "  Type              %.8s\n", h->type);
+  gavl_dprintf( "  Subtype:          ");
   bgav_dump_fourcc(h->subtype);
-  bgav_dprintf( "\n");
+  gavl_dprintf( "\n");
 
-  bgav_dprintf( "  Size:             %d\n", h->size);
-  bgav_dprintf( "  Time unit:        %" PRId64 "\n", h->time_unit);
-  bgav_dprintf( "  Samples per unit: %" PRId64 "\n", h->samples_per_unit);
-  bgav_dprintf( "  Default len:      %d\n", h->default_len);
-  bgav_dprintf( "  Buffer size:      %d\n", h->buffersize);
-  bgav_dprintf( "  Bits per sample:  %d\n", h->bits_per_sample);
+  gavl_dprintf( "  Size:             %d\n", h->size);
+  gavl_dprintf( "  Time unit:        %" PRId64 "\n", h->time_unit);
+  gavl_dprintf( "  Samples per unit: %" PRId64 "\n", h->samples_per_unit);
+  gavl_dprintf( "  Default len:      %d\n", h->default_len);
+  gavl_dprintf( "  Buffer size:      %d\n", h->buffersize);
+  gavl_dprintf( "  Bits per sample:  %d\n", h->bits_per_sample);
   if(!strncmp(h->type, "video", 5))
     {
-    bgav_dprintf( "  Width:            %d\n", h->data.video.width);
-    bgav_dprintf( "  Height:           %d\n", h->data.video.height);
+    gavl_dprintf( "  Width:            %d\n", h->data.video.width);
+    gavl_dprintf( "  Height:           %d\n", h->data.video.height);
     }
   if(!strncmp(h->type, "audio", 5))
     {
-    bgav_dprintf( "  Channels:         %d\n", h->data.audio.channels);
-    bgav_dprintf( "  Block align:      %d\n", h->data.audio.blockalign);
-    bgav_dprintf( "  Avg bytes per sec: %d\n", h->data.audio.avgbytespersec);
+    gavl_dprintf( "  Channels:         %d\n", h->data.audio.channels);
+    gavl_dprintf( "  Block align:      %d\n", h->data.audio.blockalign);
+    gavl_dprintf( "  Avg bytes per sec: %d\n", h->data.audio.avgbytespersec);
     }
   }
 #endif
@@ -266,36 +266,36 @@ static void dump_ogg(bgav_demuxer_context_t * ctx)
   stream_priv_t * stream_priv;
   bgav_stream_t * s;
   
-  bgav_dprintf( "Ogg Structure\n");
+  gavl_dprintf( "Ogg Structure\n");
 
   for(i = 0; i < ctx->tt->num_tracks; i++)
     {
     track = &ctx->tt->tracks[i];
     track_priv = track->priv;
-    bgav_dprintf( "Track %d, start_pos: %" PRId64 ", end_pos: %" PRId64 "\n",
+    gavl_dprintf( "Track %d, start_pos: %" PRId64 ", end_pos: %" PRId64 "\n",
             i+1, track_priv->start_pos, track_priv->end_pos);
     
     for(j = 0; j < track->num_audio_streams; j++)
       {
       s = &track->audio_streams[j];
       stream_priv = s->priv;
-      bgav_dprintf( "Audio stream %d\n", j+1);
-      bgav_dprintf( "  Serialno: %d\n", s->stream_id);
-      bgav_dprintf( "  Language: %s\n", s->language);
-      bgav_dprintf( "  Last granulepos: %" PRId64 "\n",
+      gavl_dprintf( "Audio stream %d\n", j+1);
+      gavl_dprintf( "  Serialno: %d\n", s->stream_id);
+      gavl_dprintf( "  Language: %s\n", s->language);
+      gavl_dprintf( "  Last granulepos: %" PRId64 "\n",
               stream_priv->last_granulepos);
-      bgav_dprintf( "  Metadata:\n");
+      gavl_dprintf( "  Metadata:\n");
       gavl_dictionary_dump(&stream_priv->metadata);
       }
     for(j = 0; j < track->num_video_streams; j++)
       {
       s = &track->video_streams[j];
       stream_priv = s->priv;
-      bgav_dprintf( "Video stream %d\n", j+1);
-      bgav_dprintf( "  Serialno: %d\n", s->stream_id);
-      bgav_dprintf( "  Last granulepos: %" PRId64 "\n",
+      gavl_dprintf( "Video stream %d\n", j+1);
+      gavl_dprintf( "  Serialno: %d\n", s->stream_id);
+      gavl_dprintf( "  Last granulepos: %" PRId64 "\n",
               stream_priv->last_granulepos);
-      bgav_dprintf( "  Metadata:\n");
+      gavl_dprintf( "  Metadata:\n");
       gavl_dictionary_dump(&stream_priv->metadata);
       }
     for(j = 0; j < track->num_subtitle_streams; j++)
@@ -305,10 +305,10 @@ static void dump_ogg(bgav_demuxer_context_t * ctx)
       
       s = &track->subtitle_streams[j];
       stream_priv = s->priv;
-      bgav_dprintf( "Subtitle stream %d\n", j+1);
-      bgav_dprintf( "  Serialno: %d\n", s->stream_id);
-      bgav_dprintf( "  Language: %s\n", s->language);
-      bgav_dprintf( "  Metadata:\n");
+      gavl_dprintf( "Subtitle stream %d\n", j+1);
+      gavl_dprintf( "  Serialno: %d\n", s->stream_id);
+      gavl_dprintf( "  Language: %s\n", s->language);
+      gavl_dprintf( "  Metadata:\n");
       gavl_dictionary_dump(&stream_priv->metadata);
       }
     

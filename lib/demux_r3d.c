@@ -95,25 +95,25 @@ static int read_red1(bgav_input_context_t * ctx,
 
 static void dump_red1(red1_t * red1)
   {
-  bgav_dprintf("R3D header:\n");
-  bgav_dprintf("  unknown1:        %d (%08x)\n", red1->unknown1,
+  gavl_dprintf("R3D header:\n");
+  gavl_dprintf("  unknown1:        %d (%08x)\n", red1->unknown1,
                red1->unknown1);
-  bgav_dprintf("  pts_timescale:   %d\n", red1->pts_timescale);
-  bgav_dprintf("  unknown2:        %d\n", red1->unknown2);
-  bgav_dprintf("  unknown3:        %d\n", red1->unknown3);
-  bgav_dprintf("  unknown4:        %d\n", red1->unknown4);
-  bgav_dprintf("  unknown5:        %d\n", red1->unknown5);
-  bgav_dprintf("  unknown6:        %d\n", red1->unknown6);
-  bgav_dprintf("  unknown7:        %d\n", red1->unknown7);
-  bgav_dprintf("  unknown8:        %d\n", red1->unknown8);
-  bgav_dprintf("  unknown9:        %d\n", red1->unknown9);
-  bgav_dprintf("  unknown10:       %d\n", red1->unknown10);
-  bgav_dprintf("  width:           %d\n", red1->width);
-  bgav_dprintf("  height:          %d\n", red1->height);
-  bgav_dprintf("  video_timescale: %d\n", red1->video_timescale);
-  bgav_dprintf("  frame_duration:  %d\n", red1->frame_duration);
-  bgav_dprintf("  unknown15:       %d\n", red1->unknown15);
-  bgav_dprintf("  name:            %s\n", red1->name);
+  gavl_dprintf("  pts_timescale:   %d\n", red1->pts_timescale);
+  gavl_dprintf("  unknown2:        %d\n", red1->unknown2);
+  gavl_dprintf("  unknown3:        %d\n", red1->unknown3);
+  gavl_dprintf("  unknown4:        %d\n", red1->unknown4);
+  gavl_dprintf("  unknown5:        %d\n", red1->unknown5);
+  gavl_dprintf("  unknown6:        %d\n", red1->unknown6);
+  gavl_dprintf("  unknown7:        %d\n", red1->unknown7);
+  gavl_dprintf("  unknown8:        %d\n", red1->unknown8);
+  gavl_dprintf("  unknown9:        %d\n", red1->unknown9);
+  gavl_dprintf("  unknown10:       %d\n", red1->unknown10);
+  gavl_dprintf("  width:           %d\n", red1->width);
+  gavl_dprintf("  height:          %d\n", red1->height);
+  gavl_dprintf("  video_timescale: %d\n", red1->video_timescale);
+  gavl_dprintf("  frame_duration:  %d\n", red1->frame_duration);
+  gavl_dprintf("  unknown15:       %d\n", red1->unknown15);
+  gavl_dprintf("  name:            %s\n", red1->name);
   }
 /* Packet headers are not used, we build a superindex instead.
    They are left here for reference */
@@ -149,15 +149,15 @@ static int read_audio_header(bgav_input_context_t * ctx,
 
 static void dump_audio_header(audio_header_t * h)
   {
-  bgav_dprintf("Audio packet header:\n");
-  bgav_dprintf("  PTS:        %d\n", h->pts);
-  bgav_dprintf("  samplerate: %d\n", h->samplerate);
-  bgav_dprintf("  samples:    %d\n", h->samples);
-  bgav_dprintf("  packetno:   %d\n", h->packetno);
-  bgav_dprintf("  Unknown5:   %d (%08x)\n",
+  gavl_dprintf("Audio packet header:\n");
+  gavl_dprintf("  PTS:        %d\n", h->pts);
+  gavl_dprintf("  samplerate: %d\n", h->samplerate);
+  gavl_dprintf("  samples:    %d\n", h->samples);
+  gavl_dprintf("  packetno:   %d\n", h->packetno);
+  gavl_dprintf("  Unknown5:   %d (%08x)\n",
                h->unknown5,
                h->unknown5);
-  bgav_dprintf("  Unknown6:   %d (%08x)\n",
+  gavl_dprintf("  Unknown6:   %d (%08x)\n",
                h->unknown6,
                h->unknown6);
   }
@@ -185,10 +185,10 @@ static int read_video_header(bgav_input_context_t * ctx,
 
 static void dump_video_header(video_header_t * h)
   {
-  bgav_dprintf("Video packet header:\n");
-  bgav_dprintf("  PTS:      %d\n", h->pts);
-  bgav_dprintf("  packetno: %d\n", h->packetno);
-  bgav_dprintf("  Unknown3: %d (%08x)\n",
+  gavl_dprintf("Video packet header:\n");
+  gavl_dprintf("  PTS:      %d\n", h->pts);
+  gavl_dprintf("  packetno: %d\n", h->packetno);
+  gavl_dprintf("  Unknown3: %d (%08x)\n",
                h->unknown3,
                h->unknown3);
   }
@@ -236,19 +236,19 @@ static int read_reob(bgav_input_context_t * ctx,
 
 static void dump_reob(reob_t * reob)
   {
-  bgav_dprintf("reob:\n");
-  bgav_dprintf("  rdvo_offset:    %d\n", reob->rdvo_offset);
-  bgav_dprintf("  rdvs_offset:    %d\n", reob->rdvs_offset);
-  bgav_dprintf("  rdao_offset:    %d\n", reob->rdao_offset);
-  bgav_dprintf("  rdas_offset:    %d\n", reob->rdas_offset);
-  bgav_dprintf("  video_packets:  %d\n", reob->video_packets);
-  bgav_dprintf("  audio_packets:  %d\n", reob->audio_packets);
-  bgav_dprintf("  totlen:         %d\n", reob->totlen);
-  bgav_dprintf("  max_video_size: %d\n", reob->max_video_size);
-  bgav_dprintf("  max_audio_size: %d\n", reob->max_audio_size);
-  bgav_dprintf("  unknown3:       %d\n", reob->unknown3);
-  bgav_dprintf("  unknown4:       %d\n", reob->unknown4);
-  bgav_dprintf("  unknown5:       %d\n", reob->unknown5);
+  gavl_dprintf("reob:\n");
+  gavl_dprintf("  rdvo_offset:    %d\n", reob->rdvo_offset);
+  gavl_dprintf("  rdvs_offset:    %d\n", reob->rdvs_offset);
+  gavl_dprintf("  rdao_offset:    %d\n", reob->rdao_offset);
+  gavl_dprintf("  rdas_offset:    %d\n", reob->rdas_offset);
+  gavl_dprintf("  video_packets:  %d\n", reob->video_packets);
+  gavl_dprintf("  audio_packets:  %d\n", reob->audio_packets);
+  gavl_dprintf("  totlen:         %d\n", reob->totlen);
+  gavl_dprintf("  max_video_size: %d\n", reob->max_video_size);
+  gavl_dprintf("  max_audio_size: %d\n", reob->max_audio_size);
+  gavl_dprintf("  unknown3:       %d\n", reob->unknown3);
+  gavl_dprintf("  unknown4:       %d\n", reob->unknown4);
+  gavl_dprintf("  unknown5:       %d\n", reob->unknown5);
   }
 /* Index */
 

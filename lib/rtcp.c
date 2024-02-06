@@ -100,28 +100,28 @@ int bgav_rtcp_rr_write(rtcp_sr_t * r, uint8_t * data)
 void bgav_rtcp_sr_dump(rtcp_sr_t * r)
   {
   int i;
-  bgav_dprintf("RTCP RR\n");
-  bgav_dprintf("  version:      %d\n", r->version);
-  bgav_dprintf("  padding:      %d\n", r->padding);
-  bgav_dprintf("  rc:           %d\n", r->rc);
-  bgav_dprintf("  type:         %d\n", r->type);
-  bgav_dprintf("  length:       %d\n", r->length);
-  bgav_dprintf("  ssrc:         %08x\n", r->ssrc);
-  bgav_dprintf("  ntp_time:     %"PRIu64"\n", r->ntp_time);
-  bgav_dprintf("  rtp_time:     %u\n", r->rtp_time);
-  bgav_dprintf("  packet_count: %u\n", r->packet_count);
-  bgav_dprintf("  octet_count:  %u\n", r->octet_count);
+  gavl_dprintf("RTCP RR\n");
+  gavl_dprintf("  version:      %d\n", r->version);
+  gavl_dprintf("  padding:      %d\n", r->padding);
+  gavl_dprintf("  rc:           %d\n", r->rc);
+  gavl_dprintf("  type:         %d\n", r->type);
+  gavl_dprintf("  length:       %d\n", r->length);
+  gavl_dprintf("  ssrc:         %08x\n", r->ssrc);
+  gavl_dprintf("  ntp_time:     %"PRIu64"\n", r->ntp_time);
+  gavl_dprintf("  rtp_time:     %u\n", r->rtp_time);
+  gavl_dprintf("  packet_count: %u\n", r->packet_count);
+  gavl_dprintf("  octet_count:  %u\n", r->octet_count);
 
   for(i = 0; i < r->rc; i++)
     {
-    bgav_dprintf("  Report %d\n", i+1);
-    bgav_dprintf("    ssrc:            %08x\n", r->reports[i].ssrc);
-    bgav_dprintf("    fraction_lost:   %d\n", r->reports[i].fraction_lost);
-    bgav_dprintf("    cumulative_lost: %d\n", r->reports[i].cumulative_lost);
-    bgav_dprintf("    highest_ext_seq: %d\n", r->reports[i].highest_ext_seq);
-    bgav_dprintf("    jitter:          %d\n", r->reports[i].jitter);
-    bgav_dprintf("    lsr:             %d\n", r->reports[i].lsr);
-    bgav_dprintf("    dlsr:            %d\n", r->reports[i].dlsr);
+    gavl_dprintf("  Report %d\n", i+1);
+    gavl_dprintf("    ssrc:            %08x\n", r->reports[i].ssrc);
+    gavl_dprintf("    fraction_lost:   %d\n", r->reports[i].fraction_lost);
+    gavl_dprintf("    cumulative_lost: %d\n", r->reports[i].cumulative_lost);
+    gavl_dprintf("    highest_ext_seq: %d\n", r->reports[i].highest_ext_seq);
+    gavl_dprintf("    jitter:          %d\n", r->reports[i].jitter);
+    gavl_dprintf("    lsr:             %d\n", r->reports[i].lsr);
+    gavl_dprintf("    dlsr:            %d\n", r->reports[i].dlsr);
     }
   }
 
