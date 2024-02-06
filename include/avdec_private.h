@@ -1354,8 +1354,6 @@ void bgav_send_state(bgav_t * b);
 void bgav_dump_fourcc(uint32_t fourcc);
 int bgav_check_fourcc(uint32_t fourcc, const uint32_t * fourccs);
 
-char * gavl_sprintf(const char * format,...)   __attribute__ ((format (printf, 1, 2)));
-
 // char * bgav_strncat(char * old, const char * start, const char * end);
 
 void bgav_dprintf(const char * format, ...) __attribute__ ((format (printf, 1, 2)));
