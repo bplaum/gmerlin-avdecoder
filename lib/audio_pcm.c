@@ -793,7 +793,7 @@ static gavl_source_status_t get_packet(bgav_stream_t * s)
     return st;
 
 #ifdef DUMP_PACKETS
-  bgav_packet_dump(priv->p);
+  gavl_packet_dump(priv->p);
 #endif
 
   priv->bytes_in_packet = priv->p->buf.len;

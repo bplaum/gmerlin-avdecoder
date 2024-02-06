@@ -87,7 +87,7 @@ insert_packet(bgav_packet_timer_t * pt, bgav_packet_t ** ret, int force)
       }
 #ifdef DUMP_INPUT
     gavl_dprintf("packet_timer in:  ");
-    bgav_packet_dump(p);
+    gavl_packet_dump(p);
 #endif
     if(!PACKET_GET_SKIP(p))
       break;
@@ -124,7 +124,7 @@ static bgav_packet_t * remove_packet(bgav_packet_timer_t * pt)
     memmove(&pt->packets[0], &pt->packets[1], sizeof(pt->packets[0])*pt->num_packets);
 #ifdef DUMP_OUTPUT
   gavl_dprintf("packet_timer out: ");
-  bgav_packet_dump(ret);
+  gavl_packet_dump(ret);
 #endif
 
   return ret;

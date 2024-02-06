@@ -144,7 +144,7 @@ static int parse_frame_dvdsub(bgav_packet_parser_t * parser, bgav_packet_t * p)
   p->duration = priv->pts_mult * (end_date - start_date);
 
   //  fprintf(stderr, "Parse frame dvdsub\n");
-  //  bgav_packet_dump(p);
+  //  gavl_packet_dump(p);
   return 1;
   }
 

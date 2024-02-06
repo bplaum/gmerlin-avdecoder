@@ -182,7 +182,7 @@ get_data(bgav_stream_t * s, SchroBuffer ** ret_p)
     }
 
   //  fprintf(stderr, "Got packet\n");
-  //  bgav_packet_dump(priv->p);
+  //  gavl_packet_dump(priv->p);
   //  gavl_hexdump(priv->p->data, 16, 16);
   size = next_startcode(priv->buffer_ptr, priv->buffer_size);
   

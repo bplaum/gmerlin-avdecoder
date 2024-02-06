@@ -45,7 +45,7 @@ void bgav_packet_pad(bgav_packet_t * p)
   }
 
 
-void bgav_packet_dump_data(bgav_packet_t * p, int bytes)
+void gavl_packet_dump_data(bgav_packet_t * p, int bytes)
   {
   if(bytes > p->buf.len)
     bytes = p->buf.len;

@@ -1012,12 +1012,12 @@ static void add_packet(bgav_demuxer_context_t * ctx,
       if(s->type == GAVL_STREAM_AUDIO)
         {
         fprintf(stderr, "Got audio packet: ");
-        bgav_packet_dump(s->packet);
+        gavl_packet_dump(s->packet);
         }
       else
         {
         fprintf(stderr, "Got video packet: ");
-        bgav_packet_dump(s->packet);
+        gavl_packet_dump(s->packet);
         }
 #endif
       bgav_stream_done_packet_write(s, s->packet);

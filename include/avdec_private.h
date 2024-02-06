@@ -160,9 +160,7 @@ bgav_packet_t * bgav_packet_create();
 
 void bgav_packet_destroy(bgav_packet_t*);
 
-#define bgav_packet_dump(p) gavl_packet_dump(p)
-
-void bgav_packet_dump_data(bgav_packet_t * p, int bytes);
+void gavl_packet_dump_data(bgav_packet_t * p, int bytes);
 
 void bgav_packet_pad(bgav_packet_t * p);
 

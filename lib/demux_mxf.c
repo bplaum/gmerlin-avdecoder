@@ -230,7 +230,7 @@ static int process_packet_frame_wrapped(bgav_demuxer_context_t * ctx)
     if(s->type == GAVL_STREAM_AUDIO)
       {
       fprintf(stderr, "Got audio packet\n");
-      bgav_packet_dump(p);
+      gavl_packet_dump(p);
       }
     //    if(s->type == GAVL_STREAM_VIDEO)
     //      fprintf(stderr, "Got video packet\n");

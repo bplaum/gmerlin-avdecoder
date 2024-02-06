@@ -273,13 +273,13 @@ static gavl_source_status_t next_packet_vmd(bgav_demuxer_context_t * ctx)
       {
       p->pts = frame->pts;
       //      fprintf(stderr, "Got video frame\n");
-      //      bgav_packet_dump(p);
+      //      gavl_packet_dump(p);
       }
 #if 0
     else
       {
       fprintf(stderr, "Got audio frame\n");
-      bgav_packet_dump(p);
+      gavl_packet_dump(p);
       }
 #endif
     bgav_stream_done_packet_write(s, p);

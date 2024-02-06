@@ -253,7 +253,7 @@ read_packet_continuous(void * priv, bgav_packet_t ** ret)
   if((st == GAVL_SOURCE_OK) && s->opt->dump_packets)
     {
     gavl_dprintf("Packet out (stream %d): ", s->stream_id);
-    bgav_packet_dump(*ret);
+    gavl_packet_dump(*ret);
     //    gavl_hexdump((*ret)->buf.buf, (*ret)->buf.len < 16 ? (*ret)->buf.len : 16, 16);
     }
   
@@ -423,7 +423,7 @@ void bgav_stream_done_packet_write(bgav_stream_t * s, bgav_packet_t * p)
   {
 #ifdef DUMP_IN_PACKETS
   gavl_dprintf("Packet in (stream %d): ", s->stream_id);
-  bgav_packet_dump(p);
+  gavl_packet_dump(p);
 #endif
 
   p->id = s->stream_id;

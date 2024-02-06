@@ -97,7 +97,7 @@ static int decode_vpx(bgav_stream_t * s, gavl_video_frame_t * f)
     return 0;
 
 #ifdef DUMP_DECODE
-  bgav_packet_dump(p);
+  gavl_packet_dump(p);
 #endif
   
   if(vpx_codec_decode(&priv->decoder, p->data, p->data_size, NULL, 0) !=

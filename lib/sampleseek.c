@@ -109,7 +109,7 @@ void bgav_seek_video(bgav_t * bgav, int stream, int64_t time)
   }
 
 /* New sample accurate seeking functions */
-
+#if 0
 void bgav_seek_to_audio_sample(bgav_t * bgav, int stream, int64_t sample)
   {
   
@@ -119,7 +119,7 @@ void bgav_seek_to_video_frame(bgav_t * bgav, int stream, int64_t frame)
   {
   
   }
-
+#endif
 
 static int64_t bgav_video_stream_keyframe_before(bgav_stream_t * s, int64_t time)
   {

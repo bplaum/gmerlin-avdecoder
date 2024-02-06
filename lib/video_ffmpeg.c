@@ -259,7 +259,7 @@ get_data(bgav_stream_t * s, bgav_packet_t ** ret_p)
   
 #ifdef DUMP_PACKET
   fprintf(stderr, "video_ffmpeg: Got packet ");
-  bgav_packet_dump(ret);
+  gavl_packet_dump(ret);
   gavl_hexdump(ret->data, 16, 16);
 #endif
   

@@ -576,7 +576,7 @@ static gavl_source_status_t next_packet_gxf(bgav_demuxer_context_t * ctx)
       if(s->type == GAVF_STREAM_VIDEO)
         {
         fprintf(stderr, "Got video packet %d:\n", priv->num_fields);
-        bgav_packet_dump(p);
+        gavl_packet_dump(p);
         }
 #endif
       bgav_stream_done_packet_write(s, p);

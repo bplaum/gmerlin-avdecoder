@@ -134,7 +134,7 @@ static gavl_source_status_t next_packet(bgav_stream_t * s)
         return st;
 #ifdef DUMP_PACKET
       gavl_dprintf("vorbis: Got packet: %p ", p);
-      bgav_packet_dump(p);
+      gavl_packet_dump(p);
 #endif    
       gavl_packet_reset(&priv->p);
       bgav_packet_copy(&priv->p, p);

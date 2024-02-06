@@ -405,7 +405,7 @@ static gavl_source_status_t next_packet_mpegts(bgav_demuxer_context_t * ctx)
         if(s->type == GAVL_STREAM_VIDEO)
           {
           fprintf(stderr, "Got packet for stream %d\n", s->stream_id);
-          bgav_packet_dump(s->packet);
+          gavl_packet_dump(s->packet);
           }
 #endif
         bgav_stream_done_packet_write(s, s->packet);

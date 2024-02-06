@@ -61,7 +61,7 @@ static gavl_source_status_t decode_frame_opus(bgav_stream_t * s)
     return st;
 
 #ifdef DUMP_PACKETS
-  bgav_packet_dump(p);
+  gavl_packet_dump(p);
 #endif
   
 #ifdef USE_FLOAT  
