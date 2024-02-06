@@ -70,15 +70,15 @@ void bgav_qt_tref_free(qt_tref_t * r)
 void bgav_qt_tref_dump(int indent, qt_tref_t * c)
   {
   int i, j;
-  bgav_diprintf(indent, "tref\n");
+  gavl_diprintf(indent, "tref\n");
 
   for(i = 0; i < c->num_references; i++)
     {
-    bgav_diprintf(indent+2, "track reference: ");
+    gavl_diprintf(indent+2, "track reference: ");
     bgav_dump_fourcc(c->references[i].type);
     gavl_dprintf(" (%d tracks)\n", c->references[i].num_tracks);
     for(j = 0; j < c->references[i].num_tracks; j++)
-      bgav_diprintf(indent+2, "Track %d\n", c->references[i].tracks[j]);
+      gavl_diprintf(indent+2, "Track %d\n", c->references[i].tracks[j]);
     }
-  bgav_diprintf(indent, "end of tref\n");
+  gavl_diprintf(indent, "end of tref\n");
   }

@@ -57,7 +57,7 @@ void bgav_qt_tmcd_free(qt_tmcd_t * g)
 
 void bgav_qt_tmcd_dump(int indent, qt_tmcd_t * c)
   {
-  bgav_diprintf(indent, "tmcd\n");
+  gavl_diprintf(indent, "tmcd\n");
   bgav_qt_tcmi_dump(indent+2, &c->tcmi);
-  bgav_diprintf(indent, "end of tmcd\n");
+  gavl_diprintf(indent, "end of tmcd\n");
   }

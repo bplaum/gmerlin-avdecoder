@@ -37,6 +37,6 @@ int bgav_qt_enda_read(qt_atom_header_t * h, bgav_input_context_t * ctx,
   
 void bgav_qt_enda_dump(int indent, qt_enda_t * f)
   {
-  bgav_diprintf(indent, "enda:\n");
-  bgav_diprintf(indent+2, "littleEndian: %d\n", f->littleEndian);
+  gavl_diprintf(indent, "enda:\n");
+  gavl_diprintf(indent+2, "littleEndian: %d\n", f->littleEndian);
   }

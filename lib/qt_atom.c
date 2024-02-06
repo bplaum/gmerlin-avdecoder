@@ -110,9 +110,9 @@ void bgav_qt_atom_skip_unknown(bgav_input_context_t * input,
 
 void bgav_qt_atom_dump_header(int indent, qt_atom_header_t * h)
   {
-  bgav_diprintf(indent, "Size:           %" PRId64 "\n", h->size);
-  bgav_diprintf(indent, "Start Position: %" PRId64 "\n", h->start_position);
-  bgav_diprintf(indent, "Fourcc:         ");
+  gavl_diprintf(indent, "Size:           %" PRId64 "\n", h->size);
+  gavl_diprintf(indent, "Start Position: %" PRId64 "\n", h->start_position);
+  gavl_diprintf(indent, "Fourcc:         ");
   bgav_dump_fourcc(h->fourcc);
   gavl_dprintf("\n");
   }

@@ -70,10 +70,10 @@ void bgav_qt_gmhd_free(qt_gmhd_t * g)
 
 void bgav_qt_gmhd_dump(int indent, qt_gmhd_t * g)
   {
-  bgav_diprintf(indent, "gmhd\n");
+  gavl_diprintf(indent, "gmhd\n");
   if(g->has_gmin)
     bgav_qt_gmin_dump(indent+2, &g->gmin);
   if(g->has_tmcd)
     bgav_qt_tmcd_dump(indent+2, &g->tmcd);
-  bgav_diprintf(indent, "end of gmhd\n");
+  gavl_diprintf(indent, "end of gmhd\n");
   }

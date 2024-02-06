@@ -77,7 +77,7 @@ void bgav_qt_rmda_free(qt_rmda_t * r)
 
 void bgav_qt_rmda_dump(int indent, qt_rmda_t * r)
   {
-  bgav_diprintf(indent, "rmda\n");
+  gavl_diprintf(indent, "rmda\n");
   if(r->has_rdrf)
     bgav_qt_rdrf_dump(indent+2, &r->rdrf);
   }

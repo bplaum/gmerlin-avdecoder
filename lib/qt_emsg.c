@@ -103,27 +103,27 @@ void bgav_qt_emsg_free(qt_emsg_t * emsg)
 
 void bgav_qt_emsg_dump(int indent, qt_emsg_t * emsg)
   {
-  bgav_diprintf(indent, "emsg\n");
-  bgav_diprintf(indent, "  Version: %d\n", emsg->version);
-  bgav_diprintf(indent, "  Flags:   %d\n", emsg->flags);
+  gavl_diprintf(indent, "emsg\n");
+  gavl_diprintf(indent, "  Version: %d\n", emsg->version);
+  gavl_diprintf(indent, "  Flags:   %d\n", emsg->flags);
 
   if(emsg->version == 0)
     {
-    bgav_diprintf(indent, "  scheme_id_uri:           %s\n", emsg->scheme_id_uri);
-    bgav_diprintf(indent, "  value:                   %s\n", emsg->value);
-    bgav_diprintf(indent, "  timescale:               %d\n", emsg->timescale);
-    bgav_diprintf(indent, "  presentation_time_delta: %d\n", emsg->presentation_time_delta);
-    bgav_diprintf(indent, "  event_duration:          %d\n", emsg->event_duration);
-    bgav_diprintf(indent, "  id:                      %d\n", emsg->id);
+    gavl_diprintf(indent, "  scheme_id_uri:           %s\n", emsg->scheme_id_uri);
+    gavl_diprintf(indent, "  value:                   %s\n", emsg->value);
+    gavl_diprintf(indent, "  timescale:               %d\n", emsg->timescale);
+    gavl_diprintf(indent, "  presentation_time_delta: %d\n", emsg->presentation_time_delta);
+    gavl_diprintf(indent, "  event_duration:          %d\n", emsg->event_duration);
+    gavl_diprintf(indent, "  id:                      %d\n", emsg->id);
     }
   else if(emsg->version == 1)
     {
-    bgav_diprintf(indent, "  timescale:               %d\n", emsg->timescale);
-    bgav_diprintf(indent, "  presentation_time:       %"PRId64"\n", emsg->presentation_time);
-    bgav_diprintf(indent, "  event_duration:          %d\n", emsg->event_duration);
-    bgav_diprintf(indent, "  id:                      %d\n", emsg->id);
-    bgav_diprintf(indent, "  scheme_id_uri:           %s\n", emsg->scheme_id_uri);
-    bgav_diprintf(indent, "  value:                   %s\n", emsg->value);
+    gavl_diprintf(indent, "  timescale:               %d\n", emsg->timescale);
+    gavl_diprintf(indent, "  presentation_time:       %"PRId64"\n", emsg->presentation_time);
+    gavl_diprintf(indent, "  event_duration:          %d\n", emsg->event_duration);
+    gavl_diprintf(indent, "  id:                      %d\n", emsg->id);
+    gavl_diprintf(indent, "  scheme_id_uri:           %s\n", emsg->scheme_id_uri);
+    gavl_diprintf(indent, "  value:                   %s\n", emsg->value);
     }
   
   gavl_hexdump(emsg->message_data.buf, emsg->message_data.len, 16);

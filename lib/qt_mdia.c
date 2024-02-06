@@ -83,9 +83,9 @@ void bgav_qt_mdia_free(qt_mdia_t * c)
 
 void bgav_qt_mdia_dump(int indent, qt_mdia_t * c)
   {
-  bgav_diprintf(indent, "mdia\n");
+  gavl_diprintf(indent, "mdia\n");
   bgav_qt_mdhd_dump(indent+2, &c->mdhd);
   bgav_qt_hdlr_dump(indent+2, &c->hdlr);
   bgav_qt_minf_dump(indent+2, &c->minf);
-  bgav_diprintf(indent, "end of mdia\n");
+  gavl_diprintf(indent, "end of mdia\n");
   }

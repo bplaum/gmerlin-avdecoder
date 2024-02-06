@@ -95,7 +95,7 @@ int bgav_qt_wave_read(qt_atom_header_t * h, bgav_input_context_t * ctx,
 void bgav_qt_wave_dump(int indent, qt_wave_t * f)
   {
 
-  bgav_diprintf(indent, "wave\n");
+  gavl_diprintf(indent, "wave\n");
   if(f->has_frma)
     bgav_qt_frma_dump(indent+2, &f->frma);
   if(f->has_enda)

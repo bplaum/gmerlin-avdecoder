@@ -106,38 +106,38 @@ void bgav_qt_trun_dump(int indent, qt_trun_t * g)
   {
   int i;
 
-  bgav_diprintf(indent, "trun\n");
-  bgav_diprintf(indent+2, "version:                  %d\n", g->version);
-  bgav_diprintf(indent+2, "flags:                    %08x\n", g->flags);
-  bgav_diprintf(indent+2, "sample_count:             %d\n", g->sample_count);
+  gavl_diprintf(indent, "trun\n");
+  gavl_diprintf(indent+2, "version:                  %d\n", g->version);
+  gavl_diprintf(indent+2, "flags:                    %08x\n", g->flags);
+  gavl_diprintf(indent+2, "sample_count:             %d\n", g->sample_count);
 
   if(g->flags & TRUN_DATA_OFFSET_PRESENT)
-    bgav_diprintf(indent+2, "data_offset:              %d\n", g->data_offset);
+    gavl_diprintf(indent+2, "data_offset:              %d\n", g->data_offset);
   if(g->flags & TRUN_FIRST_SAMPLE_FLAGS_PRESENT)
-    bgav_diprintf(indent+2, "first_sample_flags:       %08x\n", g->first_sample_flags);
+    gavl_diprintf(indent+2, "first_sample_flags:       %08x\n", g->first_sample_flags);
 
   if(g->samples)
     {
     for(i = 0; i < g->sample_count; i++)
       {
-      bgav_diprintf(indent+2, "sample %d\n", i);
+      gavl_diprintf(indent+2, "sample %d\n", i);
       
       if(g->flags & TRUN_SAMPLE_DURATION_PRESENT)
-        bgav_diprintf(indent+4, "sample_duration                %d\n", g->samples[i].sample_duration);
+        gavl_diprintf(indent+4, "sample_duration                %d\n", g->samples[i].sample_duration);
 
       if(g->flags & TRUN_SAMPLE_SIZE_PRESENT)
-        bgav_diprintf(indent+4, "sample_size                    %d\n", g->samples[i].sample_size);
+        gavl_diprintf(indent+4, "sample_size                    %d\n", g->samples[i].sample_size);
 
       if(g->flags & TRUN_SAMPLE_FLAGS_PRESENT)
-        bgav_diprintf(indent+4, "sample_flags                   %d\n", g->samples[i].sample_flags);
+        gavl_diprintf(indent+4, "sample_flags                   %d\n", g->samples[i].sample_flags);
         
       if(g->flags & TRUN_SAMPLE_COMPOSITION_TIME_OFFSETS_PRESENT)
-        bgav_diprintf(indent+4, "sample_composition_time_offset %d\n",
+        gavl_diprintf(indent+4, "sample_composition_time_offset %d\n",
                       g->samples[i].sample_composition_time_offset);
       }
     }
   
-  bgav_diprintf(indent, "end of trun\n");
+  gavl_diprintf(indent, "end of trun\n");
   }
 
 void bgav_qt_trun_free(qt_trun_t * c)

@@ -46,14 +46,14 @@ int bgav_qt_ftab_read(qt_atom_header_t * h, bgav_input_context_t * ctx,
 void bgav_qt_ftab_dump(int indent, qt_ftab_t * f)
   {
   int i;
-  bgav_diprintf(indent, "ftab:\n");
-  bgav_diprintf(indent+2, "Number of fonts: %d\n", f->num_fonts);
+  gavl_diprintf(indent, "ftab:\n");
+  gavl_diprintf(indent+2, "Number of fonts: %d\n", f->num_fonts);
   for(i = 0; i < f->num_fonts; i++)
     {
-    bgav_diprintf(indent + 2 , "Font %d, ID: %d, .name = %s\n",
+    gavl_diprintf(indent + 2 , "Font %d, ID: %d, .name = %s\n",
                   i+1, f->fonts[i].font_id, f->fonts[i].font_name);
     }
-  bgav_diprintf(indent, "end of ftab\n");
+  gavl_diprintf(indent, "end of ftab\n");
   }
 
 void bgav_qt_ftab_free(qt_ftab_t * f)

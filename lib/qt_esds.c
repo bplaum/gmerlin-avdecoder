@@ -50,18 +50,18 @@
 
 void bgav_qt_esds_dump(int indent, qt_esds_t * e)
   {
-  bgav_diprintf(indent, "esds:\n");
+  gavl_diprintf(indent, "esds:\n");
   bgav_qt_atom_dump_header(indent+2, &e->h);
-  bgav_diprintf(indent+2, "Version:          %d\n", e->version);
-  bgav_diprintf(indent+2, "Flags:            0x%0x06x\n", e->flags);
-  bgav_diprintf(indent+2, "objectTypeId:     %d\n", e->objectTypeId);
-  bgav_diprintf(indent+2, "streamType:       0x%02x\n", e->streamType);
-  bgav_diprintf(indent+2, "bufferSizeDB:     %d\n", e->bufferSizeDB);
+  gavl_diprintf(indent+2, "Version:          %d\n", e->version);
+  gavl_diprintf(indent+2, "Flags:            0x%0x06x\n", e->flags);
+  gavl_diprintf(indent+2, "objectTypeId:     %d\n", e->objectTypeId);
+  gavl_diprintf(indent+2, "streamType:       0x%02x\n", e->streamType);
+  gavl_diprintf(indent+2, "bufferSizeDB:     %d\n", e->bufferSizeDB);
 
-  bgav_diprintf(indent+2, "maxBitrate:       %d\n", e->maxBitrate);
-  bgav_diprintf(indent+2, "avgBitrate:       %d\n", e->avgBitrate);
-  bgav_diprintf(indent+2, "decoderConfigLen: %d\n", e->decoderConfigLen);
-  bgav_diprintf(indent+2, "decoderConfig:\n");
+  gavl_diprintf(indent+2, "maxBitrate:       %d\n", e->maxBitrate);
+  gavl_diprintf(indent+2, "avgBitrate:       %d\n", e->avgBitrate);
+  gavl_diprintf(indent+2, "decoderConfigLen: %d\n", e->decoderConfigLen);
+  gavl_diprintf(indent+2, "decoderConfig:\n");
   gavl_hexdump(e->decoderConfig, e->decoderConfigLen, 16);
   }
 

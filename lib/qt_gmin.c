@@ -41,14 +41,14 @@ void bgav_qt_gmin_free(qt_gmin_t * g)
 
 void bgav_qt_gmin_dump(int indent, qt_gmin_t * g)
   {
-  bgav_diprintf(indent, "gmin\n");
+  gavl_diprintf(indent, "gmin\n");
 
-  bgav_diprintf(indent+2, "version:       %d\n", g->version);
-  bgav_diprintf(indent+2, "flags:         %08x\n", g->flags);
-  bgav_diprintf(indent+2, "graphics_mode: %d\n", g->graphics_mode);
-  bgav_diprintf(indent+2, "opcolors:      %d %d %d\n",
+  gavl_diprintf(indent+2, "version:       %d\n", g->version);
+  gavl_diprintf(indent+2, "flags:         %08x\n", g->flags);
+  gavl_diprintf(indent+2, "graphics_mode: %d\n", g->graphics_mode);
+  gavl_diprintf(indent+2, "opcolors:      %d %d %d\n",
                g->opcolor[0], g->opcolor[1], g->opcolor[2]);
-  bgav_diprintf(indent+2, "balance:       %d\n", g->balance);
-  bgav_diprintf(indent+2, "reserved:      %d\n", g->reserved);
-  bgav_diprintf(indent, "end of gmin\n");
+  gavl_diprintf(indent+2, "balance:       %d\n", g->balance);
+  gavl_diprintf(indent+2, "reserved:      %d\n", g->reserved);
+  gavl_diprintf(indent, "end of gmin\n");
   }

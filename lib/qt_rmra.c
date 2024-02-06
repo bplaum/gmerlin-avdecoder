@@ -66,11 +66,11 @@ void bgav_qt_rmra_free(qt_rmra_t * r)
 void bgav_qt_rmra_dump(int indent, qt_rmra_t * c)
   {
   int i;
-  bgav_diprintf(indent, "rmra\n");
+  gavl_diprintf(indent, "rmra\n");
 
   for(i = 0; i < c->num_rmda; i++)
     {
     bgav_qt_rmda_dump(indent+2, c->rmda+i);
     }
-  bgav_diprintf(indent, "end of rmra\n");
+  gavl_diprintf(indent, "end of rmra\n");
   }

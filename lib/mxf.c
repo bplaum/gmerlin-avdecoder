@@ -610,7 +610,7 @@ int bgav_mxf_klv_read(bgav_input_context_t * input, mxf_klv_t * ret)
 
 void bgav_mxf_klv_dump(int indent, mxf_klv_t * ret)
   {
-  bgav_diprintf(indent, "Key: ");
+  gavl_diprintf(indent, "Key: ");
   dump_ul_nb(ret->key);
   gavl_dprintf(", Length: %" PRId64 "\n", ret->length);
   }
@@ -657,25 +657,25 @@ int bgav_mxf_partition_read(bgav_input_context_t * input,
 void bgav_mxf_partition_dump(int indent, mxf_partition_t * ret)
   {
   int i;
-  bgav_diprintf(indent, "Partition\n");
-  bgav_diprintf(indent+2, "major_version:       %d\n", ret->major_version);
-  bgav_diprintf(indent+2, "minor_version:       %d\n", ret->minor_version);
-  bgav_diprintf(indent+2, "kag_size:            %d\n", ret->kag_size);
-  bgav_diprintf(indent+2, "this_partition:      %" PRId64 " \n", ret->this_partition);
-  bgav_diprintf(indent+2, "previous_partition:  %" PRId64 " \n", ret->previous_partition);
-  bgav_diprintf(indent+2, "footer_partition:    %" PRId64 " \n", ret->footer_partition);
-  bgav_diprintf(indent+2, "header_byte_count:    %" PRId64 " \n", ret->header_byte_count);
-  bgav_diprintf(indent+2, "index_byte_count:     %" PRId64 " \n", ret->index_byte_count);
-  bgav_diprintf(indent+2, "index_sid:           %d\n", ret->index_sid);
-  bgav_diprintf(indent+2, "body_offset:         %" PRId64 " \n", ret->body_offset);
-  bgav_diprintf(indent+2, "body_sid:            %d\n", ret->body_sid);
-  bgav_diprintf(indent+2, "operational_pattern: ");
+  gavl_diprintf(indent, "Partition\n");
+  gavl_diprintf(indent+2, "major_version:       %d\n", ret->major_version);
+  gavl_diprintf(indent+2, "minor_version:       %d\n", ret->minor_version);
+  gavl_diprintf(indent+2, "kag_size:            %d\n", ret->kag_size);
+  gavl_diprintf(indent+2, "this_partition:      %" PRId64 " \n", ret->this_partition);
+  gavl_diprintf(indent+2, "previous_partition:  %" PRId64 " \n", ret->previous_partition);
+  gavl_diprintf(indent+2, "footer_partition:    %" PRId64 " \n", ret->footer_partition);
+  gavl_diprintf(indent+2, "header_byte_count:    %" PRId64 " \n", ret->header_byte_count);
+  gavl_diprintf(indent+2, "index_byte_count:     %" PRId64 " \n", ret->index_byte_count);
+  gavl_diprintf(indent+2, "index_sid:           %d\n", ret->index_sid);
+  gavl_diprintf(indent+2, "body_offset:         %" PRId64 " \n", ret->body_offset);
+  gavl_diprintf(indent+2, "body_sid:            %d\n", ret->body_sid);
+  gavl_diprintf(indent+2, "operational_pattern: ");
   dump_ul(ret->operational_pattern);
   
-  bgav_diprintf(indent+2, "Essence containers: %d\n", ret->num_essence_container_types);
+  gavl_diprintf(indent+2, "Essence containers: %d\n", ret->num_essence_container_types);
   for(i = 0; i < ret->num_essence_container_types; i++)
     {
-    bgav_diprintf(indent+4, "Essence container: ");
+    gavl_diprintf(indent+4, "Essence container: ");
     dump_ul(ret->essence_container_types[i]);
     }
   }
@@ -709,10 +709,10 @@ int bgav_mxf_primer_pack_read(bgav_input_context_t * input,
 void bgav_mxf_primer_pack_dump(int indent, mxf_primer_pack_t * ret)
   {
   int i;
-  bgav_diprintf(indent, "Primer pack (%d entries)\n", ret->num_entries);
+  gavl_diprintf(indent, "Primer pack (%d entries)\n", ret->num_entries);
   for(i = 0; i < ret->num_entries; i++)
     {
-    bgav_diprintf(indent+2, "LocalTag: %04x, UID: ", ret->entries[i].localTag);
+    gavl_diprintf(indent+2, "LocalTag: %04x, UID: ", ret->entries[i].localTag);
     dump_ul(ret->entries[i].uid);
     }
   }
@@ -820,13 +820,13 @@ static int read_content_storage(bgav_input_context_t * input,
 void bgav_mxf_content_storage_dump(int indent, mxf_content_storage_t * s)
   {
   int i;
-  bgav_diprintf(indent, "Content storage\n");
-  bgav_diprintf(indent+2, "UID:           "); dump_ul(s->common.uid); 
-  bgav_diprintf(indent+2, "Generation UL: "); dump_ul(s->common.generation_ul); 
+  gavl_diprintf(indent, "Content storage\n");
+  gavl_diprintf(indent+2, "UID:           "); dump_ul(s->common.uid); 
+  gavl_diprintf(indent+2, "Generation UL: "); dump_ul(s->common.generation_ul); 
 
   if(s->num_package_refs)
     {
-    bgav_diprintf(indent+2, "Package refs:  %d\n", s->num_package_refs);
+    gavl_diprintf(indent+2, "Package refs:  %d\n", s->num_package_refs);
     for(i = 0; i < s->num_package_refs; i++)
       {
       do_indent(indent+4); dump_ul_ptr(s->package_refs[i], s->packages[i]);
@@ -834,7 +834,7 @@ void bgav_mxf_content_storage_dump(int indent, mxf_content_storage_t * s)
     }
   if(s->num_essence_container_data_refs)
     {
-    bgav_diprintf(indent+2, "Essence container refs: %d\n", s->num_essence_container_data_refs);
+    gavl_diprintf(indent+2, "Essence container refs: %d\n", s->num_essence_container_data_refs);
     for(i = 0; i < s->num_essence_container_data_refs; i++)
       {
       do_indent(indent+4); dump_ul_ptr(s->essence_container_data_refs[i], s->essence_containers[i]);
@@ -953,22 +953,22 @@ void bgav_mxf_package_dump(int indent, mxf_package_t * p)
   {
   int i;
   if(p->common.type == MXF_TYPE_SOURCE_PACKAGE)
-    bgav_diprintf(indent, "Source package:\n");
+    gavl_diprintf(indent, "Source package:\n");
   else if(p->common.type == MXF_TYPE_MATERIAL_PACKAGE)
-    bgav_diprintf(indent, "Material package:\n");
-  bgav_diprintf(indent+2, "UID:           "); dump_ul(p->common.uid); 
-  bgav_diprintf(indent+2, "Generation UL: "); dump_ul(p->common.generation_ul); 
+    gavl_diprintf(indent, "Material package:\n");
+  gavl_diprintf(indent+2, "UID:           "); dump_ul(p->common.uid); 
+  gavl_diprintf(indent+2, "Generation UL: "); dump_ul(p->common.generation_ul); 
 
-  bgav_diprintf(indent+2, "Package UID:       "); dump_ul(p->package_ul); 
-  bgav_diprintf(indent+2, "Creation date:     "); dump_date(p->creation_date); gavl_dprintf("\n");
-  bgav_diprintf(indent+2, "Modification date: "); dump_date(p->modification_date); gavl_dprintf("\n");
-  bgav_diprintf(indent+2, "%d tracks\n", p->num_track_refs);
+  gavl_diprintf(indent+2, "Package UID:       "); dump_ul(p->package_ul); 
+  gavl_diprintf(indent+2, "Creation date:     "); dump_date(p->creation_date); gavl_dprintf("\n");
+  gavl_diprintf(indent+2, "Modification date: "); dump_date(p->modification_date); gavl_dprintf("\n");
+  gavl_diprintf(indent+2, "%d tracks\n", p->num_track_refs);
   for(i = 0; i < p->num_track_refs; i++)
     {
-    bgav_diprintf(indent+4, "Track: "); dump_ul_ptr(p->track_refs[i], p->tracks[i]); 
+    gavl_diprintf(indent+4, "Track: "); dump_ul_ptr(p->track_refs[i], p->tracks[i]); 
     }
-  bgav_diprintf(indent+2, "Descriptor ref: "); dump_ul_ptr(p->descriptor_ref, p->descriptor);
-  bgav_diprintf(indent+2, "Generic Name:   %s\n",
+  gavl_diprintf(indent+2, "Descriptor ref: "); dump_ul_ptr(p->descriptor_ref, p->descriptor);
+  gavl_diprintf(indent+2, "Generic Name:   %s\n",
                 (p->generic_name ? p->generic_name : "Unknown")); 
   }
 
@@ -1101,13 +1101,13 @@ static int bgav_mxf_package_finalize_descriptors(mxf_file_t * file, mxf_package_
 void bgav_mxf_source_clip_dump(int indent, mxf_source_clip_t * s)
   {
   do_indent(indent);   gavl_dprintf("Source clip:\n");
-  bgav_diprintf(indent+2, "UID:                "); dump_ul(s->common.uid);
-  bgav_diprintf(indent+2, "Generation UL:      "); dump_ul(s->common.generation_ul); 
-  bgav_diprintf(indent+2, "source_package_ref: "); dump_ul_ptr(s->source_package_ref, s->source_package);
-  bgav_diprintf(indent+2, "data_definition_ul: "); dump_ul(s->data_definition_ul);
-  bgav_diprintf(indent+2, "duration:           %" PRId64 "\n", s->duration);
-  bgav_diprintf(indent+2, "start_pos:          %" PRId64 "\n", s->start_position);
-  bgav_diprintf(indent+2, "source_track_id:    %d\n", s->source_track_id);
+  gavl_diprintf(indent+2, "UID:                "); dump_ul(s->common.uid);
+  gavl_diprintf(indent+2, "Generation UL:      "); dump_ul(s->common.generation_ul); 
+  gavl_diprintf(indent+2, "source_package_ref: "); dump_ul_ptr(s->source_package_ref, s->source_package);
+  gavl_diprintf(indent+2, "data_definition_ul: "); dump_ul(s->data_definition_ul);
+  gavl_diprintf(indent+2, "duration:           %" PRId64 "\n", s->duration);
+  gavl_diprintf(indent+2, "start_pos:          %" PRId64 "\n", s->start_position);
+  gavl_diprintf(indent+2, "source_track_id:    %d\n", s->source_track_id);
   
   }
 
@@ -1206,15 +1206,15 @@ static int read_timecode_component(bgav_input_context_t * input,
 void bgav_mxf_timecode_component_dump(int indent, mxf_timecode_component_t * s)
   {
   do_indent(indent);   gavl_dprintf("Timecode component\n");
-  bgav_diprintf(indent+2, "UID:                   "); dump_ul(s->common.uid); 
-  bgav_diprintf(indent+2, "Generation UL:         "); dump_ul(s->common.generation_ul); 
+  gavl_diprintf(indent+2, "UID:                   "); dump_ul(s->common.uid); 
+  gavl_diprintf(indent+2, "Generation UL:         "); dump_ul(s->common.generation_ul); 
 
-  bgav_diprintf(indent+2, "data_definition_ul:    "); dump_ul(s->data_definition_ul); 
-  bgav_diprintf(indent+2, "duration:              %"PRId64"\n", s->duration);
-  bgav_diprintf(indent+2, "rounded_timecode_base: %d\n",
+  gavl_diprintf(indent+2, "data_definition_ul:    "); dump_ul(s->data_definition_ul); 
+  gavl_diprintf(indent+2, "duration:              %"PRId64"\n", s->duration);
+  gavl_diprintf(indent+2, "rounded_timecode_base: %d\n",
                                     s->rounded_timecode_base);
-  bgav_diprintf(indent+2, "start_timecode:        %"PRId64"\n", s->start_timecode);
-  bgav_diprintf(indent+2, "drop_frame:            %d\n", s->drop_frame);
+  gavl_diprintf(indent+2, "start_timecode:        %"PRId64"\n", s->start_timecode);
+  gavl_diprintf(indent+2, "drop_frame:            %d\n", s->drop_frame);
   }
 
 static int bgav_mxf_timecode_component_resolve_refs(partition_t * p, mxf_timecode_component_t * s)
@@ -1231,19 +1231,19 @@ void bgav_mxf_timecode_component_free(mxf_timecode_component_t * s)
 
 void bgav_mxf_track_dump(int indent, mxf_track_t * t)
   {
-  bgav_diprintf(indent, "Track\n");
-  bgav_diprintf(indent+2, "UID:           "); dump_ul(t->common.uid); 
-  bgav_diprintf(indent+2, "Generation UL: "); dump_ul(t->common.generation_ul); 
+  gavl_diprintf(indent, "Track\n");
+  gavl_diprintf(indent+2, "UID:           "); dump_ul(t->common.uid); 
+  gavl_diprintf(indent+2, "Generation UL: "); dump_ul(t->common.generation_ul); 
 
-  bgav_diprintf(indent+2, "Track ID:      %d\n", t->track_id);
-  bgav_diprintf(indent+2, "Name:          %s\n", (t->name ? t->name : "Unknown"));
-  bgav_diprintf(indent+2, "Track number:  [%02x %02x %02x %02x]\n",
+  gavl_diprintf(indent+2, "Track ID:      %d\n", t->track_id);
+  gavl_diprintf(indent+2, "Name:          %s\n", (t->name ? t->name : "Unknown"));
+  gavl_diprintf(indent+2, "Track number:  [%02x %02x %02x %02x]\n",
                                     t->track_number[0], t->track_number[1],
                                     t->track_number[2], t->track_number[3]);
-  bgav_diprintf(indent+2, "Edit rate:     %d/%d\n", t->edit_rate_num, t->edit_rate_den);
-  bgav_diprintf(indent+2, "Sequence ref:  ");dump_ul_ptr(t->sequence_ref, t->sequence);
-  bgav_diprintf(indent+2, "num_packets:   %d\n", t->num_packets);
-  bgav_diprintf(indent+2, "max_size:      %"PRId64"\n", t->max_packet_size);
+  gavl_diprintf(indent+2, "Edit rate:     %d/%d\n", t->edit_rate_num, t->edit_rate_den);
+  gavl_diprintf(indent+2, "Sequence ref:  ");dump_ul_ptr(t->sequence_ref, t->sequence);
+  gavl_diprintf(indent+2, "num_packets:   %d\n", t->num_packets);
+  gavl_diprintf(indent+2, "max_size:      %"PRId64"\n", t->max_packet_size);
   }
 
 void bgav_mxf_track_free(mxf_track_t * t)
@@ -1306,17 +1306,17 @@ static int read_track(bgav_input_context_t * input,
 void bgav_mxf_sequence_dump(int indent, mxf_sequence_t * s)
   {
   int i;
-  bgav_diprintf(indent, "Sequence\n");
-  bgav_diprintf(indent+2, "UID:                "); dump_ul(s->common.uid); 
-  bgav_diprintf(indent+2, "Generation UL:      "); dump_ul(s->common.generation_ul); 
+  gavl_diprintf(indent, "Sequence\n");
+  gavl_diprintf(indent+2, "UID:                "); dump_ul(s->common.uid); 
+  gavl_diprintf(indent+2, "Generation UL:      "); dump_ul(s->common.generation_ul); 
 
-  bgav_diprintf(indent+2, "data_definition_ul: ");dump_ul(s->data_definition_ul);
-  bgav_diprintf(indent+2, "Structural components (%d):\n", s->num_structural_component_refs);
+  gavl_diprintf(indent+2, "data_definition_ul: ");dump_ul(s->data_definition_ul);
+  gavl_diprintf(indent+2, "Structural components (%d):\n", s->num_structural_component_refs);
   for(i = 0; i < s->num_structural_component_refs; i++)
     {
     do_indent(indent+4); dump_ul_ptr(s->structural_component_refs[i], s->structural_components[i]);
     }
-  bgav_diprintf(indent+2, "Type: %s\n",
+  gavl_diprintf(indent+2, "Type: %s\n",
                                     (s->stream_type == GAVL_STREAM_AUDIO ? "Audio" :
                                      (s->stream_type == GAVL_STREAM_VIDEO ? "Video" :
                                       (s->is_timecode ? "Timecode" : "Unknown"))));
@@ -1447,33 +1447,33 @@ static int read_identification(bgav_input_context_t * input,
 
 void bgav_mxf_identification_dump(int indent, mxf_identification_t * s)
   {
-  bgav_diprintf(indent, "Identification\n");
+  gavl_diprintf(indent, "Identification\n");
 
-  bgav_diprintf(indent+2, "UID:               "); dump_ul(s->common.uid); 
-  bgav_diprintf(indent+2, "Generation UL:     "); dump_ul(s->common.generation_ul); 
+  gavl_diprintf(indent+2, "UID:               "); dump_ul(s->common.uid); 
+  gavl_diprintf(indent+2, "Generation UL:     "); dump_ul(s->common.generation_ul); 
 
-  bgav_diprintf(indent+2, "thisGenerationUID: "); dump_ul(s->this_generation_ul);
-  bgav_diprintf(indent+2, "Company name:      %s\n",
+  gavl_diprintf(indent+2, "thisGenerationUID: "); dump_ul(s->this_generation_ul);
+  gavl_diprintf(indent+2, "Company name:      %s\n",
                                     (s->company_name ? s->company_name :
                                      "(unknown)"));
-  bgav_diprintf(indent+2, "Product name:      %s\n",
+  gavl_diprintf(indent+2, "Product name:      %s\n",
                                     (s->product_name ? s->product_name :
                                      "(unknown)"));
-  bgav_diprintf(indent+2, "Product version:   %d.%d.%d.%d.%d\n", s->product_version.maj, s->product_version.min,
+  gavl_diprintf(indent+2, "Product version:   %d.%d.%d.%d.%d\n", s->product_version.maj, s->product_version.min,
                 s->product_version.tweak, s->product_version.build, s->product_version.rel);
-  bgav_diprintf(indent+2, "Toolkit version:   %d.%d.%d.%d.%d\n", s->toolkit_version.maj, s->toolkit_version.min,
+  gavl_diprintf(indent+2, "Toolkit version:   %d.%d.%d.%d.%d\n", s->toolkit_version.maj, s->toolkit_version.min,
                 s->toolkit_version.tweak, s->toolkit_version.build, s->toolkit_version.rel);
   
-  bgav_diprintf(indent+2, "Version string:    %s\n",
+  gavl_diprintf(indent+2, "Version string:    %s\n",
                                     (s->version_string ? s->version_string :
                                      "(unknown)"));
-  bgav_diprintf(indent+2, "Platform:          %s\n",
+  gavl_diprintf(indent+2, "Platform:          %s\n",
                                     (s->platform ? s->platform :
                                      "(unknown)"));
 
-  bgav_diprintf(indent+2, "ProductUID:        "); dump_ul(s->product_ul);
+  gavl_diprintf(indent+2, "ProductUID:        "); dump_ul(s->product_ul);
   
-  bgav_diprintf(indent+2, "ModificationDate:  "); dump_date(s->modification_date);gavl_dprintf("\n");
+  gavl_diprintf(indent+2, "ModificationDate:  "); dump_date(s->modification_date);gavl_dprintf("\n");
   
   }
 
@@ -1496,10 +1496,10 @@ void bgav_mxf_descriptor_dump(int indent, mxf_descriptor_t * d)
   {
   int i;
   do_indent(indent);   gavl_dprintf("Descriptor\n");
-  bgav_diprintf(indent+2, "UID:                    ");dump_ul(d->common.uid); 
-  bgav_diprintf(indent+2, "Generation UL:          ");dump_ul(d->common.generation_ul); 
-  bgav_diprintf(indent+2, "essence_container_ul:   ");dump_ul(d->essence_container_ul);
-  bgav_diprintf(indent+2, "wrapping_type:          ");
+  gavl_diprintf(indent+2, "UID:                    ");dump_ul(d->common.uid); 
+  gavl_diprintf(indent+2, "Generation UL:          ");dump_ul(d->common.generation_ul); 
+  gavl_diprintf(indent+2, "essence_container_ul:   ");dump_ul(d->essence_container_ul);
+  gavl_diprintf(indent+2, "wrapping_type:          ");
   switch(d->wrapping_type)
     {
     case WRAP_FRAME:
@@ -1515,43 +1515,43 @@ void bgav_mxf_descriptor_dump(int indent, mxf_descriptor_t * d)
       fprintf(stderr, "Unknown\n");
       break;
     }
-  bgav_diprintf(indent+2, "essence_codec_ul:       ");dump_ul(d->essence_codec_ul);
-  bgav_diprintf(indent+2, "Sample rate:            %d/%d\n", d->sample_rate_num, d->sample_rate_den); 
-  bgav_diprintf(indent+2, "Aspect ratio:           %d/%d\n", d->aspect_ratio_num, d->aspect_ratio_den);
-  bgav_diprintf(indent+2, "Image size:             %dx%d\n", d->width, d->height);
-  bgav_diprintf(indent+2, "Sampled image size:     %dx%d\n", d->sampled_width, d->sampled_height);
-  bgav_diprintf(indent+2, "Display size:           %dx%d\n", d->display_width, d->display_height);
-  bgav_diprintf(indent+2, "Sampled image offset:   [%d,%d]\n", d->sampled_x_offset, d->sampled_y_offset);
-  bgav_diprintf(indent+2, "Bits per sample:        %d\n", d->bits_per_sample);
-  bgav_diprintf(indent+2, "Channels:               %d\n", d->channels);
-  bgav_diprintf(indent+2, "Locked:                 %d\n", d->locked);
-  bgav_diprintf(indent+2, "Frame layout:           %d\n", d->frame_layout);
-  bgav_diprintf(indent+2, "Field dominance:        %d\n", d->field_dominance);
-  bgav_diprintf(indent+2, "Active bits per sample: %d\n", d->active_bits_per_sample);
-  bgav_diprintf(indent+2, "Horizontal subsampling: %d\n", d->horizontal_subsampling);
-  bgav_diprintf(indent+2, "Vertical subsampling:   %d\n", d->vertical_subsampling);
-  bgav_diprintf(indent+2, "linked track ID:        %d\n", d->linked_track_id);
-  bgav_diprintf(indent+2, "Container duration:     %"PRId64"\n", d->container_duration);
-  bgav_diprintf(indent+2, "Block align:            %d\n", d->block_align);
-  bgav_diprintf(indent+2, "Avg BPS:                %d\n", d->avg_bps);
-  bgav_diprintf(indent+2, "Extradata:              %d bytes\n", d->ext_size);
+  gavl_diprintf(indent+2, "essence_codec_ul:       ");dump_ul(d->essence_codec_ul);
+  gavl_diprintf(indent+2, "Sample rate:            %d/%d\n", d->sample_rate_num, d->sample_rate_den); 
+  gavl_diprintf(indent+2, "Aspect ratio:           %d/%d\n", d->aspect_ratio_num, d->aspect_ratio_den);
+  gavl_diprintf(indent+2, "Image size:             %dx%d\n", d->width, d->height);
+  gavl_diprintf(indent+2, "Sampled image size:     %dx%d\n", d->sampled_width, d->sampled_height);
+  gavl_diprintf(indent+2, "Display size:           %dx%d\n", d->display_width, d->display_height);
+  gavl_diprintf(indent+2, "Sampled image offset:   [%d,%d]\n", d->sampled_x_offset, d->sampled_y_offset);
+  gavl_diprintf(indent+2, "Bits per sample:        %d\n", d->bits_per_sample);
+  gavl_diprintf(indent+2, "Channels:               %d\n", d->channels);
+  gavl_diprintf(indent+2, "Locked:                 %d\n", d->locked);
+  gavl_diprintf(indent+2, "Frame layout:           %d\n", d->frame_layout);
+  gavl_diprintf(indent+2, "Field dominance:        %d\n", d->field_dominance);
+  gavl_diprintf(indent+2, "Active bits per sample: %d\n", d->active_bits_per_sample);
+  gavl_diprintf(indent+2, "Horizontal subsampling: %d\n", d->horizontal_subsampling);
+  gavl_diprintf(indent+2, "Vertical subsampling:   %d\n", d->vertical_subsampling);
+  gavl_diprintf(indent+2, "linked track ID:        %d\n", d->linked_track_id);
+  gavl_diprintf(indent+2, "Container duration:     %"PRId64"\n", d->container_duration);
+  gavl_diprintf(indent+2, "Block align:            %d\n", d->block_align);
+  gavl_diprintf(indent+2, "Avg BPS:                %d\n", d->avg_bps);
+  gavl_diprintf(indent+2, "Extradata:              %d bytes\n", d->ext_size);
   if(d->ext_size)
     gavl_hexdump(d->ext_data, d->ext_size, 16);
   
-  bgav_diprintf(indent+2, "Subdescriptor refs:     %d\n", d->num_subdescriptor_refs);
+  gavl_diprintf(indent+2, "Subdescriptor refs:     %d\n", d->num_subdescriptor_refs);
 
   for(i = 0; i < d->num_subdescriptor_refs; i++)
     {
     do_indent(indent+4); dump_ul_ptr(d->subdescriptor_refs[i], d->subdescriptors[i]);
     }
 
-  bgav_diprintf(indent+2, "Video line map:         %d entries\n", d->video_line_map_size);
+  gavl_diprintf(indent+2, "Video line map:         %d entries\n", d->video_line_map_size);
   
   for(i = 0; i < d->video_line_map_size; i++)
     {
-    bgav_diprintf(indent+4, "Entry: %d\n", d->video_line_map[i]);
+    gavl_diprintf(indent+4, "Entry: %d\n", d->video_line_map[i]);
     }
-  bgav_diprintf(indent+2, "fourcc:                 ");
+  gavl_diprintf(indent+2, "fourcc:                 ");
   bgav_dump_fourcc(d->fourcc);
   gavl_dprintf("\n");
   }
@@ -1770,12 +1770,12 @@ void bgav_mxf_descriptor_free(mxf_descriptor_t * d)
 
 void bgav_mxf_essence_container_data_dump(int indent, mxf_essence_container_data_t * s)
   {
-  bgav_diprintf(indent, "Essence Container Data:\n");
-  bgav_diprintf(indent+2, "UID:                  ");dump_ul(s->common.uid); 
-  bgav_diprintf(indent+2, "Generation UL:        "); dump_ul(s->common.generation_ul); 
-  bgav_diprintf(indent+2, "Linked Package:       ");dump_ul_ptr(s->linked_package_ref, s->linked_package); 
-  bgav_diprintf(indent+2, "IndexSID:             %d\n", s->index_sid);
-  bgav_diprintf(indent+2, "BodySID:              %d\n", s->body_sid);
+  gavl_diprintf(indent, "Essence Container Data:\n");
+  gavl_diprintf(indent+2, "UID:                  ");dump_ul(s->common.uid); 
+  gavl_diprintf(indent+2, "Generation UL:        "); dump_ul(s->common.generation_ul); 
+  gavl_diprintf(indent+2, "Linked Package:       ");dump_ul_ptr(s->linked_package_ref, s->linked_package); 
+  gavl_diprintf(indent+2, "IndexSID:             %d\n", s->index_sid);
+  gavl_diprintf(indent+2, "BodySID:              %d\n", s->body_sid);
   }
 
 static int bgav_mxf_essence_container_data_resolve_refs(partition_t * p, mxf_essence_container_data_t * d)
@@ -1830,24 +1830,24 @@ void bgav_mxf_preface_dump(int indent, mxf_preface_t * s)
   {
   int i;
   do_indent(indent);   gavl_dprintf("Preface:\n");
-  bgav_diprintf(indent+2, "UID:                  ");dump_ul(s->common.uid); 
-  bgav_diprintf(indent+2, "Generation UL:        ");dump_ul(s->common.generation_ul); 
-  bgav_diprintf(indent+2, "Last modified date:    ");dump_date(s->last_modified_date); gavl_dprintf("\n");
-  bgav_diprintf(indent+2, "Version:               %d\n", s->version);
-  bgav_diprintf(indent+2, "ObjectModelVersion:    %d\n", s->object_model_version);
-  bgav_diprintf(indent+2, "Identifications:       %d\n", s->num_identification_refs);
+  gavl_diprintf(indent+2, "UID:                  ");dump_ul(s->common.uid); 
+  gavl_diprintf(indent+2, "Generation UL:        ");dump_ul(s->common.generation_ul); 
+  gavl_diprintf(indent+2, "Last modified date:    ");dump_date(s->last_modified_date); gavl_dprintf("\n");
+  gavl_diprintf(indent+2, "Version:               %d\n", s->version);
+  gavl_diprintf(indent+2, "ObjectModelVersion:    %d\n", s->object_model_version);
+  gavl_diprintf(indent+2, "Identifications:       %d\n", s->num_identification_refs);
   for(i = 0; i < s->num_identification_refs; i++)
     {
     do_indent(indent+4); dump_ul_ptr(s->identification_refs[i], s->identifications[i]);
     }
-  bgav_diprintf(indent+2, "Content storage:       ");dump_ul_ptr(s->content_storage_ref, s->content_storage); 
-  bgav_diprintf(indent+2, "Operational pattern:   ");dump_ul_nb(s->operational_pattern_ul);gavl_dprintf(" %s\n", get_op_name(s->operational_pattern));
-  bgav_diprintf(indent+2, "Essence containers:    %d\n", s->num_essence_container_types);
+  gavl_diprintf(indent+2, "Content storage:       ");dump_ul_ptr(s->content_storage_ref, s->content_storage); 
+  gavl_diprintf(indent+2, "Operational pattern:   ");dump_ul_nb(s->operational_pattern_ul);gavl_dprintf(" %s\n", get_op_name(s->operational_pattern));
+  gavl_diprintf(indent+2, "Essence containers:    %d\n", s->num_essence_container_types);
   for(i = 0; i < s->num_essence_container_types; i++)
     {
-    bgav_diprintf(indent+4, "Essence containers: "); dump_ul(s->essence_container_types[i]);
+    gavl_diprintf(indent+4, "Essence containers: "); dump_ul(s->essence_container_types[i]);
     }
-  bgav_diprintf(indent+2, "Primary package:      ");dump_ul(s->primary_package_ul);
+  gavl_diprintf(indent+2, "Primary package:      ");dump_ul(s->primary_package_ul);
   
   }
 
@@ -2108,29 +2108,29 @@ static int read_index_table_segment(bgav_input_context_t * input,
 void bgav_mxf_index_table_segment_dump(int indent, mxf_index_table_segment_t * idx)
   {
   int i;
-  bgav_diprintf(indent, "Index table segment:\n");
-  bgav_diprintf(indent+2, "UID: "); dump_ul(idx->uid), 
-  bgav_diprintf(indent+2, "edit_rate: %d/%d",
+  gavl_diprintf(indent, "Index table segment:\n");
+  gavl_diprintf(indent+2, "UID: "); dump_ul(idx->uid), 
+  gavl_diprintf(indent+2, "edit_rate: %d/%d",
                                     idx->edit_rate_num, idx->edit_rate_den);
-  bgav_diprintf(indent+2, "start_position: %"PRId64"\n",
+  gavl_diprintf(indent+2, "start_position: %"PRId64"\n",
                                     idx->start_position);
-  bgav_diprintf(indent+2, "duration: %"PRId64"\n",
+  gavl_diprintf(indent+2, "duration: %"PRId64"\n",
                                     idx->duration);
-  bgav_diprintf(indent+2, "edit_unit_byte_count: %d\n",
+  gavl_diprintf(indent+2, "edit_unit_byte_count: %d\n",
                                     idx->edit_unit_byte_count);
-  bgav_diprintf(indent+2, "index_sid: %d\n",
+  gavl_diprintf(indent+2, "index_sid: %d\n",
                                     idx->index_sid);
-  bgav_diprintf(indent+2, "body_sid: %d\n",
+  gavl_diprintf(indent+2, "body_sid: %d\n",
                                     idx->body_sid);
-  bgav_diprintf(indent+2, "slice_count: %d\n",
+  gavl_diprintf(indent+2, "slice_count: %d\n",
                                     idx->slice_count);
 
   if(idx->num_delta_entries)
     {
-    bgav_diprintf(indent+2, "Delta entries: %d\n", idx->num_delta_entries);
+    gavl_diprintf(indent+2, "Delta entries: %d\n", idx->num_delta_entries);
     for(i = 0; i < idx->num_delta_entries; i++)
       {
-      bgav_diprintf(indent+4, "I: %d, S: %d, delta: %d\n",
+      gavl_diprintf(indent+4, "I: %d, S: %d, delta: %d\n",
                                         idx->delta_entries[i].pos_table_index,
                                         idx->delta_entries[i].slice,
                                         idx->delta_entries[i].element_delta);
@@ -2138,10 +2138,10 @@ void bgav_mxf_index_table_segment_dump(int indent, mxf_index_table_segment_t * i
     }
   if(idx->num_entries)
     {
-    bgav_diprintf(indent+2, "Entries: %d\n", idx->num_entries);
+    gavl_diprintf(indent+2, "Entries: %d\n", idx->num_entries);
     for(i = 0; i < idx->num_entries; i++)
       {
-      bgav_diprintf(indent+4, "T: %d, A: %d, Flags: %02x, offset: %"PRId64"\n",
+      gavl_diprintf(indent+4, "T: %d, A: %d, Flags: %02x, offset: %"PRId64"\n",
                     idx->entries[i].temporal_offset,
                     idx->entries[i].anchor_offset,
                     idx->entries[i].flags,
@@ -2807,12 +2807,12 @@ static void dump_partition(int indent, partition_t * p)
   {
   int i;
   
-  bgav_diprintf(indent, "source packages:                          %d\n", p->num_source_packages);
-  bgav_diprintf(indent, "material packages:                        %d\n", p->num_material_packages);
-  bgav_diprintf(indent, "maximum components per source sequence:   %d\n", p->max_source_sequence_components);
-  bgav_diprintf(indent, "maximum components per material sequence: %d\n", p->max_material_sequence_components);
-  bgav_diprintf(indent, "start_pos:                                %"PRId64"\n", p->start_pos);
-  bgav_diprintf(indent, "end_pos:                                  %"PRId64"\n", p->end_pos);
+  gavl_diprintf(indent, "source packages:                          %d\n", p->num_source_packages);
+  gavl_diprintf(indent, "material packages:                        %d\n", p->num_material_packages);
+  gavl_diprintf(indent, "maximum components per source sequence:   %d\n", p->max_source_sequence_components);
+  gavl_diprintf(indent, "maximum components per material sequence: %d\n", p->max_material_sequence_components);
+  gavl_diprintf(indent, "start_pos:                                %"PRId64"\n", p->start_pos);
+  gavl_diprintf(indent, "end_pos:                                  %"PRId64"\n", p->end_pos);
   
   bgav_mxf_partition_dump(2, &p->p);
 

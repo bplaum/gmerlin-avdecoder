@@ -362,11 +362,11 @@ void bgav_qt_udta_free(qt_udta_t * udta)
   
   }
 
-#define PRINT(e) bgav_diprintf(indent+2, "%s: %s\n", #e, (udta->e ? udta->e : "(null)"));
+#define PRINT(e) gavl_diprintf(indent+2, "%s: %s\n", #e, (udta->e ? udta->e : "(null)"));
 
 void bgav_qt_udta_dump(int indent, qt_udta_t * udta)
   {
-  bgav_diprintf(indent, "udta\n");
+  gavl_diprintf(indent, "udta\n");
   PRINT(cpy); /* Copyright                        */
   PRINT(day); /* Date                             */
   PRINT(dir); /* Director                         */
@@ -406,6 +406,6 @@ void bgav_qt_udta_dump(int indent, qt_udta_t * udta)
   PRINT(swr); /* Software        */
   PRINT(wrn); /* Warning         */
   PRINT(url); /* URL link        */
-  bgav_diprintf(indent+2, "trkn: %d\n", udta->trkn);
+  gavl_diprintf(indent+2, "trkn: %d\n", udta->trkn);
   
   }

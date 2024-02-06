@@ -119,7 +119,7 @@ void bgav_qt_stbl_free(qt_stbl_t * c)
 
 void bgav_qt_stbl_dump(int indent, qt_stbl_t * c)
   {
-  bgav_diprintf(indent, "stbl\n");
+  gavl_diprintf(indent, "stbl\n");
   bgav_qt_stsd_dump(indent+2, &c->stsd);
   bgav_qt_stts_dump(indent+2, &c->stts);
   if(c->stss.num_entries)
@@ -132,5 +132,5 @@ void bgav_qt_stbl_dump(int indent, qt_stbl_t * c)
   if(c->has_stps)
     bgav_qt_stss_dump(indent+2, &c->stps);
     
-  bgav_diprintf(indent, "end of stbl\n");
+  gavl_diprintf(indent, "end of stbl\n");
   }

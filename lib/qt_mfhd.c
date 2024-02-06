@@ -45,10 +45,10 @@ int bgav_qt_mfhd_read(qt_atom_header_t * h, bgav_input_context_t * input,
   
 void bgav_qt_mfhd_dump(int indent, qt_mfhd_t * g)
   {
-  bgav_diprintf(indent, "mfhd\n");
+  gavl_diprintf(indent, "mfhd\n");
 
-  bgav_diprintf(indent+2, "version:         %d\n", g->version);
-  bgav_diprintf(indent+2, "flags:           %08x\n", g->flags);
-  bgav_diprintf(indent+2, "sequence_number: %d\n", g->sequence_number);
-  bgav_diprintf(indent, "end of mfhd\n");
+  gavl_diprintf(indent+2, "version:         %d\n", g->version);
+  gavl_diprintf(indent+2, "flags:           %08x\n", g->flags);
+  gavl_diprintf(indent+2, "sequence_number: %d\n", g->sequence_number);
+  gavl_diprintf(indent, "end of mfhd\n");
   }

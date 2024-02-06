@@ -161,7 +161,6 @@ bgav_packet_t * bgav_packet_create();
 void bgav_packet_destroy(bgav_packet_t*);
 void bgav_packet_free(bgav_packet_t*);
 
-#define bgav_packet_reset(p) gavl_packet_reset(p)
 #define bgav_packet_alloc(p, s) gavl_packet_alloc(p, s)
 
 #define bgav_packet_dump(p) gavl_packet_dump(p)
@@ -169,7 +168,6 @@ void bgav_packet_free(bgav_packet_t*);
 void bgav_packet_dump_data(bgav_packet_t * p, int bytes);
 
 void bgav_packet_pad(bgav_packet_t * p);
-// void bgav_packet_reset(bgav_packet_t * p);
 
 // void bgav_packet_alloc_palette(bgav_packet_t * p, int size);
 void bgav_packet_copy_metadata(bgav_packet_t * dst,
@@ -1353,12 +1351,6 @@ void bgav_send_state(bgav_t * b);
 
 void bgav_dump_fourcc(uint32_t fourcc);
 int bgav_check_fourcc(uint32_t fourcc, const uint32_t * fourccs);
-
-// char * bgav_strncat(char * old, const char * start, const char * end);
-
-void bgav_diprintf(int indent, const char * format, ...)
-  __attribute__ ((format (printf, 2, 3)));
-
 
 // char ** bgav_stringbreak(const char * str, char sep);
 // void bgav_stringbreak_free(char ** str);

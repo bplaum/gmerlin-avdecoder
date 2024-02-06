@@ -71,17 +71,17 @@ void bgav_qt_elst_dump(int indent, qt_elst_t * e)
   int i;
    
   
-  bgav_diprintf(indent, "elst\n");
-  bgav_diprintf(indent+2, "version:     %d\n", e->version);
-  bgav_diprintf(indent+2, "flags:       %06x\n", e->flags);
-  bgav_diprintf(indent+2, "num_entries: %d\n", e->num_entries);
+  gavl_diprintf(indent, "elst\n");
+  gavl_diprintf(indent+2, "version:     %d\n", e->version);
+  gavl_diprintf(indent+2, "flags:       %06x\n", e->flags);
+  gavl_diprintf(indent+2, "num_entries: %d\n", e->num_entries);
 
   for(i = 0; i < e->num_entries; i++)
     {
-    bgav_diprintf(indent+4, "duration: %d, media_time: %d, media_rate: %f\n",
+    gavl_diprintf(indent+4, "duration: %d, media_time: %d, media_rate: %f\n",
                   e->table[i].duration, e->table[i].media_time,
                   (float)e->table[i].media_rate / 65536.0);
     }
-  bgav_diprintf(indent, "end of elst\n");
+  gavl_diprintf(indent, "end of elst\n");
   }
 

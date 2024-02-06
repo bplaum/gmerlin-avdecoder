@@ -93,7 +93,7 @@ void bgav_qt_trak_free(qt_trak_t * c)
 
 void bgav_qt_trak_dump(int indent, qt_trak_t * c)
   {
-  bgav_diprintf(indent, "trak\n");
+  gavl_diprintf(indent, "trak\n");
   bgav_qt_tkhd_dump(indent+2, &c->tkhd);
   bgav_qt_mdia_dump(indent+2, &c->mdia);
 
@@ -104,7 +104,7 @@ void bgav_qt_trak_dump(int indent, qt_trak_t * c)
   if(c->has_tref)
     bgav_qt_tref_dump(indent+2, &c->tref);
   
-  bgav_diprintf(indent, "end of trak\n");
+  gavl_diprintf(indent, "end of trak\n");
   }
 
 int64_t bgav_qt_trak_samples(qt_trak_t * trak)

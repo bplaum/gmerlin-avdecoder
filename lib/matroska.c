@@ -2111,12 +2111,12 @@ int bgav_mkv_block_read(bgav_input_context_t * ctx,
 
 void bgav_mkv_block_dump(int indent, bgav_mkv_block_t * b)
   {
-  bgav_diprintf(indent, "Block\n");
-  bgav_diprintf(indent, "  Timecode: %d\n", b->timecode);
-  bgav_diprintf(indent, "  Track:    %"PRId64"\n", b->track);
-  bgav_diprintf(indent, "  Flags:    %02x\n", b->flags);
-  bgav_diprintf(indent, "  NumLaces: %d\n", b->num_laces);
-  bgav_diprintf(indent, "  DataSize: %d\n", b->data_size);
+  gavl_diprintf(indent, "Block\n");
+  gavl_diprintf(indent, "  Timecode: %d\n", b->timecode);
+  gavl_diprintf(indent, "  Track:    %"PRId64"\n", b->track);
+  gavl_diprintf(indent, "  Flags:    %02x\n", b->flags);
+  gavl_diprintf(indent, "  NumLaces: %d\n", b->num_laces);
+  gavl_diprintf(indent, "  DataSize: %d\n", b->data_size);
   }
 
 void bgav_mkv_block_free(bgav_mkv_block_t * b)

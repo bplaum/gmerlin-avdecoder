@@ -55,16 +55,16 @@ void bgav_qt_tcmi_free(qt_tcmi_t * g)
 
 void bgav_qt_tcmi_dump(int indent, qt_tcmi_t * tcmi)
   {
-  bgav_diprintf(indent, "tcmi:\n");
-  bgav_diprintf(indent+2, "version %d\n", tcmi->version);
-  bgav_diprintf(indent+2, "flags %d\n", tcmi->flags);
-  bgav_diprintf(indent+2, "font %d\n", tcmi->font);
-  bgav_diprintf(indent+2, "face %d\n", tcmi->face);
-  bgav_diprintf(indent+2, "size %d\n", tcmi->size);
-  bgav_diprintf(indent+2, "txtcolor %d %d %d\n",
+  gavl_diprintf(indent, "tcmi:\n");
+  gavl_diprintf(indent+2, "version %d\n", tcmi->version);
+  gavl_diprintf(indent+2, "flags %d\n", tcmi->flags);
+  gavl_diprintf(indent+2, "font %d\n", tcmi->font);
+  gavl_diprintf(indent+2, "face %d\n", tcmi->face);
+  gavl_diprintf(indent+2, "size %d\n", tcmi->size);
+  gavl_diprintf(indent+2, "txtcolor %d %d %d\n",
                 tcmi->txtcolor[0], tcmi->txtcolor[1], tcmi->txtcolor[2]);
-  bgav_diprintf(indent+2, "bgcolor %d %d %d\n",
+  gavl_diprintf(indent+2, "bgcolor %d %d %d\n",
                 tcmi->bgcolor[0], tcmi->bgcolor[1], tcmi->bgcolor[2]);
-  bgav_diprintf(indent+2, "fontname %s\n", tcmi->fontname);
-  bgav_diprintf(indent, "end of tcmi\n");
+  gavl_diprintf(indent+2, "fontname %s\n", tcmi->fontname);
+  gavl_diprintf(indent, "end of tcmi\n");
   }

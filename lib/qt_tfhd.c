@@ -81,25 +81,25 @@ int bgav_qt_tfhd_read(qt_atom_header_t * h, bgav_input_context_t * input,
 
 void bgav_qt_tfhd_dump(int indent, qt_tfhd_t * g)
   {
-  bgav_diprintf(indent, "tfhd\n");
-  bgav_diprintf(indent+2, "version:                  %d\n", g->version);
-  bgav_diprintf(indent+2, "flags:                    %08x\n", g->flags);
-  bgav_diprintf(indent+2, "track_ID:                 %d\n", g->track_ID);
+  gavl_diprintf(indent, "tfhd\n");
+  gavl_diprintf(indent+2, "version:                  %d\n", g->version);
+  gavl_diprintf(indent+2, "flags:                    %08x\n", g->flags);
+  gavl_diprintf(indent+2, "track_ID:                 %d\n", g->track_ID);
   
   if(g->flags & TFHD_BASE_DATA_OFFSET_PRESENT)
-    bgav_diprintf(indent+2, "base_data_offset:         %"PRId64"\n", g->base_data_offset);
+    gavl_diprintf(indent+2, "base_data_offset:         %"PRId64"\n", g->base_data_offset);
 
   if(g->flags & TFHD_SAMPLE_DESCRIPTION_INDEX_PRESENT)
-    bgav_diprintf(indent+2, "sample_description_index: %d\n", g->sample_description_index);
+    gavl_diprintf(indent+2, "sample_description_index: %d\n", g->sample_description_index);
 
   if(g->flags & TFHD_DEFAULT_SAMPLE_DURATION_PRESENT)
-    bgav_diprintf(indent+2, "default_sample_duration:  %d\n", g->default_sample_duration);
+    gavl_diprintf(indent+2, "default_sample_duration:  %d\n", g->default_sample_duration);
 
   if(g->flags & TFHD_DEFAULT_SAMPLE_SIZE_PRESENT)
-    bgav_diprintf(indent+2, "default_sample_size:      %d\n", g->default_sample_size);
+    gavl_diprintf(indent+2, "default_sample_size:      %d\n", g->default_sample_size);
 
   if(g->flags & TFHD_DEFAULT_SAMPLE_FLAGS_PRESENT)
-    bgav_diprintf(indent+2, "default_sample_flags:     %d\n", g->default_sample_flags);
+    gavl_diprintf(indent+2, "default_sample_flags:     %d\n", g->default_sample_flags);
   
-  bgav_diprintf(indent, "end of tfhd\n");
+  gavl_diprintf(indent, "end of tfhd\n");
   }

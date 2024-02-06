@@ -452,12 +452,12 @@ void bgav_track_dump(bgav_track_t * t)
   //  gavl_dprintf( "Format:   %s\n", (description ? description : 
   //                                   "Not specified"));
   
-  bgav_diprintf(2, "Metadata\n");
+  gavl_diprintf(2, "Metadata\n");
   gavl_dictionary_dump(t->metadata, 4);
   gavl_dprintf("\n");
 
-  bgav_diprintf(2, "Start position: %"PRId64"\n", t->data_start);
-  bgav_diprintf(2, "End position:   %"PRId64"\n", t->data_end);
+  gavl_diprintf(2, "Start position: %"PRId64"\n", t->data_start);
+  gavl_diprintf(2, "End position:   %"PRId64"\n", t->data_end);
   
   for(i = 0; i < t->num_streams; i++)
     {

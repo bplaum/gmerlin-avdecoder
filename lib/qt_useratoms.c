@@ -70,7 +70,7 @@ void bgav_qt_user_atoms_dump(int indent, qt_user_atoms_t * a)
     {
     size = GAVL_PTR_2_32BE(a->atoms[i]);
     fourcc = BGAV_PTR_2_FOURCC(a->atoms[i]+4);
-    bgav_diprintf(indent, "User atom: ");
+    gavl_diprintf(indent, "User atom: ");
     bgav_dump_fourcc(fourcc);
     gavl_dprintf( " (size: %d)\n", size);
     gavl_hexdump(a->atoms[i], size, 16);

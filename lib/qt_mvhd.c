@@ -129,33 +129,33 @@ void bgav_qt_mvhd_dump(int indent, qt_mvhd_t * c)
   {
   int i, j;
   
-  bgav_diprintf(indent, "mvhd\n");
-  bgav_diprintf(indent+2, "version:            %d\n", c->version);
-  bgav_diprintf(indent+2, "flags:              %08x\n", c->flags);
-  bgav_diprintf(indent+2, "creation_time:      %" PRId64 "\n", c->creation_time);
-  bgav_diprintf(indent+2, "modification_time:  %" PRId64 "\n", c->modification_time);
-  bgav_diprintf(indent+2, "time_scale:         %d\n", c->time_scale);
-  bgav_diprintf(indent+2, "duration:           %" PRId64 "\n", c->duration);
-  bgav_diprintf(indent+2, "preferred_rate:     %f\n", c->preferred_rate);
-  bgav_diprintf(indent+2, "preferred_volume:   %f\n", c->preferred_volume);
-  bgav_diprintf(indent+2, "reserved:           ");
+  gavl_diprintf(indent, "mvhd\n");
+  gavl_diprintf(indent+2, "version:            %d\n", c->version);
+  gavl_diprintf(indent+2, "flags:              %08x\n", c->flags);
+  gavl_diprintf(indent+2, "creation_time:      %" PRId64 "\n", c->creation_time);
+  gavl_diprintf(indent+2, "modification_time:  %" PRId64 "\n", c->modification_time);
+  gavl_diprintf(indent+2, "time_scale:         %d\n", c->time_scale);
+  gavl_diprintf(indent+2, "duration:           %" PRId64 "\n", c->duration);
+  gavl_diprintf(indent+2, "preferred_rate:     %f\n", c->preferred_rate);
+  gavl_diprintf(indent+2, "preferred_volume:   %f\n", c->preferred_volume);
+  gavl_diprintf(indent+2, "reserved:           ");
   gavl_hexdump(c->reserved, 10, 10);
   gavl_dprintf("\n");
-  bgav_diprintf(indent+2, "Matrix:\n");
+  gavl_diprintf(indent+2, "Matrix:\n");
 
   for(i = 0; i < 3; i++)
     {
-    bgav_diprintf(indent, "    ");
+    gavl_diprintf(indent, "    ");
     for(j = 0; j < 3; j++)
       gavl_dprintf( "%f ", c->matrix[3*i+j]);
     gavl_dprintf( "\n");
     }
-  bgav_diprintf(indent+2, "preview_time:       %d\n", c->preview_time);
-  bgav_diprintf(indent+2, "preview_duration:   %d\n", c->preview_duration);
-  bgav_diprintf(indent+2, "selection_time:     %d\n", c->selection_time);
-  bgav_diprintf(indent+2, "selection_duration: %d\n", c->selection_duration);
-  bgav_diprintf(indent+2, "current_time:       %d\n", c->current_time);
-  bgav_diprintf(indent+2, "next_track_id:      %d\n", c->next_track_id);
+  gavl_diprintf(indent+2, "preview_time:       %d\n", c->preview_time);
+  gavl_diprintf(indent+2, "preview_duration:   %d\n", c->preview_duration);
+  gavl_diprintf(indent+2, "selection_time:     %d\n", c->selection_time);
+  gavl_diprintf(indent+2, "selection_duration: %d\n", c->selection_duration);
+  gavl_diprintf(indent+2, "current_time:       %d\n", c->current_time);
+  gavl_diprintf(indent+2, "next_track_id:      %d\n", c->next_track_id);
   
-  bgav_diprintf(indent, "end of mvhd\n");
+  gavl_diprintf(indent, "end of mvhd\n");
   }

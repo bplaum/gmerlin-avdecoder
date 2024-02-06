@@ -88,12 +88,12 @@ void bgav_qt_stco_free(qt_stco_t * c)
 void bgav_qt_stco_dump(int indent, qt_stco_t * c)
   {
   int i;
-  bgav_diprintf(indent,  "stco\n");
-  bgav_diprintf(indent+2,  "num_entries: %d\n", c->num_entries);
+  gavl_diprintf(indent,  "stco\n");
+  gavl_diprintf(indent+2,  "num_entries: %d\n", c->num_entries);
   
   for(i = 0; i < c->num_entries; i++)
     {
-    bgav_diprintf(indent+2,  "offset: %" PRId64 "\n", c->entries[i]);
+    gavl_diprintf(indent+2,  "offset: %" PRId64 "\n", c->entries[i]);
     }
-  bgav_diprintf(indent,  "end of stco\n");
+  gavl_diprintf(indent,  "end of stco\n");
   }

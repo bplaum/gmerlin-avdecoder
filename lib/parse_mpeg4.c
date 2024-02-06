@@ -324,7 +324,7 @@ static int parse_frame_mpeg4(bgav_packet_parser_t * parser, bgav_packet_t * p)
         /* save this frame for later use */
         else if(priv->packed_b_frames && (num_pictures == 1))
           {
-          bgav_packet_reset(&priv->saved_packet);
+          gavl_packet_reset(&priv->saved_packet);
           gavl_buffer_append_data_pad(&priv->saved_packet.buf, data,
                                       data_end - data, GAVL_PACKET_PADDING);
           

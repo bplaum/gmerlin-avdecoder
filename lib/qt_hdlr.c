@@ -43,27 +43,27 @@ typedef struct
 
 void bgav_qt_hdlr_dump(int indent, qt_hdlr_t * ret)
   {
-  bgav_diprintf(indent, "hdlr:\n");
+  gavl_diprintf(indent, "hdlr:\n");
   
-  bgav_diprintf(indent+2, "component_type:         ");
+  gavl_diprintf(indent+2, "component_type:         ");
   bgav_dump_fourcc(ret->component_type);
   
   gavl_dprintf("\n");
-  bgav_diprintf(indent+2, "component_subtype:      ");
+  gavl_diprintf(indent+2, "component_subtype:      ");
   bgav_dump_fourcc(ret->component_subtype);
   gavl_dprintf("\n");
 
-  bgav_diprintf(indent+2, "component_manufacturer: ");
+  gavl_diprintf(indent+2, "component_manufacturer: ");
   bgav_dump_fourcc(ret->component_manufacturer);
   gavl_dprintf("\n");
 
-  bgav_diprintf(indent+2, "component_flags:        0x%08x\n",
+  gavl_diprintf(indent+2, "component_flags:        0x%08x\n",
                 ret->component_flags);
-  bgav_diprintf(indent+2, "component_flag_mask:    0x%08x\n",
+  gavl_diprintf(indent+2, "component_flag_mask:    0x%08x\n",
                 ret->component_flag_mask);
-  bgav_diprintf(indent+2, "component_name:         %s\n",
+  gavl_diprintf(indent+2, "component_name:         %s\n",
                 ret->component_name);
-  bgav_diprintf(indent, "end of hdlr\n");
+  gavl_diprintf(indent, "end of hdlr\n");
 
   }
 

@@ -59,8 +59,8 @@ void bgav_qt_dinf_free(qt_dinf_t * dinf)
 
 void bgav_qt_dinf_dump(int indent, qt_dinf_t * dinf)
   {
-  bgav_diprintf(indent, "dinf\n");
+  gavl_diprintf(indent, "dinf\n");
   if(dinf->has_dref)
     bgav_qt_dref_dump(indent+2, &dinf->dref);
-  bgav_diprintf(indent, "end of dinf\n");
+  gavl_diprintf(indent, "end of dinf\n");
   }

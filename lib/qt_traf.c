@@ -96,7 +96,7 @@ void bgav_qt_traf_free(qt_traf_t * c)
 void bgav_qt_traf_dump(int indent, qt_traf_t * c)
   {
   int i;
-  bgav_diprintf(indent, "traf\n");
+  gavl_diprintf(indent, "traf\n");
   bgav_qt_tfhd_dump(indent+2, &c->tfhd);
  
   if(c->have_tfdt)
@@ -105,6 +105,6 @@ void bgav_qt_traf_dump(int indent, qt_traf_t * c)
   for(i = 0; i < c->num_truns; i++)
     bgav_qt_trun_dump(indent+2, c->trun + i);
   
-  bgav_diprintf(indent, "end of traf\n");
+  gavl_diprintf(indent, "end of traf\n");
   
   }

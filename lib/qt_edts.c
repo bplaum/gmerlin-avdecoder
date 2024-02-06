@@ -56,8 +56,8 @@ void bgav_qt_edts_free(qt_edts_t * g)
 
 void bgav_qt_edts_dump(int indent, qt_edts_t * g)
   {
-  bgav_diprintf(indent, "edts\n");
+  gavl_diprintf(indent, "edts\n");
   if(g->has_elst)
     bgav_qt_elst_dump(indent+2, &g->elst);
-  bgav_diprintf(indent, "end of edts\n");
+  gavl_diprintf(indent, "end of edts\n");
   }

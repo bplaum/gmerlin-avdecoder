@@ -93,7 +93,7 @@ void bgav_qt_minf_free(qt_minf_t * h)
 
 void bgav_qt_minf_dump(int indent, qt_minf_t * h)
   {
-  bgav_diprintf(indent, "minf\n");
+  gavl_diprintf(indent, "minf\n");
   bgav_qt_hdlr_dump(indent+2, &h->hdlr);
   bgav_qt_stbl_dump(indent+2, &h->stbl);
 
@@ -105,5 +105,5 @@ void bgav_qt_minf_dump(int indent, qt_minf_t * h)
   if(h->has_nmhd)
     bgav_qt_nmhd_dump(indent+2, &h->nmhd);
   
-  bgav_diprintf(indent, "end of minf\n");
+  gavl_diprintf(indent, "end of minf\n");
   }

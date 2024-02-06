@@ -71,20 +71,20 @@ void bgav_qt_stsz_free(qt_stsz_t * c)
 void bgav_qt_stsz_dump(int indent, qt_stsz_t * c)
   {
   int i;
-  bgav_diprintf(indent, "stsz\n");
+  gavl_diprintf(indent, "stsz\n");
 
   if(c->sample_size)
     {
-    bgav_diprintf(indent+2, "sample size: %d\n", c->sample_size);
+    gavl_diprintf(indent+2, "sample size: %d\n", c->sample_size);
     }
   else
     {
-    bgav_diprintf(indent+2, "num_entries: %d\n", c->num_entries);
+    gavl_diprintf(indent+2, "num_entries: %d\n", c->num_entries);
     
     for(i = 0; i < c->num_entries; i++)
       {
-      bgav_diprintf(indent+2, "sample size: %d\n", c->entries[i]);
+      gavl_diprintf(indent+2, "sample size: %d\n", c->entries[i]);
       }
     }
-  bgav_diprintf(indent, "end of stsz\n");
+  gavl_diprintf(indent, "end of stsz\n");
   }

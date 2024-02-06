@@ -94,12 +94,12 @@ void bgav_qt_moof_free(qt_moof_t * c)
 void bgav_qt_moof_dump(int indent, qt_moof_t * c)
   {
   int i;
-  bgav_diprintf(indent, "moof\n");
+  gavl_diprintf(indent, "moof\n");
   bgav_qt_mfhd_dump(indent+2, &c->mfhd);
 
   for(i = 0; i < c->num_trafs; i++)
     bgav_qt_traf_dump(indent+2, c->traf + i);
   
-  bgav_diprintf(indent, "end of moof\n");
+  gavl_diprintf(indent, "end of moof\n");
   }
 

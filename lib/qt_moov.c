@@ -95,7 +95,7 @@ void bgav_qt_moov_free(qt_moov_t * c)
 void bgav_qt_moov_dump(int indent, qt_moov_t * c)
   {
   int i;
-  bgav_diprintf(indent, "moov\n");
+  gavl_diprintf(indent, "moov\n");
   bgav_qt_mvhd_dump(indent+2, &c->mvhd);
 
   if(c->has_udta)
@@ -105,7 +105,7 @@ void bgav_qt_moov_dump(int indent, qt_moov_t * c)
     bgav_qt_trak_dump(indent+2, &c->tracks[i]);
   if(c->has_rmra)
     bgav_qt_rmra_dump(indent+2, &c->rmra);
-  bgav_diprintf(indent, "end of moov\n");
+  gavl_diprintf(indent, "end of moov\n");
   
   }
 

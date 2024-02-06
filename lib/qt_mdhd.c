@@ -73,18 +73,18 @@ void bgav_qt_mdhd_dump(int indent, qt_mdhd_t * m)
   if(!charset)
     charset = "UTF-8/16";
   
-  bgav_diprintf(indent, "mdhd:\n");
-  bgav_diprintf(indent+2, "version:           %d\n", m->version);
-  bgav_diprintf(indent+2, "flags:             %06xd\n", m->flags);
+  gavl_diprintf(indent, "mdhd:\n");
+  gavl_diprintf(indent+2, "version:           %d\n", m->version);
+  gavl_diprintf(indent+2, "flags:             %06xd\n", m->flags);
   
-  bgav_diprintf(indent+2, "creation_time:     %"PRId64"\n", m->creation_time);
-  bgav_diprintf(indent+2, "modification_time: %"PRId64"\n", m->modification_time);
-  bgav_diprintf(indent+2, "time_scale:        %d\n", m->time_scale);
-  bgav_diprintf(indent+2, "duration:          %"PRId64"\n", m->duration);
-  bgav_diprintf(indent+2, "language:          %d (%s, charset: %s)\n",
+  gavl_diprintf(indent+2, "creation_time:     %"PRId64"\n", m->creation_time);
+  gavl_diprintf(indent+2, "modification_time: %"PRId64"\n", m->modification_time);
+  gavl_diprintf(indent+2, "time_scale:        %d\n", m->time_scale);
+  gavl_diprintf(indent+2, "duration:          %"PRId64"\n", m->duration);
+  gavl_diprintf(indent+2, "language:          %d (%s, charset: %s)\n",
                 m->language, language, charset);
-  bgav_diprintf(indent+2, "quality:           %d\n", m->quality);
-  bgav_diprintf(indent, "end of mdhd\n");
+  gavl_diprintf(indent+2, "quality:           %d\n", m->quality);
+  gavl_diprintf(indent, "end of mdhd\n");
 
   }
 

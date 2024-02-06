@@ -40,8 +40,8 @@ int bgav_qt_frma_read(qt_atom_header_t * h, bgav_input_context_t * ctx,
   
 void bgav_qt_frma_dump(int indent, qt_frma_t * f)
   {
-  bgav_diprintf(indent, "frma:\n");
-  bgav_diprintf(indent+2, "fourcc: ");
+  gavl_diprintf(indent, "frma:\n");
+  gavl_diprintf(indent+2, "fourcc: ");
   bgav_dump_fourcc(f->fourcc);
   gavl_dprintf( "\n");
   }

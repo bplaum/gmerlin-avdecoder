@@ -74,16 +74,16 @@ void bgav_qt_stsc_free(qt_stsc_t * c)
 void bgav_qt_stsc_dump(int indent, qt_stsc_t * c)
   {
   int i;
-  bgav_diprintf(indent,  "stsc\n");
-  bgav_diprintf(indent+2,  "num_entries: %d\n", c->num_entries);
+  gavl_diprintf(indent,  "stsc\n");
+  gavl_diprintf(indent+2,  "num_entries: %d\n", c->num_entries);
 
   for(i = 0; i < c->num_entries; i++)
     {
-    bgav_diprintf(indent+2, "chunk: %d samples: %d id: %d\n",
+    gavl_diprintf(indent+2, "chunk: %d samples: %d id: %d\n",
             c->entries[i].first_chunk, c->entries[i].samples_per_chunk,
             c->entries[i].sample_description_id);
     }
-  bgav_diprintf(indent,  "end of stsc\n");
+  gavl_diprintf(indent,  "end of stsc\n");
   
   }
 

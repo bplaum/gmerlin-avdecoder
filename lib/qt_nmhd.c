@@ -37,9 +37,9 @@ void bgav_qt_nmhd_free(qt_nmhd_t * g)
 
 void bgav_qt_nmhd_dump(int indent, qt_nmhd_t * g)
   {
-  bgav_diprintf(indent, "nmhd\n");
+  gavl_diprintf(indent, "nmhd\n");
 
-  bgav_diprintf(indent+2, "version:       %d\n", g->version);
-  bgav_diprintf(indent+2, "flags:         %08x\n", g->flags);
-  bgav_diprintf(indent, "end of nmhd\n");
+  gavl_diprintf(indent+2, "version:       %d\n", g->version);
+  gavl_diprintf(indent+2, "flags:         %08x\n", g->flags);
+  gavl_diprintf(indent, "end of nmhd\n");
   }

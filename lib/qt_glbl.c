@@ -38,8 +38,8 @@ int bgav_qt_glbl_read(qt_atom_header_t * h, bgav_input_context_t * ctx,
 
 void bgav_qt_glbl_dump(int indent, qt_glbl_t * f)
   {
-  bgav_diprintf(indent, "glbl:\n");
-  bgav_diprintf(indent+2, "Size: %d\n", f->size);
+  gavl_diprintf(indent, "glbl:\n");
+  gavl_diprintf(indent+2, "Size: %d\n", f->size);
   gavl_hexdump(f->data, f->size, 16);
   }
 
