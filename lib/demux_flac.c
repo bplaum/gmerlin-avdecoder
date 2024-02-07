@@ -64,9 +64,6 @@ typedef struct
   bgav_flac_streaminfo_t streaminfo;
   bgav_flac_seektable_t seektable;
   
-  //  gavl_buffer_t buf;
-  //  int64_t next_header;
-  //  int has_sync;
   bgav_flac_frame_header_t this_fh;
   
   } flac_priv_t;
