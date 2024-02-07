@@ -394,15 +394,17 @@ void bgav_packet_parser_flush(bgav_packet_parser_t * p)
   if(p->packets[0].pts != GAVL_TIME_UNDEFINED)
     {
     pkt->pes_pts = p->packets[0].pts;
-
-    pkt->position = p->packets[0].position;
-        
+    
     /* Don't use this pts for other frames */
     p->packets[0].pts = GAVL_TIME_UNDEFINED;
-    p->packets[0].position = -1;
     }
+  
+  pkt->id = p->stream_id;
+  pkt->position = p->packets[0].position;
 
-      
+  if(!(p->ci.flags & GAVL_COMPRESSION_HAS_P_FRAMES))
+    PACKET_SET_KEYFRAME(pkt);
+  
   /* Parse frame (must be done *after* pes_pts is set) */
   if(!do_parse_frame(p, pkt))
     return;
