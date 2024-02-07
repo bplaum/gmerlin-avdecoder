@@ -209,12 +209,18 @@ static int init_format(bgav_stream_t * s, int samples_per_frame)
   s->data.audio.format->num_channels = priv->ctx->channels;
   s->data.audio.format->samplerate   = priv->ctx->sample_rate;
 
-  if((priv->ctx->codec_id == AV_CODEC_ID_AAC) && (samples_per_frame == 2048))
+  s->data.audio.sync_samples = priv->info->preroll;
+  
+  if((priv->ctx->codec_id == AV_CODEC_ID_AAC))
     {
-    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Detected SBR");
-    //    gavl_stream_stats_dump(&s->stats, 2);
-    bgav_stream_set_sbr(s);
-    s->data.audio.format->samples_per_frame = 2048;
+    if(samples_per_frame == 2048)
+      {
+      gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Detected SBR");
+      //    gavl_stream_stats_dump(&s->stats, 2);
+      bgav_stream_set_sbr(s);
+      s->data.audio.format->samples_per_frame = 2048;
+      }
+    s->data.audio.sync_samples = samples_per_frame;
     }
   
   /* These come from the codec */
@@ -438,7 +444,6 @@ static int init_ffmpeg_audio(bgav_stream_t * s)
   /* Set missing format values */
   
   s->data.audio.format->interleave_mode = GAVL_INTERLEAVE_ALL;
-  s->data.audio.preroll = priv->info->preroll;
 
   //  /* Check if we know the format already */
   //  if(s->data.audio.format->num_channels &&

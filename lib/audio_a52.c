@@ -176,7 +176,7 @@ static int init_a52(bgav_stream_t * s)
   decode_frame_a52(s);
   priv->need_format = 0;
 
-  s->data.audio.preroll = 32 * FRAME_SAMPLES;
+  s->data.audio.sync_samples = 32 * FRAME_SAMPLES;
   
   return 1;
   }

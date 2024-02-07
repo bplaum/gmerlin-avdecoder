@@ -145,7 +145,7 @@ static int init_opus(bgav_stream_t * s)
 #endif
   s->data.audio.format->samples_per_frame = MAX_FRAME_SIZE;
   s->data.audio.format->interleave_mode = GAVL_INTERLEAVE_ALL;
-  s->data.audio.preroll = MAX_FRAME_SIZE;
+  s->data.audio.sync_samples = MAX_FRAME_SIZE;
   
   if(s->data.audio.format->channel_locations[0] == GAVL_CHID_NONE)
     bgav_opus_set_channel_setup(&priv->h,

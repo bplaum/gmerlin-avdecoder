@@ -360,7 +360,9 @@ int bgav_audio_skipto(bgav_stream_t * s, int64_t * t, int scale)
              s->out_time, skip_time, num_samples);
     return 1;
     }
-  
+
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Skipping: %"PRId64" samples\n", num_samples);
+    
   //  fprintf(stderr, "bgav_audio_skipto... %"PRId64"...", num_samples);
   gavl_audio_source_skip(s->data.audio.source, num_samples);
   //  fprintf(stderr, "done\n");

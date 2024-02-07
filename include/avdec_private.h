@@ -389,7 +389,7 @@ struct bgav_stream_s
          the next frame after seeking. Codecs set this, demuxers
          can honour it when seeking. */
       
-      int preroll;
+      int sync_samples;
       
       gavl_audio_frame_t * frame;
       

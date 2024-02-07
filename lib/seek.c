@@ -113,8 +113,8 @@ static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
     time_scaled = gavl_time_rescale(scale, sample_scale, time);
     
     /* Handle preroll */
-    if((s->type == GAVL_STREAM_AUDIO) && s->data.audio.preroll)
-      time_scaled -= s->data.audio.preroll;
+    if((s->type == GAVL_STREAM_AUDIO) && s->data.audio.sync_samples)
+      time_scaled -= s->data.audio.sync_samples;
     
     s->index_position = gavl_packet_index_seek(b->demuxer->si, s->stream_id, time_scaled);
 

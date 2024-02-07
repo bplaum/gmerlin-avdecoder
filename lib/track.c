@@ -736,7 +736,10 @@ int bgav_track_skipto(bgav_track_t * track, int64_t * time, int scale)
     {
     t = *time;
     s = bgav_track_get_video_stream(track, i);
-    
+
+    if(s->action == BGAV_STREAM_MUTE)
+      continue;
+      
     if(!bgav_stream_skipto(s, &t, scale))
       {
       return 0;
@@ -747,6 +750,9 @@ int bgav_track_skipto(bgav_track_t * track, int64_t * time, int scale)
   for(i = 0; i < track->num_audio_streams; i++)
     {
     s = bgav_track_get_audio_stream(track, i);
+
+    if(s->action == BGAV_STREAM_MUTE)
+      continue;
 
     if(!bgav_stream_skipto(s, time, scale))
       {

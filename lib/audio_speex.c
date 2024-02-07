@@ -72,7 +72,7 @@ static int init_speex(bgav_stream_t * s)
   
   priv->dec_state = speex_decoder_init(speex_mode_list[priv->header->mode]);
 
-  s->data.audio.preroll = priv->frame_size;
+  s->data.audio.sync_samples = priv->frame_size;
   
   /* Set up format */
 

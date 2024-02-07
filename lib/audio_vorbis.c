@@ -477,7 +477,7 @@ static int init_vorbis(bgav_stream_t * s)
      Largest Packet size: (bz[1]+bz[1])/4 = bz[1]/2
      2 packets: bz[1]
    */
-  s->data.audio.preroll = vorbis_info_blocksize(&priv->dec_vi, 1);
+  s->data.audio.sync_samples = vorbis_info_blocksize(&priv->dec_vi, 1);
   return 1;
   }
 

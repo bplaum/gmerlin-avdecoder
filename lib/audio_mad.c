@@ -124,25 +124,25 @@ static int get_format(bgav_stream_t * s)
   if(h.flags & MAD_FLAG_MPEG_2_5_EXT)
     {
     if(h.layer == 3)
-      s->data.audio.preroll = s->data.audio.format->samples_per_frame * 30;
+      s->data.audio.sync_samples = s->data.audio.format->samples_per_frame * 30;
     else
-      s->data.audio.preroll = s->data.audio.format->samples_per_frame;
+      s->data.audio.sync_samples = s->data.audio.format->samples_per_frame;
     version_string = "2.5";
     }
   else if(h.flags & MAD_FLAG_LSF_EXT)
     {
     if(h.layer == 3)
-      s->data.audio.preroll = s->data.audio.format->samples_per_frame * 30;
+      s->data.audio.sync_samples = s->data.audio.format->samples_per_frame * 30;
     else
-      s->data.audio.preroll = s->data.audio.format->samples_per_frame;
+      s->data.audio.sync_samples = s->data.audio.format->samples_per_frame;
     version_string = "2";
     }
   else
     {
     if(h.layer == 3)
-      s->data.audio.preroll = s->data.audio.format->samples_per_frame * 10;
+      s->data.audio.sync_samples = s->data.audio.format->samples_per_frame * 10;
     else
-      s->data.audio.preroll = s->data.audio.format->samples_per_frame;
+      s->data.audio.sync_samples = s->data.audio.format->samples_per_frame;
     version_string = "1";
     }
   
