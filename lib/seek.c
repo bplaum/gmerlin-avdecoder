@@ -115,6 +115,10 @@ static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
     /* Handle preroll */
     if((s->type == GAVL_STREAM_AUDIO) && s->data.audio.sync_samples)
       time_scaled -= s->data.audio.sync_samples;
+
+    if((s->stats.pts_start != GAVL_TIME_UNDEFINED) &&
+       (time_scaled < s->stats.pts_start))
+      time_scaled = s->stats.pts_start;
     
     s->index_position = gavl_packet_index_seek(b->demuxer->si, s->stream_id, time_scaled);
 

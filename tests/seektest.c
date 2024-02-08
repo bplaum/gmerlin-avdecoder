@@ -346,7 +346,7 @@ int main(int argc, char ** argv)
   i = 1;
   while(i < argc)
     {
-    if(!strcmp(argv[i], "-apos"))
+    if(!strcmp(argv[i], "-atime"))
       {
       audio_position = strtoll(argv[i+1], NULL, 10);
       i++;
@@ -395,8 +395,8 @@ int main(int argc, char ** argv)
     {
     fprintf(stderr, "Usage: %s [options] filename", argv[0]);
     fprintf(stderr, "\n");
-    fprintf(stderr, "-apos <sample>  Audio position\n");
-    fprintf(stderr, "-vpos <time>    Video time\n");
+    fprintf(stderr, "-atime <sample>  Audio position\n");
+    fprintf(stderr, "-vpos  <number>  Video frame number\n");
     fprintf(stderr, "-sa             Sample accurate\n");
     fprintf(stderr, "-as <stream>    Select audio stream\n");
     fprintf(stderr, "-vs <stream>    Select video stream\n");
