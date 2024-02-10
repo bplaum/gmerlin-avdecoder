@@ -251,8 +251,8 @@ static int open_dvd(bgav_input_context_t * ctx, const char * url, char ** r)
       gavl_dictionary_set_string_nocopy(new_track->metadata, GAVL_META_LABEL, label);
       gavl_dictionary_set_long(new_track->metadata, GAVL_META_APPROX_DURATION, gavl_time_unscale(90000, duration));
 
-      gavl_dictionary_set_string(new_track->metadata, GAVL_META_MEDIA_CLASS,
-                                 GAVL_META_MEDIA_CLASS_VIDEO_DISK_TRACK);
+      gavl_dictionary_set_string(new_track->metadata, GAVL_META_CLASS,
+                                 GAVL_META_CLASS_VIDEO_DISK_TRACK);
 
       dvdnav_title_play(priv->d, i);
 

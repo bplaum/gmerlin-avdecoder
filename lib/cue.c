@@ -396,7 +396,7 @@ gavl_dictionary_t * bgav_cue_get_edl(bgav_cue_t * cue,
   int64_t total_samples;
   gavl_dictionary_t * ret_m = gavl_dictionary_get_dictionary_create(ret, GAVL_META_METADATA);
 
-  gavl_dictionary_set_string(ret_m, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_MULTITRACK_FILE);
+  gavl_dictionary_set_string(ret_m, GAVL_META_CLASS, GAVL_META_CLASS_MULTITRACK_FILE);
 
   
   
@@ -418,7 +418,7 @@ gavl_dictionary_t * bgav_cue_get_edl(bgav_cue_t * cue,
   if(cue->performer && cue->title)
     {
     gavl_dictionary_set_string_nocopy(ret_m, GAVL_META_LABEL, gavl_sprintf("%s - %s", cue->performer, cue->title));
-    gavl_dictionary_set_string(ret_m, GAVL_META_CHILD_CLASS, GAVL_META_MEDIA_CLASS_SONG);
+    gavl_dictionary_set_string(ret_m, GAVL_META_CHILD_CLASS, GAVL_META_CLASS_SONG);
     }
   else if(cue->title)
     gavl_dictionary_set_string(ret_m, GAVL_META_LABEL, cue->title);

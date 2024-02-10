@@ -110,7 +110,7 @@ static char * make_hls_uri(const char * uri)
 static bgav_track_t * append_track(bgav_track_table_t * tt)
   {
   bgav_track_t * ret = bgav_track_table_append_track(tt);
-  gavl_dictionary_set_string(ret->metadata, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_LOCATION);
+  gavl_dictionary_set_string(ret->metadata, GAVL_META_CLASS, GAVL_META_CLASS_LOCATION);
   return ret;
   }
 

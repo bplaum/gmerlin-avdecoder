@@ -335,8 +335,8 @@ static int setup_track(bgav_input_context_t * ctx,
     gavl_dictionary_set_string_nocopy(new_track->metadata, GAVL_META_LABEL,
                                       gavl_sprintf("Title %02d", title+1));
   
-  gavl_dictionary_set_string(new_track->metadata, GAVL_META_MEDIA_CLASS,
-                             GAVL_META_MEDIA_CLASS_VIDEO_DISK_TRACK);
+  gavl_dictionary_set_string(new_track->metadata, GAVL_META_CLASS,
+                             GAVL_META_CLASS_VIDEO_DISK_TRACK);
   
   /* Set up chapters */
   

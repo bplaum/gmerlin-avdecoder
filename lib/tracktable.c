@@ -46,7 +46,7 @@ bgav_track_table_t * bgav_track_table_create(int num_tracks)
   //  m = gavl_dictionary_get_dictionary_create(&track, GAVL_META_METADATA);
 
   //  gavl_dictionary_set_int(m, GAVL_META_TOTAL, num_tracks);
-  //  gavl_dictionary_set_string(m, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_ITEM);
+  //  gavl_dictionary_set_string(m, GAVL_META_CLASS, GAVL_META_CLASS_ITEM);
   
   if(num_tracks)
     {

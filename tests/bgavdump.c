@@ -695,8 +695,8 @@ int main(int argc, char ** argv)
         if((dict = bgav_get_media_info(file)) &&
            (dict = gavl_get_track(dict, 0)) &&
            (dict = gavl_track_get_metadata(dict)) &&
-           (var = gavl_dictionary_get_string(dict, GAVL_META_MEDIA_CLASS)) &&
-           !strcmp(var, GAVL_META_MEDIA_CLASS_LOCATION) && gavl_metadata_get_src(dict, GAVL_META_SRC, 0,
+           (var = gavl_dictionary_get_string(dict, GAVL_META_CLASS)) &&
+           !strcmp(var, GAVL_META_CLASS_LOCATION) && gavl_metadata_get_src(dict, GAVL_META_SRC, 0,
                                    NULL, &var))
           {
           fprintf(stderr, "Got redirection to %s\n", var);

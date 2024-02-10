@@ -1806,7 +1806,7 @@ static int handle_rmra(bgav_demuxer_context_t * ctx)
       char * uri;
       t = bgav_track_table_append_track(ctx->tt);
 
-      gavl_dictionary_set_string(t->metadata, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_LOCATION);
+      gavl_dictionary_set_string(t->metadata, GAVL_META_CLASS, GAVL_META_CLASS_LOCATION);
 
       uri = bgav_input_absolute_url(ctx->input, (char*)priv->moov.rmra.rmda[i].rdrf.data_ref);
       gavl_metadata_add_src(t->metadata, GAVL_META_SRC, NULL, uri);

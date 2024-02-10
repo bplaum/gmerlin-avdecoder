@@ -101,7 +101,7 @@ static void get_url(bgav_yml_node_t * n, bgav_track_t * ret,
 
   /* Set URL */
 
-  gavl_dictionary_set_string(ret->metadata, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_LOCATION);
+  gavl_dictionary_set_string(ret->metadata, GAVL_META_CLASS, GAVL_META_CLASS_LOCATION);
   
   if(!strstr(location, "://") && url_base)
     {

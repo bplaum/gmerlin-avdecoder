@@ -61,7 +61,7 @@ static bgav_track_table_t * parse_rtsptext(bgav_input_context_t * input)
   
   if(*pos != '\0')
     {
-    gavl_dictionary_set_string(ret->tracks[0]->metadata, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_LOCATION);
+    gavl_dictionary_set_string(ret->tracks[0]->metadata, GAVL_META_CLASS, GAVL_META_CLASS_LOCATION);
     gavl_metadata_add_src(ret->tracks[0]->metadata, GAVL_META_SRC, NULL, pos);
     }
   else
@@ -70,7 +70,7 @@ static bgav_track_table_t * parse_rtsptext(bgav_input_context_t * input)
       return 0;
     str = (char*)line_buf.buf;
 
-    gavl_dictionary_set_string(ret->tracks[0]->metadata, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_LOCATION);
+    gavl_dictionary_set_string(ret->tracks[0]->metadata, GAVL_META_CLASS, GAVL_META_CLASS_LOCATION);
     gavl_metadata_add_src(ret->tracks[0]->metadata, GAVL_META_SRC, NULL, str);
     }
 

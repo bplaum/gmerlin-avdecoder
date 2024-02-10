@@ -77,7 +77,7 @@ static bgav_track_table_t * parse_ref(bgav_input_context_t * input)
                                              ret->num_tracks,
                                              pos));
 
-        gavl_dictionary_set_string(t->metadata, GAVL_META_MEDIA_CLASS, GAVL_META_MEDIA_CLASS_LOCATION);
+        gavl_dictionary_set_string(t->metadata, GAVL_META_CLASS, GAVL_META_CLASS_LOCATION);
         
         
         if(!strncasecmp(pos, "http://", 7))

@@ -90,8 +90,8 @@ int bgav_is_redirector(bgav_t * b)
   const char * klass;
   
   if(b->tt && b->tt->num_tracks &&
-     (klass = gavl_dictionary_get_string(b->tt->tracks[0]->metadata, GAVL_META_MEDIA_CLASS)) &&
-     !strcmp(klass, GAVL_META_MEDIA_CLASS_LOCATION))
+     (klass = gavl_dictionary_get_string(b->tt->tracks[0]->metadata, GAVL_META_CLASS)) &&
+     !strcmp(klass, GAVL_META_CLASS_LOCATION))
     return 1;
   return 0;
   }
