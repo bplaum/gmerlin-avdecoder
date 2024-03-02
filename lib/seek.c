@@ -121,7 +121,7 @@ static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
       time_scaled = s->stats.pts_start;
     
     s->index_position = gavl_packet_index_seek(b->demuxer->si, s->stream_id, time_scaled);
-
+    
     if(s->index_position < 0)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Seeking failed");

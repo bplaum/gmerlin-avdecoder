@@ -845,11 +845,10 @@ gavl_packet_index_t * bgav_get_packet_index(const char * url)
   gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Build packet index in %f seconds", gavl_time_to_seconds(duration));
   gavl_packet_index_dump(ret);
   
-  gavl_packet_index_save(ret, filename);
-  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Saved packet index to %s", filename);
-  
   if(duration > GAVL_TIME_SCALE * 2)
     {
+    gavl_packet_index_save(ret, filename);
+    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Saved packet index to %s", filename);
     }
   
   end:
