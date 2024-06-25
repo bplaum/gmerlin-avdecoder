@@ -30,6 +30,7 @@
 
 #include <gavl/http.h>
 #include <gavl/gavlsocket.h>
+#include <gavl/io.h>
 
 
 #include <http.h>
@@ -103,9 +104,9 @@ do_connect(bgav_http_t * ret, const char * host, int port, const bgav_options_t 
   /* Wrap https */
   
   if(use_tls)
-    ret->io = gavl_io_create_tls_client(fd, host, GAVF_IO_SOCKET_DO_CLOSE);
+    ret->io = gavl_io_create_tls_client(fd, host, GAVL_IO_SOCKET_DO_CLOSE);
   else
-    ret->io = gavl_io_create_socket(fd, ret->opt->read_timeout, GAVF_IO_SOCKET_DO_CLOSE);
+    ret->io = gavl_io_create_socket(fd, ret->opt->read_timeout, GAVL_IO_SOCKET_DO_CLOSE);
 
   if(!ret->io)
     {
@@ -133,9 +134,9 @@ do_connect(bgav_http_t * ret, const char * host, int port, const bgav_options_t 
         goto fail;
 
       if(use_tls)
-        ret->io = gavl_io_create_tls_client(fd, host, GAVF_IO_SOCKET_DO_CLOSE);
+        ret->io = gavl_io_create_tls_client(fd, host, GAVL_IO_SOCKET_DO_CLOSE);
       else
-        ret->io = gavl_io_create_socket(fd, ret->opt->read_timeout, GAVF_IO_SOCKET_DO_CLOSE);
+        ret->io = gavl_io_create_socket(fd, ret->opt->read_timeout, GAVL_IO_SOCKET_DO_CLOSE);
       
       if(!ret->io ||
          !gavl_http_request_write(ret->io, &header))

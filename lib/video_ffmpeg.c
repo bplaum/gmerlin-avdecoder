@@ -44,6 +44,9 @@
 #include <gavl/hw_vaapi_x11.h>
 #endif
 
+#include <gavl/gavldsp.h>
+
+
 #include <dvframe.h>
 #include <mpeg4_header.h>
 
@@ -260,7 +263,6 @@ get_data(bgav_stream_t * s, bgav_packet_t ** ret_p)
 #ifdef DUMP_PACKET
   fprintf(stderr, "video_ffmpeg: Got packet ");
   gavl_packet_dump(ret);
-  gavl_hexdump(ret->data, 16, 16);
 #endif
   
   if((priv->flags & SWAP_FIELDS_IN) && (ret->field2_offset))

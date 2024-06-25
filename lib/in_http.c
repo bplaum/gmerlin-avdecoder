@@ -24,9 +24,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <avdec_private.h>
-// #include <http.h>
 #include <hls.h>
 #include <gavl/http.h>
+#include <gavl/io.h>
 
 #define LOG_DOMAIN "in_http"
 

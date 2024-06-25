@@ -26,7 +26,6 @@
 
 #include <avdec.h>
 #include <libavcodec/version.h>
-#include <gavl/gavf.h>
 #include <gavl/log.h>
 
 #include <stdio.h> /* Needed for fileindex stuff */

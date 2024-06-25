@@ -29,6 +29,7 @@
 #include <gavl/value.h>
 #include <gavl/http.h>
 #include <gavl/state.h>
+#include <gavl/io.h>
 
 #include <id3.h>
 
