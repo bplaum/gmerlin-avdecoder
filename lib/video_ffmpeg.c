@@ -44,6 +44,10 @@
 #include <gavl/hw_vaapi_x11.h>
 #endif
 
+/* TODO: configure check */
+// #define HAVE_DRM
+
+
 #include <gavl/gavldsp.h>
 
 
@@ -67,8 +71,8 @@
 #define B_REFERENCE     (1<<5) // B-frames can be reference frames (H.264 only for now)
 #define GOT_EOS         (1<<6) // Got end of sequence
 #define NEED_FORMAT     (1<<7)
-
 #define FLUSH_EOF       (1<<8)
+#define HAVE_DR          (1<<9)
 
 /* Skip handling */
 
@@ -94,12 +98,21 @@ typedef struct
 
 typedef struct
   {
+  AVBufferRef *refs[GAVL_MAX_PLANES];
+  } pool_el_t;
+
+typedef struct
+  {
   AVCodecContext * ctx;
   AVFrame * frame;
   //  enum CodecID ffmpeg_id;
   codec_info_t * info;
   gavl_video_frame_t * gavl_frame;
-    
+  gavl_video_frame_t * gavl_frame_priv;
+
+  pool_el_t * pool_el;
+  int pool_el_alloc;
+  
   /* Real video ugliness */
 
   uint32_t rv_extradata[2+AV_INPUT_BUFFER_PADDING_SIZE/4];
@@ -157,8 +170,11 @@ typedef struct
 #endif
   
   gavl_dsp_context_t * dsp;
+
+  gavl_video_frame_pool_t * fp;
   
   } ffmpeg_video_priv;
+
 
 #ifdef HAVE_LIBVA // NEW libva API
 static int vaapi_supported(AVCodec *codec)
@@ -216,8 +232,6 @@ static int init_vaapi(bgav_stream_t * s)
   return 1;
   
   }
-                     
-
 
 static void put_frame_vaapi(bgav_stream_t * s, gavl_video_frame_t * f1)
   {
@@ -237,6 +251,15 @@ static void put_frame_vaapi(bgav_stream_t * s, gavl_video_frame_t * f1)
 
 #endif
 
+static void put_frame_fp(bgav_stream_t * s, gavl_video_frame_t * f1)
+  {
+  //  VAStatus result;
+  ffmpeg_video_priv * priv = s->decoder_priv;
+
+  //  id = (VASurfaceID)(uintptr_t)priv->frame->data[0];
+
+  s->vframe = priv->gavl_frame;
+  }
 
 
 static codec_info_t * lookup_codec(bgav_stream_t * s);
@@ -587,12 +610,19 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
     {
     int i;
     s->flags |= STREAM_HAVE_FRAME; 
-      
-    /* Set our internal frame */
-    for(i = 0; i < 3; i++)
+
+    if(priv->flags & HAVE_DR)
       {
-      priv->gavl_frame->planes[i]  = priv->frame->data[i];
-      priv->gavl_frame->strides[i] = priv->frame->linesize[i];
+      priv->gavl_frame = priv->frame->opaque;
+      }
+    else
+      {
+      /* Set our internal frame */
+      for(i = 0; i < 3; i++)
+        {
+        priv->gavl_frame->planes[i]  = priv->frame->data[i];
+        priv->gavl_frame->strides[i] = priv->frame->linesize[i];
+        }
       }
     bgav_pts_cache_get_first(&priv->pts_cache, priv->gavl_frame);
 
@@ -681,16 +711,104 @@ decode_ffmpeg(bgav_stream_t * s, gavl_video_frame_t * f)
 
 // #define find_decoder(id, s) avcodec_find_decoder(id)
 
-static AVCodec * find_decoder(bgav_stream_t * s, enum AVCodecID id)
+static const AVCodec * find_decoder(bgav_stream_t * s, enum AVCodecID id)
   {
   return avcodec_find_decoder(id);
   }
 
+#if 1
 
+
+static void buffer_free_func(void *opaque, uint8_t *data)
+  {
+  /* NOP */
+  }
+
+static int get_buffer(struct AVCodecContext *ctx, AVFrame *frame, int flags)
+  {
+  gavl_video_frame_t * vframe;
+  ffmpeg_video_priv * priv;
+  bgav_stream_t * s = ctx->opaque;
+  int i;
+  int frame_height;
+  const gavl_video_format_t * vfmt;
+
+  priv = s->decoder_priv;
+  
+  if(!priv->fp)
+    {
+    gavl_video_format_t fmt;
+    priv->fp = gavl_video_frame_pool_create(priv->hwctx);
+
+    /* Set format */
+    fmt.image_width = priv->ctx->width;
+    fmt.image_height = priv->ctx->height;
+    fmt.pixelformat = get_pixelformat(priv->ctx->pix_fmt, GAVL_PIXELFORMAT_NONE);
+    
+    gavl_video_frame_pool_set_format(priv->fp, &fmt);
+    }
+  
+  memset(frame->data, 0, sizeof(frame->data));
+  frame->extended_data = frame->data;
+
+  vframe = gavl_video_frame_pool_get(priv->fp);
+
+  if(vframe->buf_idx >= priv->pool_el_alloc)
+    {
+    int inc = vframe->buf_idx - priv->pool_el_alloc + 1;
+    inc = ((inc + 7)/8)*8;
+    
+    priv->pool_el = realloc(priv->pool_el,
+                            (priv->pool_el_alloc + inc)*sizeof(*priv->pool_el));
+    memset(priv->pool_el + priv->pool_el_alloc, 0, inc*sizeof(*priv->pool_el));
+    priv->pool_el_alloc += inc;
+    }
+
+  if(!priv->pool_el[vframe->buf_idx].refs[0])
+    {
+    vfmt = gavl_video_frame_pool_get_format(priv->fp);
+    frame_height = vfmt->frame_height;
+  
+    for(i = 0; i < GAVL_MAX_PLANES; i++)
+      {
+      if(!vframe->strides[i])
+        break;
+
+      if(i == 1)
+        {
+        int sub_v;
+        gavl_pixelformat_chroma_sub(vfmt->pixelformat, NULL, &sub_v);
+        frame_height /= sub_v;
+        }
+    
+      frame->linesize[i] = vframe->strides[i];
+
+      priv->pool_el[vframe->buf_idx].refs[i] = 
+        av_buffer_create(vframe->planes[i],
+                         vframe->strides[i] * frame_height,
+                         buffer_free_func,
+                         NULL, 0);
+    
+      }
+    }
+  else
+    {
+    for(i = 0; i < GAVL_MAX_PLANES; i++)
+      {
+      if(!vframe->strides[i])
+        break;
+
+      frame->buf[i]  = av_buffer_ref(priv->pool_el[vframe->buf_idx].refs[i]);
+      frame->data[i] = frame->buf[i]->data;
+      }
+    }
+  return 0;
+  }
+#endif
 
 static int init_ffmpeg(bgav_stream_t * s)
   {
-  AVCodec * codec;
+  const AVCodec * codec;
   
   ffmpeg_video_priv * priv;
 
@@ -739,13 +857,20 @@ static int init_ffmpeg(bgav_stream_t * s)
 #ifdef HAVE_LIBVA
   if(s->opt->vaapi && vaapi_supported(codec) && init_vaapi(s))
     {
-    //    priv->ctx->get_format = vaapi_get_format;
-
-    
     priv->ctx->thread_count = 1;
     }
+  else
 #endif
+  if(codec->capabilities & AV_CODEC_CAP_DR1)
+    {
+    fprintf(stderr, "Direct rendering supported\n");
 
+    priv->ctx->get_buffer2 = get_buffer;
+    priv->flags |= HAVE_DR;
+    
+    /* TODO: Allocate HW context */
+    
+    }
   
   /* Check if there might be B-frames */
   if(codec->capabilities & AV_CODEC_CAP_DELAY)
@@ -791,7 +916,13 @@ static int init_ffmpeg(bgav_stream_t * s)
   //  gavl_hexdump(s->ci->global_header, s->ci->global_header_len, 16);
   
   priv->frame = av_frame_alloc();
-  priv->gavl_frame = gavl_video_frame_create(NULL);
+
+  if(!(priv->flags & HAVE_DR))
+    {
+    priv->gavl_frame_priv = gavl_video_frame_create(NULL);
+    priv->gavl_frame_priv = priv->gavl_frame_priv;
+    }
+
   priv->pkt = av_packet_alloc();
   
   /* Some codecs need extra stuff */
@@ -948,15 +1079,31 @@ static void close_ffmpeg(bgav_stream_t * s)
     bgav_ffmpeg_unlock();
     av_free(priv->ctx);
     }
-  if(priv->gavl_frame)
+  if(priv->gavl_frame_priv)
     {
-    gavl_video_frame_null(priv->gavl_frame);
+    gavl_video_frame_null(priv->gavl_frame_priv);
 
-    priv->gavl_frame->storage = NULL;
-    priv->gavl_frame->hwctx = NULL;
-    gavl_video_frame_destroy(priv->gavl_frame);
+    priv->gavl_frame_priv->storage = NULL;
+    priv->gavl_frame_priv->hwctx = NULL;
+    gavl_video_frame_destroy(priv->gavl_frame_priv);
     }
 
+  if(priv->fp)
+    gavl_video_frame_pool_destroy(priv->fp);
+
+  if(priv->pool_el)
+    {
+    int i, j;
+    for(i = 0; i < priv->pool_el_alloc; i++)
+      {
+      for(j = 0; j < GAVL_MAX_PLANES; j++)
+        {
+        if(priv->pool_el[i].refs[j])
+          av_buffer_unref(&priv->pool_el[i].refs[j]);
+        }
+      }
+    free(priv->pool_el);
+    }
   
   if(priv->src_field)
     {
@@ -1656,7 +1803,7 @@ static codec_info_t * lookup_codec(bgav_stream_t * s)
 void bgav_init_video_decoders_ffmpeg(bgav_options_t * opt)
   {
   int i;
-  AVCodec * c;
+  const AVCodec * c;
   
   real_num_codecs = 0;
   for(i = 0; i < NUM_CODECS; i++)
@@ -2188,7 +2335,17 @@ static void init_put_frame(bgav_stream_t * s)
   
   ffmpeg_video_priv * priv;
   priv = s->decoder_priv;
+  if(priv->hwctx)
+    {
+    s->data.video.format->hwctx = priv->hwctx;
+    s->src_flags |= GAVL_SOURCE_SRC_ALLOC;
+    }
 
+  if(priv->fp)
+    {
+    priv->put_frame = put_frame_fp;
+    return;
+    }
   switch(priv->ctx->pix_fmt)
     {
     case AV_PIX_FMT_PAL8:
@@ -2197,8 +2354,6 @@ static void init_put_frame(bgav_stream_t * s)
 #ifdef HAVE_LIBVA
     case AV_PIX_FMT_VAAPI:
       priv->put_frame = put_frame_vaapi;
-      s->data.video.format->hwctx = priv->hwctx;
-      s->src_flags |= GAVL_SOURCE_SRC_ALLOC;
       gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Using VAAPI");
       break;
 #endif

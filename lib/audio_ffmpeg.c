@@ -42,6 +42,11 @@
 // #define DUMP_PACKET
 // #define DUMP_EXTRADATA
 
+/* Channel layout changed in 59.24.100 */
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
+#define OLD_CHANNEL_LAYOUT
+#endif
+
 /* Different decoding functions */
 
 // #define DECODE_FUNC avcodec_decode_audio2
@@ -142,8 +147,8 @@ static gavl_channel_id_t get_channel_id(uint64_t ffmpeg_id)
   return GAVL_CHID_AUX;
   }
 
-static void convert_channel_layout(gavl_audio_format_t * fmt,
-                                   uint64_t ffmpeg_layout)
+static void convert_channel_layout_old(gavl_audio_format_t * fmt,
+                                       uint64_t ffmpeg_layout)
   {
   int i;
   int chidx = 0;
@@ -164,6 +169,31 @@ static void convert_channel_layout(gavl_audio_format_t * fmt,
   
   }
 
+#ifndef OLD_CHANNEL_LAYOUT
+static void convert_channel_layout(gavl_audio_format_t * fmt,
+                                   struct AVChannelLayout * layout)
+  {
+  switch(layout->order)
+    {
+    case AV_CHANNEL_ORDER_NATIVE:
+      convert_channel_layout_old(fmt, layout->u.mask);
+      break;
+    case AV_CHANNEL_ORDER_CUSTOM:
+      {
+      int i;
+      for(i = 0; i < layout->nb_channels; i++)
+        fmt->channel_locations[i] = get_channel_id(layout->u.map[i].id);
+      }
+      break;
+    case AV_CHANNEL_ORDER_AMBISONIC:
+      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Ambisonic channel order not supported");
+      break;
+    case AV_CHANNEL_ORDER_UNSPEC:
+      gavl_set_channel_setup(fmt);
+      break;
+    }
+  }
+#endif
 
 /* Map of ffmpeg codecs to fourccs (from ffmpeg's avienc.c) */
 
@@ -205,8 +235,13 @@ static int init_format(bgav_stream_t * s, int samples_per_frame)
   priv= s->decoder_priv;
 
   /* These might be set from the codec or the container */
-  
+
+#ifdef OLD_CHANNEL_LAYOUT
   s->data.audio.format->num_channels = priv->ctx->channels;
+#else
+  s->data.audio.format->num_channels = priv->ctx->ch_layout.nb_channels;
+#endif
+  
   s->data.audio.format->samplerate   = priv->ctx->sample_rate;
 
   s->data.audio.sync_samples = priv->info->preroll;
@@ -243,10 +278,14 @@ static int init_format(bgav_stream_t * s, int samples_per_frame)
   priv->sample_size =
     gavl_bytes_per_sample(s->data.audio.format->sample_format);
 
+#ifdef OLD_CHANNEL_LAYOUT
   if(priv->ctx->channel_layout)
-    convert_channel_layout(s->data.audio.format, priv->ctx->channel_layout);
+    convert_channel_layout_old(s->data.audio.format, priv->ctx->channel_layout);
   else
     gavl_set_channel_setup(s->data.audio.format);
+#else
+  convert_channel_layout(s->data.audio.format, &priv->ctx->ch_layout);
+#endif
   
   //  fprintf(stderr, "Got format\n");
   return 1;
@@ -368,7 +407,7 @@ static gavl_source_status_t decode_frame_ffmpeg(bgav_stream_t * s)
 
 static int init_ffmpeg_audio(bgav_stream_t * s)
   {
-  AVCodec * codec;
+  const AVCodec * codec;
   ffmpeg_audio_priv * priv;
   priv = calloc(1, sizeof(*priv));
   priv->info = lookup_codec(s);
@@ -400,7 +439,12 @@ static int init_ffmpeg_audio(bgav_stream_t * s)
   gavl_dprintf("Adding extradata %d bytes\n", priv->ctx->extradata_size);
   gavl_hexdump(priv->ctx->extradata, priv->ctx->extradata_size, 16);
 #endif    
-  priv->ctx->channels        = s->data.audio.format->num_channels;
+
+#ifdef OLD_CHANNEL_LAYOUT
+  priv->ctx->channels = s->data.audio.format->num_channels;
+#else
+  priv->ctx->ch_layout.nb_channels = s->data.audio.format->num_channels;
+#endif
   priv->ctx->sample_rate     = s->data.audio.format->samplerate;
   priv->ctx->block_align     = s->data.audio.block_align;
   priv->ctx->bit_rate        = s->codec_bitrate;
