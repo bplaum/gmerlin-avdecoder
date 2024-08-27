@@ -984,8 +984,6 @@ void bgav_input_close(bgav_input_context_t * ctx)
 
   if(ctx->location)
     free(ctx->location);
-  if(ctx->index_file)
-    free(ctx->index_file);
   if(ctx->id3v2)
     bgav_id3v2_destroy(ctx->id3v2);
   if(ctx->charset)

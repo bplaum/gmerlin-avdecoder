@@ -861,9 +861,6 @@ struct bgav_input_context_s
   // Stream ID, which will be used for syncing (for DVB)
   int sync_id;
   
-  /* Inputs set this, if indexing is supported */
-  char * index_file;
-
   bgav_yml_node_t * yml;
   
   bgav_t * b;

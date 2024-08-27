@@ -25,7 +25,6 @@
 
 #include <avdec_private.h>
 #include <utils.h>
-#include <md5.h>
 
 typedef struct
   {
@@ -101,19 +100,6 @@ bgav_input_open_callbacks(int (*read_callback)(void * priv, uint8_t * data, int 
     gavl_dictionary_set_string(gavl_metadata_get_src_nc(&ret->m, GAVL_META_SRC, 0),
                                GAVL_META_MIMETYPE, mimetype);
   ret->total_bytes = total_bytes;
-  
-  if(ret->location)
-    {
-    uint8_t md5sum[16];
-    bgav_md5_buffer(ret->location, strlen(ret->location),
-                    md5sum);
-    ret->index_file =
-      gavl_sprintf("%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-                   md5sum[0], md5sum[1], md5sum[2], md5sum[3], 
-                   md5sum[4], md5sum[5], md5sum[6], md5sum[7], 
-                   md5sum[8], md5sum[9], md5sum[10], md5sum[11], 
-                   md5sum[12], md5sum[13], md5sum[14], md5sum[15]);
-    }
   
   return ret;
   }

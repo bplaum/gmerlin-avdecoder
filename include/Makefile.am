@@ -27,7 +27,6 @@ hls.h \
 http.h \
 id3.h \
 matroska.h \
-md5.h \
 mms.h \
 mpa_header.h \
 mpeg4_header.h \

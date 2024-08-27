@@ -407,7 +407,6 @@ in_pnm.c \
 input.c \
 languages.c \
 matroska.c \
-md5.c \
 metadata.c \
 mpa_header.c \
 mpeg4_header.c \
