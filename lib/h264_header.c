@@ -1,9 +1,8 @@
 /*****************************************************************
  * gmerlin-avdecoder - a general purpose multimedia decoding library
  *
- * Copyright (c) 2001 - 2012 Members of the Gmerlin project
- * gmerlin-general@lists.sourceforge.net
- * http://gmerlin.sourceforge.net
+ * Copyright (c) 2001 - 2024 Members of the Gmerlin project
+ * http://github.com/bplaum
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +17,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
+
+
 
 #include <stdlib.h>
 #include <string.h>
@@ -257,7 +258,7 @@ static void vui_parse(bgav_bitstream_t * b, bgav_h264_vui_t * vui)
   bgav_bitstream_get(b, &vui->pic_struct_present_flag, 1);
   bgav_bitstream_get(b, &vui->bitstream_restriction_flag, 1);
   
-  if(&vui->bitstream_restriction_flag )
+  if(vui->bitstream_restriction_flag )
     {
     bgav_bitstream_get(b, &vui->motion_vectors_over_pic_boundaries_flag, 1);
 
