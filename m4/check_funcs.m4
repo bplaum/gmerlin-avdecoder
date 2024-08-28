@@ -12,7 +12,8 @@ GMERLIN_EXE_LDFLAGS=""
 AC_MSG_CHECKING(if linker supports --no-undefined)
 OLD_LDFLAGS=$LDFLAGS
 LDFLAGS="$LDFLAGS -Wl,--no-undefined"
-AC_TRY_LINK([],[],
+
+AC_LINK_IFELSE([AC_LANG_SOURCE([[int main() { return 0; } ]])],
             [GMERLIN_LIB_LDFLAGS="-Wl,--no-undefined $GMERLIN_LIB_LDFLAGS"; AC_MSG_RESULT(Supported)],
             [AC_MSG_RESULT(Unsupported)])
 LDFLAGS=$OLD_LDFLAGS
@@ -20,7 +21,7 @@ LDFLAGS=$OLD_LDFLAGS
 AC_MSG_CHECKING(if linker supports --as-needed)
 OLD_LDFLAGS=$LDFLAGS
 LDFLAGS="$LDFLAGS -Wl,--as-needed"
-AC_TRY_LINK([],[],
+AC_LINK_IFELSE([AC_LANG_SOURCE([[int main() { return 0; }]])],
             [GMERLIN_EXE_LDFLAGS="-Wl,--as-needed $GMERLIN_EXE_LDFLAGS"; AC_MSG_RESULT(Supported)],
             [AC_MSG_RESULT(Unsupported)])
 LDFLAGS=$OLD_LDFLAGS
@@ -44,7 +45,7 @@ have_theora="false"
 THEORADEC_REQUIRED="1.0.0"
 
 AC_ARG_ENABLE(theoradec,
-[AC_HELP_STRING([--disable-theoradec],[Disable theoradec (default: autodetect)])],
+[AS_HELP_STRING([--disable-theoradec],[Disable theoradec (default: autodetect)])],
 [case "${enableval}" in
    yes) test_theoradec=true ;;
    no)  test_theoradec=false ;;
@@ -81,7 +82,7 @@ have_theoraenc="false"
 THEORAENC_REQUIRED="1.0.0"
 
 AC_ARG_ENABLE(theoraenc,
-[AC_HELP_STRING([--disable-theoraenc],[Disable theoraenc (default: autodetect)])],
+[AS_HELP_STRING([--disable-theoraenc],[Disable theoraenc (default: autodetect)])],
 [case "${enableval}" in
    yes) test_theoraenc=true ;;
    no)  test_theoraenc=false ;;
@@ -118,7 +119,7 @@ have_libavcodec="false"
 AVCODEC_REQUIRED="58.54.100"
 
 AC_ARG_ENABLE(avcodec,
-[AC_HELP_STRING([--disable-avcodec],[Disable libavcodec (default: autodetect)])],
+[AS_HELP_STRING([--disable-avcodec],[Disable libavcodec (default: autodetect)])],
 [case "${enableval}" in
    yes) test_avcodec=true ;;
    no)  test_avcodec=false ;;
@@ -151,7 +152,7 @@ have_libavformat="false"
 AVFORMAT_REQUIRED="58.29.100"
 
 AC_ARG_ENABLE(avformat,
-[AC_HELP_STRING([--disable-avformat],[Disable libavformat (default: autodetect)])],
+[AS_HELP_STRING([--disable-avformat],[Disable libavformat (default: autodetect)])],
 [case "${enableval}" in
    yes) test_avformat=true ;;
    no)  test_avformat=false ;;
@@ -188,7 +189,7 @@ have_speex="false"
 SPEEX_REQUIRED="1.0.4"
 
 AC_ARG_ENABLE(speex,
-[AC_HELP_STRING([--disable-speex],[Disable speex (default: autodetect)])],
+[AS_HELP_STRING([--disable-speex],[Disable speex (default: autodetect)])],
 [case "${enableval}" in
    yes) test_speex=true ;;
    no)  test_speex=false ;;
@@ -226,7 +227,7 @@ have_speex="false"
 DVDNAV_REQUIRED="6.0.0"
 
 AC_ARG_ENABLE(speex,
-[AC_HELP_STRING([--disable-dvdnav],[Disable libdvdnav (default: autodetect)])],
+[AS_HELP_STRING([--disable-dvdnav],[Disable libdvdnav (default: autodetect)])],
 [case "${enableval}" in
    yes) test_dvdnav=true ;;
    no)  test_dvdnav=false ;;
@@ -264,7 +265,7 @@ have_pulseaudio="false"
 PULSEAUDIO_REQUIRED="0.9.6"
 
 AC_ARG_ENABLE(pulseaudio,
-[AC_HELP_STRING([--disable-pulseaudio],[Disable pulseaudio (default: autodetect)])],
+[AS_HELP_STRING([--disable-pulseaudio],[Disable pulseaudio (default: autodetect)])],
 [case "${enableval}" in
    yes) test_pulseaudio=true ;;
    no)  test_pulseaudio=false ;;
@@ -300,16 +301,18 @@ have_ogg=false
 AH_TEMPLATE([HAVE_OGG], [Ogg libraries are there])
 
 AC_ARG_ENABLE(ogg,
-[AC_HELP_STRING([--disable-ogg],[Disable ogg (default: autodetect)])],
+[AS_HELP_STRING([--disable-ogg],[Disable ogg (default: autodetect)])],
 [case "${enableval}" in
    yes) test_ogg=true ;;
    no)  test_ogg=false ;;
 esac],[test_ogg=true])
 
 if test x$test_ogg = xtrue; then
-    
-XIPH_PATH_OGG(have_ogg=true)
+PKG_CHECK_MODULES(OGG, ogg, have_ogg="true", have_ogg="false")
 fi
+
+AC_SUBST(OGG_LIBS)
+AC_SUBST(OGG_CFLAGS)
 
 AM_CONDITIONAL(HAVE_OGG, test x$have_ogg = xtrue)
  
@@ -335,15 +338,14 @@ have_vorbis=false
 AH_TEMPLATE([HAVE_VORBIS], [Vorbis libraries are there])
 
 AC_ARG_ENABLE(vorbis,
-[AC_HELP_STRING([--disable-vorbis],[Disable vorbis (default: autodetect)])],
+[AS_HELP_STRING([--disable-vorbis],[Disable vorbis (default: autodetect)])],
 [case "${enableval}" in
    yes) test_vorbis=true ;;
    no)  test_vorbis=false ;;
 esac],[test_vorbis=true])
 
 if test x$test_vorbis = xtrue; then
-    
-XIPH_PATH_VORBIS(have_vorbis=true)
+PKG_CHECK_MODULES(VORBIS, vorbis, have_vorbis="true", have_vorbis="false")
 fi
 
 AM_CONDITIONAL(HAVE_VORBIS, test x$have_vorbis = xtrue)
@@ -381,7 +383,7 @@ have_libmpeg2=false
 AH_TEMPLATE([HAVE_LIBMPEG2], [libmpeg2 found])
 
 AC_ARG_ENABLE(libmpeg2,
-[AC_HELP_STRING([--disable-libmpeg2],[Disable libmpeg2 (default: autodetect)])],
+[AS_HELP_STRING([--disable-libmpeg2],[Disable libmpeg2 (default: autodetect)])],
 [case "${enableval}" in
    yes) test_libmpeg2=true ;;
    no)  test_libmpeg2=false ;;
@@ -416,7 +418,7 @@ have_libtiff=false
 TIFF_REQUIRED="3.5.0"
 
 AC_ARG_ENABLE(libtiff,
-[AC_HELP_STRING([--disable-libtiff],[Disable libtiff (default: autodetect)])],
+[AS_HELP_STRING([--disable-libtiff],[Disable libtiff (default: autodetect)])],
 [case "${enableval}" in
    yes) test_libtiff=true ;;
    no)  test_libtiff=false ;;
@@ -429,13 +431,16 @@ OLD_LIBS=$LIBS
 LIBS="$LIBS -ltiff"
    
 AC_MSG_CHECKING(for libtiff)
-AC_TRY_LINK([#include <tiffio.h>],
-            [TIFF * tiff = (TIFF*)0;
-	     int i = 0;
-	     /* We ensure the function is here but never call it */
-             if(i)
-	       TIFFReadRGBAImage(tiff, 0, 0, (uint32*)0, 0);
-	     return 0;],
+AC_LINK_IFELSE([AC_LANG_SOURCE([[#include <tiffio.h>
+				int main()
+				{
+				TIFF * tiff = (TIFF*)0;
+				int i = 0;
+				/* We ensure the function is here but never call it */
+				if(i)
+				  TIFFReadRGBAImage(tiff, 0, 0, (uint32*)0, 0);
+				return 0;    
+				}]])],
             [have_libtiff=true])
  
 case $have_libtiff in
@@ -472,7 +477,7 @@ have_openjpeg=false
 OPENJPEG_REQUIRED="1.3"
 
 AC_ARG_ENABLE(openjpeg,
-[AC_HELP_STRING([--disable-openjpeg],[Disable openjpeg (default: autodetect)])],
+[AS_HELP_STRING([--disable-openjpeg],[Disable openjpeg (default: autodetect)])],
 [case "${enableval}" in
    yes) test_openjpeg=true ;;
    no)  test_openjpeg=false ;;
@@ -516,68 +521,6 @@ fi
 
 ])
 
-
-dnl
-dnl libsmbclient
-dnl
-
-AC_DEFUN([GMERLIN_CHECK_SAMBA],[
-
-AH_TEMPLATE([HAVE_SAMBA], [Samba support])
- 
-have_libsmbclient=false
-
-SAMBA_REQUIRED="3.0.0"
-
-AC_ARG_ENABLE(samba,
-[AC_HELP_STRING([--disable-samba],[Disable samba (default autodetect)])],
-[case "${enableval}" in
-   yes) test_libsmbclient=true ;;
-   no)  test_libsmbclient=false ;;
-esac],[test_libsmbclient=true])
-
-if test x$test_libsmbclient = xtrue; then
- 
-OLD_CFLAGS=$CFLAGS
-OLD_LIBS=$LIBS
-
-LIBS="-lsmbclient"
-CFLAGS=""
- 
-AC_MSG_CHECKING(for libsmbclient)
-AC_TRY_LINK([#include <libsmbclient.h>
-             #include <stdio.h>],
-            [int i = 0;
-	     /* We ensure the function is here but never call it */
-             if(i)
-		smbc_lseek(0,0,SEEK_SET);
-	     return 0;],
-            [have_libsmbclient=true])
- 
-case $have_libsmbclient in
-  true) AC_DEFINE(HAVE_SAMBA)
-        AC_MSG_RESULT(yes)
-        SAMBA_LIBS=$LIBS;
-        SAMBA_CFLAGS=$CFLAGS ;;
-  false) AC_MSG_RESULT(no); SAMBA_LIBS=""; SAMBA_CFLAGS="";;
-esac
-CFLAGS=$OLD_CFLAGS
-LIBS=$OLD_LIBS
-
-fi
-
-AC_SUBST(SAMBA_CFLAGS)
-AC_SUBST(SAMBA_LIBS)
-AC_SUBST(SAMBA_REQUIRED)
-
-AM_CONDITIONAL(HAVE_SAMBA, test x$have_libsmbclient = xtrue)
-
-if test x$have_libsmbclient = xtrue; then
-AC_DEFINE(HAVE_SAMBA)
-fi
-
-])
-
 dnl
 dnl PNG
 dnl 
@@ -590,34 +533,15 @@ have_libpng=false
 PNG_REQUIRED="1.2.2"
 
 AC_ARG_ENABLE(libpng,
-[AC_HELP_STRING([--disable-libpng],[Disable libpng (default: autodetect)])],
+[AS_HELP_STRING([--disable-libpng],[Disable libpng (default: autodetect)])],
 [case "${enableval}" in
    yes) test_libpng=true ;;
    no)  test_libpng=false ;;
 esac],[test_libpng=true])
 
 if test x$test_libpng = xtrue; then
-   
-OLD_LIBS=$LIBS
 
-LIBS="$LIBS -lpng -lm -lz"
- 
-AC_MSG_CHECKING(for libpng)
-AC_TRY_LINK([#include <png.h>],
-            [png_structp png_ptr;
-             png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,
-                                               (png_voidp)0,
-                                                NULL, NULL);],
-            [have_libpng=true])
- 
-case $have_libpng in
-  true) AC_DEFINE(HAVE_LIBPNG)
-        AC_MSG_RESULT(yes)
-        PNG_LIBS=$LIBS;;
-  false) AC_MSG_RESULT(no); PNG_LIBS=""; PNG_CFLAGS="";;
-esac
-LIBS=$OLD_LIBS
-
+PKG_CHECK_MODULES(PNG, libpng, have_libpng="true", have_libpng="false")
 fi
 
 AC_SUBST(PNG_CFLAGS)
@@ -647,7 +571,7 @@ AC_ARG_WITH(faad2-prefix, [ --with-faad2-prefix=PFX   Prefix to search for faad2
 
 
 AC_ARG_ENABLE(faad2,
-[AC_HELP_STRING([--disable-faad2],[Disable faad2 (default: autodetect)])],
+[AS_HELP_STRING([--disable-faad2],[Disable faad2 (default: autodetect)])],
 [case "${enableval}" in
    yes) test_faad2=true ;;
    no)  test_faad2=false ;;
@@ -722,7 +646,7 @@ AH_TEMPLATE([HAVE_DVDREAD], [Enable libdvdread])
 have_dvdread="false"
 
 AC_ARG_ENABLE(dvdread,
-[AC_HELP_STRING([--disable-dvdread],[Disable libdvdread (default: autodetect)])],
+[AS_HELP_STRING([--disable-dvdread],[Disable libdvdread (default: autodetect)])],
 [case "${enableval}" in
    yes) test_dvdread=true ;;
    no)  test_dvdread=false ;;
@@ -789,7 +713,7 @@ FLAC_REQUIRED="1.2.0"
 have_flac="false"
 
 AC_ARG_ENABLE(flac,
-[AC_HELP_STRING([--disable-flac],[Disable flac (default: autodetect)])],
+[AS_HELP_STRING([--disable-flac],[Disable flac (default: autodetect)])],
 [case "${enableval}" in
    yes) test_flac=true ;;
    no)  test_flac=false ;;
@@ -799,67 +723,7 @@ if test x$test_flac = xtrue; then
 
 AH_TEMPLATE([HAVE_FLAC], [Enable FLAC])
 
-AC_MSG_CHECKING(for flac)
-
-OLD_CFLAGS=$CFLAGS
-OLD_LIBS=$LIBS
-
-CFLAGS=""
-LIBS="-lFLAC -lm"
-
-  AC_TRY_RUN([
-    #include <FLAC/stream_decoder.h>
-    #include <stdio.h>
-    main()
-    {
-    FILE * version_file;
-    int version_major;
-    int version_minor;
-    int version_patchlevel;
-    fprintf(stderr, "FLAC__VERSION_STRING: %s\n", FLAC__VERSION_STRING);
-    if(sscanf(FLAC__VERSION_STRING, "%d.%d.%d", &version_major,
-              &version_minor, &version_patchlevel) < 3)
-      return -1;
-    if((version_major != 1) || (version_minor < 2))
-      return 1;
-    version_file = fopen("flac_version", "w");
-    fprintf(version_file, "%d.%d.%d\n", version_major,
-            version_minor, version_patchlevel);
-    fclose(version_file);
-    return 0;
-    }
-  ],
-  [
-    # program could be run
-    have_flac="true"
-    AC_MSG_RESULT(yes)
-    FLAC_CFLAGS=$CFLAGS
-    FLAC_LIBS=$LIBS
-    BGAV_FLAC_MAJOR=$(cat flac_version | cut -d . -f 1)
-    BGAV_FLAC_MINOR=$(cat flac_version | cut -d . -f 2)
-    BGAV_FLAC_PATCHLEVEL=$(cat flac_version | cut -d . -f 3)
-    rm -f flac_version
-  ],[
-    # program could not be run
-    AC_MSG_RESULT(no)
-  ],[
-    if test -n "${FLAC_VERSION}"; then
-      have_flac="true"
-      AC_MSG_RESULT([assuming yes (cross-compiling)])
-      FLAC_CFLAGS=$CFLAGS
-      FLAC_LIBS=$LIBS
-      BGAV_FLAC_MAJOR=$(echo ${FLAC_VERSION} | cut -d . -f 1)
-      BGAV_FLAC_MINOR=$(echo ${FLAC_VERSION} | cut -d . -f 2)
-      BGAV_FLAC_PATCHLEVEL=$(echo ${FLAC_VERSION} | cut -d . -f 3)
-    else
-      AC_MSG_RESULT([no (cross-compiling)])
-    fi
-  ]
-)
-
-CFLAGS=$OLD_CFLAGS
-LIBS=$OLD_LIBS
-
+PKG_CHECK_MODULES(FLAC, flac, have_flac="true", have_flac="false")
 fi
 
 AC_SUBST(FLAC_CFLAGS)
@@ -870,9 +734,6 @@ AM_CONDITIONAL(HAVE_FLAC, test x$have_flac = xtrue)
 
 if test x$have_flac = xtrue; then
 AC_DEFINE(HAVE_FLAC)
-AC_DEFINE_UNQUOTED(BGAV_FLAC_MAJOR, $BGAV_FLAC_MAJOR, Flac major version)
-AC_DEFINE_UNQUOTED(BGAV_FLAC_MINOR, $BGAV_FLAC_MINOR, Flac minor version)
-AC_DEFINE_UNQUOTED(BGAV_FLAC_PATCHLEVEL, $BGAV_FLAC_PATCHLEVEL, Flac patchlevel)
 fi
 
 ])
@@ -887,7 +748,7 @@ have_musepack="false"
 MUSEPACK_REQUIRED="1.1"
 
 AC_ARG_ENABLE(musepack,
-[AC_HELP_STRING([--disable-musepack],[Disable musepack (default: autodetect)])],
+[AS_HELP_STRING([--disable-musepack],[Disable musepack (default: autodetect)])],
 [case "${enableval}" in
    yes) test_musepack=true ;;
    no)  test_musepack=false ;;
@@ -904,14 +765,15 @@ CFLAGS=""
 AH_TEMPLATE([HAVE_MUSEPACK], [Enable Musepack])
 AC_MSG_CHECKING(for libmpcdec)
 
-  AC_TRY_LINK([
-    #include <mpc/mpcdec.h>
+  AC_LINK_IFELSE([AC_LANG_SOURCE([[#include <mpc/mpcdec.h>
     #include <stdio.h>
-   ],[
+    int main()
+    {
     mpc_reader reader;
     mpc_demux_init(&reader);
     return 0;
-  ],[
+    }
+]])],[
     # program could be run
     have_musepack="true"
     AC_MSG_RESULT(yes)
@@ -950,7 +812,7 @@ AH_TEMPLATE([HAVE_MAD], [Enable MAD])
 have_mad="false"
 
 AC_ARG_ENABLE(mad,
-[AC_HELP_STRING([--disable-mad],[Disable libmad (default: autodetect)])],
+[AS_HELP_STRING([--disable-mad],[Disable libmad (default: autodetect)])],
 [case "${enableval}" in
    yes) test_mad=true ;;
    no)  test_mad=false ;;
@@ -964,42 +826,7 @@ OLD_LIBS=$LIBS
 LIBS="-lmad"
 CFLAGS=""
 
-AC_MSG_CHECKING(for libmad 0.15.x)
-
-  AC_TRY_RUN([
-    #include "mad.h"
-    #include <stdio.h>
-    main()
-    {
-    struct mad_stream stream;
-    int version_major = MAD_VERSION_MAJOR;
-    int version_minor = MAD_VERSION_MINOR;
-    if((version_major != 0) || (version_minor != 15))
-      return -1;
-    mad_stream_init(&stream);
-    return 0;
-    }
-  ],
-  [
-    # program could be run
-    have_mad="true"
-    AC_MSG_RESULT(yes)
-    MAD_CFLAGS=$CFLAGS
-    MAD_LIBS=$LIBS
-  ],[
-    # program could not be run
-    AC_MSG_RESULT(no)
-  ],[
-    # cross-compiling
-    have_mad="true"
-    AC_MSG_RESULT([assuming yes (cross-compiling)])
-    MAD_CFLAGS=$CFLAGS
-    MAD_LIBS=$LIBS
-  ]
-)
-
-CFLAGS=$OLD_CFLAGS
-LIBS=$OLD_LIBS
+PKG_CHECK_MODULES(MAD, mad >= $MAD_REQUIRED, have_mad="true", have_mad="false")
 
 fi
 
@@ -1025,7 +852,7 @@ AH_TEMPLATE([HAVE_LIBA52], [Enable liba52])
 have_liba52="false"
 
 AC_ARG_ENABLE(liba52,
-[AC_HELP_STRING([--disable-liba52],[Disable liba52 (default: autodetect)])],
+[AS_HELP_STRING([--disable-liba52],[Disable liba52 (default: autodetect)])],
 [case "${enableval}" in
    yes) test_liba52=true ;;
    no)  test_liba52=false ;;
@@ -1041,12 +868,15 @@ CFLAGS=""
 LIBA52_REQUIRED="0.7.4"
 AC_MSG_CHECKING([for liba52])
 
-  AC_TRY_LINK([
+  AC_LINK_IFELSE([
+    AC_LANG_SOURCE([[
     #include <inttypes.h>
     #include <a52dec/a52.h>
-  ],[
-    a52_state_t * state = a52_init(0);
-    return 0;
+    int main() {
+      a52_state_t * state = a52_init(0);
+      return 0;
+      }
+    ]])
   ],[
     # program could be run
     have_liba52="true"
@@ -1088,7 +918,7 @@ have_cdio="false"
 CDIO_REQUIRED="0.79"
 
 AC_ARG_ENABLE(libcdio,
-[AC_HELP_STRING([--disable-libcdio],[Disable libcdio (default: autodetect)])],
+[AS_HELP_STRING([--disable-libcdio],[Disable libcdio (default: autodetect)])],
 [case "${enableval}" in
    yes) test_cdio=true ;;
    no)  test_cdio=false ;;
@@ -1160,7 +990,7 @@ have_dts="false"
 DCA_REQUIRED="0.0.2"
 
 AC_ARG_ENABLE(libcda,
-[AC_HELP_STRING([--disable-libdca],[Disable libdca (default: autodetect)])],
+[AS_HELP_STRING([--disable-libdca],[Disable libdca (default: autodetect)])],
 [case "${enableval}" in
    yes) test_libdca=true ;;
    no)  test_libdca=false ;;
@@ -1217,39 +1047,6 @@ fi
 
 ])
 
-
-
-dnl
-dnl Ogg
-dnl
-
-AC_DEFUN([GMERLIN_CHECK_OGG],[
-
-OGG_REQUIRED="1.1"
-have_ogg=false
-AH_TEMPLATE([HAVE_OGG], [Ogg libraries are there])
-
-AC_ARG_ENABLE(ogg,
-[AC_HELP_STRING([--disable-ogg],[Disable libogg (default: autodetect)])],
-[case "${enableval}" in
-   yes) test_ogg=true ;;
-   no)  test_ogg=false ;;
-esac],[test_ogg=true])
-
-if test x$test_ogg = xtrue; then
-XIPH_PATH_OGG(have_ogg=true)
-fi
-
-AM_CONDITIONAL(HAVE_OGG, test x$have_ogg = xtrue)
-
-if test x$have_ogg = xtrue; then
-AC_DEFINE(HAVE_OGG)
-fi
-
-AC_SUBST(OGG_REQUIRED)
-
-])
-
 dnl
 dnl lame
 dnl
@@ -1259,7 +1056,7 @@ LAME_REQUIRED="3.93"
 have_lame="false"
 
 AC_ARG_ENABLE(lame,
-[AC_HELP_STRING([--disable-lame],[Disable lame (default: autodetect)])],
+[AS_HELP_STRING([--disable-lame],[Disable lame (default: autodetect)])],
 [case "${enableval}" in
    yes) test_lame=true ;;
    no)  test_lame=false ;;
@@ -1344,7 +1141,7 @@ FAAC_REQUIRED="1.24"
 
 
 AC_ARG_ENABLE(faac,
-[AC_HELP_STRING([--disable-faac],[Disable faac (default: autodetect)])],
+[AS_HELP_STRING([--disable-faac],[Disable faac (default: autodetect)])],
 [case "${enableval}" in
    yes) test_faac=true ;;
    no)  test_faac=false ;;
@@ -1427,7 +1224,7 @@ have_libjpeg=false
 JPEG_REQUIRED="6b"
 
 AC_ARG_ENABLE(libjpeg,
-[AC_HELP_STRING([--disable-libjpeg],[Disable libjpeg (default: autodetect)])],
+[AS_HELP_STRING([--disable-libjpeg],[Disable libjpeg (default: autodetect)])],
 [case "${enableval}" in
    yes) test_libjpeg=true ;;
    no)  test_libjpeg=false ;;
@@ -1500,9 +1297,8 @@ have_GL="true"
 AC_SEARCH_LIBS([glBegin], [GL], [], [have_GL="false"], [])
 
 if test "x$have_GL" = "xtrue"; then
-AC_TRY_LINK([#include <GL/gl.h>],[
-if(0) glBegin(GL_QUADS); return 0;],
-[],[have_GL="false"])
+AC_LINK_IFELSE([AC_LANG_SOURCE([[#include <GL/gl.h> int main() { if(0) glBegin(GL_QUADS); return 0; } ]])],[],[have_GL="false"])
+dnl AC_LINK_IFELSE(AC_LANG_SOURCE([]),[],[have_GL="false"])
 fi
 
 GL_LIBS=$LIBS
@@ -1519,9 +1315,7 @@ have_GLX="true"
 AC_SEARCH_LIBS([glXCreateContext], [GL glx], [], [have_GLX="false"], [])
 
 if test "x$have_GL" = "xtrue"; then
-AC_TRY_LINK([#include <GL/glx.h>],[
-if(0) glXChooseFBConfig(NULL, 0, NULL, NULL); return 0;
-],[],[have_GLX="false"])
+AC_LINK_IFELSE([AC_LANG_SOURCE([[#include <GL/glx.h>int main() { if(0) glXChooseFBConfig(NULL, 0, NULL, NULL); return 0;} ]])],[],[have_GLX="false"])
 fi
 
 GLX_LIBS=$LIBS
@@ -1538,9 +1332,8 @@ have_EGL="true"
 AC_SEARCH_LIBS([eglGetCurrentDisplay], [GL EGL], [], [have_EGL="false"], [])
 
 if test "x$have_GL" = "xtrue"; then
-AC_TRY_LINK([#include <EGL/egl.h>],[
-if(0) eglGetCurrentDisplay(); return 0;
-],[],[have_EGL="false"])
+AC_LINK_IFELSE([AC_LANG_SOURCE([[#include <EGL/egl.h> if(0) eglGetCurrentDisplay(); return 0;]])],
+	       [],[have_EGL="false"])
 fi
 
 EGL_LIBS=$LIBS
@@ -1623,57 +1416,6 @@ AC_CHECK_FUNC(inotify_init,have_inotify="true";AC_DEFINE(HAVE_INOTIFY))
 ])
 
 dnl
-dnl Semaphores
-dnl
-
-AC_DEFUN([GMERLIN_CHECK_SEMAPHORES],[
-AH_TEMPLATE([HAVE_POSIX_SEMAPHORES], [System supports POSIX semaphores])
-
-have_posix_semaphores="false"
-
-OLD_LIBS=$LIBS
-LIBS="$LIBS -lpthread"
-
-AC_MSG_CHECKING([for POSIX unnamed semaphores]);
-
-  AC_TRY_RUN([
-    #include <semaphore.h>
-	  
-    #include <stdio.h>
-    main()
-    {
-    int result;
-    sem_t s;
-    result = sem_init(&s, 0, 0);
-    if(result)
-      return -1;
-    return 0;
-    }
-  ],
-  [
-    # program could be run
-    have_posix_semaphores="true"
-    AC_MSG_RESULT(yes)
-    AC_DEFINE(HAVE_POSIX_SEMAPHORES)
-  ],[
-    # program could not be run
-    AC_MSG_RESULT(no)
-  ],[
-    # cross compiling
-    have_posix_semaphores="true"
-    AC_MSG_RESULT([assuming yes (cross compiling)])
-    AC_DEFINE(HAVE_POSIX_SEMAPHORES)
-  ]
-)
-
-LIBS=$OLD_LIBS
-
-
-AM_CONDITIONAL(HAVE_POSIX_SEMAPHORES, test x$have_posix_semaphores = xtrue)
-
-])
-
-dnl
 dnl vdpau
 dnl
 
@@ -1684,7 +1426,7 @@ AH_TEMPLATE([HAVE_VDPAU], [Enable tiff codec])
 have_vdpau=false
 
 AC_ARG_ENABLE(vdpau,
-[AC_HELP_STRING([--disable-vdpau],[Disable vdpau (default: autodetect)])],
+[AS_HELP_STRING([--disable-vdpau],[Disable vdpau (default: autodetect)])],
 [case "${enableval}" in
    yes) test_vdpau=true ;;
    no)  test_vdpau=false ;;
@@ -1744,7 +1486,7 @@ AH_TEMPLATE([HAVE_V4L2], [Enable v4l2])
 	     
 have_v4l2=false
 AC_ARG_ENABLE(v4l2,
-              AC_HELP_STRING(--disable-v4l2, [Disable Video4Linux (default: autodetect)]),
+              AS_HELP_STRING(--disable-v4l2, [Disable Video4Linux (default: autodetect)]),
               [case "${enableval}" in
                  yes) test_v4l2=true ;;
                  no) test_v4l2=false ;;
@@ -1778,7 +1520,7 @@ have_shout="false"
 SHOUT_REQUIRED="2.2.2"
 
 AC_ARG_ENABLE(libshout,
-[AC_HELP_STRING([--disable-libshout],[Disable libshout (default: autodetect)])],
+[AS_HELP_STRING([--disable-libshout],[Disable libshout (default: autodetect)])],
 [case "${enableval}" in
    yes) test_shout=true ;;
    no)  test_shout=false ;;
@@ -1815,7 +1557,7 @@ have_opus="false"
 OPUS_REQUIRED="1.0.0"
 
 AC_ARG_ENABLE(opus,
-[AC_HELP_STRING([--disable-opus],[Disable opus (default: autodetect)])],
+[AS_HELP_STRING([--disable-opus],[Disable opus (default: autodetect)])],
 [case "${enableval}" in
    yes) test_opus=true ;;
    no)  test_opus=false ;;
@@ -1905,7 +1647,7 @@ LIBVA_CFLAGS=""
 LIBVA_LIBS=""
 
 AC_ARG_ENABLE(libva,
-[AC_HELP_STRING([--disable-libva],[Disable libva (default: autodetect)])],
+[AS_HELP_STRING([--disable-libva],[Disable libva (default: autodetect)])],
 [case "${enableval}" in
    yes) test_libva=true ;;
    no)  test_libva=false ;;

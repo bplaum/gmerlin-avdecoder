@@ -24,7 +24,7 @@ endif
 
 if HAVE_VORBIS
 vorbis_cflags = @VORBIS_CFLAGS@
-vorbis_libs =   @VORBIS_LIBS@ @VORBISENC_LIBS@
+vorbis_libs =   @VORBIS_LIBS@
 vorbis_sources = audio_vorbis.c parse_vorbis.c
 else
 vorbis_cflags =
@@ -165,15 +165,6 @@ dvd_cflags  =
 dvd_libs    =
 endif
 
-if HAVE_SAMBA
-samba_cflags =  @SAMBA_CFLAGS@
-samba_libs =    @SAMBA_LIBS@
-samba_sources = in_smb.c
-else
-samba_cflags =
-samba_libs =
-samba_sources =
-endif
 
 if HAVE_THEORADEC
 theora_cflags  = @THEORADEC_CFLAGS@
@@ -246,7 +237,6 @@ $(avformat_libs) \
 $(a52_libs) \
 $(avcodec_libs) \
 $(cdio_libs) \
-$(samba_libs) \
 $(theora_libs) \
 $(speex_libs) \
 $(libpostproc_libs) \
@@ -278,7 +268,6 @@ $(avformat_cflags) \
 $(avcodec_cflags) \
 $(cdio_cflags) \
 $(mjpegtools_cflags) \
-$(samba_cflags) \
 $(theora_cflags) \
 $(speex_cflags) \
 $(libpostproc_cflags) \
@@ -300,7 +289,6 @@ $(dca_sources) \
 $(flac_sources) \
 $(avcodec_sources) \
 $(mjpegtools_sources) \
-$(samba_sources) \
 $(theora_sources) \
 $(speex_sources) \
 $(dvb_sources) \
@@ -398,12 +386,10 @@ id3v1.c \
 id3v2.c \
 in_cb.c \
 in_file.c \
-in_ftp.c \
 in_hls.c \
 in_http.c \
 in_memory.c \
 in_mms.c \
-in_pnm.c \
 input.c \
 languages.c \
 matroska.c \

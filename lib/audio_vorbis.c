@@ -58,13 +58,6 @@ typedef struct
   int64_t packetno;
   } vorbis_audio_priv;
 
-/*
- *  The following function comes at the very end, because it's 
- *  not that nice :-)
- *  (Ported from the Vorbis ACM codec)
- */
-
-static char * get_default_vorbis_header(bgav_stream_t * stream, int *len);
 
 /* Put raw streams into the sync engine */
 
@@ -190,8 +183,6 @@ static int init_vorbis(bgav_stream_t * s)
   {
   uint8_t * ptr;
   char * buffer;
-  char * default_header;
-  int default_header_len;
 
   uint32_t header_sizes[3];
   uint32_t len;
@@ -209,9 +200,7 @@ static int init_vorbis(bgav_stream_t * s)
   /* Heroine Virtual way:
      The 3 header packets are in the first audio chunk */
   
-  if((s->fourcc == BGAV_MK_FOURCC('O','g', 'g', 'S')) ||
-     (s->fourcc == BGAV_WAVID_2_FOURCC(0x674f)) || /* mode 1  */
-     (s->fourcc == BGAV_WAVID_2_FOURCC(0x676f)))   /* mode 1+ */
+  if(s->fourcc == BGAV_MK_FOURCC('O','g', 'g', 'S'))
     {
     if(!next_page(s))
       return 0;
@@ -319,46 +308,7 @@ static int init_vorbis(bgav_stream_t * s)
       return 0;
     vorbis_synthesis_headerin(&priv->dec_vi, &priv->dec_vc, &priv->dec_op);
     }
-#if 1
 
-  /* This is the most ugly method (AVI vorbis Mode 3): There is no header inside
-     the file. Instead, an encoder is created from the stream data.
-  */
-  
-  else if((s->fourcc == BGAV_WAVID_2_FOURCC(0x6751)) ||
-          (s->fourcc == BGAV_WAVID_2_FOURCC(0x6771)))
-    {
-    default_header = get_default_vorbis_header(s, &default_header_len);
-
-    buffer = ogg_sync_buffer(&priv->dec_oy, default_header_len);
-    memcpy(buffer, default_header, default_header_len);
-    ogg_sync_wrote(&priv->dec_oy, default_header_len);
-    free(default_header);
-    
-    if(!next_page(s))
-      return 0;
-    if(!next_packet(s))
-      return 0;
-    /* Initialize vorbis */
-    
-    if(vorbis_synthesis_headerin(&priv->dec_vi, &priv->dec_vc,
-                                 &priv->dec_op) < 0)
-      {
-      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "decode: vorbis_synthesis_headerin: not a vorbis header");
-      return 0;
-      }
-    
-    if(!next_packet(s))
-      return 0;
-    vorbis_synthesis_headerin(&priv->dec_vi, &priv->dec_vc, &priv->dec_op);
-    if(!next_packet(s))
-      return 0;
-    vorbis_synthesis_headerin(&priv->dec_vi, &priv->dec_vc, &priv->dec_op);
-
-    
-    }
-#endif
-  
   /*
    *  OggV method (qtcomponents.sf.net):
    *  In the sample description, we have an atom of type
@@ -640,249 +590,3 @@ void bgav_init_audio_decoders_vorbis()
   bgav_audio_decoder_register(&decoder);
   }
 
-/* Now comes the ugly part: Create a vorbis header from a bgav stream
-   (needed for Vorbis type 3).
-
-   It works the following: With the stream format (samplerate, bitrate,
-   channels) we search in a table for the vorbis encoder parameters.
-   Then, we start an encoder, get the header data and use them for decoding.
-
-   WARNING: This code assumes, that the vorbis encoder always emits the same
-   codebooks for a particular setup, which may not be the case across
-   libvorbis versions :-(
-*/
-
-#define WORD  uint16_t
-#define DWORD uint32_t
-#define LONG  long
-
-typedef struct
-{
-        DWORD nSamplesPerSec;
-        WORD  nChannels;
-        WORD  wBitsPerSample;
-        DWORD nAvgBytesPerSec;
-        float flQuality;
-} FORMATDETAIL;
-
-static const FORMATDETAIL aOggFormatIndexToDetail[] =
-  {
-    // WAVE_FORMAT_VORBIS(48K,16Bits,Stereo)
-    // { 64000/8, 80000/8, 96000/8, 112000/8, 128000/8, 160000/8, 192000/8, 240000/8, 256000/8, 350000/8, 450000/8 }, // 48K,Stereo
-    
-    { 48000, 2, 16,  64000/8, 0.0f },
-    { 48000, 2, 16,  80000/8, 0.1f },
-    { 48000, 2, 16,  96000/8, 0.2f },
-    { 48000, 2, 16, 112000/8, 0.3f },
-    { 48000, 2, 16, 128000/8, 0.4f },
-    { 48000, 2, 16, 160000/8, 0.5f },
-    { 48000, 2, 16, 192000/8, 0.6f },
-    { 48000, 2, 16, 240000/8, 0.7f },
-    { 48000, 2, 16, 256000/8, 0.8f },
-    { 48000, 2, 16, 350000/8, 0.9f },
-    { 48000, 2, 16, 450000/8, 1.0f },
-    // WAVE_FORMAT_VORBIS(48K,16Bits,Mono)
-    // { 48000/8, 64000/8, 72000/8,  80000/8,  88000/8,  96000/8, 112000/8, 128000/8, 144000/8, 192000/8, 256000/8 }, // 48K,Mono
-
-    { 48000, 1, 16,  48000/8, 0.0f },
-    { 48000, 1, 16,  64000/8, 0.1f },
-    { 48000, 1, 16,  72000/8, 0.2f },
-    { 48000, 1, 16,  80000/8, 0.3f },
-    { 48000, 1, 16,  88000/8, 0.4f },
-    { 48000, 1, 16,  96000/8, 0.5f },
-    { 48000, 1, 16, 112000/8, 0.6f },
-    { 48000, 1, 16, 128000/8, 0.7f },
-    { 48000, 1, 16, 144000/8, 0.8f },
-    { 48000, 1, 16, 192000/8, 0.9f },
-    { 48000, 1, 16, 256000/8, 1.0f },
-    // WAVE_FORMAT_VORBIS(44K,16Bits,Stereo)
-    // { 64000/8, 80000/8, 96000/8, 112000/8, 128000/8, 160000/8, 192000/8, 240000/8, 256000/8, 350000/8, 450000/8 }, // 44K,Stereo
-    { 44100, 2, 16,  64000/8, 0.0f },
-    { 44100, 2, 16,  80000/8, 0.1f },
-    { 44100, 2, 16,  96000/8, 0.2f },
-    { 44100, 2, 16, 112000/8, 0.3f },
-    { 44100, 2, 16, 128000/8, 0.4f },
-    { 44100, 2, 16, 160000/8, 0.5f },
-    { 44100, 2, 16, 192000/8, 0.6f },
-    { 44100, 2, 16, 240000/8, 0.7f },
-    { 44100, 2, 16, 256000/8, 0.8f },
-    { 44100, 2, 16, 350000/8, 0.9f },
-    { 44100, 2, 16, 450000/8, 1.0f },
-    // WAVE_FORMAT_VORBIS(44K,16Bits,Mono)
-    // { 48000/8, 64000/8, 72000/8,  80000/8,  88000/8,  96000/8, 112000/8, 128000/8, 144000/8, 192000/8, 256000/8 }, // 44K,Mono
-    { 44100, 1, 16,  48000/8, 0.0f },
-    { 44100, 1, 16,  64000/8, 0.1f },
-    { 44100, 1, 16,  72000/8, 0.2f },
-    { 44100, 1, 16,  80000/8, 0.3f },
-    { 44100, 1, 16,  88000/8, 0.4f },
-    { 44100, 1, 16,  96000/8, 0.5f },
-    { 44100, 1, 16, 112000/8, 0.6f },
-    { 44100, 1, 16, 128000/8, 0.7f },
-    { 44100, 1, 16, 144000/8, 0.8f },
-    { 44100, 1, 16, 192000/8, 0.9f },
-    { 44100, 1, 16, 256000/8, 1.0f },
-    // WAVE_FORMAT_VORBIS(22K,16Bits,Stereo)
-    // { 56000/8, 72000/8, 80000/8,  88000/8,  96000/8, 112000/8, 144000/8, 176000/8, 192000/8, 256000/8, 320000/8 }, // 22K,Stereo
-    { 22050, 2, 16,  56000/8, 0.0f },
-    { 22050, 2, 16,  72000/8, 0.1f },
-    { 22050, 2, 16,  80000/8, 0.2f },
-    { 22050, 2, 16,  88000/8, 0.3f },
-    { 22050, 2, 16,  96000/8, 0.4f },
-    { 22050, 2, 16, 112000/8, 0.5f },
-    { 22050, 2, 16, 144000/8, 0.6f },
-    { 22050, 2, 16, 176000/8, 0.7f },
-    { 22050, 2, 16, 192000/8, 0.8f },
-    { 22050, 2, 16, 256000/8, 0.9f },
-    { 22050, 2, 16, 320000/8, 1.0f },
-    // WAVE_FORMAT_VORBIS(22K,16Bits,Mono)
-    // { 36000/8, 42000/8, 48000/8,  52000/8,  56000/8,  64000/8,  80000/8,  88000/8,  96000/8, 128000/8, 168000/8 }, // 22K,Mono
-    { 22050, 1, 16,  36000/8, 0.0f },
-    { 22050, 1, 16,  42000/8, 0.1f },
-    { 22050, 1, 16,  48000/8, 0.2f },
-    { 22050, 1, 16,  52000/8, 0.3f },
-    { 22050, 1, 16,  56000/8, 0.4f },
-    { 22050, 1, 16,  64000/8, 0.5f },
-    { 22050, 1, 16,  80000/8, 0.6f },
-    { 22050, 1, 16,  88000/8, 0.7f },
-    { 22050, 1, 16,  96000/8, 0.8f },
-    { 22050, 1, 16, 128000/8, 0.9f },
-    { 22050, 1, 16, 168000/8, 1.0f },
-    // WAVE_FORMAT_VORBIS(11K,16Bits,Stereo)
-    // { 36000/8, 44000/8, 50000/8,  52000/8,  56000/8,  64000/8,  80000/8,  96000/8, 112000/8, 144000/8, 168000/8 }, // 11K,Stereo
-    { 11025, 2, 16,  36000/8, 0.0f },
-    { 11025, 2, 16,  44000/8, 0.1f },
-    { 11025, 2, 16,  50000/8, 0.2f },
-    { 11025, 2, 16,  52000/8, 0.3f },
-    { 11025, 2, 16,  56000/8, 0.4f },
-    { 11025, 2, 16,  64000/8, 0.5f },
-    { 11025, 2, 16,  80000/8, 0.6f },
-    { 11025, 2, 16,  96000/8, 0.7f },
-    { 11025, 2, 16, 112000/8, 0.8f },
-    { 11025, 2, 16, 144000/8, 0.9f },
-    { 11025, 2, 16, 168000/8, 1.0f },
-    // WAVE_FORMAT_VORBIS(11K,16Bits,Mono)
-    // { 22000/8, 26000/8, 28000/8,  30000/8,  32000/8,  34000/8,  40000/8,  48000/8,  56000/8,  72000/8,  88000/8 }, // 11K,Mono
-
-    { 11025, 1, 16,  22000/8, 0.0f },
-    { 11025, 1, 16,  26000/8, 0.1f },
-    { 11025, 1, 16,  28000/8, 0.2f },
-    { 11025, 1, 16,  30000/8, 0.3f },
-    { 11025, 1, 16,  32000/8, 0.4f },
-    { 11025, 1, 16,  34000/8, 0.5f },
-    { 11025, 1, 16,  40000/8, 0.6f },
-    { 11025, 1, 16,  48000/8, 0.7f },
-    { 11025, 1, 16,  56000/8, 0.8f },
-    { 11025, 1, 16,  72000/8, 0.9f },
-    { 11025, 1, 16,  88000/8, 1.0f },
-  };
-
-#define ARRAYLEN(arr) (sizeof(arr)/sizeof(arr[0]))
-
-static DWORD oggFormatToIndex(const bgav_stream_t *pwfx)
-  {
-  DWORD index = 0;
-  LONG  delta = LONG_MAX;
-  DWORD n;
-  LONG d;
-        
-  for(n=0; n<ARRAYLEN(aOggFormatIndexToDetail); n++)
-    {
-    if(pwfx->data.audio.format->samplerate!=aOggFormatIndexToDetail[n].nSamplesPerSec) continue;
-    if(pwfx->data.audio.format->num_channels!=aOggFormatIndexToDetail[n].nChannels     ) continue;
-    d = pwfx->container_bitrate/8 - aOggFormatIndexToDetail[n].nAvgBytesPerSec;
-    if(d==0)
-      {
-      index = n;
-      break;
-      }
-    if(abs(d)<abs(delta))
-      {
-      index = n;
-      delta = d;
-      }
-    }
-  return index;
-  }
-
-#define MEMZERO(p) memset(&p, 0, sizeof(p))
-
-static char * get_default_vorbis_header(bgav_stream_t * stream, int * len)
-  {
-
-  char * ret = NULL;
-  int ret_len = 0;
-
-  vorbis_info vi;
-  vorbis_block vb;
-  vorbis_comment vc;
-  vorbis_dsp_state vd;
-
-  ogg_packet header_main;
-  ogg_packet header_comments;
-  ogg_packet header_codebooks;
-  ogg_stream_state os;
-  ogg_page og;
-  
-  int format_index;
-
-  /* Initialize */
-
-  MEMZERO(vi);
-  MEMZERO(vb);
-  MEMZERO(vc);
-  MEMZERO(vd);
-
-  MEMZERO(header_main);
-  MEMZERO(header_comments);
-  MEMZERO(header_codebooks);
-  MEMZERO(os);
-  MEMZERO(og);
-    
-  /* Get format description */
-  
-  format_index = oggFormatToIndex(stream);
-
-  /* Fire up an encoder */
-  
-  vorbis_info_init(&vi);
-  vorbis_comment_init(&vc);
-  vorbis_comment_add_tag(&vc,"ENCODER","vorbis.acm"); /* LOL */
-  
-  vorbis_encode_init_vbr(&vi,stream->data.audio.format->num_channels,
-                         stream->data.audio.format->num_channels,aOggFormatIndexToDetail[format_index].flQuality);
-  
-  //  vorbis_encode_init(&vi,stream->data.audio.format->num_channels,
-  //                     stream->data.audio.format->num_channels,bitrate, bitrate, bitrate);
-  
-  vorbis_analysis_init(&vd,&vi);
-  vorbis_block_init(&vd,&vb);
-
-  vorbis_analysis_headerout(&vd,&vc,&header_main,&header_comments,&header_codebooks);
-
-  ogg_stream_init(&os,0);
-  ogg_stream_packetin(&os,&header_main);
-  ogg_stream_packetin(&os,&header_comments);
-  ogg_stream_packetin(&os,&header_codebooks);
-
-  /* Extract header pages */
-
-  while(ogg_stream_flush(&os, &og))
-    {
-    ret = realloc(ret, ret_len + og.header_len + og.body_len);
-     
-    memcpy(ret + ret_len, og.header, og.header_len);
-    memcpy(ret + ret_len + og.header_len, og.body, og.body_len);
-
-    ret_len += og.header_len + og.body_len;
-    }
-
-  ogg_stream_clear(&os);
-  vorbis_block_clear(&vb);
-  vorbis_dsp_clear(&vd);
-  vorbis_comment_clear(&vc);
-  vorbis_info_clear(&vi);
-  
-  if(len)
-    *len = ret_len;
-  return ret;
-  }

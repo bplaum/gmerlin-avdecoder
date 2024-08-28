@@ -1,6 +1,6 @@
-AC_INIT(gmerlin-avdecoder, 2.0.0)
+AC_INIT([gmerlin-avdecoder],[2.0.0])
 AC_CONFIG_SRCDIR([include/avdec.h])
-AM_CONFIG_HEADER(include/config.h)
+AC_CONFIG_HEADERS(include/config.h)
 AM_INIT_AUTOMAKE(1.8.5)
 
 
@@ -29,11 +29,11 @@ AC_SUBST([XTRA_LDFLAGS])
 
 AC_LANG(C)
 
-AC_GNU_SOURCE
+AC_USE_SYSTEM_EXTENSIONS
 
 AC_DISABLE_STATIC
 AM_PROG_AS
-AC_PROG_LIBTOOL
+LT_INIT
 
 CFLAGS=$OLD_CFLAGS
 
@@ -52,12 +52,6 @@ AC_CHECK_FUNCS(ftello vasprintf isatty)
 AC_CHECK_DECLS([MSG_NOSIGNAL, SO_NOSIGPIPE],,,
                [#include <sys/types.h>
 	       #include <sys/socket.h>])
-
-dnl
-dnl Semaphores
-dnl
-
-GMERLIN_CHECK_SEMAPHORES
 
 dnl
 dnl Gettext
@@ -109,7 +103,7 @@ test_doxygen="true"
 have_doxygen="false"
 
 AC_ARG_WITH(doxygen,
-    AC_HELP_STRING([--without-doxygen],
+    AS_HELP_STRING([--without-doxygen],
     [disable documentation generation]),
     test_doxygen="false")
 
@@ -170,7 +164,7 @@ have_gmerlin="false"
 GMERLIN_REQUIRED="2.0.0"
 
 AC_ARG_ENABLE(gmerlin,
-[AC_HELP_STRING([--disable-gmerlin],[Disable gmerlin plugins (default: autodetect)])],
+[AS_HELP_STRING([--disable-gmerlin],[Disable gmerlin plugins (default: autodetect)])],
 [case "${enableval}" in
    yes) test_gmerlin=true ;;
    no)  test_gmerlin=false ;;
@@ -313,12 +307,6 @@ dnl
 dnl GMERLIN_CHECK_OPENJPEG
 
 dnl
-dnl libsmbclient
-dnl
-
-GMERLIN_CHECK_SAMBA
-
-dnl
 dnl PNG
 dnl 
 
@@ -387,7 +375,7 @@ AH_TEMPLATE([HAVE_LIBGSM], [ libgsm enabled ])
 have_libgsm="true"
 
 AC_ARG_WITH(GSM610,
-    AC_HELP_STRING([--without-GSM610],
+    AS_HELP_STRING([--without-GSM610],
     [disable libgsm]),
     have_libgsm="false", have_libgsm="true")
 

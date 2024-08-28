@@ -145,7 +145,8 @@ static gavl_source_status_t source_func_adts(void * priv, gavl_packet_t ** p)
     {
     gavl_dictionary_t * s;
     const uint8_t * extradata;
-    int extradata_size = 0;
+
+    size_t extradata_size = 0;
     
     s = gavl_packet_source_get_stream_nc(f->src);
     

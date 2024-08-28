@@ -681,10 +681,8 @@ int bgav_input_get_double_64_le(bgav_input_context_t * ctx, double * ret)
 extern const bgav_input_t bgav_input_file;
 extern const bgav_input_t bgav_input_stdin;
 // extern const bgav_input_t bgav_input_rtsp;
-extern const bgav_input_t bgav_input_pnm;
 extern const bgav_input_t bgav_input_mms;
 extern const bgav_input_t bgav_input_http;
-extern const bgav_input_t bgav_input_ftp;
 extern const bgav_input_t bgav_input_hls;
 //extern const bgav_input_t bgav_input_mmsh;
 
@@ -700,11 +698,6 @@ extern const bgav_input_t bgav_input_dvd;
 extern const bgav_input_t bgav_input_dvb;
 #endif
 
-
-#ifdef HAVE_SAMBA
-extern const bgav_input_t bgav_input_smb;
-#endif
-
 void bgav_inputs_dump()
   {
   gavl_dprintf( "<h2>Input modules</h2>\n");
@@ -712,12 +705,10 @@ void bgav_inputs_dump()
   gavl_dprintf( "<li>%s\n", bgav_input_file.name);
   gavl_dprintf( "<li>%s\n", bgav_input_stdin.name);
   //  gavl_dprintf( "<li>%s\n", bgav_input_rtsp.name);
-  gavl_dprintf( "<li>%s\n", bgav_input_pnm.name);
   gavl_dprintf( "<li>%s\n", bgav_input_mms.name);
   //  gavl_dprintf( "<li>%s\n", bgav_input_mmsh.name);
   gavl_dprintf( "<li>%s\n", bgav_input_http.name);
   gavl_dprintf( "<li>%s\n", bgav_input_hls.name);
-  gavl_dprintf( "<li>%s\n", bgav_input_ftp.name);
 
 #ifdef HAVE_CDIO
 
@@ -729,9 +720,6 @@ void bgav_inputs_dump()
 
 #endif // HAVE_CDIO
 
-#ifdef HAVE_SAMBA
-  gavl_dprintf( "<li>%s\n", bgav_input_smb.name);
-#endif
 
 #ifdef HAVE_LINUXDVB
   gavl_dprintf( "<li>%s\n", bgav_input_dvb.name);
@@ -812,12 +800,10 @@ static int input_open(bgav_input_context_t * ctx,
     {
     //    if(!strcasecmp(protocol, "rtsp"))
     //      ctx->input = &bgav_input_rtsp;
-    if(!strcasecmp(protocol, "pnm"))
-      ctx->input = &bgav_input_pnm;
-    else if(!strcasecmp(protocol, "mms") ||
-            !strcasecmp(protocol, "mmst")
-            //            || !strcasecmp(protocol, "mmsu")
-            )
+    if(!strcasecmp(protocol, "mms") ||
+       !strcasecmp(protocol, "mmst")
+       //            || !strcasecmp(protocol, "mmsu")
+       )
       ctx->input = &bgav_input_mms;
     else if(!strcasecmp(protocol, "http") ||
             !strcasecmp(protocol, "icyx") ||
@@ -826,18 +812,12 @@ static int input_open(bgav_input_context_t * ctx,
     else if(!strcasecmp(protocol, "hls") ||
             !strcasecmp(protocol, "hlss"))
       ctx->input = &bgav_input_hls;
-    else if(!strcasecmp(protocol, "ftp"))
-      ctx->input = &bgav_input_ftp;
     //    else if(!strcasecmp(protocol, "mmsh"))
     //      ctx->input = &bgav_input_mmsh;
     else if(!strcasecmp(protocol, "file"))
       ctx->input = &bgav_input_file;
     else if(!strcasecmp(protocol, "stdin") || !strcmp(url, "-"))
       ctx->input = &bgav_input_stdin;
-#ifdef HAVE_SAMBA
-    else if(!strcmp(protocol, "smb"))
-      ctx->input = &bgav_input_smb;
-#endif
 #ifdef HAVE_DVDNAV
     else if(!strcmp(protocol, "dvd"))
       ctx->input = &bgav_input_dvd;
