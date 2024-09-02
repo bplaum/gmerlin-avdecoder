@@ -581,16 +581,6 @@ else
 echo "Missing (Go to http://www.gnu.org/software/libcdio/)"
 fi
 
-
-echo -n "samba:                  "
-if test "x$have_libsmbclient" = "xtrue"; then
-echo "Found (CFLAGS=$SAMBA_CFLAGS LIBS=$SAMBA_LIBS)"
-elif test "x$test_libsmbclient" = "xfalse"; then
-echo "Disabled"
-else
-echo "Missing (Go to http://www.samba.org)"
-fi
-
 echo -n "libdvdread:             "
 if test "x$have_dvdread" = "xtrue"; then
 echo "Found (CFLAGS=$DVDREAD_CFLAGS LIBS=$DVDREAD_LIBS)"
