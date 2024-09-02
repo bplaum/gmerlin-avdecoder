@@ -222,11 +222,11 @@ AC_DEFUN([GMERLIN_CHECK_DVDNAV],[
 AH_TEMPLATE([HAVE_DVDNAV],
             [Do we have libdvdnav installed?])
 
-have_speex="false"
+have_dvdnav="false"
 
 DVDNAV_REQUIRED="6.0.0"
 
-AC_ARG_ENABLE(speex,
+AC_ARG_ENABLE(dvdnav,
 [AS_HELP_STRING([--disable-dvdnav],[Disable libdvdnav (default: autodetect)])],
 [case "${enableval}" in
    yes) test_dvdnav=true ;;
@@ -578,74 +578,6 @@ AC_DEFINE(HAVE_FAAD2)
 fi
 
 ])
-
-dnl
-dnl DVDREAD
-dnl
-
-AC_DEFUN([GMERLIN_CHECK_DVDREAD],[
-
-DVDREAD_REQUIRED="0.9.5"
-AH_TEMPLATE([HAVE_DVDREAD], [Enable libdvdread])
-have_dvdread="false"
-
-AC_ARG_ENABLE(dvdread,
-[AS_HELP_STRING([--disable-dvdread],[Disable libdvdread (default: autodetect)])],
-[case "${enableval}" in
-   yes) test_dvdread=true ;;
-   no)  test_dvdread=false ;;
-esac],[test_dvdread=true])
-
-if test x$test_dvdread = xtrue; then
-
-OLD_CFLAGS=$CFLAGS
-OLD_LIBS=$LIBS
-
-CFLAGS=""
-LIBS="-ldvdread"
-
-AC_MSG_CHECKING(for libdvdread >= 0.9.5)
-
-  AC_TRY_LINK([
-    #include <dvdread/dvd_reader.h>
-  ],[
-    #if DVDREAD_VERSION < 905
-    # error libdvdread must be at least 0.9.5
-    #endif
-    return 0;
-  ],[
-    # program could be run
-    have_dvdread="true"
-    AC_MSG_RESULT(yes)
-    DVDREAD_CFLAGS=""
-    DVDREAD_LIBS="-ldvdread"
-  ],[
-    # program could not be run
-    AC_MSG_RESULT(no)
-  ]
-)
-
-if test "x$have_dvdread" = "xtrue"; then
-AC_CHECK_FUNCS(DVDInit DVDFinish)
-fi
-
-CFLAGS=$OLD_CFLAGS
-LIBS=$OLD_LIBS
-
-fi
-
-AC_SUBST(DVDREAD_CFLAGS)
-AC_SUBST(DVDREAD_LIBS)
-AC_SUBST(DVDREAD_REQUIRED)
-AM_CONDITIONAL(HAVE_DVDREAD, test x$have_dvdread = xtrue)
-
-if test x$have_dvdread = xtrue; then
-AC_DEFINE(HAVE_DVDREAD)
-fi
-
-])
-
-
 
 dnl
 dnl FLAC

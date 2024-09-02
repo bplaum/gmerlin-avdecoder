@@ -506,7 +506,7 @@ echo "Found (CFLAGS=$SPEEX_CFLAGS LIBS=$SPEEX_LIBS)"
 elif test "x$test_speex" = "xfalse"; then
 echo "Disabled"
 else
-echo "Missing (Go to http://www.speex.org/)"
+echo "Missing (Go to http://www.speex.org/) $have_speex"
 fi
 
 echo -n "libpng:                 "
@@ -581,15 +581,6 @@ else
 echo "Missing (Go to http://www.gnu.org/software/libcdio/)"
 fi
 
-echo -n "libdvdread:             "
-if test "x$have_dvdread" = "xtrue"; then
-echo "Found (CFLAGS=$DVDREAD_CFLAGS LIBS=$DVDREAD_LIBS)"
-elif test "x$test_dvdread" = "xfalse"; then
-echo "Disabled"
-else
-echo "Missing (Go to http://www.dtek.chalmers.se/groups/dvd/downloads.shtml)"
-fi
-
 echo -n "libopus:                "
 if test "x$have_opus" = "xtrue"; then
 echo "Found (CFLAGS=$OPUS_CFLAGS LIBS=$OPUS_LIBS)"
@@ -608,21 +599,8 @@ else
 echo "Missing (Go to http://www.videolan.org)"
 fi
 
-
-echo ""
-echo "=== Other features: ============================"
-
-echo -n "Linux DVB Support:      "
-if test "x$have_linuxdvb" = "xtrue"; then
-echo "Enabled"
-else
-echo "Disabled (Unsupported Architecture or kernel headers missing)"
-fi
-
 echo
-echo "If you installed a library but it was not detected, check the file INSTALL"
-echo "for troubleshooting tips. Also note that if the configure script reaches"
-echo "this point, all missing packages are optional so compilation should succeed"
-echo "anyway."
-
+echo "If the configure script reaches this point, all missing packages are "
+echo "optional so compilation should succeed anyway."
+echo
 

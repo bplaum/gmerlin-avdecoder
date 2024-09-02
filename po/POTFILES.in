@@ -37,7 +37,6 @@ include/a52_header.h
 include/bgav_vdpau.h
 include/dvb_channels.h
 include/opus_header.h
-include/md5.h
 include/packettimer.h
 include/ogg_header.h
 include/sdp.h
@@ -94,7 +93,6 @@ lib/demux_fli.c
 lib/pes_header.c
 lib/qt_palette.c
 lib/parse_dvdsub.c
-lib/video_openjpeg.c
 lib/video_theora.c
 lib/video_p207.c
 lib/RTjpeg.c
@@ -132,7 +130,6 @@ lib/qt_ftab.c
 lib/demux_nsv.c
 lib/audio.c
 lib/translation.c
-lib/video_schroedinger.c
 lib/GSM610/gsm_decode.c
 lib/GSM610/gsm.h
 lib/GSM610/table.c
@@ -227,7 +224,6 @@ lib/video_qtraw.c
 lib/demux_cue.c
 lib/bytebuffer.c
 lib/demux_srt.c
-lib/md5.c
 lib/r_pls.c
 lib/audio_flac.c
 lib/parse_mjpa.c
@@ -296,7 +292,6 @@ lib/qt_useratoms.c
 lib/qt_dinf.c
 lib/qt_tcmi.c
 lib/demuxer.c
-lib/in_smb.c
 lib/parse_vc1.c
 lib/qt_emsg.c
 lib/demux_smjpeg.c
@@ -309,7 +304,6 @@ lib/stream.c
 lib/rtp.c
 lib/os.c
 lib/flac_header.c
-lib/in_ftp.c
 lib/rtpbuffer.c
 lib/demux_r3d.c
 lib/a52_header.c
@@ -345,7 +339,6 @@ lib/ogg_header.c
 lib/qt_elst.c
 lib/rtsp.c
 lib/qt_trun.c
-lib/in_pnm.c
 lib/audio_dca.c
 lib/parse_a52.c
 lib/demux_ircam.c
