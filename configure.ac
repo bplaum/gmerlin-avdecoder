@@ -527,15 +527,6 @@ else
 echo "Missing (Go to http://www.remotesensing.org/libtiff/)"
 fi
 
-echo -n "libopenjpeg:            "
-if test "x$have_openjpeg" = "xtrue"; then
-echo "Found (CFLAGS=$OPENJPEG_CFLAGS LIBS=$OPENJPEG_LIBS)"
-elif test "x$test_openjpeg" = "xfalse"; then
-echo "Disabled"
-else
-echo "Missing (Go to http://www.openjpeg.org)"
-fi
-
 echo -n "libmad 0.15.x:          "
 if test "x$have_mad" = "xtrue"; then
 echo "Found (CFLAGS=$MAD_CFLAGS LIBS=$MAD_LIBS)"
