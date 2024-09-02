@@ -62,16 +62,6 @@ png_libs =
 png_sources =
 endif
 
-# if HAVE_OPENJPEG
-# openjpeg_cflags =  @OPENJPEG_CFLAGS@
-# openjpeg_libs =    @OPENJPEG_LIBS@
-# openjpeg_sources = video_openjpeg.c
-# else
-# openjpeg_cflags =
-# openjpeg_libs =
-# openjpeg_sources =
-# endif
-
 
 if HAVE_LIBTIFF
 tiff_cflags =  @TIFF_CFLAGS@
@@ -257,7 +247,6 @@ $(opus_cflags) \
 $(ogg_cflags) \
 $(mad_cflags) \
 $(png_cflags) \
-$(openjpeg_cflags) \
 $(tiff_cflags) \
 $(flac_cflags) \
 $(a52_cflags) \
@@ -279,7 +268,6 @@ $(vorbis_sources) \
 $(opus_sources) \
 $(ogg_sources) \
 $(png_sources) \
-$(openjpeg_sources) \
 $(tiff_sources) \
 $(mad_sources) \
 $(musepack_sources) \

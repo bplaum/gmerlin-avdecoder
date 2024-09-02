@@ -201,12 +201,6 @@ dnl
 GMERLIN_CHECK_AVFORMAT
 
 dnl
-dnl OpenGL
-dnl
-
-GMERLIN_CHECK_OPENGL
-
-dnl
 dnl V4L2
 dnl
 
@@ -299,12 +293,6 @@ dnl libtiff
 dnl
 
 GMERLIN_CHECK_LIBTIFF
-
-dnl
-dnl openjpeg
-dnl
-
-dnl GMERLIN_CHECK_OPENJPEG
 
 dnl
 dnl PNG
@@ -510,15 +498,6 @@ elif test "x$test_theoradec" = "xfalse"; then
 echo "Disabled"
 else
 echo "Missing (Go to http://www.theora.org/)"
-fi
-
-echo -n "schroedinger:           "
-if test "x$have_schroedinger" = "xtrue"; then
-echo "Found (CFLAGS=$SCHROEDINGER_CFLAGS LIBS=$SCHROEDINGER_LIBS)"
-elif test "x$test_schroedinger" = "xfalse"; then
-echo "Disabled"
-else
-echo "Missing (Go to http://www.diracvideo.org/)"
 fi
 
 echo -n "speex:                  "

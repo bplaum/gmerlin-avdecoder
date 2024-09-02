@@ -136,13 +136,8 @@ void bgav_codecs_init(bgav_options_t * opt)
   bgav_init_audio_decoders_dca();
 #endif
 
-
 #ifdef HAVE_LIBPNG
   bgav_init_video_decoders_png();
-#endif
-
-#ifdef HAVE_OPENJPEG
-  bgav_init_video_decoders_openjpeg();
 #endif
 
 #ifdef HAVE_LIBTIFF
@@ -151,10 +146,6 @@ void bgav_codecs_init(bgav_options_t * opt)
 
 #ifdef HAVE_THEORADEC
   bgav_init_video_decoders_theora();
-#endif
-
-#ifdef HAVE_SCHROEDINGER
-  bgav_init_video_decoders_schroedinger();
 #endif
 
 #ifdef HAVE_SPEEX

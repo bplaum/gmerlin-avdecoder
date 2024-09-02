@@ -466,62 +466,6 @@ fi
 ])
 
 dnl
-dnl libopenjpeg
-dnl
-
-AC_DEFUN([GMERLIN_CHECK_OPENJPEG],[
-
-AH_TEMPLATE([HAVE_OPENJPEG], [Enable openjpeg codec])
- 
-have_openjpeg=false
-OPENJPEG_REQUIRED="1.3"
-
-AC_ARG_ENABLE(openjpeg,
-[AS_HELP_STRING([--disable-openjpeg],[Disable openjpeg (default: autodetect)])],
-[case "${enableval}" in
-   yes) test_openjpeg=true ;;
-   no)  test_openjpeg=false ;;
-esac],[test_openjpeg=true])
-
-if test x$test_openjpeg = xtrue; then
-   
-OLD_CFLAGS=$CFLAGS
-OLD_LIBS=$LIBS
-
-LIBS="-lopenjpeg -lm"
-CFLAGS=""
-   
-AC_MSG_CHECKING(for openjpeg)
-AC_TRY_LINK([#include <openjpeg.h>],
-            [opj_version();
-	     return 0;],
-            [have_openjpeg=true])
- 
-case $have_openjpeg in
-  true) AC_DEFINE(HAVE_OPENJPEG)
-        AC_MSG_RESULT(yes)
-        OPENJPEG_LIBS=$LIBS;
-        OPENJPEG_CFLAGS=$CFLAGS ;;
-  false) AC_MSG_RESULT(no); OPENJPEG_LIBS=""; OPENJPEG_CFLAGS="";;
-esac
-CFLAGS=$OLD_CFLAGS
-LIBS=$OLD_LIBS
-
-fi
-
-AC_SUBST(OPENJPEG_CFLAGS)
-AC_SUBST(OPENJPEG_LIBS)
-AC_SUBST(OPENJPEG_REQUIRED)
-
-AM_CONDITIONAL(HAVE_OPENJPEG, test x$have_openjpeg = xtrue)
-
-if test x$have_openjpeg = xtrue; then
-AC_DEFINE(HAVE_OPENJPEG)
-fi
-
-])
-
-dnl
 dnl PNG
 dnl 
 
