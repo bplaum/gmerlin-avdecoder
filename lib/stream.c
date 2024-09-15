@@ -247,10 +247,10 @@ read_packet_continuous(void * priv, bgav_packet_t ** ret)
     st1 = bgav_demuxer_next_packet(demuxer);
     demuxer->request_stream = NULL;
     
-    if(st1 == GAVL_SOURCE_AGAIN)
-      break; // Return for now
+    if(st1 != GAVL_SOURCE_OK)
+      return st1; // Return for now
     }
-
+  
   if((st == GAVL_SOURCE_OK) && s->opt->dump_packets)
     {
     gavl_dprintf("Packet out (stream %d): ", s->stream_id);

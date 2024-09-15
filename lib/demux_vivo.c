@@ -442,7 +442,7 @@ static int open_vivo(bgav_demuxer_context_t * ctx)
     audio_stream->fourcc = BGAV_WAVID_2_FOURCC(0x0111);
     audio_stream->data.audio.format->samplerate = 8000;
     audio_stream->container_bitrate = 800 * 8;
-    audio_stream->data.audio.block_align = 24;
+    audio_stream->ci->block_align = 24;
     audio_stream->data.audio.bits_per_sample = 8;
     }
   else if(priv->header.version == 2)
@@ -451,7 +451,7 @@ static int open_vivo(bgav_demuxer_context_t * ctx)
     audio_stream->fourcc = BGAV_WAVID_2_FOURCC(0x0112);
     audio_stream->data.audio.format->samplerate = 16000;
     audio_stream->container_bitrate = 2000 * 8;
-    audio_stream->data.audio.block_align = 40;
+    audio_stream->ci->block_align = 40;
     audio_stream->data.audio.bits_per_sample = 16;
     }
   audio_stream->data.audio.format->num_channels = 1;

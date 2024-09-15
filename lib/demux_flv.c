@@ -172,7 +172,7 @@ static int init_audio_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
       {
       case 0: /* Uncompressed, Big endian */
         s->fourcc = BGAV_MK_FOURCC('t', 'w', 'o', 's');
-        s->data.audio.block_align = s->data.audio.format->num_channels *
+        s->ci->block_align = s->data.audio.format->num_channels *
           (s->data.audio.bits_per_sample / 8);
         s->stats.pts_end = 0;
         break;
@@ -193,7 +193,7 @@ static int init_audio_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
         break;
       case 3: /* Uncompressed, Little endian */
         s->fourcc = BGAV_MK_FOURCC('s', 'o', 'w', 't');
-        s->data.audio.block_align = s->data.audio.format->num_channels *
+        s->ci->block_align = s->data.audio.format->num_channels *
           (s->data.audio.bits_per_sample / 8);
         s->stats.pts_end = 0;
         break;
@@ -720,8 +720,8 @@ static gavl_source_status_t next_packet_flv(bgav_demuxer_context_t * ctx)
       return GAVL_SOURCE_EOF;
     if(s->type == GAVL_STREAM_AUDIO)
       {
-      if(s->data.audio.block_align)
-        p->duration = p->buf.len / s->data.audio.block_align;
+      if(s->ci->block_align)
+        p->duration = p->buf.len / s->ci->block_align;
       p->pes_pts = t.timestamp;
       }
     else

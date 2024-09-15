@@ -53,7 +53,7 @@ static int open_daud(bgav_demuxer_context_t * ctx)
   s->data.audio.format->num_channels = 6;
   s->data.audio.format->samplerate = 96000;
   s->container_bitrate = 3 * 6 * 96000 * 8;
-  s->data.audio.block_align = 3 * 6;
+  s->ci->block_align = 3 * 6;
   s->data.audio.bits_per_sample = 24;
 
   bgav_track_set_format(ctx->tt->cur, "D-Cinema audio", NULL);

@@ -160,7 +160,7 @@ static int open_roq(bgav_demuxer_context_t * ctx)
     s->data.audio.format->num_channels = num_channels;
     s->data.audio.format->samplerate = RoQ_AUDIO_SAMPLE_RATE;
     s->data.audio.bits_per_sample = 16;
-    s->data.audio.block_align = num_channels * s->data.audio.bits_per_sample;
+    s->ci->block_align = num_channels * s->data.audio.bits_per_sample;
     }
 
   if(width && height)

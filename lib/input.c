@@ -822,6 +822,10 @@ static int input_open(bgav_input_context_t * ctx,
     else if(!strcmp(protocol, "dvd"))
       ctx->input = &bgav_input_dvd;
 #endif
+#ifdef HAVE_CDIO
+    else if(!strcmp(protocol, "vcd"))
+      ctx->input = &bgav_input_vcd;
+#endif
     else
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,

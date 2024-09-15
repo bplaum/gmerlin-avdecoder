@@ -213,10 +213,10 @@ static int open_8svx(bgav_demuxer_context_t * ctx)
   as->fourcc = BGAV_MK_FOURCC('t', 'w', 'o', 's');
   as->data.audio.format->samplerate = hdr.samplesPerSec;
   as->data.audio.format->num_channels = 1;
-  as->data.audio.block_align = 1;
+  as->ci->block_align = 1;
   as->data.audio.bits_per_sample = BITSPERSAMPLES;
 
-  total_samples = as->stats.total_bytes / as->data.audio.block_align;
+  total_samples = as->stats.total_bytes / as->ci->block_align;
   if(as->stats.total_bytes)
     as->stats.pts_end = total_samples;
   
@@ -230,7 +230,7 @@ static int open_8svx(bgav_demuxer_context_t * ctx)
 
 static int64_t samples_to_bytes(bgav_stream_t * s, int samples)
   {
-  return  s->data.audio.block_align * samples;
+  return  s->ci->block_align * samples;
   }
 
 static gavl_source_status_t next_packet_8svx(bgav_demuxer_context_t * ctx)
@@ -260,7 +260,7 @@ static gavl_source_status_t next_packet_8svx(bgav_demuxer_context_t * ctx)
   
   p->buf.len = bytes_read;
 
-  p->duration = p->buf.len / s->data.audio.block_align;
+  p->duration = p->buf.len / s->ci->block_align;
   
   bgav_stream_done_packet_write(s, p);
   return GAVL_SOURCE_OK;

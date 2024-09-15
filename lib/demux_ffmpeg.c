@@ -445,15 +445,15 @@ static void init_audio_stream(bgav_demuxer_context_t * ctx,
     s->data.audio.bits_per_sample = params->bits_per_coded_sample;
 #endif
   
-  s->data.audio.block_align = params->block_align;
-  if(!s->data.audio.block_align &&
+  s->ci->block_align = params->block_align;
+  if(!s->ci->block_align &&
      map->bits)
     {
-    s->data.audio.block_align = ((map->bits + 7) / 8) *
+    s->ci->block_align = ((map->bits + 7) / 8) *
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
-            params->ch_layout.nb_channels;
+      params->ch_layout.nb_channels;
 #else
-            params->channels;
+    params->channels;
 #endif
     }
   

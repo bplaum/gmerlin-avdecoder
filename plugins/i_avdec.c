@@ -403,15 +403,14 @@ static char const * const mimetypes =
   "video/3gpp "
   "video/3gpp2 "
   "application/x-cue "
-  "application/x-subrip "
-  "video/gavf";
+  "application/x-subrip ";
 
 static const char * get_mimetypes(void * priv)
   {
   return mimetypes;
   }
 
-static char const * const extensions = "avi asf asx wmv rm ra ram mov wav mp4 m4a 3gp qt au aiff aif mp3 mpg mpeg vob m3u pls ogg flac aac mpc spx vob wv tta gsm vp5 vp6 voc opus";
+static char const * const extensions = "avi asf asx wmv rm ra ram mov wav mp4 m4a 3gp qt au aiff aif mp3 mpg mpeg vob m3u pls ogg flac aac mpc spx vob wv tta gsm vp5 vp6 voc opus wma ac3 mp2";
 
 static const char * get_extensions(void * priv)
   {

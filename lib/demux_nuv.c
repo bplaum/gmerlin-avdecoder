@@ -137,7 +137,7 @@ static int open_nuv(bgav_demuxer_context_t * ctx)
     as->data.audio.format->samplerate = 44100;
     as->container_bitrate = as->data.audio.format->samplerate *
       as->data.audio.format->num_channels * as->data.audio.bits_per_sample;
-    as->data.audio.block_align = as->data.audio.format->num_channels * 2;
+    as->ci->block_align = as->data.audio.format->num_channels * 2;
     }
   
   /* Get codec data */

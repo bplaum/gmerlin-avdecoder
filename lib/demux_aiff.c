@@ -124,7 +124,7 @@ static int64_t pos_2_time(bgav_demuxer_context_t * ctx, int64_t pos)
   s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
   priv = ctx->priv;
   
-  return ((pos - ctx->tt->cur->data_start)/s->data.audio.block_align) *
+  return ((pos - ctx->tt->cur->data_start)/s->ci->block_align) *
     priv->samples_per_block;
   }
 
@@ -137,7 +137,7 @@ static int64_t time_2_pos(bgav_demuxer_context_t * ctx, int64_t time)
   s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
   
   return ctx->tt->cur->data_start + (time/priv->samples_per_block)
-    * s->data.audio.block_align;
+    * s->ci->block_align;
   }
 
 
@@ -286,19 +286,19 @@ static int open_aiff(bgav_demuxer_context_t * ctx)
           case BGAV_MK_FOURCC('a','i','f','f'):
             if(s->data.audio.bits_per_sample <= 8)
               {
-              s->data.audio.block_align = comm.num_channels;
+              s->ci->block_align = comm.num_channels;
               }
             else if(s->data.audio.bits_per_sample <= 16)
               {
-              s->data.audio.block_align = 2 * comm.num_channels;
+              s->ci->block_align = 2 * comm.num_channels;
               }
             else if(s->data.audio.bits_per_sample <= 24)
               {
-              s->data.audio.block_align = 3 * comm.num_channels;
+              s->ci->block_align = 3 * comm.num_channels;
               }
             else if(s->data.audio.bits_per_sample <= 32)
               {
-              s->data.audio.block_align = 4 * comm.num_channels;
+              s->ci->block_align = 4 * comm.num_channels;
               }
             else
               {
@@ -311,11 +311,11 @@ static int open_aiff(bgav_demuxer_context_t * ctx)
             priv->samples_per_block = 1;
             break;
           case BGAV_MK_FOURCC('f','l','3','2'):
-            s->data.audio.block_align = 4 * comm.num_channels;
+            s->ci->block_align = 4 * comm.num_channels;
             priv->samples_per_block = 1;
             break;
           case BGAV_MK_FOURCC('f','l','6','4'):
-            s->data.audio.block_align = 8 * comm.num_channels;
+            s->ci->block_align = 8 * comm.num_channels;
             priv->samples_per_block = 1;
             s->data.audio.format->samples_per_frame = 1024;
             break;
@@ -323,24 +323,24 @@ static int open_aiff(bgav_demuxer_context_t * ctx)
           case BGAV_MK_FOURCC('A','L','A','W'):
           case BGAV_MK_FOURCC('u','l','a','w'):
           case BGAV_MK_FOURCC('U','L','A','W'):
-            s->data.audio.block_align = comm.num_channels;
+            s->ci->block_align = comm.num_channels;
             priv->samples_per_block = 1;
             s->data.audio.format->samples_per_frame = 1024;
             break;
 #if 0
           case BGAV_MK_FOURCC('G','S','M',' '):
-            s->data.audio.block_align = 33;
+            s->ci->block_align = 33;
             priv->samples_per_block = 160;
             s->data.audio.format->samples_per_frame = 160;
             break;
 #endif
           case BGAV_MK_FOURCC('M','A','C','3'):
-            s->data.audio.block_align = comm.num_channels * 2;
+            s->ci->block_align = comm.num_channels * 2;
             priv->samples_per_block = 6;
             s->data.audio.format->samples_per_frame = 6*128;
             break;
           case BGAV_MK_FOURCC('M','A','C','6'):
-            s->data.audio.block_align = comm.num_channels;
+            s->ci->block_align = comm.num_channels;
             priv->samples_per_block = 6;
             s->data.audio.format->samples_per_frame = 6*128;
             break;
@@ -413,7 +413,7 @@ static gavl_source_status_t next_packet_aiff(bgav_demuxer_context_t * ctx)
   p = bgav_stream_get_packet_write(s);
   
   bytes_to_read =
-    (s->data.audio.format->samples_per_frame * s->data.audio.block_align) /
+    (s->data.audio.format->samples_per_frame * s->ci->block_align) /
     priv->samples_per_block;
   
   gavl_packet_alloc(p, bytes_to_read);
@@ -421,7 +421,7 @@ static gavl_source_status_t next_packet_aiff(bgav_demuxer_context_t * ctx)
   bytes_read = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
   
   p->buf.len = bytes_read;
-  p->duration = p->buf.len / s->data.audio.block_align;
+  p->duration = p->buf.len / s->ci->block_align;
   
   PACKET_SET_KEYFRAME(p);
   bgav_stream_done_packet_write(s, p);

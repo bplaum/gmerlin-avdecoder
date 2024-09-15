@@ -376,9 +376,6 @@ struct bgav_stream_s
                               PCM codecs. For compressed codecs like mp3, this
                               field is nonsense*/
       
-      /* The following ones are mainly for Microsoft formats and codecs */
-      int block_align;
-
       /* This is ONLY used for codecs, which can be both little-
          and big-endian. In this case, the endianess is set by
          the demuxer */

@@ -258,17 +258,17 @@ static int open_ircam(bgav_demuxer_context_t * ctx)
       as->fourcc = BGAV_MK_FOURCC('t', 'w', 'o', 's'); /* Assuming signed */
       //  as->fourcc = BGAV_MK_FOURCC('r', 'a', 'w', ' ');
       as->data.audio.bits_per_sample = 8;
-      as->data.audio.block_align = 1 * h.NumChannels;
+      as->ci->block_align = 1 * h.NumChannels;
       break;
     case SF_ALAW:
       as->fourcc = BGAV_MK_FOURCC('a', 'l', 'a', 'w');
       as->data.audio.bits_per_sample = 8;
-      as->data.audio.block_align = 1 * h.NumChannels;
+      as->ci->block_align = 1 * h.NumChannels;
       break;
     case SF_ULAW:
       as->fourcc = BGAV_MK_FOURCC('u', 'l', 'a', 'w');
       as->data.audio.bits_per_sample = 8;
-      as->data.audio.block_align = 1 * h.NumChannels;
+      as->ci->block_align = 1 * h.NumChannels;
       break;
     case SF_SHORT:
       if(h.LittleEndian == 1)
@@ -276,7 +276,7 @@ static int open_ircam(bgav_demuxer_context_t * ctx)
       else
         as->fourcc = BGAV_MK_FOURCC('t', 'w', 'o', 's');
       as->data.audio.bits_per_sample = 16;
-      as->data.audio.block_align = 2 * h.NumChannels;
+      as->ci->block_align = 2 * h.NumChannels;
       break;
     case SF_24INT:
       if(h.LittleEndian == 1)
@@ -285,7 +285,7 @@ static int open_ircam(bgav_demuxer_context_t * ctx)
         as->data.audio.endianess = BGAV_ENDIANESS_BIG;
       as->fourcc = BGAV_MK_FOURCC('i', 'n', '2', '4');
       as->data.audio.bits_per_sample = 24;
-      as->data.audio.block_align = 3 * h.NumChannels;
+      as->ci->block_align = 3 * h.NumChannels;
       break;
     case SF_LONG:
       if(h.LittleEndian == 1)
@@ -294,7 +294,7 @@ static int open_ircam(bgav_demuxer_context_t * ctx)
         as->data.audio.endianess = BGAV_ENDIANESS_BIG;
       as->fourcc = BGAV_MK_FOURCC('i', 'n', '3', '2');
       as->data.audio.bits_per_sample = 32;
-      as->data.audio.block_align = 4 * h.NumChannels;
+      as->ci->block_align = 4 * h.NumChannels;
       break;
     case SF_FLOAT:
       if(h.LittleEndian == 1)
@@ -303,7 +303,7 @@ static int open_ircam(bgav_demuxer_context_t * ctx)
         as->data.audio.endianess = BGAV_ENDIANESS_BIG;
       as->fourcc = BGAV_MK_FOURCC('f', 'l', '3', '2');
       as->data.audio.bits_per_sample = 32;
-      as->data.audio.block_align = 4 * h.NumChannels;
+      as->ci->block_align = 4 * h.NumChannels;
       break;
     case SF_DOUBLE:
       if(h.LittleEndian == 1)
@@ -312,7 +312,7 @@ static int open_ircam(bgav_demuxer_context_t * ctx)
         as->data.audio.endianess = BGAV_ENDIANESS_BIG;
       as->fourcc = BGAV_MK_FOURCC('f', 'l', '6', '4');
       as->data.audio.bits_per_sample = 64;
-      as->data.audio.block_align = 8 * h.NumChannels;
+      as->ci->block_align = 8 * h.NumChannels;
       break;
     default:
       break;
@@ -323,7 +323,7 @@ static int open_ircam(bgav_demuxer_context_t * ctx)
 
   if(ctx->input->total_bytes)
     {
-    as->stats.pts_end = (ctx->input->total_bytes - HEADER_SIZE) / as->data.audio.block_align;
+    as->stats.pts_end = (ctx->input->total_bytes - HEADER_SIZE) / as->ci->block_align;
     if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
       ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
     }
@@ -367,7 +367,7 @@ static int open_ircam(bgav_demuxer_context_t * ctx)
 
 static int64_t samples_to_bytes(bgav_stream_t * s, int samples)
   {
-  return  s->data.audio.block_align * samples;
+  return  s->ci->block_align * samples;
   }
 
 static gavl_source_status_t next_packet_ircam(bgav_demuxer_context_t * ctx)
@@ -392,9 +392,9 @@ static gavl_source_status_t next_packet_ircam(bgav_demuxer_context_t * ctx)
   PACKET_SET_KEYFRAME(p);
   bytes_read = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
   p->buf.len = bytes_read;
-  p->duration = p->buf.len / s->data.audio.block_align;
+  p->duration = p->buf.len / s->ci->block_align;
   
-  if(bytes_read < s->data.audio.block_align)
+  if(bytes_read < s->ci->block_align)
     return GAVL_SOURCE_EOF;
   
   bgav_stream_done_packet_write(s, p);
@@ -412,7 +412,7 @@ static void seek_ircam(bgav_demuxer_context_t * ctx, int64_t time,
   
   sample = gavl_time_rescale(scale, s->data.audio.format->samplerate, time);
     
-  position =  s->data.audio.block_align * sample + HEADER_SIZE;
+  position =  s->ci->block_align * sample + HEADER_SIZE;
   bgav_input_seek(ctx->input, position, SEEK_SET);
 
   STREAM_SET_SYNC(s, sample);

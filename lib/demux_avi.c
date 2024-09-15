@@ -431,11 +431,11 @@ static void add_index_packet(gavl_packet_index_t * si, bgav_stream_t * stream,
       
     /* Increase block count */
             
-    if(stream->data.audio.block_align)
+    if(stream->ci->block_align)
       {
       avi_as->total_blocks +=
-        (size + stream->data.audio.block_align - 1)
-        / stream->data.audio.block_align;
+        (size + stream->ci->block_align - 1)
+        / stream->ci->block_align;
       }
     else
       {
@@ -469,12 +469,12 @@ static void add_index_packet(gavl_packet_index_t * si, bgav_stream_t * stream,
 
       //        lprintf("get_audio_pts: CBR: nBlockAlign=%d, dwSampleSize=%d\n",
       //                at->wavex->nBlockAlign, at->dwSampleSize);
-      if(stream->data.audio.block_align)
+      if(stream->ci->block_align)
         {
         stream->stats.pts_end =
           ((gavl_time_t)avi_as->total_bytes * (gavl_time_t)avi_as->strh.dwScale *
            samplerate) /
-          (stream->data.audio.block_align * avi_as->strh.dwRate);
+          (stream->ci->block_align * avi_as->strh.dwRate);
         }
       else
         {
@@ -1866,8 +1866,8 @@ static gavl_source_status_t next_packet_avi(bgav_demuxer_context_t * ctx)
       }
     else if(s->type == GAVL_STREAM_AUDIO)
       {
-      if(s->data.audio.block_align)
-        p->duration = p->buf.len / s->data.audio.block_align;
+      if(s->ci->block_align)
+        p->duration = p->buf.len / s->ci->block_align;
       PACKET_SET_KEYFRAME(p);
       }
     bgav_stream_done_packet_write(s, p);

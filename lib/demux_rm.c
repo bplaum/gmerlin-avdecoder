@@ -389,10 +389,10 @@ static void init_audio_stream(bgav_demuxer_context_t * ctx,
         /* AC3 byteswapped */
         break;
       case BGAV_MK_FOURCC('1', '4', '_', '4'):
-        bg_as->data.audio.block_align = 0x14;
+        bg_as->ci->block_align = 0x14;
         break;
       case BGAV_MK_FOURCC('2', '8', '_', '8'):
-        bg_as->data.audio.block_align = coded_framesize;
+        bg_as->ci->block_align = coded_framesize;
 
         rm_as->sub_packet_size = sub_packet_size;
         rm_as->sub_packet_h = sub_packet_h;
@@ -413,9 +413,9 @@ static void init_audio_stream(bgav_demuxer_context_t * ctx,
         
         if((bg_as->fourcc == BGAV_MK_FOURCC('a', 't', 'r', 'c')) ||
            (bg_as->fourcc == BGAV_MK_FOURCC('c', 'o', 'o', 'k')))
-          bg_as->data.audio.block_align = sub_packet_size;
+          bg_as->ci->block_align = sub_packet_size;
         else
-          bg_as->data.audio.block_align = coded_framesize;
+          bg_as->ci->block_align = coded_framesize;
       
         rm_as->sub_packet_size = sub_packet_size;
         rm_as->sub_packet_h = sub_packet_h;
@@ -1337,7 +1337,7 @@ static int process_audio_chunk(bgav_demuxer_context_t * ctx,
     
     if(++(as->sub_packet_cnt) >= sph)
       {
-      int apk_usize = stream->data.audio.block_align;
+      int apk_usize = stream->ci->block_align;
       as->sub_packet_cnt = 0;
     
       for (x = 0; x < sph*w/apk_usize; x++)

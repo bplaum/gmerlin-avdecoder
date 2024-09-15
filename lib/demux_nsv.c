@@ -570,7 +570,7 @@ static int get_pcm_format(bgav_demuxer_context_t * ctx, bgav_stream_t * s)
   if(!bgav_input_read_16_le(ctx->input, &tmp_16))
     return 0;
   s->data.audio.format->samplerate = tmp_16;
-  s->data.audio.block_align = (s->data.audio.bits_per_sample * s->data.audio.format->num_channels) / 8;
+  s->ci->block_align = (s->data.audio.bits_per_sample * s->data.audio.format->num_channels) / 8;
 
 #if 1 /* What's that???? */
   s->data.audio.bits_per_sample = 8;

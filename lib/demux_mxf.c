@@ -79,8 +79,8 @@ static void set_pts(bgav_stream_t * s, stream_priv_t * sp,
     }
   else if(s->type == GAVL_STREAM_AUDIO)
     {
-    if(s->data.audio.block_align)
-      p->duration = p->buf.len / s->data.audio.block_align;
+    if(s->ci->block_align)
+      p->duration = p->buf.len / s->ci->block_align;
     PACKET_SET_KEYFRAME(p);
     }
   }
@@ -188,7 +188,7 @@ static int process_packet_frame_wrapped(bgav_demuxer_context_t * ctx)
 
     num_samples = (end_pos - ctx->input->position) / 32; /* 8 channels*4 bytes/channel */
     
-    gavl_packet_alloc(p, num_samples * s->data.audio.block_align);
+    gavl_packet_alloc(p, num_samples * s->ci->block_align);
     ptr = p->buf.buf;
     p->buf.len = 0;
     for(i = 0; i < num_samples; i++)
@@ -331,10 +331,10 @@ static void init_audio_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
 
   if(is_pcm(fourcc))
     {
-    s->data.audio.block_align = sd->channels * ((sd->bits_per_sample+7)/8);
+    s->ci->block_align = sd->channels * ((sd->bits_per_sample+7)/8);
     /* Make a more sensible frame size for clip wrapped PCM streams */
-    if(priv->frame_size == s->data.audio.block_align)
-      priv->frame_size = 1024 * s->data.audio.block_align; /* 1024 samples */
+    if(priv->frame_size == s->ci->block_align)
+      priv->frame_size = 1024 * s->ci->block_align; /* 1024 samples */
     }
   else
     {

@@ -145,16 +145,16 @@ static int open_vmd(bgav_demuxer_context_t * ctx)
     as->data.audio.format->samplerate = samplerate;
     as->data.audio.format->num_channels =
       (priv->header[811] & 0x80) ? 2 : 1;
-    as->data.audio.block_align = GAVL_PTR_2_16LE(&priv->header[806]);
-    if(as->data.audio.block_align & 0x8000)
+    as->ci->block_align = GAVL_PTR_2_16LE(&priv->header[806]);
+    if(as->ci->block_align & 0x8000)
       {
       as->data.audio.bits_per_sample = 16;
-      as->data.audio.block_align = -(as->data.audio.block_align - 0x10000);
+      as->ci->block_align = -(as->ci->block_align - 0x10000);
       }
     else
       as->data.audio.bits_per_sample = 8;
     
-    vs->data.video.format->frame_duration = as->data.audio.block_align;
+    vs->data.video.format->frame_duration = as->ci->block_align;
     vs->data.video.format->timescale =
       as->data.audio.format->num_channels * as->data.audio.format->samplerate;
     }

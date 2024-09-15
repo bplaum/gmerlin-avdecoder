@@ -410,6 +410,8 @@ static int init_ffmpeg_audio(bgav_stream_t * s)
   {
   const AVCodec * codec;
   ffmpeg_audio_priv * priv;
+  int result;
+  
   priv = calloc(1, sizeof(*priv));
   priv->info = lookup_codec(s);
   codec = avcodec_find_decoder(priv->info->ffmpeg_id);
@@ -447,7 +449,7 @@ static int init_ffmpeg_audio(bgav_stream_t * s)
   priv->ctx->ch_layout.nb_channels = s->data.audio.format->num_channels;
 #endif
   priv->ctx->sample_rate     = s->data.audio.format->samplerate;
-  priv->ctx->block_align     = s->data.audio.block_align;
+  priv->ctx->block_align     = s->ci->block_align;
   priv->ctx->bit_rate        = s->codec_bitrate;
   priv->ctx->bits_per_coded_sample = s->data.audio.bits_per_sample;
   if(priv->info->codec_tag != -1)
@@ -457,6 +459,8 @@ static int init_ffmpeg_audio(bgav_stream_t * s)
 
   priv->ctx->codec_type  = codec->type;
   priv->ctx->codec_id    = codec->id;
+
+  priv->ctx->codec = codec;
   
   /* Some codecs need extra stuff */
     
@@ -464,23 +468,15 @@ static int init_ffmpeg_audio(bgav_stream_t * s)
 
   bgav_ffmpeg_lock();
   
-#if LIBAVCODEC_VERSION_INT < ((53<<16)|(8<<8)|0)
-  if(avcodec_open(priv->ctx, codec) != 0)
+  if((result = avcodec_open2(priv->ctx, codec, NULL)) != 0)
     {
+    char errbuf[128];
     bgav_ffmpeg_unlock();
+    av_strerror(result, errbuf, 128);
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-             "avcodec_open failed");
+             "avcodec_open2 failed: %s", errbuf);
     return 0;
     }
-#else
-  if(avcodec_open2(priv->ctx, codec, NULL) != 0)
-    {
-    bgav_ffmpeg_unlock();
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-             "avcodec_open2 failed");
-    return 0;
-    }
-#endif
   
   bgav_ffmpeg_unlock();
   

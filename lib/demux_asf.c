@@ -315,7 +315,8 @@ typedef struct
   asf_main_header_t hdr;
   uint8_t * packet_buffer;
   int64_t data_size;
-
+  int64_t packet_start;
+  
   //  uint32_t first_timestamp;
   //  int need_first_timestamp;
   
@@ -603,7 +604,9 @@ static int open_asf(bgav_demuxer_context_t * ctx)
            type_specific_size)
           goto fail;
         bgav_WAVEFORMAT_read(&wf, buf, type_specific_size);
-        bgav_WAVEFORMAT_dump(&wf);
+
+        if(ctx->opt->dump_headers)
+          bgav_WAVEFORMAT_dump(&wf);
         bgav_WAVEFORMAT_get_format(&wf, bgav_as);
         bgav_WAVEFORMAT_free(&wf);
         
@@ -673,7 +676,9 @@ static int open_asf(bgav_demuxer_context_t * ctx)
         //        bgav_input_read_32_le(ctx->input, &size1);
 
         bgav_BITMAPINFOHEADER_read(&bh, &pos);
-        //        bgav_BITMAPINFOHEADER_dump(&bh);
+        
+        if(ctx->opt->dump_headers)
+          bgav_BITMAPINFOHEADER_dump(&bh);
         bgav_BITMAPINFOHEADER_get_format(&bh, bgav_vs);
         /* Fill in the remeaining values */
         
@@ -976,20 +981,20 @@ static int read_segment_header(const bgav_options_t * opt,
   }
 
 static void add_packet(bgav_demuxer_context_t * ctx,
+                       bgav_stream_t * s,
                        uint8_t * data,
                        int len,
-                       int id,
+                       //                       int id,
                        int seq,
                        unsigned long time,
                        unsigned short dur,
                        int offs,
                        int keyframe)
   {
-  bgav_stream_t * s;
   asf_audio_stream_t * as;
-  //  asf_t * asf = ctx->priv;
+  asf_t * asf = ctx->priv;
 
-  s = bgav_track_find_stream(ctx, id);
+  //  fprintf(stderr, "add_packet %d\n", dur);
   
   if(!s)
     return;
@@ -1043,9 +1048,13 @@ static void add_packet(bgav_demuxer_context_t * ctx,
   s->packet = bgav_stream_get_packet_write(s);
   gavl_packet_alloc(s->packet, len);
   
-
+  s->packet->position = asf->packet_start;
+  
   if(s->type == GAVL_STREAM_AUDIO)
+    {
     s->packet->pes_pts = time;
+    as = s->priv;
+    }
   else
     s->packet->pts = time;
   
@@ -1065,21 +1074,24 @@ static gavl_source_status_t next_packet_asf(bgav_demuxer_context_t * ctx)
   uint8_t * data_ptr;
   asf_packet_header_t pkt_hdr;
   asf_segment_header_t seg_hdr;
+  bgav_stream_t * s;
   asf = ctx->priv;
 
   //  if(ctx->input->position >= asf->data_start + asf->data_size)
   //    return 0;
 
+  
   if(asf->hdr.packets_count && (asf->packets_read >= asf->hdr.packets_count))
     return GAVL_SOURCE_EOF;
   
+  asf->packet_start = ctx->input->position;
   if(bgav_input_read_data(ctx->input, asf->packet_buffer,
                           ctx->packet_size) < ctx->packet_size)
     return GAVL_SOURCE_EOF;
   
   data_ptr = asf->packet_buffer +
     read_packet_header(ctx, asf, &pkt_hdr, asf->packet_buffer);
-
+  
   for(i = 0; i < pkt_hdr.segs; i++)
     {
     result = read_segment_header(ctx->opt, asf, &pkt_hdr, &seg_hdr, data_ptr);
@@ -1088,7 +1100,9 @@ static gavl_source_status_t next_packet_asf(bgav_demuxer_context_t * ctx)
       return GAVL_SOURCE_EOF;
       }
     data_ptr += result;
-        
+
+    s = bgav_track_find_stream(ctx, seg_hdr.streamno);
+    
     switch(seg_hdr.rlen)
       {
       case 0x01:
@@ -1097,9 +1111,10 @@ static gavl_source_status_t next_packet_asf(bgav_demuxer_context_t * ctx)
           len2 = *data_ptr;
           data_ptr++;
           add_packet(ctx,
+                     s,
                      data_ptr,          /* Data     */
                      len2,              /* Len      */
-                     seg_hdr.streamno,  /* ID       */
+                     //                     seg_hdr.streamno,  /* ID       */
                      seg_hdr.seq,       /* Sequence */
                      seg_hdr.x,         /* Time     */
                      pkt_hdr.duration,  /* Duration */ 
@@ -1113,9 +1128,10 @@ static gavl_source_status_t next_packet_asf(bgav_demuxer_context_t * ctx)
       default:
         {
         add_packet(ctx,
+                   s,
                    data_ptr,          /* Data     */
                    seg_hdr.len,       /* Len      */
-                   seg_hdr.streamno,  /* ID       */
+                   //                   seg_hdr.streamno,  /* ID       */
                    seg_hdr.seq,       /* Sequence */
                    seg_hdr.time2,     /* Time     */
                    pkt_hdr.duration,  /* Duration */

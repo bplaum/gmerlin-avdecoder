@@ -279,7 +279,7 @@ static int open_dvd(bgav_input_context_t * ctx, const char * url, char ** r)
       while(dvdnav_audio_stream_format(priv->d, k) != 0xffff)
         {
         audio_attr_t attr;
-        const char * audio_codec;
+        const char * audio_codec = NULL;
         
         lang = dvdnav_audio_stream_to_lang(priv->d, k);
         

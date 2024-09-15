@@ -1294,7 +1294,7 @@ static void init_audio(bgav_demuxer_context_t * ctx,
   if(desc->version == 1)
     {
     if(desc->format.audio.bytes_per_frame)
-      bg_as->data.audio.block_align =
+      bg_as->ci->block_align =
         desc->format.audio.bytes_per_frame;
     }
 

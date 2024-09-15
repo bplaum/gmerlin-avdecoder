@@ -311,7 +311,6 @@ int bgav_read_audio(bgav_t * b, gavl_audio_frame_t * frame,
 void bgav_audio_dump(bgav_stream_t * s)
   {
   gavl_dprintf("  Bits per sample:   %d\n", s->data.audio.bits_per_sample);
-  gavl_dprintf("  Block align:       %d\n", s->data.audio.block_align);
   gavl_dprintf("Format:\n");
   gavl_audio_format_dump(s->data.audio.format);
   }

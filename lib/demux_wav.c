@@ -169,14 +169,14 @@ static int open_wav(bgav_demuxer_context_t * ctx)
 
   /* Packet size will be at least 1024 bytes */
 
-  if(!s->data.audio.block_align)
+  if(!s->ci->block_align)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "BlockAlign is zero");
     goto fail;
     }
   
-  priv->packet_size = ((1024 + s->data.audio.block_align - 1) / 
-                       s->data.audio.block_align) * s->data.audio.block_align;
+  priv->packet_size = ((1024 + s->ci->block_align - 1) / 
+                       s->ci->block_align) * s->ci->block_align;
 
   if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
     ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
@@ -186,7 +186,7 @@ static int open_wav(bgav_demuxer_context_t * ctx)
   if(s->data.audio.bits_per_sample)
     {
     ctx->flags |= BGAV_DEMUXER_SAMPLE_ACCURATE;
-    s->stats.pts_end = s->stats.total_bytes / s->data.audio.block_align;
+    s->stats.pts_end = s->stats.total_bytes / s->ci->block_align;
     }
   else
     gavl_track_set_duration(ctx->tt->cur->info,
@@ -253,15 +253,15 @@ static void seek_wav(bgav_demuxer_context_t * ctx, int64_t time, int scale)
   
   if(s->data.audio.bits_per_sample)
     {
-    file_position = s->data.audio.block_align * gavl_time_rescale(scale,
+    file_position = s->ci->block_align * gavl_time_rescale(scale,
                                                                   s->data.audio.format->samplerate,
                                                                   time);
     }
   else
     {
     file_position = (gavl_time_unscale(scale, time) * (s->codec_bitrate / 8)) / scale;
-    file_position /= s->data.audio.block_align;
-    file_position *= s->data.audio.block_align;
+    file_position /= s->ci->block_align;
+    file_position *= s->ci->block_align;
     }
   /* Calculate the time before we add the start offset */
   STREAM_SET_SYNC(s, ((int64_t)file_position * s->data.audio.format->samplerate) /

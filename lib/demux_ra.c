@@ -123,14 +123,14 @@ static int open_ra(bgav_demuxer_context_t * ctx)
 
     s->data.audio.format->num_channels = 1;
     s->data.audio.format->samplerate = 8000;
-    s->data.audio.block_align = 240;
+    s->ci->block_align = 240;
     s->data.audio.bits_per_sample = 16;
     offset = 0x16;
     }
   else if(hdr_size >= 72)
     {
     priv->data_size = GAVL_PTR_2_32BE(audio_header + 0x1C);    
-    s->data.audio.block_align = GAVL_PTR_2_16BE(audio_header + 0x2A);
+    s->ci->block_align = GAVL_PTR_2_16BE(audio_header + 0x2A);
     s->data.audio.format->samplerate = GAVL_PTR_2_16BE(audio_header + 0x30);
     
     s->data.audio.bits_per_sample     = audio_header[0x35];
@@ -281,7 +281,7 @@ static gavl_source_status_t next_packet_ra(bgav_demuxer_context_t * ctx)
   s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
   p = bgav_stream_get_packet_write(s);
 
-  len = s->data.audio.block_align * priv->sub_packet_h;
+  len = s->ci->block_align * priv->sub_packet_h;
   gavl_packet_alloc(p, len);
   if(bgav_input_read_data(ctx->input, p->buf.buf, len) < len)
     return GAVL_SOURCE_EOF;

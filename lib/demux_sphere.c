@@ -222,12 +222,12 @@ static int open_sphere(bgav_demuxer_context_t * ctx)
     if(!strcmp(h.SampleCoding, "ulaw") || !strcmp(h.SampleCoding, "mu-law"))
       {
       as->fourcc = BGAV_MK_FOURCC('u','l','a','w');
-      as->data.audio.block_align = as->data.audio.format->num_channels;
+      as->ci->block_align = as->data.audio.format->num_channels;
       }
     else if(!strcmp(h.SampleCoding, "alaw"))
       {
       as->fourcc = BGAV_MK_FOURCC('a','l','a','w');
-      as->data.audio.block_align = as->data.audio.format->num_channels;
+      as->ci->block_align = as->data.audio.format->num_channels;
       }
     }
   else /* pcm */
@@ -245,7 +245,7 @@ static int open_sphere(bgav_demuxer_context_t * ctx)
       return 0;
       }
     
-    as->data.audio.block_align = as->data.audio.format->num_channels * bytes_per_sample;
+    as->ci->block_align = as->data.audio.format->num_channels * bytes_per_sample;
     as->data.audio.bits_per_sample = bytes_per_sample * 8;
 
     /* Endianess */
@@ -284,7 +284,7 @@ static int open_sphere(bgav_demuxer_context_t * ctx)
 
   if(ctx->input->total_bytes)
     {
-    as->stats.pts_end = (ctx->input->total_bytes - HEADERSIZE) / as->data.audio.block_align;
+    as->stats.pts_end = (ctx->input->total_bytes - HEADERSIZE) / as->ci->block_align;
     if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
       ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
     }
@@ -312,7 +312,7 @@ static int open_sphere(bgav_demuxer_context_t * ctx)
 
 static int64_t samples_to_bytes(bgav_stream_t * s, int samples)
   {
-  return  s->data.audio.block_align * samples;
+  return  s->ci->block_align * samples;
   }
 
 static gavl_source_status_t next_packet_sphere(bgav_demuxer_context_t * ctx)
@@ -335,12 +335,12 @@ static gavl_source_status_t next_packet_sphere(bgav_demuxer_context_t * ctx)
   
   gavl_packet_alloc(p, bytes_to_read);
   
-  p->pts = (ctx->input->position - HEADERSIZE) / s->data.audio.block_align;
+  p->pts = (ctx->input->position - HEADERSIZE) / s->ci->block_align;
   PACKET_SET_KEYFRAME(p);
   bytes_read = bgav_input_read_data(ctx->input, p->buf.buf, bytes_to_read);
   p->buf.len = bytes_read;
 
-  if(bytes_read < s->data.audio.block_align)
+  if(bytes_read < s->ci->block_align)
     return GAVL_SOURCE_EOF;
   
   bgav_stream_done_packet_write(s, p);
@@ -359,7 +359,7 @@ static void seek_sphere(bgav_demuxer_context_t * ctx,
   sample = gavl_time_rescale(scale,
                              s->data.audio.format->samplerate, time);
     
-  position =  s->data.audio.block_align * sample + HEADERSIZE;
+  position =  s->ci->block_align * sample + HEADERSIZE;
   bgav_input_seek(ctx->input, position, SEEK_SET);
   STREAM_SET_SYNC(s, sample);
   }

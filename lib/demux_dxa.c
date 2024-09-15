@@ -210,7 +210,7 @@ static int open_dxa(bgav_demuxer_context_t * ctx)
     priv->audio_end       = ctx->input->position + size;
     
     priv->audio_block_size      =
-      ((4096+as->data.audio.block_align-1)/as->data.audio.block_align)*as->data.audio.block_align;
+      ((4096+as->ci->block_align-1)/as->ci->block_align)*as->ci->block_align;
     }
   else
     priv->video_start    = ctx->input->position;

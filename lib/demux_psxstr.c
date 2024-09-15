@@ -156,7 +156,7 @@ static int open_psxstr(bgav_demuxer_context_t * ctx)
         s->data.audio.format->samplerate      = (sector[0x13] & 0x04) ? 18900 : 37800;
         s->data.audio.format->num_channels    = (sector[0x13] & 0x01) ? 2 : 1;
         s->data.audio.bits_per_sample = (sector[0x13] & 0x10) ? 8 : 4;
-        s->data.audio.block_align     = 128;
+        s->ci->block_align     = 128;
 
         s->stream_id = channel + AUDIO_OFFSET;
         

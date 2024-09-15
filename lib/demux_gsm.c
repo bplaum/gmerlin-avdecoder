@@ -56,7 +56,7 @@ static int open_gsm(bgav_demuxer_context_t * ctx)
   as->data.audio.format->num_channels = 1;
 
   
-  as->data.audio.block_align = GSM_BLOCK_SIZE;
+  as->ci->block_align = GSM_BLOCK_SIZE;
   
   if(ctx->input->total_bytes)
     {
@@ -81,15 +81,15 @@ static gavl_source_status_t next_packet_gsm(bgav_demuxer_context_t * ctx)
   s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
   p = bgav_stream_get_packet_write(s);
 
-  gavl_packet_alloc(p, s->data.audio.block_align);
+  gavl_packet_alloc(p, s->ci->block_align);
 
   p->pts = bytes_2_samples(ctx->input->position);
   PACKET_SET_KEYFRAME(p);
   bytes_read = bgav_input_read_data(ctx->input, p->buf.buf,
-                                    s->data.audio.block_align);
+                                    s->ci->block_align);
   p->buf.len = bytes_read;
 
-  if(bytes_read < s->data.audio.block_align)
+  if(bytes_read < s->ci->block_align)
     return GAVL_SOURCE_EOF;
   
   bgav_stream_done_packet_write(s, p);

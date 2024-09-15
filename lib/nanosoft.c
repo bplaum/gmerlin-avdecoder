@@ -226,10 +226,14 @@ void bgav_WAVEFORMAT_get_format(bgav_WAVEFORMAT_t * wf,
   s->data.audio.format->samplerate   = wf->f.WAVEFORMAT.nSamplesPerSec;
   s->codec_bitrate                  = wf->f.WAVEFORMAT.nAvgBytesPerSec * 8;
   s->container_bitrate              = wf->f.WAVEFORMAT.nAvgBytesPerSec * 8;
-  s->data.audio.block_align         = wf->f.WAVEFORMAT.nBlockAlign;
+  s->ci->block_align         = wf->f.WAVEFORMAT.nBlockAlign;
   
   s->timescale = s->data.audio.format->samplerate;
 
+  if((s->fourcc == BGAV_WAVID_2_FOURCC(0x160)) ||
+     (s->fourcc == BGAV_WAVID_2_FOURCC(0x161)))
+    gavl_dictionary_set_int(s->m, GAVL_META_STREAM_PACKET_DURATION_DIVISOR, 2048);
+  
   switch(wf->type)
     {
     case BGAV_WAVEFORMAT_WAVEFORMAT:
@@ -276,7 +280,7 @@ void bgav_WAVEFORMAT_set_format(bgav_WAVEFORMAT_t * wf,
   wf->f.WAVEFORMAT.nChannels         = s->data.audio.format->num_channels;
   wf->f.WAVEFORMAT.nSamplesPerSec    = s->data.audio.format->samplerate;
   wf->f.WAVEFORMAT.nAvgBytesPerSec   = s->codec_bitrate / 8;
-  wf->f.WAVEFORMAT.nBlockAlign       = s->data.audio.block_align;
+  wf->f.WAVEFORMAT.nBlockAlign       = s->ci->block_align;
   wf->f.WAVEFORMAT.wFormatTag        = BGAV_FOURCC_2_WAVID(s->fourcc);
   wf->f.PCMWAVEFORMAT.wBitsPerSample = s->data.audio.bits_per_sample;
   wf->f.WAVEFORMATEX.cbSize          = 0;
