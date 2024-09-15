@@ -444,7 +444,7 @@ static gavl_source_status_t next_packet_ogg(bgav_demuxer_context_t * ctx)
     if(!(page.header_type_flags & BGAV_OGG_HEADER_TYPE_CONTINUED) &&
        s->packet)
       {
-      fprintf(stderr, "Discarding packet from last page: %d bytes\n", s->packet->buf.len);
+      // fprintf(stderr, "Discarding packet from last page: %d bytes\n", s->packet->buf.len);
       
       gavl_buffer_reset(&s->packet->buf);
       s->packet->position = page.position;
@@ -480,8 +480,8 @@ static gavl_source_status_t next_packet_ogg(bgav_demuxer_context_t * ctx)
       return GAVL_SOURCE_OK;
       }
 
-    fprintf(stderr, "Resync stream %d, prev_granulepos: %"PRId64"\n",
-            s->stream_id, page.granulepos);
+    //    fprintf(stderr, "Resync stream %d, prev_granulepos: %"PRId64"\n",
+    //            s->stream_id, page.granulepos);
     
     stream_priv->prev_granulepos = page.granulepos;
     
