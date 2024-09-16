@@ -242,61 +242,9 @@ static gavl_source_status_t next_packet_wavpack(bgav_demuxer_context_t * ctx)
   return GAVL_SOURCE_OK;
   }
 
-#if 0
-static void seek_wavpack(bgav_demuxer_context_t * ctx,
-                         int64_t time, int scale)
-  {
-  int64_t time_scaled;
-  int64_t pts;
-  bgav_stream_t * s;
-  
-  uint8_t header[HEADER_SIZE];
-  wvpk_header_t h;
-  
-  s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
-  
-  pts = 0;
-  time_scaled = gavl_time_rescale(scale, s->timescale, time);
-  
-  bgav_input_seek(ctx->input, 0, SEEK_SET);
-  
-  while(1)
-    {
-    //    fprintf(stderr, "Seek %"PRId64"\n", pts);
-
-    if(bgav_input_get_data(ctx->input, header, HEADER_SIZE) < HEADER_SIZE)
-      {
-      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "EOF during seeking");
-      return;
-      }
-    parse_header(&h, header);
-    if(pts + h.block_samples > time_scaled)
-      break;
-    
-    bgav_input_skip(ctx->input, HEADER_SIZE + h.block_size - 24);
-    pts += h.block_samples;
-
-    while(!(h.flags & WV_MCEND))
-      {
-      if(bgav_input_get_data(ctx->input, header, HEADER_SIZE) < HEADER_SIZE)
-        {
-        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "EOF during seeking");
-        return; // EOF
-        }
-      parse_header(&h, header);
-
-      bgav_input_skip(ctx->input, HEADER_SIZE + h.block_size - 24);
-      }
-    
-    }
-  STREAM_SET_SYNC(s, pts);
-  }
-#endif
-
 const bgav_demuxer_t bgav_demuxer_wavpack =
   {
     .probe =       probe_wavpack,
     .open =        open_wavpack,
     .next_packet = next_packet_wavpack,
-    //    .seek =        seek_wavpack,
   };
