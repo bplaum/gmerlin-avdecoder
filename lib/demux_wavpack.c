@@ -126,30 +126,6 @@ static int open_wavpack(bgav_demuxer_context_t * ctx)
 
   if(ctx->opt->dump_headers)
     dump_header(&h);
-
-#if 0 // Not the demuxers business  
-  /* Use header data to set up stream */
-  if(h.flags & WV_FLOAT)
-    {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-             "Floating point data is not supported");
-    return 0;
-    }
-  
-  if(h.flags & WV_HYBRID)
-    {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-             "Hybrid coding mode is not supported");
-    return 0;
-    }
-  
-  if(h.flags & WV_INT32)
-    {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-             "Integer point data is not supported");
-    return 0;
-    }
-#endif
   
   /* Create the track and the stream */
   ctx->tt = bgav_track_table_create(1);
@@ -266,6 +242,7 @@ static gavl_source_status_t next_packet_wavpack(bgav_demuxer_context_t * ctx)
   return GAVL_SOURCE_OK;
   }
 
+#if 0
 static void seek_wavpack(bgav_demuxer_context_t * ctx,
                          int64_t time, int scale)
   {
@@ -314,11 +291,12 @@ static void seek_wavpack(bgav_demuxer_context_t * ctx,
     }
   STREAM_SET_SYNC(s, pts);
   }
+#endif
 
 const bgav_demuxer_t bgav_demuxer_wavpack =
   {
     .probe =       probe_wavpack,
     .open =        open_wavpack,
     .next_packet = next_packet_wavpack,
-    .seek =        seek_wavpack,
+    //    .seek =        seek_wavpack,
   };
