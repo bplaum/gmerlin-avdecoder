@@ -797,11 +797,12 @@ struct bgav_input_s
   };
 
 // #define BGAV_INPUT_DO_BUFFER      (1<<0)
-#define BGAV_INPUT_CAN_PAUSE      (1<<1)
-#define BGAV_INPUT_CAN_SEEK_BYTE  (1<<2)
-#define BGAV_INPUT_CAN_SEEK_TIME  (1<<3)
-#define BGAV_INPUT_SEEK_SLOW      (1<<4)
-#define BGAV_INPUT_PAUSED         (1<<5)
+#define BGAV_INPUT_CAN_PAUSE           (1<<1)
+#define BGAV_INPUT_CAN_SEEK_BYTE       (1<<2)
+#define BGAV_INPUT_CAN_SEEK_TIME       (1<<3)
+#define BGAV_INPUT_SEEK_SLOW           (1<<4)
+#define BGAV_INPUT_PAUSED              (1<<5)
+#define BGAV_INPUT_CAN_SEEK_BYTE_FAST  (1<<6)
 
 struct bgav_input_context_s
   {
@@ -1253,6 +1254,9 @@ int bgav_is_redirector(bgav_t * bgav);
 #define BGAV_FLAG_STATE_SENT       (1<<2)
 #define BGAV_FLAG_PAUSED           (1<<3)
 
+/* Decoder was only opened to build an index */
+#define BGAV_FLAG_BUILD_INDEX      (1<<4)
+
 struct bgav_s
   {
   char * location;
@@ -1287,8 +1291,7 @@ void bgav_signal_restart(bgav_t * b, int reason);
 void bgav_seek_window_changed(bgav_t * b,
                               gavl_time_t start, gavl_time_t end);
 
-// void bgav_abs_time_offset_changed(bgav_t * b, gavl_time_t off);
-//void bgav_start_time_absolute_changed(bgav_t * b, gavl_time_t off);
+int bgav_ensure_index(bgav_t * b);
 
 void bgav_send_state(bgav_t * b);
 
@@ -1586,48 +1589,6 @@ void bgav_translation_init();
 
 /* For static strings */
 #define TRS(s) (s)
-
-
-#if 0
-/* keyframetable.c */
-
-/*
- *  A keyframe table is always associated with 
- *  either a file index or a superindex.
- */
-
-struct bgav_keyframe_table_s
-  {
-  int num_entries;
-  struct
-    {
-    int pos;
-    int64_t pts;
-    } * entries;
-  };
-
-bgav_keyframe_table_t * bgav_keyframe_table_create_fi(bgav_file_index_t * fi);
-bgav_keyframe_table_t * bgav_keyframe_table_create_si(gavl_packet_index_t * si,
-                                                      bgav_stream_t * s);
-
-void bgav_keyframe_table_destroy(bgav_keyframe_table_t *);
-/* Returns the index position */
-int bgav_keyframe_table_seek(bgav_keyframe_table_t *,
-                             int64_t  seek_pts,
-                             int64_t * kf_pts);
-
-#endif
-/* formattracker.c */
-
-
-#if 0
-bgav_video_format_tracker_t *
-bgav_video_format_tracker_create(bgav_stream_t * s);
-
-void bgav_video_format_tracker_destroy(bgav_video_format_tracker_t *);
-#endif
-
-
 
 /* parse_dca.c */
 #ifdef HAVE_DCA

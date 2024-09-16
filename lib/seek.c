@@ -414,12 +414,11 @@ static void seek_input(bgav_t * b, int64_t * time, int scale)
   
   }
 
-static int ensure_index(bgav_t * b)
+int bgav_ensure_index(bgav_t * b)
   {
-  
   if((b->demuxer->index_mode == INDEX_MODE_SIMPLE) && !b->demuxer->si)
     {
-    /* TODO: Build packet index */
+    /* Build packet index */
     const char * location = NULL;
 
     if(!gavl_metadata_get_src(&b->input->m, GAVL_META_SRC, 0, NULL, &location) |
@@ -463,7 +462,7 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
 
   if(b->opt.sample_accurate && !(b->demuxer->flags & BGAV_DEMUXER_SAMPLE_ACCURATE))
     {
-    if(!ensure_index(b))
+    if(!bgav_ensure_index(b))
       {
       gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Sample accurate seeking not supported for format");
       }
@@ -485,7 +484,7 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
   else if((b->demuxer->index_mode == INDEX_MODE_SIMPLE) &&
           (b->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
     {
-    if(!ensure_index(b) || !b->demuxer->si)
+    if(!bgav_ensure_index(b) || !b->demuxer->si)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Building packet index failed");
       return;
@@ -493,14 +492,6 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
     seek_si(b, b->demuxer, *time, scale);
     }
   }
-
-#if 0
-void
-bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
-  {
-  bgav_seek_scaled_unit(b, time, scale, GAVL_SRC_SEEK_PTS);
-  }
-#endif
 
 void
 bgav_seek(bgav_t * b, gavl_time_t * time)

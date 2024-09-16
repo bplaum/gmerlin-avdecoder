@@ -190,8 +190,9 @@ int bgav_init(bgav_t * ret)
     return 1;
 
   /* Let the demuxer get the track durations */
-  if(ret->demuxer && (ret->demuxer->flags & BGAV_DEMUXER_GET_DURATION) &&
-     (ret->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
+  if(!(ret->flags & BGAV_FLAG_BUILD_INDEX) &&
+     ret->demuxer && (ret->demuxer->flags & BGAV_DEMUXER_GET_DURATION) &&
+     (ret->input->flags & BGAV_INPUT_CAN_SEEK_BYTE_FAST))
     {
     for(i = 0; i < ret->tt->num_tracks; i++)
       {

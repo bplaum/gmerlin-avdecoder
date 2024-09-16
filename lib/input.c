@@ -951,6 +951,11 @@ int bgav_input_open(bgav_input_context_t * ctx,
       free(new_url);
       }
     }
+
+  /* Signal fast seeking support */
+  if((ctx->flags & (BGAV_INPUT_CAN_SEEK_BYTE|BGAV_INPUT_SEEK_SLOW)) == 
+     BGAV_INPUT_CAN_SEEK_BYTE)
+    ctx->flags |= BGAV_INPUT_CAN_SEEK_BYTE_FAST;    
   
   return ret;
   }

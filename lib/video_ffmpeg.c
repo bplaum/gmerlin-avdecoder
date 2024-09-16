@@ -717,7 +717,7 @@ static const AVCodec * find_decoder(bgav_stream_t * s, enum AVCodecID id)
   return avcodec_find_decoder(id);
   }
 
-#if 1
+#if 0
 
 
 static void buffer_free_func(void *opaque, uint8_t *data)
@@ -862,6 +862,8 @@ static int init_ffmpeg(bgav_stream_t * s)
     }
   else
 #endif
+
+#if 0    
   if(codec->capabilities & AV_CODEC_CAP_DR1)
     {
     fprintf(stderr, "Direct rendering supported\n");
@@ -872,6 +874,7 @@ static int init_ffmpeg(bgav_stream_t * s)
     /* TODO: Allocate HW context */
     
     }
+#endif
   
   /* Check if there might be B-frames */
   if(codec->capabilities & AV_CODEC_CAP_DELAY)
@@ -922,8 +925,9 @@ static int init_ffmpeg(bgav_stream_t * s)
     {
     priv->gavl_frame_priv = gavl_video_frame_create(NULL);
     priv->gavl_frame_priv = priv->gavl_frame_priv;
+    priv->gavl_frame = priv->gavl_frame_priv;
     }
-
+  
   priv->pkt = av_packet_alloc();
   
   /* Some codecs need extra stuff */

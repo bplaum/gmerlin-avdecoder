@@ -364,8 +364,6 @@ static void init_superindex(bgav_demuxer_context_t * ctx)
       }
     else
       {
-      //      gavl_packet_index_set_durations(ctx->si, &ctx->tt->cur->streams[i]);
-      //      gavl_packet_index_set_stream_stats(ctx->si, &ctx->tt->cur->streams[i]);
       i++;
       }
     }
@@ -689,64 +687,88 @@ int bgav_demuxer_get_duration(bgav_demuxer_context_t * ctx)
   int done = 0;
   int64_t position;
   int64_t end_position;
-  int type_mask = GAVL_STREAM_AUDIO | GAVL_STREAM_VIDEO;
-
+  int type_mask;
+  
   gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Getting stream duration");
-  
-  parse_start(ctx, type_mask, 1);
 
-  if(ctx->tt->cur->data_end > 0)
-    end_position = ctx->tt->cur->data_end;
-  else
-    end_position = ctx->input->total_bytes;
-
-  position = end_position;
-  
-  while(!done)
+  if(ctx->demuxer->post_seek_resync)
     {
-    position -= 1024*1024; // Start 1 MB from track end
+    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Getting duration from end of stream");
     
-    if(position < ctx->tt->cur->data_start)
-      position = ctx->tt->cur->data_start;
+    /* Go to end of file and fetch last timestamps */
+    
+    type_mask = GAVL_STREAM_AUDIO | GAVL_STREAM_VIDEO;
+    parse_start(ctx, type_mask, 1);
 
-    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Trying position: %"PRId64, position);
+    if(ctx->tt->cur->data_end > 0)
+      end_position = ctx->tt->cur->data_end;
+    else
+      end_position = ctx->input->total_bytes;
+
+    position = end_position;
+  
+    while(!done)
+      {
+      position -= 1024*1024; // Start 1 MB from track end
     
-    bgav_input_seek(ctx->input, position, SEEK_SET);
-    if(!ctx->demuxer->post_seek_resync(ctx))
+      if(position < ctx->tt->cur->data_start)
+        position = ctx->tt->cur->data_start;
+
+      gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Trying position: %"PRId64, position);
+    
+      bgav_input_seek(ctx->input, position, SEEK_SET);
+      if(!ctx->demuxer->post_seek_resync(ctx))
+        return 0;
+    
+      while(parse_packet(ctx))
+        ;
+    
+      /* Check if we are done */
+
+      done = 1;
+
+      for(i = 0; i < ctx->tt->cur->num_streams; i++)
+        {
+        if(!(ctx->tt->cur->streams[i]->type & type_mask))
+          continue;
+        if(ctx->tt->cur->streams[i]->stats.pts_end == GAVL_TIME_UNDEFINED)
+          {
+          done = 0;
+          break;
+          }
+        }
+    
+      if(!done)
+        {
+        bgav_track_clear(ctx->tt->cur);
+      
+        /* Reached beginning */
+        if(position == ctx->tt->cur->data_start)
+          {
+          parse_end(ctx, type_mask);
+          return 0;
+          }
+        }
+      }
+  
+    parse_end(ctx, type_mask);
+    }
+  else if(ctx->index_mode == INDEX_MODE_SIMPLE)
+    {
+    /* Build index and take duration from it */
+    const char * location = NULL;
+    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Getting duration by parsing");
+    
+    if(!gavl_metadata_get_src(&ctx->input->m, GAVL_META_SRC, 0, NULL, &location) |
+       !location)
       return 0;
     
-    while(parse_packet(ctx))
-      ;
-    
-    /* Check if we are done */
+    if(!(ctx->si = bgav_get_packet_index(location)))
+      return 0;
 
-    done = 1;
-
-    for(i = 0; i < ctx->tt->cur->num_streams; i++)
-      {
-      if(!(ctx->tt->cur->streams[i]->type & type_mask))
-        continue;
-      if(ctx->tt->cur->streams[i]->stats.pts_end == GAVL_TIME_UNDEFINED)
-        {
-        done = 0;
-        break;
-        }
-      }
-    
-    if(!done)
-      {
-      bgav_track_clear(ctx->tt->cur);
-      
-      /* Reached beginning */
-      if(position == ctx->tt->cur->data_start)
-        {
-        parse_end(ctx, type_mask);
-        return 0;
-        }
-      }
+    bgav_demuxer_set_durations_from_superindex(ctx, ctx->tt->cur);
     }
   
-  parse_end(ctx, type_mask);
   return 1;
   }
 
@@ -825,13 +847,14 @@ gavl_packet_index_t * bgav_get_packet_index(const char * url)
      (ret = gavl_packet_index_load(filename)))
     {
     gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Loaded packet index from %s", filename);
-    gavl_packet_index_dump(ret);
+    //    gavl_packet_index_dump(ret);
     goto end;
     }
   
   before = gavl_time_get_monotonic();
   b = bgav_create();
-
+  b->flags |= BGAV_FLAG_BUILD_INDEX;
+  
   if(!bgav_open(b, url))
     goto end;
 
@@ -844,7 +867,7 @@ gavl_packet_index_t * bgav_get_packet_index(const char * url)
   duration = gavl_time_get_monotonic() - before;
   
   gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Build packet index in %f seconds", gavl_time_to_seconds(duration));
-  gavl_packet_index_dump(ret);
+  //  gavl_packet_index_dump(ret);
   
   if(duration > GAVL_TIME_SCALE * 2)
     {

@@ -202,6 +202,7 @@ static int open_adts(bgav_demuxer_context_t * ctx)
   //  adts_header_dump(&adts);
 
   ctx->index_mode = INDEX_MODE_SIMPLE;
+  ctx->flags |= BGAV_DEMUXER_GET_DURATION;
   
   bgav_track_set_format(ctx->tt->cur, "ADTS", "audio/aac");
   
@@ -210,7 +211,7 @@ static int open_adts(bgav_demuxer_context_t * ctx)
   //  fprintf(stderr, "adts_open\n");
   //  gavl_dictionary_dump(ctx->tt->cur->info, 2);
 
-  if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_TIME)
+  if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
     ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
   
   return 1;
@@ -226,7 +227,7 @@ static gavl_source_status_t next_packet_adts(bgav_demuxer_context_t * ctx)
   bgav_adts_header_t adts;
   aac_priv_t * priv;
   uint8_t buf[ADTS_HEADER_LEN];
-
+  int64_t pos;
   //  fprintf(stderr, "next packet ADTS\n");
   
   priv = ctx->priv;
@@ -235,6 +236,8 @@ static gavl_source_status_t next_packet_adts(bgav_demuxer_context_t * ctx)
 
   if(bgav_input_get_data(ctx->input, buf, ADTS_HEADER_LEN) < ADTS_HEADER_LEN)
     return GAVL_SOURCE_EOF;
+
+  pos = ctx->input->position;
   
   if(!bgav_adts_header_read(buf, &adts))
     {
@@ -252,7 +255,7 @@ static gavl_source_status_t next_packet_adts(bgav_demuxer_context_t * ctx)
     }
   
   p->duration = priv->block_samples * adts.num_blocks;
-  p->position = ctx->input->position;
+  p->position = pos;
 
   PACKET_SET_KEYFRAME(p);
   
