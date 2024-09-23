@@ -370,6 +370,7 @@ static int open_ogg(bgav_demuxer_context_t * ctx)
 
     }
   ctx->flags |= BGAV_DEMUXER_GET_DURATION;
+  ctx->index_mode = INDEX_MODE_SIMPLE;
   
   return 1;
   }
@@ -686,7 +687,6 @@ const bgav_demuxer_t bgav_demuxer_ogg2 =
     .open =         open_ogg,
     .next_packet =  next_packet_ogg,
     .post_seek_resync =  post_seek_resync_ogg,
-    // .seek =         seek_ogg,
     .select_track = select_track_ogg
   };
 

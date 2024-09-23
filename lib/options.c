@@ -247,6 +247,9 @@ void bgav_options_set_defaults(bgav_options_t * b)
     GAVL_LOG_INFO | \
     GAVL_LOG_ERROR | \
     GAVL_LOG_WARNING;
+
+  //  b->sample_accurate = 1;
+  
   
   // Test
   // b->dump_packets = 1;

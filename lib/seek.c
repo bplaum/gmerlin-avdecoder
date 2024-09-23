@@ -426,8 +426,11 @@ int bgav_ensure_index(bgav_t * b)
       return 0;
     
     if((b->demuxer->si = bgav_get_packet_index(location)))
+      {
+      fprintf(stderr, "Built packet index:\n");
+      gavl_packet_index_dump(b->demuxer->si);
       return 1;
-    
+      }
     }
 
   return 0;
@@ -463,9 +466,7 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
   if(b->opt.sample_accurate && !(b->demuxer->flags & BGAV_DEMUXER_SAMPLE_ACCURATE))
     {
     if(!bgav_ensure_index(b))
-      {
       gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Sample accurate seeking not supported for format");
-      }
     }
     
   if(b->demuxer->si)

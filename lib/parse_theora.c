@@ -60,8 +60,8 @@ static int parse_frame_theora(bgav_packet_parser_t * parser, bgav_packet_t * p)
     frames += p->pes_pts - (frames << th->ti.keyframe_granule_shift);
     p->pes_pts = frames * parser->vfmt->frame_duration;
     
-    //    fprintf(stderr, "Frames: %"PRId64" Time: %"PRId64" (%d:%d)\n",
-    //            frames, p->pes_pts, );
+    //    fprintf(stderr, "Frames: %"PRId64" Time: %"PRId64"\n",
+    //            frames, p->pes_pts);
     }
 
   //  gavl_packet_dump(p);

@@ -818,8 +818,13 @@ static int check_sync_time(bgav_stream_t * s, int64_t * t)
   if(!gavl_dictionary_get_int(s->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, &scale) ||
      (scale <= 0))
     return 1;
+
   
   tt = gavl_time_unscale(scale, p->pts);
+
+  //  fprintf(stderr, "check_sync_time %d %"PRId64" %"PRId64"\n",
+  //          scale, p->pts, tt);
+  
   if(tt > *t)
     *t = tt;
   

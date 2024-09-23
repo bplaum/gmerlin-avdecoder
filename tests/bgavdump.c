@@ -158,22 +158,22 @@ static void print_usage()
   fprintf(stderr, "Usage: bgavdump [options] location\n");
   fprintf(stderr, "       bgavdump -L\n");
   fprintf(stderr, "\n");
-  fprintf(stderr, "-s               Switch to sample accurate mode\n");
-  fprintf(stderr, "-aseek <sample>  Seek to audio sample\n");
-  fprintf(stderr, "-vseek <time>    Seek to video time\n");
-  fprintf(stderr, "-seek <seconds>  Do a global seek to a time\n");
-  fprintf(stderr, "-na              Disable audio\n");
-  fprintf(stderr, "-nv              Disable video\n");
-  fprintf(stderr, "-nf <number>     Number of A/V frames to read\n");
-  fprintf(stderr, "-v <level>       Verbosity level (0..4)\n");
-  fprintf(stderr, "-ci              Dump compression info\n");
-  fprintf(stderr, "-vdpau           Try to use vdpau\n");
-  fprintf(stderr, "-dh              Dump headers of the file\n");
-  fprintf(stderr, "-di              Dump indices of the file\n");
-  fprintf(stderr, "-dp              Dump packets\n");
-  fprintf(stderr, "-L               List all demultiplexers and codecs\n");
-  fprintf(stderr, "-follow          Follow redirections (e.g. in m3u files)\n");
-  fprintf(stderr, "-t <num>         Dump track <num> (default: Dump all)\n");
+  fprintf(stderr, "-s                    Switch to sample accurate mode\n");
+  fprintf(stderr, "-aseek <sample>       Seek to audio sample\n");
+  fprintf(stderr, "-vseek <time>         Seek to video time\n");
+  fprintf(stderr, "-seek <microseconds>  Do a global seek to a time\n");
+  fprintf(stderr, "-na                   Disable audio\n");
+  fprintf(stderr, "-nv                   Disable video\n");
+  fprintf(stderr, "-nf <number>          Number of A/V frames to read\n");
+  fprintf(stderr, "-v <level>            Verbosity level (0..4)\n");
+  fprintf(stderr, "-ci                   Dump compression info\n");
+  fprintf(stderr, "-vdpau                Try to use vdpau\n");
+  fprintf(stderr, "-dh                   Dump headers of the file\n");
+  fprintf(stderr, "-di                   Dump indices of the file\n");
+  fprintf(stderr, "-dp                   Dump packets\n");
+  fprintf(stderr, "-L                    List all demultiplexers and codecs\n");
+  fprintf(stderr, "-follow               Follow redirections (e.g. in m3u files)\n");
+  fprintf(stderr, "-t <num>              Dump track <num> (default: Dump all)\n");
 
   }
 
