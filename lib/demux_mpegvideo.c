@@ -141,6 +141,9 @@ static int open_mpegvideo(bgav_demuxer_context_t * ctx)
                         "video/mpeg");
   
   ctx->index_mode = INDEX_MODE_SIMPLE;
+
+  ctx->flags |= BGAV_DEMUXER_GET_DURATION;
+
   bgav_stream_set_parse_full(s);
   
   
