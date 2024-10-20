@@ -27,7 +27,7 @@
 #include <bswap.h>
 #include <avdec_private.h>
 #include <codecs.h>
-#include <ptscache.h>
+// #include <ptscache.h>
 
 #include <stdio.h>
 #include <pthread.h>
@@ -139,9 +139,9 @@ typedef struct
   gavl_video_format_t field_format[2];
   
   /* */
-  
-  bgav_pts_cache_t pts_cache;
 
+  gavl_packet_pts_cache_t * pts_cache;
+  
   //  int64_t picture_timestamp;
   //  int     picture_duration;
   //  gavl_timecode_t picture_timecode;
@@ -384,7 +384,7 @@ static gavl_source_status_t get_packet(bgav_stream_t * s)
   bgav_packet_t * p;
   gavl_source_status_t st;
   ffmpeg_video_priv * priv;
-  bgav_pts_cache_entry_t * e;
+  //  bgav_pts_cache_entry_t * e;
   gavl_palette_t * palette;
   
   priv = s->decoder_priv;
@@ -467,7 +467,7 @@ static gavl_source_status_t get_packet(bgav_stream_t * s)
 
   if((priv->ctx->skip_frame == AVDISCARD_DEFAULT) &&
      !(p->flags & GAVL_PACKET_NOOUTPUT))
-    bgav_pts_cache_push(&priv->pts_cache, p, NULL, &e);
+    gavl_packet_pts_cache_push_packet(priv->pts_cache, p);
   
   priv->pkt->data = p->buf.buf;
   if(p->field2_offset)
@@ -625,8 +625,9 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
         priv->gavl_frame->strides[i] = priv->frame->linesize[i];
         }
       }
-    bgav_pts_cache_get_first(&priv->pts_cache, priv->gavl_frame);
 
+    gavl_packet_pts_cache_get_first(priv->pts_cache, priv->gavl_frame);
+    
     if(gavl_interlace_mode_is_mixed(s->data.video.format->interlace_mode))
       {
       if(priv->frame->interlaced_frame)
@@ -820,6 +821,7 @@ static int init_ffmpeg(bgav_stream_t * s)
   priv = calloc(1, sizeof(*priv));
   priv->skip_time = GAVL_TIME_UNDEFINED;
 
+  priv->pts_cache = gavl_packet_pts_cache_create(-1);
   
   s->decoder_priv = priv;
   
@@ -1044,7 +1046,7 @@ static void resync_ffmpeg(bgav_stream_t * s)
   
   avcodec_flush_buffers(priv->ctx);
   
-  bgav_pts_cache_clear(&priv->pts_cache);
+  gavl_packet_pts_cache_clear(priv->pts_cache);
   
   }
 
@@ -1137,7 +1139,9 @@ static void close_ffmpeg(bgav_stream_t * s)
 
   if(priv->dsp)
     gavl_dsp_context_destroy(priv->dsp);
-  
+
+  if(priv->pts_cache)
+    gavl_packet_pts_cache_destroy(priv->pts_cache);
 
   free(priv);
   }

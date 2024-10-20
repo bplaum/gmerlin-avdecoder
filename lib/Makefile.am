@@ -415,7 +415,6 @@ parse_vp9.c \
 parser.c \
 pes_header.c \
 pnm.c \
-ptscache.c \
 qt_atom.c \
 qt_chan.c \
 qt_cmov.c \
