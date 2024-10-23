@@ -178,7 +178,7 @@ typedef struct
 
 
 #ifdef HAVE_LIBVA // NEW libva API
-static int vaapi_supported(AVCodec *codec)
+static int vaapi_supported(const AVCodec *codec)
   {
   const AVCodecHWConfig * cfg = NULL;
   int idx = 0;
@@ -630,6 +630,17 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
     
     if(gavl_interlace_mode_is_mixed(s->data.video.format->interlace_mode))
       {
+/* Newer version */
+#if defined (AV_FRAME_FLAG_INTERLACED) && defined (AV_FRAME_FLAG_TOP_FIELD_FIRST)
+      if(priv->frame->flags & AV_FRAME_FLAG_INTERLACED)
+        {
+        if(priv->frame->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST)
+          priv->gavl_frame->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
+        else
+          priv->gavl_frame->interlace_mode = GAVL_INTERLACE_BOTTOM_FIRST;
+        
+        }
+#else
       if(priv->frame->interlaced_frame)
         {
         if(priv->frame->top_field_first)
@@ -637,11 +648,11 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
         else
           priv->gavl_frame->interlace_mode = GAVL_INTERLACE_BOTTOM_FIRST;
         }
+#endif
       else
         priv->gavl_frame->interlace_mode = GAVL_INTERLACE_NONE;
       }
     }
-  
   return GAVL_SOURCE_OK;
   }
 
