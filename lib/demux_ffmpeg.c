@@ -620,9 +620,15 @@ static int open_ffmpeg(bgav_demuxer_context_t * ctx)
   if((priv->avfc->duration != 0) && (priv->avfc->duration != AV_NOPTS_VALUE))
     {
     gavl_track_set_duration(ctx->tt->cur->info, (priv->avfc->duration * GAVL_TIME_SCALE) / AV_TIME_BASE);
-    
+
+#ifdef AVFMTCTX_UNSEEKABLE
+    if((ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE) &&
+       !(priv->avfc->ctx_flags & AVFMTCTX_UNSEEKABLE))
+      ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
+#else
     if(priv->avfc->iformat->read_seek)
       ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
+#endif
     }
   
 #define GET_METADATA_STRING(gavl_name, ffmpeg_name) \
