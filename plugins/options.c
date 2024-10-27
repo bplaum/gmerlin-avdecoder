@@ -21,6 +21,7 @@
 
 
 #include <string.h>
+#include <stdlib.h>
 
 #include <gmerlin/parameter.h>
 #include <avdec.h>
