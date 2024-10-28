@@ -64,7 +64,6 @@ typedef struct bgav_video_decoder_s            bgav_video_decoder_t;
 typedef struct bgav_subtitle_converter_s bgav_subtitle_converter_t;
 typedef struct bgav_stream_s   bgav_stream_t;
 
-typedef struct bgav_charset_converter_s bgav_charset_converter_t;
 
 typedef struct bgav_track_s bgav_track_t;
 
@@ -827,7 +826,7 @@ struct bgav_input_context_s
   /* For reading textfiles */
   char * charset;
   
-  bgav_charset_converter_t * cnv;
+  gavl_charset_converter_t * cnv;
   
   /* For multiple track support */
 
@@ -1393,23 +1392,6 @@ int bgav_udp_write(const bgav_options_t * opt,
                    int fd, uint8_t * data, int len,
                    struct addrinfo * addr);
 
-/* Charset utilities (charset.c) */
-
-#define BGAV_UTF8 "UTF-8" // iconf string for UTF-8
-
-bgav_charset_converter_t *
-bgav_charset_converter_create(const char * in_charset,
-                              const char * out_charset);
-
-void bgav_charset_converter_destroy(bgav_charset_converter_t *);
-
-char * bgav_convert_string(bgav_charset_converter_t *,
-                           const char * in_string, int in_len,
-                           uint32_t * out_len);
-
-int bgav_convert_string_realloc(bgav_charset_converter_t * cnv,
-                                const char * str, int len,
-                                gavl_buffer_t * out);
 
 /* subtitleconverter.c */
 /* Subtitle converter (converts character sets and removes \r */

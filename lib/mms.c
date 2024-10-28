@@ -410,7 +410,7 @@ bgav_mms_t * bgav_mms_open(const bgav_options_t * opt,
   char guid[37];
   char * buf;
   char * utf16;
-  uint32_t len_out;
+  int len_out;
   uint8_t * pos;
   uint32_t i_tmp;
   int server_version_len;
@@ -418,12 +418,12 @@ bgav_mms_t * bgav_mms_open(const bgav_options_t * opt,
   int update_url_len;
   int password_encryption_type_len;
 
-  bgav_charset_converter_t * ascii_2_utf16;
-  bgav_charset_converter_t * utf16_2_utf8;
+  gavl_charset_converter_t * ascii_2_utf16;
+  gavl_charset_converter_t * utf16_2_utf8;
   bgav_mms_t * ret = NULL;
 
-  ascii_2_utf16 = bgav_charset_converter_create("ASCII", "UTF-16LE");
-  utf16_2_utf8  = bgav_charset_converter_create("UTF-16LE", BGAV_UTF8);
+  ascii_2_utf16 = gavl_charset_converter_create("ASCII", "UTF-16LE");
+  utf16_2_utf8  = gavl_charset_converter_create("UTF-16LE", GAVL_UTF8);
   
   
   if(!gavl_url_split(url,
@@ -477,7 +477,7 @@ bgav_mms_t * bgav_mms_open(const bgav_options_t * opt,
   buf = gavl_sprintf("\034\003NSPlayer/7.0.0.1956; {33715801-BAB3-9D85-24E9-03B90328270A}; Host: %s",
                      host);
   
-  utf16 = bgav_convert_string(ascii_2_utf16, buf, -1, &len_out);
+  utf16 = gavl_convert_string(ascii_2_utf16, buf, -1, &len_out);
   
   
   set_command_header(ret, 0x01, 0, 0x0004000b, strlen(buf)*2+2);
@@ -516,7 +516,7 @@ bgav_mms_t * bgav_mms_open(const bgav_options_t * opt,
 
   if(server_version_len)
     {
-    ret->server_version = bgav_convert_string(utf16_2_utf8,
+    ret->server_version = gavl_convert_string(utf16_2_utf8,
                                               (char*)pos, server_version_len*2,
                                               NULL);
     pos += server_version_len*2;
@@ -524,7 +524,7 @@ bgav_mms_t * bgav_mms_open(const bgav_options_t * opt,
 
   if(tool_version_len)
     {
-    ret->tool_version = bgav_convert_string(utf16_2_utf8,
+    ret->tool_version = gavl_convert_string(utf16_2_utf8,
                                             (char*)pos, tool_version_len*2,
                                             NULL);
     pos += tool_version_len*2;
@@ -532,7 +532,7 @@ bgav_mms_t * bgav_mms_open(const bgav_options_t * opt,
   
   if(update_url_len)
     {
-    ret->update_url = bgav_convert_string(utf16_2_utf8,
+    ret->update_url = gavl_convert_string(utf16_2_utf8,
                                           (char*)pos, update_url_len*2,
                                           NULL);
     pos += update_url_len*2;
@@ -541,7 +541,7 @@ bgav_mms_t * bgav_mms_open(const bgav_options_t * opt,
   if(password_encryption_type_len)
     {
     ret->password_encryption_type =
-      bgav_convert_string(utf16_2_utf8, (char*)pos,
+      gavl_convert_string(utf16_2_utf8, (char*)pos,
                           password_encryption_type_len*2,
                           NULL);
     pos += password_encryption_type_len*2;
@@ -549,7 +549,7 @@ bgav_mms_t * bgav_mms_open(const bgav_options_t * opt,
   
   /* C->S 0x02: Send Protocol and stuff */
   
-  utf16 = bgav_convert_string(ascii_2_utf16,
+  utf16 = gavl_convert_string(ascii_2_utf16,
                               "\002\000\\\\192.168.0.129\\TCP\\1037\0000",
                               28, &len_out);
   
@@ -587,7 +587,7 @@ bgav_mms_t * bgav_mms_open(const bgav_options_t * opt,
   
   /* C->S: Request file */
 
-  utf16 = bgav_convert_string(ascii_2_utf16, path, strlen(path),
+  utf16 = gavl_convert_string(ascii_2_utf16, path, strlen(path),
                               &len_out);
   
   set_command_header(ret, 0x05, 1, 0xFFFFFFFF, len_out + 10);
@@ -700,8 +700,8 @@ bgav_mms_t * bgav_mms_open(const bgav_options_t * opt,
     }
   //  mms_dump(ret);
 
-  bgav_charset_converter_destroy(ascii_2_utf16);
-  bgav_charset_converter_destroy(utf16_2_utf8);
+  gavl_charset_converter_destroy(ascii_2_utf16);
+  gavl_charset_converter_destroy(utf16_2_utf8);
   
   if(host)
     free(host);
@@ -713,8 +713,8 @@ bgav_mms_t * bgav_mms_open(const bgav_options_t * opt,
   return ret;
   
   fail:
-  bgav_charset_converter_destroy(ascii_2_utf16);
-  bgav_charset_converter_destroy(utf16_2_utf8);
+  gavl_charset_converter_destroy(ascii_2_utf16);
+  gavl_charset_converter_destroy(utf16_2_utf8);
   if(host)
     free(host);
   if(protocol)

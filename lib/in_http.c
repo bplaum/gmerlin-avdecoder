@@ -44,7 +44,7 @@ typedef struct
 
   gavl_io_t * io;
   
-  bgav_charset_converter_t * charset_cnv;
+  gavl_charset_converter_t * charset_cnv;
   int64_t bytes_read;
 
   gavl_buffer_t buffer;
@@ -236,8 +236,8 @@ static int open_http(bgav_input_context_t * ctx, const char * url1, char ** r)
     p->icy_metaint = atoi(var);
     /* Then, we'll also need a charset converter */
 
-    p->charset_cnv = bgav_charset_converter_create("ISO-8859-1",
-                                                   BGAV_UTF8);
+    p->charset_cnv = gavl_charset_converter_create("ISO-8859-1",
+                                                   GAVL_UTF8);
     }
 
   if(gavl_io_can_seek(p->io))
@@ -360,7 +360,7 @@ static int read_shoutcast_metadata(bgav_input_context_t* ctx)
           {
           gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata,
                                             GAVL_META_LABEL,
-                                            bgav_convert_string(priv->charset_cnv ,
+                                            gavl_convert_string(priv->charset_cnv ,
                                                                 pos, end_pos - pos,
                                                                 NULL));
           }
@@ -442,7 +442,7 @@ static void close_http(bgav_input_context_t * ctx)
     gavl_io_destroy(p->io);
   
   if(p->charset_cnv)
-    bgav_charset_converter_destroy(p->charset_cnv);
+    gavl_charset_converter_destroy(p->charset_cnv);
   free(p);
   }
 

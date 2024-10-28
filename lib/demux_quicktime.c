@@ -822,7 +822,7 @@ static void build_index(bgav_demuxer_context_t * ctx)
       gavl_dictionary_set_string(ctx->tt->cur->metadata, gavl_name, moov->udta.src); \
     else                                                                \
       gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata, gavl_name, \
-                              bgav_convert_string(cnv, moov->udta.src, -1, NULL)); \
+                              gavl_convert_string(cnv, moov->udta.src, -1, NULL)); \
     }
 
 #define SET_UDTA_INT(gavl_name, src) \
@@ -837,13 +837,13 @@ static void set_metadata(bgav_demuxer_context_t * ctx)
   qt_priv_t * priv;
   qt_moov_t * moov;
   
-  bgav_charset_converter_t * cnv = NULL;
+  gavl_charset_converter_t * cnv = NULL;
   
   priv = ctx->priv;
   moov = &priv->moov;
 
   if(!moov->udta.have_ilst)
-    cnv = bgav_charset_converter_create("ISO-8859-1", BGAV_UTF8);
+    cnv = gavl_charset_converter_create("ISO-8859-1", GAVL_UTF8);
     
   
   SET_UDTA_STRING(GAVL_META_ARTIST,    ART);
@@ -872,7 +872,7 @@ static void set_metadata(bgav_demuxer_context_t * ctx)
 
   
   if(cnv)
-    bgav_charset_converter_destroy(cnv);
+    gavl_charset_converter_destroy(cnv);
 
   
   //  gavl_dictionary_dump(&ctx->tt->cur->metadata);
@@ -1136,7 +1136,7 @@ static void setup_chapter_track(bgav_demuxer_context_t * ctx, qt_trak_t * trak)
   qt_stsz_t * stsz;
   qt_stco_t * stco;
   uint32_t len;
-  bgav_charset_converter_t * cnv;
+  gavl_charset_converter_t * cnv;
   const char * charset;
   int64_t time;
   char * label = NULL;
@@ -1161,7 +1161,7 @@ static void setup_chapter_track(bgav_demuxer_context_t * ctx, qt_trak_t * trak)
     charset = "bgav_unicode";
 
   if(charset)
-    cnv = bgav_charset_converter_create(charset, BGAV_UTF8);
+    cnv = gavl_charset_converter_create(charset, GAVL_UTF8);
   else
     {
     cnv = NULL;
@@ -1223,7 +1223,7 @@ static void setup_chapter_track(bgav_demuxer_context_t * ctx, qt_trak_t * trak)
 
     len = GAVL_PTR_2_16BE(buffer);
     if(len)
-      label = bgav_convert_string(cnv, (char*)(buffer+2), len, NULL);
+      label = gavl_convert_string(cnv, (char*)(buffer+2), len, NULL);
     else
       label = NULL;
 

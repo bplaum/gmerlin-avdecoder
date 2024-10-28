@@ -217,7 +217,7 @@ static int open_srt(bgav_demuxer_context_t * ctx)
   ctx->tt = bgav_track_table_create(1);
   
   /* We output UTF-8 already */
-  s = bgav_track_add_text_stream(ctx->tt->cur, ctx->opt, BGAV_UTF8);
+  s = bgav_track_add_text_stream(ctx->tt->cur, ctx->opt, GAVL_UTF8);
   s->stream_id = STREAM_ID;
   s->timescale = 1000;
   srt->scale_num = 1;

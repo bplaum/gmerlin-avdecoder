@@ -396,7 +396,7 @@ static int read_metadata(bgav_demuxer_context_t * ctx)
   char * str = NULL;
   uint16_t len1, len2, len3, len4, len5;
   int str_len;
-  bgav_charset_converter_t * cnv = NULL;
+  gavl_charset_converter_t * cnv = NULL;
   
   if(!bgav_input_read_16_le(ctx->input, &len1) ||
      !bgav_input_read_16_le(ctx->input, &len2) ||
@@ -405,7 +405,7 @@ static int read_metadata(bgav_demuxer_context_t * ctx)
      !bgav_input_read_16_le(ctx->input, &len5))
     goto fail;
 
-  cnv = bgav_charset_converter_create("UTF-16LE", BGAV_UTF8);
+  cnv = gavl_charset_converter_create("UTF-16LE", GAVL_UTF8);
   
   str_len = len1;
   if(str_len < len2)
@@ -426,7 +426,7 @@ static int read_metadata(bgav_demuxer_context_t * ctx)
     if(bgav_input_read_data(ctx->input, (uint8_t*)str, len1) < len1)
       goto fail;
     gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata,
-                            GAVL_META_TITLE, bgav_convert_string(cnv, str, len1,
+                            GAVL_META_TITLE, gavl_convert_string(cnv, str, len1,
                                                                  NULL));
     }
 
@@ -437,7 +437,7 @@ static int read_metadata(bgav_demuxer_context_t * ctx)
     if(bgav_input_read_data(ctx->input, (uint8_t*)str, len2) < len2)
       goto fail;
     gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata,
-                            GAVL_META_AUTHOR, bgav_convert_string(cnv, str, len2,
+                            GAVL_META_AUTHOR, gavl_convert_string(cnv, str, len2,
                                                                   NULL));
     }
 
@@ -448,7 +448,7 @@ static int read_metadata(bgav_demuxer_context_t * ctx)
     if(bgav_input_read_data(ctx->input, (uint8_t*)str, len3) < len3)
       goto fail;
     gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata,
-                            GAVL_META_COPYRIGHT, bgav_convert_string(cnv, str, len3,
+                            GAVL_META_COPYRIGHT, gavl_convert_string(cnv, str, len3,
                                                                      NULL));
     }
 
@@ -459,7 +459,7 @@ static int read_metadata(bgav_demuxer_context_t * ctx)
     if(bgav_input_read_data(ctx->input, (uint8_t*)str, len4) < len4)
       goto fail;
     gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata,
-                            GAVL_META_COMMENT, bgav_convert_string(cnv, str, len4,
+                            GAVL_META_COMMENT, gavl_convert_string(cnv, str, len4,
                                                                    NULL));
     }
 
@@ -469,12 +469,12 @@ static int read_metadata(bgav_demuxer_context_t * ctx)
     bgav_input_skip(ctx->input, len5);
   
   free(str);
-  bgav_charset_converter_destroy(cnv);
+  gavl_charset_converter_destroy(cnv);
   return 1;
 
   fail:
   if(cnv)
-    bgav_charset_converter_destroy(cnv);
+    gavl_charset_converter_destroy(cnv);
   if(str)
     free(str);
   return 0;

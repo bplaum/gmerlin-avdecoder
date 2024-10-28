@@ -163,7 +163,7 @@ void bgav_subtitle_dump(bgav_stream_t * s)
     {
     gavl_dprintf( "  Character set:     %s\n",
                   (s->data.subtitle.charset ? s->data.subtitle.charset :
-                   BGAV_UTF8));
+                   GAVL_UTF8));
     }
   else
     {

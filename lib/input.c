@@ -164,14 +164,14 @@ int bgav_input_read_line(bgav_input_context_t* input,
 int bgav_input_read_convert_line(bgav_input_context_t * input,
                                  gavl_buffer_t * ret)
   {
-  if(!input->charset || !strcmp(input->charset, BGAV_UTF8))
+  if(!input->charset || !strcmp(input->charset, GAVL_UTF8))
     return bgav_input_read_line(input, ret);
   else
     {
     gavl_buffer_t line_buf;
     
     if(!input->cnv)
-      input->cnv = bgav_charset_converter_create(input->charset, BGAV_UTF8);
+      input->cnv = gavl_charset_converter_create(input->charset, GAVL_UTF8);
     
     gavl_buffer_init(&line_buf);
     
@@ -193,7 +193,7 @@ int bgav_input_read_convert_line(bgav_input_context_t * input,
         return 0;
       }
     
-    bgav_convert_string_realloc(input->cnv,
+    gavl_convert_string_to_buffer(input->cnv,
                                 (char*)line_buf.buf,
                                 line_buf.len,
                                 ret);
@@ -978,7 +978,7 @@ void bgav_input_close(bgav_input_context_t * ctx)
   if(ctx->charset)
     free(ctx->charset);
   if(ctx->cnv)
-    bgav_charset_converter_destroy(ctx->cnv);
+    gavl_charset_converter_destroy(ctx->cnv);
 
   if(ctx->tt)
     bgav_track_table_unref(ctx->tt);

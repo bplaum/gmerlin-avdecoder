@@ -28,7 +28,7 @@
 
 struct bgav_subtitle_converter_s
   {
-  bgav_charset_converter_t * cnv;
+  gavl_charset_converter_t * cnv;
   
   gavl_packet_source_t * src;
   gavl_packet_source_t * prev;
@@ -98,7 +98,7 @@ source_func(void * priv, bgav_packet_t ** ret_p)
     ret = *ret_p;
     
     /* Convert character set */
-    if(!bgav_convert_string_realloc(cnv->cnv,
+    if(!gavl_convert_string_to_buffer(cnv->cnv,
                                     (const char *)in_packet->buf.buf,
                                     in_packet->buf.len,
                                     &ret->buf))
@@ -164,10 +164,10 @@ bgav_subtitle_converter_create(const char * charset)
   bgav_subtitle_converter_t * ret;
   ret = calloc(1, sizeof(*ret));
 
-  if(strcmp(charset, BGAV_UTF8))
+  if(strcmp(charset, GAVL_UTF8))
     {
-    ret->cnv = bgav_charset_converter_create(charset,
-                                             BGAV_UTF8);
+    ret->cnv = gavl_charset_converter_create(charset,
+                                             GAVL_UTF8);
     }
   
   return ret;
@@ -196,7 +196,7 @@ void
 bgav_subtitle_converter_destroy(bgav_subtitle_converter_t * cnv)
   {
   if(cnv->cnv)
-    bgav_charset_converter_destroy(cnv->cnv);
+    gavl_charset_converter_destroy(cnv->cnv);
   if(cnv->src)
     gavl_packet_source_destroy(cnv->src);
   

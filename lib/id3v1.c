@@ -39,7 +39,7 @@ struct bgav_id3v1_tag_s
   
   };
 
-static char * get_string(bgav_charset_converter_t * cnv, char * ptr, int max_size)
+static char * get_string(gavl_charset_converter_t * cnv, char * ptr, int max_size)
   {
   char * end;
   
@@ -55,7 +55,7 @@ static char * get_string(bgav_charset_converter_t * cnv, char * ptr, int max_siz
     return NULL;
   end++;
 
-  return bgav_convert_string(cnv, ptr, end - ptr, NULL);
+  return gavl_convert_string(cnv, ptr, end - ptr, NULL);
   //  return gavl_strndup(ptr, end);
   }
 
@@ -66,12 +66,12 @@ bgav_id3v1_tag_t * bgav_id3v1_read(bgav_input_context_t * input)
   char * pos;
   
   bgav_id3v1_tag_t * ret;
-  bgav_charset_converter_t * cnv;
+  gavl_charset_converter_t * cnv;
   
   if(bgav_input_read_data(input, (uint8_t*)buffer, 128) < 128)
     return NULL;
 
-  cnv = bgav_charset_converter_create("ISO-8859-1", BGAV_UTF8);
+  cnv = gavl_charset_converter_create("ISO-8859-1", GAVL_UTF8);
   
   ret = calloc(1, sizeof(*ret));
   
@@ -93,7 +93,7 @@ bgav_id3v1_tag_t * bgav_id3v1_read(bgav_input_context_t * input)
     ret->track = buffer[126];
   ret->genre = buffer[127];
 
-  bgav_charset_converter_destroy(cnv);
+  gavl_charset_converter_destroy(cnv);
 
   return ret;
   }

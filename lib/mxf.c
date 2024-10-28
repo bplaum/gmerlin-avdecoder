@@ -554,9 +554,9 @@ static const codec_entry_t * match_codec(const codec_entry_t * ce, const mxf_ul_
 
 static char * read_utf16_string(bgav_input_context_t * input, int len)
   {
-  bgav_charset_converter_t * cnv;
+  gavl_charset_converter_t * cnv;
   char * str, * ret;
-  cnv = bgav_charset_converter_create("UTF-16BE", BGAV_UTF8);
+  cnv = gavl_charset_converter_create("UTF-16BE", GAVL_UTF8);
   if(!cnv)
     {
     bgav_input_skip(input, len);
@@ -565,12 +565,12 @@ static char * read_utf16_string(bgav_input_context_t * input, int len)
   str = malloc(len);
   if(bgav_input_read_data(input, (uint8_t*)str, len) < len)
     {
-    bgav_charset_converter_destroy(cnv);
+    gavl_charset_converter_destroy(cnv);
     return NULL;
     }
 
-  ret = bgav_convert_string(cnv, str, len, NULL);
-  bgav_charset_converter_destroy(cnv);
+  ret = gavl_convert_string(cnv, str, len, NULL);
+  gavl_charset_converter_destroy(cnv);
   free(str);
   return ret;
   }

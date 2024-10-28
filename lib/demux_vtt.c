@@ -120,7 +120,7 @@ static int open_vtt(bgav_demuxer_context_t * ctx)
   
   priv->time_offset = GAVL_TIME_UNDEFINED;
   
-  s = bgav_track_add_text_stream(ctx->tt->cur, ctx->opt, BGAV_UTF8);
+  s = bgav_track_add_text_stream(ctx->tt->cur, ctx->opt, GAVL_UTF8);
   s->stream_id = STREAM_ID;
   s->timescale = GAVL_TIME_SCALE;
 
