@@ -2220,6 +2220,7 @@ void bgav_seek(bgav_t * bgav, gavl_time_t * time);
 BGAV_PUBLIC
 void bgav_seek_scaled(bgav_t * bgav, int64_t * time, int scale);
 
+  
 /** \ingroup sampleseek
  *  \brief Time value indicating an invalid time
  */
@@ -2340,39 +2341,19 @@ int64_t bgav_text_duration(bgav_t * bgav, int stream);
 BGAV_PUBLIC
 int64_t bgav_overlay_duration(bgav_t * bgav, int stream);
 
-
-  
-/** \ingroup sampleseek
- *  \brief Seek to a specific audio sample
- *  \param bgav A decoder handle
- *  \param stream Audio stream index (starting with 0)
- *  \param sample The sample to seek to
- *
- *  Use this only after \ref bgav_can_seek_sample returned 1.
- *  The time is relative to the first decodable sample
- *  (always starting with 0), the offset returned by
- *  \ref bgav_audio_start_time is <b>not</b> included here.
- *  
- */
-  
 BGAV_PUBLIC
-void bgav_seek_audio(bgav_t * bgav, int stream, int64_t sample);
-
+int64_t bgav_get_num_video_frames(bgav_t * bgav, int stream);
+  
 /** \ingroup sampleseek
- *  \brief Seek to a specific video time
+ *  \brief Seek to video frame given by index
  *  \param bgav A decoder handle
  *  \param stream Video stream index (starting with 0)
- *  \param time Time
- *
- *  Use this only after \ref bgav_can_seek_sample returned 1.
- *  If time is between 2 frames, the earlier one will be chosen.
- *  The time is relative to the first decodable frame
- *  (always starting with 0), the offset returned by
- *  \ref bgav_video_start_time is <b>not</b> included here.
+ *  \param idx Frame index (starting with zero)
+ *  \returns Time of the previous keyframe.
  */
 
 BGAV_PUBLIC
-void bgav_seek_video(bgav_t * bgav, int stream, int64_t time);
+void bgav_seek_to_video_frame(bgav_t * bgav, int stream, int frame);
 
 /** \ingroup sampleseek
  *  \brief Get the time of the closest keyframe before a given time

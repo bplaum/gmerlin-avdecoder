@@ -238,6 +238,8 @@ typedef struct
   
   gavl_video_source_t * vsrc;
   gavl_video_source_t * vsrc_priv;
+
+  gavl_packet_index_t * frame_table;
   
   } bgav_stream_video_t;
   
