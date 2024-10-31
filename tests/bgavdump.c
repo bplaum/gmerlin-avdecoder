@@ -146,8 +146,11 @@ static int do_audio          = 1;
 static int do_video          = 1;
 static int sample_accurate = 0;
 static int vdpau = 0;
-static int64_t audio_seek = -1;
-static int64_t video_seek = -1;
+static int64_t audio_seek = GAVL_TIME_UNDEFINED;
+static int64_t video_seek = GAVL_TIME_UNDEFINED;
+static int64_t frameno = -1;
+
+
 static gavl_time_t global_seek = -1;
 static int dump_ci = 0;
 static int follow_redir= 0;
@@ -161,6 +164,7 @@ static void print_usage()
   fprintf(stderr, "-s                    Switch to sample accurate mode\n");
   fprintf(stderr, "-aseek <sample>       Seek to audio sample\n");
   fprintf(stderr, "-vseek <time>         Seek to video time\n");
+  fprintf(stderr, "-frameno <idx>        Seek to video frame by index\n");
   fprintf(stderr, "-seek <microseconds>  Do a global seek to a time\n");
   fprintf(stderr, "-na                   Disable audio\n");
   fprintf(stderr, "-nv                   Disable video\n");
@@ -340,9 +344,9 @@ static void dump_track(bgav_t * file, int track)
         
       audio_format = bgav_get_audio_format(file, i);
       // af = gavl_audio_frame_create(audio_format);
-      if(sample_accurate && (audio_seek >= 0))
-        bgav_seek_audio(file, i, audio_seek);
-
+      if(sample_accurate && (audio_seek != GAVL_TIME_UNDEFINED))
+        bgav_seek_scaled(file, &audio_seek, audio_format->samplerate);
+      
       for(j = 0; j < frames_to_read; j++)
         {
         fprintf(stderr, "Reading frame from audio stream %d...", i+1);
@@ -373,8 +377,12 @@ static void dump_track(bgav_t * file, int track)
         
       if(sample_accurate)
         {
-        if(video_seek >= 0)
-          bgav_seek_video(file, i, video_seek);
+        if(video_seek != GAVL_TIME_UNDEFINED)
+          bgav_seek_scaled(file, &video_seek, video_format->timescale);
+
+        else if(frameno > 0)
+          bgav_seek_to_video_frame(file, 0, frameno);
+        
         }
       for(j = 0; j < frames_to_read; j++)
         {
@@ -550,6 +558,11 @@ int main(int argc, char ** argv)
     else if(!strcmp(argv[arg_index], "-vseek"))
       {
       video_seek = strtoll(argv[arg_index+1], NULL, 10);
+      arg_index+=2;
+      }
+    else if(!strcmp(argv[arg_index], "-frameno"))
+      {
+      frameno = strtoll(argv[arg_index+1], NULL, 10);
       arg_index+=2;
       }
     else if(!strcmp(argv[arg_index], "-seek"))

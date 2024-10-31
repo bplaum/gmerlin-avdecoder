@@ -427,7 +427,7 @@ int bgav_ensure_index(bgav_t * b)
     
     if((b->demuxer->si = bgav_get_packet_index(location)))
       {
-      fprintf(stderr, "Built packet index:\n");
+      gavl_dprintf("Built packet index:\n");
       gavl_packet_index_dump(b->demuxer->si);
       return 1;
       }
@@ -492,6 +492,52 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
       }
     seek_si(b, b->demuxer, *time, scale);
     }
+  }
+
+void
+bgav_seek_to_video_frame(bgav_t * b, int stream, int frame)
+  {
+  int64_t pts;
+
+  /* Frame -> Time */
+  bgav_stream_t * s = bgav_track_get_video_stream(b->tt->cur, stream);
+  if(s->data.video.format->framerate_mode == GAVL_FRAMERATE_CONSTANT)
+    pts = s->stats.pts_start + frame * s->data.video.format->frame_duration;
+  else if(!(s->ci->flags & GAVL_COMPRESSION_HAS_B_FRAMES))
+    {
+    pts = gavl_packet_index_packet_number_to_pts(b->demuxer->si,
+                                                 s->stream_id,
+                                                 frame);
+    if(pts == GAVL_TIME_UNDEFINED)
+      return;
+    }
+  else /* B-frames and nonconstant framerate */
+    {
+    if(!s->data.video.frame_table)
+      {
+      if(!b->demuxer->si)
+        {
+        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
+                 "Seeking by frame index (with variable framerate and B-Frames) requires a packet index");
+        return;
+        }
+
+      s->data.video.frame_table = gavl_packet_index_create(0);
+      
+      gavl_packet_index_extract_stream(b->demuxer->si,
+                                       s->data.video.frame_table,
+                                       s->stream_id);
+      gavl_packet_index_sort_by_pts(s->data.video.frame_table);
+      }
+
+    if((frame < 0) || (frame >= s->data.video.frame_table->num_entries))
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Frame index %d out of range (must be between zero and %"PRId64")",
+               frame, bgav_get_num_video_frames(b, stream));
+      return;
+      }
+    }
+  bgav_seek_scaled(b, &pts, s->data.video.format->timescale);
   }
 
 void

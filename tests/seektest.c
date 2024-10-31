@@ -242,7 +242,7 @@ static int test_video(const char * filename)
   gavl_video_frame_t * f1, *f2;
   int result;
   int64_t frames_to_skip;
-  int64_t video_time;
+  //  int64_t video_time;
   
   bgav_t * b = open_video(filename);
   int ret = 0;
@@ -252,6 +252,9 @@ static int test_video(const char * filename)
   
   format_orig = bgav_get_video_format(b, video_stream);
   gavl_video_format_copy(&format, format_orig);
+  
+  fprintf(stderr, "Total video frames: %"PRId64"\n", bgav_get_num_video_frames(b, 0));
+  gavl_video_format_dump(&format);
   
   f1 = gavl_video_frame_create(&format);
   f2 = gavl_video_frame_create(&format);
@@ -285,10 +288,10 @@ static int test_video(const char * filename)
   if(!b)
     goto fail;
 
-  video_time = f1->timestamp;
+  //  video_time = f1->timestamp;
   
-  bgav_seek_scaled(b, &video_time, format.timescale);
-
+  bgav_seek_to_video_frame(b, 0, video_position);
+  
   /* Read second frame */
   result = bgav_read_video(b, f2, video_stream);
 

@@ -434,6 +434,10 @@ int bgav_video_start(bgav_stream_t * s)
 
       s->data.video.vsrc = s->data.video.vsrc_priv;
       }
+    else // Decoder created source already, update format
+      {
+      gavl_video_format_copy(s->data.video.format, gavl_video_source_get_src_format(s->data.video.vsrc));
+      }
     
     }
   else if(s->action == BGAV_STREAM_READRAW)
@@ -509,9 +513,14 @@ void bgav_video_stop(bgav_stream_t * s)
     }
   /* Clear still mode flag (it will be set during reinit) */
   s->flags &= ~(STREAM_STILL_SHOWN  | STREAM_HAVE_FRAME);
-  
-  }
 
+  if(s->data.video.frame_table)
+    {
+    gavl_packet_index_destroy(s->data.video.frame_table);
+    s->data.video.frame_table = NULL;
+    }
+  }
+  
 void bgav_video_resync(bgav_stream_t * s)
   {
   if(s->out_time == GAVL_TIME_UNDEFINED)
@@ -677,7 +686,6 @@ gavl_video_source_t * bgav_get_video_source(bgav_t * bgav, int stream)
   s = bgav_track_get_video_stream(bgav->tt->cur, stream);
   return s->data.video.vsrc;
   }
-
 
 
 /* Create frame table from superindex */
@@ -864,4 +872,10 @@ gavl_packet_source_t * bgav_get_video_packet_source(bgav_t * bgav, int stream)
   {
   bgav_stream_t * s = bgav_track_get_video_stream(bgav->tt->cur, stream);
   return s->psrc;
+  }
+
+int64_t bgav_get_num_video_frames(bgav_t * bgav, int stream)
+  {
+  bgav_stream_t * s = bgav_track_get_video_stream(bgav->tt->cur, stream);
+  return s->stats.total_packets;
   }
