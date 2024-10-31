@@ -103,6 +103,8 @@ typedef struct
   int skip_first_frame; /* Enabled only if the first frame has a different codec */
   int skip_last_frame; /* Enabled only if the last frame has a different codec */
   int64_t dts;
+  
+  int samples_per_block;
   } stream_priv_t;
 
 typedef struct
@@ -360,7 +362,6 @@ static int check_keyframe(stream_priv_t * s)
 static void add_packet(bgav_demuxer_context_t * ctx,
                        qt_priv_t * priv,
                        bgav_stream_t * s,
-                       int index,
                        int64_t offset,
                        int stream_id,
                        int64_t timestamp,
@@ -371,7 +372,8 @@ static void add_packet(bgav_demuxer_context_t * ctx,
   if(stream_id >= 0)
     gavl_packet_index_add(ctx->si, offset, chunk_size,
                           stream_id, timestamp, keyframe ? GAVL_PACKET_KEYFRAME : 0, duration);
-  
+
+#if 0
   if(index && !ctx->si->entries[index-1].size)
     {
     /* Check whether to advance the mdat */
@@ -400,6 +402,7 @@ static void add_packet(bgav_demuxer_context_t * ctx,
         }
       }
     }
+#endif
   }
 
 static int next_moof(bgav_demuxer_context_t * ctx)
@@ -482,11 +485,13 @@ static void build_index(bgav_demuxer_context_t * ctx)
       }
     else if(trak->mdia.minf.has_smhd)
       {
-      /* Some audio frames will be read as "samples" (-> VBR audio!) */
-      if(!trak->mdia.minf.stbl.stsz.sample_size)
-        num_packets += bgav_qt_trak_samples(trak);
-      else /* Other packets (uncompressed) will be complete quicktime chunks */
+      /* Other packets (uncompressed) will be complete quicktime chunks */
+      if((trak->mdia.minf.stbl.stts.num_entries == 1) &&
+         (trak->mdia.minf.stbl.stts.entries[0].duration == 1))
         num_packets += bgav_qt_trak_chunks(trak);
+      /* Some audio frames will be read as "samples" (-> VBR audio!) */
+      else
+        num_packets += bgav_qt_trak_samples(trak);
       }
     else if(trak->mdia.minf.stbl.stsd.entries &&
             (!strncmp((char*)trak->mdia.minf.stbl.stsd.entries[0].data, "text", 4) ||
@@ -554,7 +559,8 @@ static void build_index(bgav_demuxer_context_t * ctx)
       {
       s = bgav_s->priv;
 
-      if(!s->stbl->stsz.sample_size)
+      if((s->stbl->stts.num_entries > 1) ||
+         (s->stbl->stts.entries[0].duration > 1))
         {
         /* Read single packets of a chunk. We do this, when the stsz atom has more than
            zero entries */
@@ -571,8 +577,13 @@ static void build_index(bgav_demuxer_context_t * ctx)
                   s->stsz_pos, s->stbl->stsz.num_entries,
                   j, s->stbl->stsc.entries[s->stsc_pos].samples_per_chunk);
 #endif
-          packet_size   = s->stbl->stsz.entries[s->stsz_pos];
-          s->stsz_pos++;
+          if(s->stbl->stsz.sample_size)
+            packet_size   = s->stbl->stsz.sample_size;
+          else
+            {
+            packet_size   = s->stbl->stsz.entries[s->stsz_pos];
+            s->stsz_pos++;
+            }
           
           chunk_samples = (s->stts_pos >= 0) ?
             s->stbl->stts.entries[s->stts_pos].duration :
@@ -581,7 +592,7 @@ static void build_index(bgav_demuxer_context_t * ctx)
           add_packet(ctx,
                      priv,
                      bgav_s,
-                     i, chunk_offset,
+                     chunk_offset,
                      stream_id,
                      s->dts,
                      check_keyframe(s), chunk_samples, packet_size);
@@ -618,14 +629,40 @@ static void build_index(bgav_demuxer_context_t * ctx)
             s->stbl->stts.entries[0].duration *
             s->stbl->stsc.entries[s->stsc_pos].samples_per_chunk;
           }
-      
-        add_packet(ctx,
-                   priv,
-                   bgav_s,
-                   i, chunk_offset,
-                   stream_id,
-                   s->dts,
-                   check_keyframe(s), chunk_samples, 0);
+
+
+        if(s->samples_per_block == 1)
+          {
+          packet_size = chunk_samples * bgav_s->ci->block_align;
+        
+          add_packet(ctx,
+                     priv,
+                     bgav_s,
+                     chunk_offset,
+                     stream_id,
+                     s->dts,
+                     1, chunk_samples, packet_size);
+          }
+        else // ima4
+          {
+          int k;
+          int samples_left = chunk_samples;
+          int num_blocks = (chunk_samples+s->samples_per_block-1) / s->samples_per_block;
+
+          for(k = 0; k < num_blocks; k++)
+            {
+            add_packet(ctx,
+                       priv,
+                       bgav_s,
+                       chunk_offset + k * bgav_s->ci->block_align,
+                       stream_id,
+                       s->dts + k * s->samples_per_block,
+                       1, samples_left >= s->samples_per_block ? s->samples_per_block: samples_left,
+                       bgav_s->ci->block_align);
+            samples_left -= s->samples_per_block;
+            }
+          }
+        
         /* Time to sample */
         s->dts += chunk_samples;
         if(s->stts_pos >= 0)
@@ -690,7 +727,7 @@ static void build_index(bgav_demuxer_context_t * ctx)
           add_packet(ctx,
                      priv,
                      bgav_s,
-                     i, chunk_offset,
+                     chunk_offset,
                      -1,
                      s->dts + pts_offset,
                      check_keyframe(s),
@@ -702,7 +739,7 @@ static void build_index(bgav_demuxer_context_t * ctx)
           add_packet(ctx,
                      priv,
                      bgav_s,
-                     i, chunk_offset,
+                     chunk_offset,
                      stream_id,
                      s->dts + pts_offset,
                      check_keyframe(s),
@@ -764,7 +801,7 @@ static void build_index(bgav_demuxer_context_t * ctx)
         add_packet(ctx,
                    priv,
                    bgav_s,
-                   i, chunk_offset,
+                   chunk_offset,
                    stream_id,
                    s->dts,
                    check_keyframe(s), duration,
@@ -797,21 +834,13 @@ static void build_index(bgav_demuxer_context_t * ctx)
     else
       {
       /* Fill in dummy packet */
-      add_packet(ctx, priv, NULL, i, chunk_offset, stream_id, -1, 0, 0, 0);
+      add_packet(ctx, priv, NULL, chunk_offset, stream_id, -1, 0, 0, 0);
       i++;
       priv->streams[stream_id].stco_pos++;
       }
     if(done)
       break;
     }
-  /* Set the final packet size to the end of the mdat */
-
-  if(ctx->si->entries[ctx->si->num_entries-1].size <= 0)
-    ctx->si->entries[ctx->si->num_entries-1].size =
-      priv->mdats[priv->current_mdat].start +
-      priv->mdats[priv->current_mdat].size -
-      ctx->si->entries[ctx->si->num_entries-1].position;
-  
   free(chunk_indices);
   }
 
@@ -1291,13 +1320,28 @@ static void init_audio(bgav_demuxer_context_t * ctx,
   bg_as->data.audio.format->num_channels = desc->format.audio.num_channels;
   bg_as->data.audio.format->samplerate = (int)(desc->format.audio.samplerate+0.5);
   bg_as->data.audio.bits_per_sample = desc->format.audio.bits_per_sample;
-  if(desc->version == 1)
+  
+  priv->streams[index].samples_per_block = 1;
+  
+  if(desc->version == 0)
     {
-    if(desc->format.audio.bytes_per_frame)
-      bg_as->ci->block_align =
-        desc->format.audio.bytes_per_frame;
+    bg_as->ci->block_align = (desc->format.audio.bits_per_sample / 8) *
+      desc->format.audio.num_channels;
     }
-
+  else if(desc->version == 1)
+    {
+    if(desc->format.audio.bytes_per_frame > 1)
+      {
+      bg_as->ci->block_align = desc->format.audio.bytes_per_frame;
+      priv->streams[index].samples_per_block = desc->format.audio.samples_per_packet;
+      }
+    
+    }
+  else if(desc->version == 2)
+    {
+    
+    }
+    
   /* Set channel configuration (if present) */
 
   if(desc->format.audio.has_chan)
