@@ -1366,22 +1366,26 @@ static int init_video_stream(bgav_demuxer_context_t * ctx,
     {
     bg_vs->flags |= STREAM_DTS_ONLY;
     bg_vs->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
-    bgav_stream_set_parse_frame(bg_vs);
+    if(!bgav_stream_set_parse_frame(bg_vs))
+      return 0;
     }
   else if(bgav_check_fourcc(bg_vs->fourcc, video_codecs_h264))
     {
     bg_vs->flags |= STREAM_DTS_ONLY;
     bg_vs->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
     if(!bg_vs->ci->codec_header.len)
-      bgav_stream_set_parse_frame(bg_vs);
+      {
+      if(!bgav_stream_set_parse_frame(bg_vs))
+        return 0;
+      }
     }
   else if(bgav_check_fourcc(bg_vs->fourcc, bgav_dv_fourccs) ||
           bgav_check_fourcc(bg_vs->fourcc, bgav_png_fourccs))
     {
     bg_vs->ci->flags &= ~GAVL_COMPRESSION_HAS_P_FRAMES;
-    bgav_stream_set_parse_frame(bg_vs);
+    if(!bgav_stream_set_parse_frame(bg_vs))
+      return 0;
     }
-          
   
   return 1;
   }
