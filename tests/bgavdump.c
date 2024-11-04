@@ -190,7 +190,7 @@ static void list_all()
   //  bgav_subreaders_dump();
   }
 
-static void dump_track(bgav_t * file, int track)
+static int dump_track(bgav_t * file, int track)
   {
   int num_audio_streams;
   int num_video_streams;
@@ -218,7 +218,7 @@ static void dump_track(bgav_t * file, int track)
   if(sample_accurate && !bgav_can_seek_sample(file))
     {
     fprintf(stderr, "Sample accurate access not possible for track %d\n", track+1);
-    return;
+    return 0;
     }
   fprintf(stderr, "===================================\n");
   fprintf(stderr, "============ Track %3d ============\n", track+1);
@@ -307,7 +307,7 @@ static void dump_track(bgav_t * file, int track)
 #ifndef TRACK  
     continue;
 #else
-    return;
+    return 0;
 #endif
     }
   else
@@ -324,7 +324,7 @@ static void dump_track(bgav_t * file, int track)
     else
       {
       fprintf(stderr, "Global seek requested for non-seekable file\n");
-      return;
+      return EXIT_FAILURE;
       }
     }
     
@@ -358,6 +358,7 @@ static void dump_track(bgav_t * file, int track)
         else
           {
           fprintf(stderr, "Failed\n");
+          return 0;
           break;
           }
         }
@@ -432,6 +433,7 @@ static void dump_track(bgav_t * file, int track)
         else
           {
           fprintf(stderr, "Failed\n");
+          return 0;
           break;
           }
         }
@@ -482,7 +484,8 @@ static void dump_track(bgav_t * file, int track)
 
   if(sub_text)
     free(sub_text);
-  
+
+  return 1;
   }
 
 int main(int argc, char ** argv)
@@ -635,7 +638,7 @@ int main(int argc, char ** argv)
       {
       fprintf(stderr, "Could not open VCD Device %s\n",
               argv[argc-1] + 6);
-      return -1;
+      return EXIT_FAILURE;
       }
     }
 #if 0
@@ -645,7 +648,7 @@ int main(int argc, char ** argv)
       {
       fprintf(stderr, "Could not open DVD Device %s\n",
               argv[argc-1] + 6);
-      return -1;
+      return EXIT_FAILURE;
       }
     }
   else if(!strncmp(argv[argc-1], "dvb://", 6))
@@ -654,7 +657,7 @@ int main(int argc, char ** argv)
       {
       fprintf(stderr, "Could not open DVB Device %s\n",
               argv[argc-1] + 6);
-      return -1;
+      return EXIT_FAILURE;
       }
     }
 #endif
@@ -665,7 +668,7 @@ int main(int argc, char ** argv)
       {
       fprintf(stderr, "Could not open file %s via callbacks\n",
               argv[argc-1] + 5);
-      return -1;
+      return EXIT_FAILURE;
       }
     if(!bgav_open_callbacks(file,
                             read_callback,
@@ -675,7 +678,7 @@ int main(int argc, char ** argv)
       {
       fprintf(stderr, "Could not open file %s via callbacks\n",
               argv[argc-1] + 5);
-      return -1;
+      return EXIT_FAILURE;
       }
     }
   else 
@@ -687,7 +690,7 @@ int main(int argc, char ** argv)
         fprintf(stderr, "Could not open file %s\n",
                 argv[argc-1]);
         bgav_close(file);
-        return -1;
+        return EXIT_FAILURE;
         }
       }
     else
@@ -702,7 +705,7 @@ int main(int argc, char ** argv)
           {
           fprintf(stderr, "Could not open location %s\n", str);
           bgav_close(file);
-          return -1;
+          return EXIT_FAILURE;
           }
         /* Check for redirection */
 
@@ -739,12 +742,18 @@ int main(int argc, char ** argv)
   if(track < 0)
     {
     for(i = 0; i < num_tracks; i++)
-      dump_track(file, i);
+      {
+      if(!dump_track(file, i))
+        return EXIT_FAILURE;
+      }
     }
   else
     {
     if((track >= 0) && (track < num_tracks))
-      dump_track(file, track);
+      {
+      if(!dump_track(file, track))
+        return EXIT_FAILURE;
+      }
     else
       fprintf(stderr, "No such track %d\n", track);
     }
@@ -754,5 +763,5 @@ int main(int argc, char ** argv)
   if(cb_file)
     fclose(cb_file);
   
-  return -1;
+  return EXIT_SUCCESS;
   }
