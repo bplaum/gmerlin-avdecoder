@@ -434,8 +434,8 @@ void bgav_stream_free(bgav_stream_t * stream);
 void bgav_stream_dump(bgav_stream_t * s);
 void bgav_stream_set_extradata(bgav_stream_t * s, const uint8_t * data, int len);
 
-void bgav_stream_set_parse_full(bgav_stream_t * s);
-void bgav_stream_set_parse_frame(bgav_stream_t * s);
+int bgav_stream_set_parse_full(bgav_stream_t * s);
+int bgav_stream_set_parse_frame(bgav_stream_t * s);
 
 void bgav_stream_set_from_gavl(bgav_stream_t * s,
                                gavl_dictionary_t * dict);
