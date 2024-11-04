@@ -69,7 +69,7 @@ parsers[] =
 #endif
     { BGAV_MK_FOURCC('A','D','T','S'), bgav_packet_parser_init_adts },
     { BGAV_MK_FOURCC('A','A','C','P'), bgav_packet_parser_init_adts },
-
+    
     /* Video */
     
     { BGAV_MK_FOURCC('H', '2', '6', '4'), bgav_packet_parser_init_h264 },
