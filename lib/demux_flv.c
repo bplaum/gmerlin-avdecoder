@@ -88,6 +88,8 @@ typedef struct
 
   int need_audio_extradata;
   int need_video_extradata;
+
+  int audio_frame_duration;
   } flv_priv_t;
 
 static int probe_flv(bgav_input_context_t * input)
@@ -187,8 +189,8 @@ static int init_audio_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
         break;
       case 2: /* MP3 */
         s->fourcc = BGAV_MK_FOURCC('.', 'm', 'p', '3');
-
-        bgav_stream_set_parse_full(s);
+        if(!bgav_stream_set_parse_full(s))
+          return 0;
         s->stats.pts_end = 0;
         break;
       case 3: /* Uncompressed, Little endian */
@@ -214,7 +216,7 @@ static int init_audio_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
         // ctx->index_mode = 0;
         s->stats.pts_end = 0;
         priv->need_audio_extradata = 1;
-        bgav_stream_set_parse_full(s);
+        priv->audio_frame_duration = 1024;
         break;
       default: /* Set some nonsense so we can finish initializing */
         s->fourcc = BGAV_MK_FOURCC('?', '?', '?', '?');
@@ -264,9 +266,9 @@ static int init_video_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
     case 7:
       s->fourcc = FOURCC_H264;
       priv->need_video_extradata = 1;
-      s->flags |= STREAM_HAS_DTS;
+      s->flags |= (STREAM_HAS_DTS|STREAM_PARSE_FRAME);
       s->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
-      bgav_stream_set_parse_frame(s);
+      
       //          s->data.video.wrong_b_timestamps = 1;
       break;
     default: /* Set some nonsense so we can finish initializing */
@@ -275,7 +277,7 @@ static int init_video_stream(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
                flags & 0x0f);
       break;
     }
-      
+  
   /* Set the framerate */
   s->data.video.format->framerate_mode = GAVL_FRAMERATE_VARIABLE;
   s->data.video.format->timescale = 1000;
@@ -696,6 +698,11 @@ static gavl_source_status_t next_packet_flv(bgav_demuxer_context_t * ctx)
           priv->need_audio_extradata = 0;
         else
           priv->need_video_extradata = 0;
+
+        if(s->flags & STREAM_PARSE_FULL)
+          bgav_stream_set_parse_full(s);
+        else if(s->flags & STREAM_PARSE_FRAME)
+          bgav_stream_set_parse_frame(s);
         }
       else
         bgav_input_skip(ctx->input, packet_size);
@@ -722,6 +729,8 @@ static gavl_source_status_t next_packet_flv(bgav_demuxer_context_t * ctx)
       {
       if(s->ci->block_align)
         p->duration = p->buf.len / s->ci->block_align;
+      else if(priv->audio_frame_duration)
+        p->duration = priv->audio_frame_duration;
       p->pes_pts = t.timestamp;
       }
     else
@@ -964,6 +973,14 @@ static int open_flv(bgav_demuxer_context_t * ctx)
     }
   
   bgav_track_set_format(ctx->tt->cur, "FLV", "video/x-flv");
+
+  /* Get packets until we have the codec headers */
+  while(priv->need_audio_extradata ||
+        priv->need_video_extradata)
+    {
+    if(!next_packet_flv(ctx))
+      return 0;
+    }
   
   return 1;
   
