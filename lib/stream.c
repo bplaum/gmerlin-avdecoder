@@ -131,7 +131,7 @@ void bgav_stream_stop(bgav_stream_t * s)
   
   }
 
-static void create_parser(bgav_stream_t * s)
+static int create_parser(bgav_stream_t * s)
   {
   gavl_stream_set_compression_info(s->info, s->ci);
   gavl_stream_set_compression_tag(s->info, s->fourcc);
@@ -140,25 +140,28 @@ static void create_parser(bgav_stream_t * s)
     gavl_dictionary_set_int(s->m, GAVL_META_STREAM_PACKET_TIMESCALE, s->timescale);
   
   /* Create parser */
-  s->parser = bgav_packet_parser_create(s->info, s->flags);
-  s->psink = bgav_packet_parser_connect(s->parser, s->psink);
+  if((s->parser = bgav_packet_parser_create(s->info, s->flags)) &&
+     (s->psink = bgav_packet_parser_connect(s->parser, s->psink)))
+    return 1;
+  else
+    return 0;
   }
 
-void bgav_stream_set_parse_full(bgav_stream_t * s)
+int bgav_stream_set_parse_full(bgav_stream_t * s)
   {
   if(s->parser)
-    return;
+    return 1;
   
   s->flags |= STREAM_PARSE_FULL;
-  create_parser(s);
+  return create_parser(s);
   }
 
-void bgav_stream_set_parse_frame(bgav_stream_t * s)
+int bgav_stream_set_parse_frame(bgav_stream_t * s)
   {
   if(s->parser)
-    return;
+    return 1;
   s->flags |= STREAM_PARSE_FRAME;
-  create_parser(s);
+  return create_parser(s);
   }
 
 void bgav_stream_flush(bgav_stream_t * s)
