@@ -873,7 +873,6 @@ static void set_metadata(bgav_demuxer_context_t * ctx)
 
   if(!moov->udta.have_ilst)
     cnv = gavl_charset_converter_create("ISO-8859-1", GAVL_UTF8);
-    
   
   SET_UDTA_STRING(GAVL_META_ARTIST,    ART);
   SET_UDTA_STRING(GAVL_META_TITLE,     nam);
@@ -1187,7 +1186,7 @@ static void setup_chapter_track(bgav_demuxer_context_t * ctx, qt_trak_t * trak)
   old_pos = ctx->input->position;
 
   if(!(charset = bgav_qt_get_charset(trak->mdia.mdhd.language)))
-    charset = "bgav_unicode";
+    charset = GAVL_UTF_BOM;
 
   if(charset)
     cnv = gavl_charset_converter_create(charset, GAVL_UTF8);
@@ -1727,7 +1726,7 @@ static void quicktime_init(bgav_demuxer_context_t * ctx)
       else
         {
         bg_ss =
-          bgav_track_add_text_stream(track, ctx->opt, "bgav_unicode");
+          bgav_track_add_text_stream(track, ctx->opt, GAVL_UTF_BOM);
 
         if(trak_has_edl(trak))
           priv->has_edl = 1;
