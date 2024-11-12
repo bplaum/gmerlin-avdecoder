@@ -136,20 +136,21 @@ static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
   if(!(ctx->flags & BGAV_DEMUXER_NONINTERLEAVED))
     {
     ctx->index_position = get_start(track->streams, track->num_streams);
-    
     bgav_input_seek(b->input, ctx->si->entries[ctx->index_position].position, SEEK_SET);
+    }
 
-    for(j = 0; j < track->num_streams; j++)
-      {
-      s = track->streams[j];
+  for(j = 0; j < track->num_streams; j++)
+    {
+    s = track->streams[j];
 
-      if((s->action == BGAV_STREAM_MUTE) ||
-         (s->flags & STREAM_EXTERN))
-        continue;
+    if((s->action == BGAV_STREAM_MUTE) ||
+       (s->flags & STREAM_EXTERN))
+      continue;
 
+    if(!(ctx->flags & BGAV_DEMUXER_NONINTERLEAVED))
       s->index_position = gavl_packet_index_get_next_keyframe(ctx->si, s->stream_id, ctx->index_position);
-      STREAM_SET_SYNC(s, b->demuxer->si->entries[s->index_position].pts);
-      }
+    
+    STREAM_SET_SYNC(s, b->demuxer->si->entries[s->index_position].pts);
     }
   
   bgav_track_resync(track);

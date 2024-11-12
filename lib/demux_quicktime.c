@@ -1130,18 +1130,6 @@ static void process_packet_subtitle_tx3g(bgav_stream_t * s, bgav_packet_t * p)
 #endif
   }
 
-#if 0
-static void process_packet_fragmented(bgav_stream_t * s, bgav_packet_t * p)
-  {
-  /* Load the next moof atom if necessary */
-  
-  if(s->index_position == s->last_index_position)
-    {
-    
-    }
-  
-  }
-#endif
 
 static void setup_chapter_track(bgav_demuxer_context_t * ctx, qt_trak_t * trak)
   {
@@ -1969,58 +1957,6 @@ static void build_edl(bgav_demuxer_context_t * ctx)
   }
 
 
-static void fix_index(bgav_demuxer_context_t * ctx)
-  {
-  int i, j;
-  bgav_stream_t * s;
-  stream_priv_t * sp;
-
-  //  fprintf(stderr, "Fix index\n");
-  //  gavl_packet_index_dump(ctx->si);
-
-  
-  for(i = 0; i < ctx->tt->cur->num_video_streams; i++)
-    {
-    s = bgav_track_get_video_stream(ctx->tt->cur, i);
-    if(s->fourcc == BGAV_MK_FOURCC('d','r','a','c'))
-      {
-      /* Remove the last sample (the sequence end code) */
-      j = ctx->si->num_entries - 1;
-      while(ctx->si->entries[j].stream_id != s->stream_id)
-        j--;
-      /* Disable this packet */
-      if(ctx->si->entries[j].size == 13)
-        {
-        ctx->si->entries[j].stream_id = -1;
-        s->stats.pts_end -= ctx->si->entries[j].duration;
-        }
-      /* Update last index position */
-      j--;
-      while(ctx->si->entries[j].stream_id != s->stream_id)
-        j--;
-      s->last_index_position = j;
-      
-      /* Check if we have a ctts. If not, we will parse the
-         whole stream for getting sample accuracy */
-      sp = s->priv;
-
-      /* If the track doesn't have a ctts, we parse the complete
-         stream, except if the file was created with libquicktime */
-      if(!sp->trak->mdia.minf.stbl.has_ctts &&
-         strncmp(sp->trak->mdia.minf.stbl.stsd.entries[0].desc.format.video.compressor_name,
-                 "libquicktime", 12))
-        {
-        gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-                 "Dirac stream has no ctts");
-        ctx->index_mode = INDEX_MODE_SI_PARSE;
-        bgav_stream_set_parse_frame(s);
-        }
-      }
-    }
-  
-  }
-
-
 static int open_quicktime(bgav_demuxer_context_t * ctx)
   {
   qt_atom_header_t h;
@@ -2152,9 +2088,6 @@ static int open_quicktime(bgav_demuxer_context_t * ctx)
   
   ctx->flags |= BGAV_DEMUXER_SAMPLE_ACCURATE;
   
-  /* Fix index (probably changing index mode) */
-  fix_index(ctx);
-  
   /* Check if we have an EDL */
   if(priv->has_edl)
     build_edl(ctx);
@@ -2191,12 +2124,10 @@ static int open_quicktime(bgav_demuxer_context_t * ctx)
   
   if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
     ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
-
-  if(!priv->fragmented || (ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
-    {
-    bgav_demuxer_check_interleave(ctx);
-    bgav_demuxer_set_durations_from_superindex(ctx, ctx->tt->cur);
-    }
+  
+  if(priv->fragmented && (ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
+    ctx->flags |= BGAV_DEMUXER_LIVE;
+  
   return 1;
   }
 

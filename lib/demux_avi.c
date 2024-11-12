@@ -422,6 +422,9 @@ static void add_index_packet(gavl_packet_index_t * si, bgav_stream_t * stream,
     avi_as = stream->priv;
     samplerate = stream->data.audio.format->samplerate;
 
+    if(stream->stats.pts_end == GAVL_TIME_UNDEFINED)
+      stream->stats.pts_end = 0;
+    
     gavl_packet_index_add(si,
                           offset,
                           size,
@@ -1743,8 +1746,6 @@ static int open_avi(bgav_demuxer_context_t * ctx)
 
   bgav_track_set_format(ctx->tt->cur, "AVI", "video/x-msvideo");
 
-  bgav_demuxer_check_interleave(ctx);
-  bgav_demuxer_set_durations_from_superindex(ctx, ctx->tt->cur);
   
   return 1;
   fail:

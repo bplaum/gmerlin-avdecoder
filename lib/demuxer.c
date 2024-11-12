@@ -351,24 +351,50 @@ void bgav_demuxer_destroy(bgav_demuxer_context_t * ctx)
 static void init_superindex(bgav_demuxer_context_t * ctx)
   {
   int i;
-
+  
   i = 0;
 
   while(i < ctx->tt->cur->num_streams)
     {
-    if(ctx->tt->cur->streams[i]->last_index_position < 0)
+    ctx->tt->cur->streams[i]->first_index_pos =
+      gavl_packet_index_get_first(ctx->si, ctx->tt->cur->streams[i]->stream_id); 
+    
+    if(ctx->tt->cur->streams[i]->first_index_pos < 0)
       {
       gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
                "Removing stream %d (no packets found)", i+1);
       bgav_track_remove_stream(ctx->tt->cur, i);
+      continue;
       }
-    else
+
+    ctx->tt->cur->streams[i]->last_index_pos =
+      gavl_packet_index_get_last(ctx->si, ctx->tt->cur->streams[i]->stream_id); 
+
+    /* Check for non-interleaved stream */
+    if((i > 0) && !(ctx->flags & BGAV_DEMUXER_NONINTERLEAVED))
       {
-      i++;
+      if((ctx->tt->cur->streams[i-1]->last_index_pos < ctx->tt->cur->streams[i]->first_index_pos) ||
+         (ctx->tt->cur->streams[i]->last_index_pos < ctx->tt->cur->streams[i-1]->first_index_pos))
+        {
+        gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Got non-interleaved file");
+        ctx->flags |= BGAV_DEMUXER_NONINTERLEAVED;
+        }
       }
+
+    /* Set durations and stream stats */
+
+    if(!(ctx->flags & BGAV_DEMUXER_LIVE))
+      {
+      bgav_packet_index_set_durations(ctx->si, ctx->tt->cur->streams[i]);
+      gavl_packet_index_set_stream_stats(ctx->si, ctx->tt->cur->streams[i]->stream_id,
+                                         &ctx->tt->cur->streams[i]->stats);
+      }
+    
+    i++;
     }
   }
 
+#if 0
 void bgav_demuxer_set_durations_from_superindex(bgav_demuxer_context_t * ctx, bgav_track_t * t)
   {
   int i;
@@ -377,8 +403,6 @@ void bgav_demuxer_set_durations_from_superindex(bgav_demuxer_context_t * ctx, bg
 
   for(i = 0; i < t->num_streams; i++)
     {
-    gavl_packet_index_set_durations(ctx->si, t->streams[i]);
-    gavl_packet_index_set_stream_stats(ctx->si, t->streams[i]->stream_id, &t->streams[i]->stats);
     i++;
     }
   
@@ -409,6 +433,7 @@ void bgav_demuxer_check_interleave(bgav_demuxer_context_t * ctx)
       }
     }
   }
+#endif
 
 static int read_packet_superindex(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
                                   gavl_packet_t * p, int pos)
@@ -455,28 +480,25 @@ gavl_source_status_t bgav_demuxer_next_packet_si(bgav_demuxer_context_t * ctx)
   if(ctx->flags & BGAV_DEMUXER_NONINTERLEAVED)
     {
     s = ctx->request_stream;
+
+    //    if(s->type == GAVL_STREAM_AUDIO)
+    //      fprintf(stderr, "Blupp");
     
     if(s->flags & STREAM_EOF_D)
       return GAVL_SOURCE_EOF;
-    
-    idx = s->index_position;
-    
-    /* If the file is truely noninterleaved, this isn't neccessary, but who knows? */
-    while((ctx->si->entries[s->index_position].stream_id != s->stream_id) &&
-          (s->index_position < ctx->si->num_entries))
-      {
-      s->index_position++;
-      }
 
-    if(s->index_position >= ctx->si->num_entries)
+    if(s->index_position < 0)
+      s->index_position = gavl_packet_index_get_first(ctx->si, s->stream_id);
+    else
+      s->index_position = gavl_packet_index_get_next_packet(ctx->si, s->stream_id, s->index_position);
+    
+    if(s->index_position < 0)
       {
       ctx->request_stream->flags |= STREAM_EOF_D;
       return GAVL_SOURCE_EOF;
       }
-
     idx = s->index_position;
     s->index_position++;
-    
     }
   else // Interleaved
     {
@@ -755,6 +777,7 @@ int bgav_demuxer_get_duration(bgav_demuxer_context_t * ctx)
     }
   else if(ctx->index_mode == INDEX_MODE_SIMPLE)
     {
+    int i;
     /* Build index and take duration from it */
     const char * location = NULL;
     gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Getting duration by parsing");
@@ -766,7 +789,15 @@ int bgav_demuxer_get_duration(bgav_demuxer_context_t * ctx)
     if(!(ctx->si = bgav_get_packet_index(location)))
       return 0;
 
-    bgav_demuxer_set_durations_from_superindex(ctx, ctx->tt->cur);
+    for(i = 0; i < ctx->tt->cur->num_streams; i++)
+      {
+      /* Set durations and stream stats */
+      bgav_packet_index_set_durations(ctx->si, ctx->tt->cur->streams[i]);
+      gavl_packet_index_set_stream_stats(ctx->si, ctx->tt->cur->streams[i]->stream_id,
+                                         &ctx->tt->cur->streams[i]->stats);
+      
+      }
+    
     }
   
   return 1;

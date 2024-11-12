@@ -297,8 +297,8 @@ struct bgav_stream_s
   
   /* Positions in the superindex */
   
-  int first_index_position;
-  int last_index_position;
+  int first_index_pos;
+  int last_index_pos;
   int index_position;
   
   /* Where to get data */
@@ -637,8 +637,6 @@ void bgav_track_free(bgav_track_t * t);
 void bgav_track_dump(bgav_track_t * t);
 
 int bgav_track_has_sync(bgav_track_t * t);
-
-void bgav_track_reset_index_positions(bgav_track_t * t);
 
 
 /* Tracktable */
@@ -1030,7 +1028,7 @@ void bgav_packet_index_seek(gavl_packet_index_t * idx,
                           int64_t * time, int scale);
 
 
-void gavl_packet_index_set_durations(gavl_packet_index_t * idx, bgav_stream_t * s);
+void bgav_packet_index_set_durations(gavl_packet_index_t * idx, bgav_stream_t * s);
 
 
 void gavl_packet_index_set_coding_types(gavl_packet_index_t * idx,
@@ -1120,13 +1118,12 @@ struct bgav_demuxer_s
 
 /* Use generic code to get the duration */
 #define BGAV_DEMUXER_GET_DURATION          (1<<11)
-
 #define BGAV_DEMUXER_HAS_CLOCK_TIME        (1<<12)
 
 /* Set if a seek index is already there */
 #define BGAV_DEMUXER_NONINTERLEAVED         (1<<15)
-
 #define BGAV_DEMUXER_SAMPLE_ACCURATE        (1<<16)
+#define BGAV_DEMUXER_LIVE                   (1<<17)
 
 #define INDEX_MODE_NONE   0 /* Default: No sample accuracy */
 /* Packets have precise timestamps and durations and are adjacent in the file */
@@ -1135,6 +1132,7 @@ struct bgav_demuxer_s
 // #define INDEX_MODE_SI_SA  5
 /* File has a global index but codecs, which need complete parsing */
 #define INDEX_MODE_SI_PARSE  6
+
 
 
 // #define INDEX_MODE_CUSTOM 4 /* Demuxer builds index */
@@ -1187,8 +1185,6 @@ const bgav_demuxer_t * bgav_demuxer_probe(bgav_input_context_t * input);
 void bgav_demuxer_create_buffers(bgav_demuxer_context_t * demuxer);
 void bgav_demuxer_destroy(bgav_demuxer_context_t * demuxer);
 
-void bgav_demuxer_check_interleave(bgav_demuxer_context_t * ctx);
-void bgav_demuxer_set_durations_from_superindex(bgav_demuxer_context_t * ctx, bgav_track_t * t);
 
 void bgav_demuxer_parse_track(bgav_demuxer_context_t * ctx);
 

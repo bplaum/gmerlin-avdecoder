@@ -28,28 +28,29 @@
 
 #define LOG_DOMAIN "superindex"
 
-void gavl_packet_index_set_durations(gavl_packet_index_t * idx,
-                                   bgav_stream_t * s)
+void bgav_packet_index_set_durations(gavl_packet_index_t * idx,
+                                     bgav_stream_t * s)
   {
   int i;
   int last_pos;
-  if(idx->entries[s->first_index_position].duration)
+  
+  if(idx->entries[s->first_index_pos].duration)
     return;
   
   /* Special case if there is only one chunk */
-  if(s->first_index_position == s->last_index_position)
+  if(s->first_index_pos == s->last_index_pos)
     {
-    idx->entries[s->first_index_position].duration = bgav_stream_get_duration(s);
+    idx->entries[s->first_index_pos].duration = bgav_stream_get_duration(s);
     return;
     }
   
-  i = s->first_index_position+1;
+  i = s->first_index_pos+1;
   while(idx->entries[i].stream_id != s->stream_id)
     i++;
   
-  last_pos = s->first_index_position;
+  last_pos = s->first_index_pos;
   
-  while(i <= s->last_index_position)
+  while(i <= s->last_index_pos)
     {
     if(idx->entries[i].stream_id == s->stream_id)
       {
@@ -58,10 +59,10 @@ void gavl_packet_index_set_durations(gavl_packet_index_t * idx,
       }
     i++;
     }
-  if((idx->entries[s->last_index_position].duration <= 0) &&
-     (s->stats.pts_end > idx->entries[s->last_index_position].pts))
-    idx->entries[s->last_index_position].duration = s->stats.pts_end -
-      idx->entries[s->last_index_position].pts;
+  if((idx->entries[s->last_index_pos].duration <= 0) &&
+     (s->stats.pts_end > idx->entries[s->last_index_pos].pts))
+    idx->entries[s->last_index_pos].duration = s->stats.pts_end -
+      idx->entries[s->last_index_pos].pts;
   }
 
 #if 0
