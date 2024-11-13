@@ -663,8 +663,8 @@ static gavl_source_status_t next_packet_flv(bgav_demuxer_context_t * ctx)
 
     if(packet_size <= 0)
       {
-      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Packet size is %d (somethings wrong?)",
-               packet_size);
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Packet size is %d at file position %"PRId64" (somethings wrong?)",
+               packet_size, position);
       return GAVL_SOURCE_EOF;
       }
 
@@ -712,8 +712,8 @@ static gavl_source_status_t next_packet_flv(bgav_demuxer_context_t * ctx)
   
   if(packet_size <= 0)
     {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Packet size is %d (somethings wrong?)",
-             packet_size);
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Packet size is %d at file position %"PRId64" (somethings wrong?)",
+             packet_size, position);
     return GAVL_SOURCE_EOF;
     }
   
