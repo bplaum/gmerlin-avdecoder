@@ -552,10 +552,8 @@ int bgav_demuxer_start(bgav_demuxer_context_t * ctx)
       return 0;
       }
     
-    //#ifdef DUMP_SUPERINDEX
     if(ctx->opt->dump_indices)
       gavl_packet_index_dump(ctx->si);
-    // #endif
     }
   return 1;
   }
@@ -881,6 +879,8 @@ gavl_packet_index_t * bgav_get_packet_index(const char * url)
     //    gavl_packet_index_dump(ret);
     goto end;
     }
+
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Building packet index");
   
   before = gavl_time_get_monotonic();
   b = bgav_create();
@@ -897,7 +897,7 @@ gavl_packet_index_t * bgav_get_packet_index(const char * url)
 
   duration = gavl_time_get_monotonic() - before;
   
-  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Build packet index in %f seconds", gavl_time_to_seconds(duration));
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Built packet index in %f seconds", gavl_time_to_seconds(duration));
   //  gavl_packet_index_dump(ret);
   
   if(duration > GAVL_TIME_SCALE * 2)

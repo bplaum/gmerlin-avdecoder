@@ -417,7 +417,10 @@ static void seek_input(bgav_t * b, int64_t * time, int scale)
 
 int bgav_ensure_index(bgav_t * b)
   {
-  if((b->demuxer->index_mode == INDEX_MODE_SIMPLE) && !b->demuxer->si)
+  if(b->demuxer->si)
+    return 1;
+  
+  if(b->demuxer->index_mode == INDEX_MODE_SIMPLE)
     {
     /* Build packet index */
     const char * location = NULL;
@@ -428,12 +431,17 @@ int bgav_ensure_index(bgav_t * b)
     
     if((b->demuxer->si = bgav_get_packet_index(location)))
       {
-      gavl_dprintf("Built packet index:\n");
-      gavl_packet_index_dump(b->demuxer->si);
+      //      gavl_dprintf("Built packet index:\n");
+      //      gavl_packet_index_dump(b->demuxer->si);
       return 1;
       }
+    else
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Building packet index failed");
+      return 0;
+      }
     }
-
+  gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Cannot build packet index (unsupported file format)");
   return 0;
   }
 
@@ -516,13 +524,9 @@ bgav_seek_to_video_frame(bgav_t * b, int stream, int frame)
     {
     if(!s->data.video.frame_table)
       {
-      if(!b->demuxer->si)
-        {
-        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-                 "Seeking by frame index (with variable framerate and B-Frames) requires a packet index");
+      if(!bgav_ensure_index(b))
         return;
-        }
-
+      
       s->data.video.frame_table = gavl_packet_index_create(0);
       
       gavl_packet_index_extract_stream(b->demuxer->si,
@@ -537,6 +541,7 @@ bgav_seek_to_video_frame(bgav_t * b, int stream, int frame)
                frame, bgav_get_num_video_frames(b, stream));
       return;
       }
+    pts = s->data.video.frame_table->entries[frame].pts;
     }
   bgav_seek_scaled(b, &pts, s->data.video.format->timescale);
   }
