@@ -874,8 +874,38 @@ gavl_packet_source_t * bgav_get_video_packet_source(bgav_t * bgav, int stream)
   return s->psrc;
   }
 
-int64_t bgav_get_num_video_frames(bgav_t * bgav, int stream)
+int bgav_video_ensure_frame_table(bgav_t * b, int stream)
   {
-  bgav_stream_t * s = bgav_track_get_video_stream(bgav->tt->cur, stream);
+  bgav_stream_t * s = bgav_track_get_video_stream(b->tt->cur, stream);
+
+  if(s->data.video.frame_table)
+    return 1;
+  
+  if(!bgav_ensure_index(b))
+    return 0;
+      
+  s->data.video.frame_table = gavl_packet_index_create(0);
+      
+  gavl_packet_index_extract_stream(b->demuxer->si,
+                                   s->data.video.frame_table,
+                                   s->stream_id);
+  gavl_packet_index_sort_by_pts(s->data.video.frame_table);
+  gavl_packet_index_set_stream_stats(s->data.video.frame_table,
+                                     s->stream_id, &s->stats);
+  return 1;
+  }
+
+int64_t bgav_get_num_video_frames(bgav_t * b, int stream)
+  {
+  bgav_stream_t * s = bgav_track_get_video_stream(b->tt->cur, stream);
+
+  if(!s->stats.total_packets)
+    {
+    if(!bgav_video_ensure_frame_table(b, stream))
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Couldn't get total number of frames");
+      }
+    }
+
   return s->stats.total_packets;
   }

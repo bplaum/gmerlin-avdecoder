@@ -1451,6 +1451,7 @@ int bgav_video_skipto(bgav_stream_t * stream, int64_t * t, int scale);
 
 void bgav_video_set_still(bgav_stream_t * stream);
 
+int bgav_video_ensure_frame_table(bgav_t * b, int stream);
 
 /* subtitle.c */
 
