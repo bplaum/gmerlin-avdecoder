@@ -172,7 +172,7 @@ void bgav_packet_destroy(bgav_packet_t*);
 #define STREAM_STILL_SHOWN        (1<<3)  /* Still image already shown */
 #define STREAM_EOF_D              (1<<4)  /* End of file at demuxer    */
 #define STREAM_EOF_C              (1<<5)  /* End of file at codec      */
-// #define STREAM_NEED_FRAMETYPES    (1<<6) /* Need frame types          */
+#define STREAM_SKIP_MODE_CHANGED  (1<<6)  /* Skip mode changed    */
 
 /* Picture is available for immediate output */
 #define STREAM_HAVE_FRAME         (1<<7)
@@ -240,7 +240,7 @@ typedef struct
   gavl_video_source_t * vsrc_priv;
 
   gavl_packet_index_t * frame_table;
-  
+  int skip_mode;
   } bgav_stream_video_t;
   
 struct bgav_stream_s
@@ -1452,6 +1452,9 @@ int bgav_video_skipto(bgav_stream_t * stream, int64_t * t, int scale);
 void bgav_video_set_still(bgav_stream_t * stream);
 
 int bgav_video_ensure_frame_table(bgav_t * b, int stream);
+
+/* Check if a packet will be skipped */
+int bgav_video_packet_skip(gavl_packet_t * p, int skip_mode);
 
 /* subtitle.c */
 

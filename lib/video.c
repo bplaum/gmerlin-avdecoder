@@ -28,6 +28,7 @@
 #include <parser.h>
 #include <bsf.h>
 #include <mpeg4_header.h>
+#include <gavl/msg.h>
 
 // #define DUMP_TIMESTAMPS
 
@@ -908,4 +909,39 @@ int64_t bgav_get_num_video_frames(bgav_t * b, int stream)
     }
 
   return s->stats.total_packets;
+  }
+
+void bgav_set_video_skip_mode(bgav_t * bgav, int stream,
+                              int mode)
+  {
+  bgav_stream_t * s = bgav_track_get_video_stream(bgav->tt->cur, stream);
+
+  if(s->data.video.skip_mode != mode)
+    {
+    s->data.video.skip_mode = mode;
+    s->flags |= STREAM_SKIP_MODE_CHANGED;
+    }
+  }
+
+int bgav_video_packet_skip(gavl_packet_t * p, int skip_mode)
+  {
+  switch(skip_mode)
+    {
+    case GAVL_MSG_SRC_SKIP_NONE:
+      return 0;
+      break;
+    case GAVL_MSG_SRC_SKIP_NONREF:
+      if(((p->flags & GAVL_PACKET_TYPE_MASK) == GAVL_PACKET_TYPE_B) &&
+         !(p->flags & GAVL_PACKET_REF))
+        return 1;
+      else
+        return 0;
+      break;
+    case GAVL_MSG_SRC_SKIP_NONKEY:
+      if(p->flags & GAVL_PACKET_KEYFRAME)
+        return 0;
+      else
+        return 1;
+    }
+  return 0;
   }

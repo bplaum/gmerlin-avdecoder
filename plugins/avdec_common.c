@@ -38,6 +38,8 @@ static int bg_avdec_start(void * priv);
 static int handle_cmd(void * data, gavl_msg_t * msg)
   {
   avdec_priv * avdec = data;
+
+  bg_avdec_lock(avdec);
   
   switch(msg->NS)
     {
@@ -87,10 +89,20 @@ static int handle_cmd(void * data, gavl_msg_t * msg)
           bgav_seek_scaled(avdec->dec, &time, scale);
           }
           break;
+        case GAVL_CMD_SRC_SET_VIDEO_SKIP_MODE:
+          {
+          int stream;
+          int mode;
+          
+          stream = gavl_msg_get_arg_int(msg, 0);
+          mode = gavl_msg_get_arg_int(msg, 1);
+          bgav_set_video_skip_mode(avdec->dec, stream, mode);
+          }
         }
       
       break;
     }
+  bg_avdec_unlock(avdec);
   return 1;
   }
 

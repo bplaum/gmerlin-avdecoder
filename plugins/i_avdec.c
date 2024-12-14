@@ -451,8 +451,6 @@ const bg_input_plugin_t the_plugin =
     
     .get_frame_table =       bg_avdec_get_frame_table,
     
-    .skip_video =      bg_avdec_skip_video,
-
     .get_src = bg_avdec_get_src,
     
     /* Stop playback, close all decoders */

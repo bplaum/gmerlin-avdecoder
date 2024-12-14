@@ -2017,12 +2017,23 @@ int bgav_read_video(bgav_t * bgav, gavl_video_frame_t * frame, int stream);
     Use this function if it turns out, that the machine is too weak to
     decode all frames. Set exact to 0 to make the skipping even faster
     but less accurate.
+
+    Depracated, use bgav_set_video_skip_mode instead
+    
 */
 
 BGAV_PUBLIC
 void bgav_skip_video(bgav_t * bgav, int stream,
                      int64_t * time, int scale,
                      int exact);
+
+/*
+ * Set a skip mode (see GAVL_MSG_SRC_SKIP_* in gavl/msg.h)
+ */
+  
+BGAV_PUBLIC
+void bgav_set_video_skip_mode(bgav_t * bgav, int stream,
+                              int mode);
 
 /** \ingroup decode
     \brief Return the video source for a video stream

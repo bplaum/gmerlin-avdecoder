@@ -106,7 +106,6 @@ const bg_input_plugin_t the_plugin =
 
     .get_media_info = bg_avdec_get_media_info,
 
-    .skip_video =      bg_avdec_skip_video,
     .get_src = bg_avdec_get_src,
 
     /*
