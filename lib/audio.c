@@ -420,6 +420,12 @@ static uint32_t aac_fourccs[] =
     0x00
   };
 
+static uint32_t adts_fourccs[] =
+  {
+    BGAV_MK_FOURCC('A','D','T','S'),
+    0x00
+  };
+
 static uint32_t flac_fourccs[] =
   {
     BGAV_MK_FOURCC('F','L','A','C'),
@@ -438,11 +444,6 @@ static uint32_t speex_fourccs[] =
     0x00
   };
 
-static uint32_t adts_fourccs[] =
-  {
-    BGAV_MK_FOURCC('A','D','T','S'),
-    0x00
-  };
 
 static uint32_t dts_fourccs[] =
   {
@@ -463,7 +464,7 @@ int bgav_get_audio_compression_info(bgav_t * bgav, int stream,
 int bgav_set_audio_compression_info(bgav_stream_t * s)
   {
   int need_header = 0;
-  int need_bitrate = 1;
+  //  int need_bitrate = 1;
   uint32_t codec_tag = 0;
   gavl_codec_id_t id = GAVL_CODEC_ID_NONE;
   
@@ -485,30 +486,25 @@ int bgav_set_audio_compression_info(bgav_stream_t * s)
     {
     id = GAVL_CODEC_ID_AAC;
     need_header = 1;
-    need_bitrate = 0;
     }
   else if(bgav_check_fourcc(s->fourcc, speex_fourccs))
     {
     id = GAVL_CODEC_ID_SPEEX;
     need_header = 1;
-    need_bitrate = 0;
     }
   else if(bgav_check_fourcc(s->fourcc, vorbis_fourccs))
     {
     id = GAVL_CODEC_ID_VORBIS;
-    need_bitrate = 0;
     need_header = 1;
     }
   else if(bgav_check_fourcc(s->fourcc, flac_fourccs))
     {
     id = GAVL_CODEC_ID_FLAC;
-    need_bitrate = 0;
     need_header = 1;
     }
   else if(bgav_check_fourcc(s->fourcc, opus_fourccs))
     {
     id = GAVL_CODEC_ID_OPUS;
-    need_bitrate = 0;
     need_header = 1;
     }
   else if(bgav_check_fourcc(s->fourcc, adts_fourccs) &&
@@ -516,7 +512,6 @@ int bgav_set_audio_compression_info(bgav_stream_t * s)
     {
     id = GAVL_CODEC_ID_AAC;
     //    need_header = 1;
-    need_bitrate = 0;
     }
   
   if(id == GAVL_CODEC_ID_NONE)
@@ -529,13 +524,6 @@ int bgav_set_audio_compression_info(bgav_stream_t * s)
     {
     gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
              "Cannot output compressed audio stream: Global header missing");
-    s->flags |= STREAM_GOT_NO_CI;
-    return 0;
-    }
-  if(need_bitrate && !s->container_bitrate && !s->codec_bitrate)
-    {
-    gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-             "Cannot output compressed audio stream: No bitrate specified");
     s->flags |= STREAM_GOT_NO_CI;
     return 0;
     }
