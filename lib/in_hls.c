@@ -58,7 +58,7 @@
 #define END_OF_SEQUENCE (1<<0)
 #define HAVE_HEADER     (1<<1)
 #define SENT_HEADER     (1<<2)
-
+#define NEED_PTS        (1<<3)
 
 typedef struct
   {
@@ -147,8 +147,10 @@ static gavl_time_t get_segment_duration(bgav_input_context_t * ctx, int idx)
 static int clock_time_to_idx(bgav_input_context_t * ctx, gavl_time_t * time)
   {
   int i;
-  hls_priv_t * p = ctx->priv;
   gavl_time_t test_time;
+  hls_priv_t * p = ctx->priv;
+
+#if 0 // Nearest
   gavl_time_t test_diff;
 
   gavl_time_t last_diff;
@@ -192,6 +194,23 @@ static int clock_time_to_idx(bgav_input_context_t * ctx, gavl_time_t * time)
   
   *time = last_time;
   return p->segments.num_entries - 1;
+#else
+
+  i = p->segments.num_entries-1;
+  
+  while(i > 0)
+    {
+    test_time = get_segment_clock_time(ctx, i);
+    if(test_time <= *time)
+      {
+      *time = test_time;
+      return i;
+      }
+    i--;
+    }
+  *time = get_segment_clock_time(ctx, 0);
+  return 0;
+#endif
   }
 
 
@@ -515,7 +534,6 @@ static int parse_iv(bgav_input_context_t * ctx, const char * str, uint8_t * out,
   return 1;
   }
 
-
 static int handle_id3(bgav_input_context_t * ctx)
   {
   hls_priv_t * p = ctx->priv;
@@ -530,7 +548,7 @@ static int handle_id3(bgav_input_context_t * ctx)
   if(gavl_io_get_data(p->io, probe_buf, BGAV_ID3V2_DETECT_LEN) < BGAV_ID3V2_DETECT_LEN)
     return 1;
   
-  //  fprintf(stderr, "Segment start:\n");
+  //  fprintf(stderr, "handle_id3: %d\n", !!(p->flags & NEED_PTS));
   //  gavl_hexdump(probe_buf, BGAV_ID3V2_DETECT_LEN, BGAV_ID3V2_DETECT_LEN);
   
   if((len = bgav_id3v2_detect(probe_buf)) <= 0)
@@ -542,28 +560,41 @@ static int handle_id3(bgav_input_context_t * ctx)
 
   buf.len = len;
   mem = bgav_input_open_memory(buf.buf, buf.len);
-
+  
   if((id3 = bgav_id3v2_read(mem)))
     {
     int64_t pts;
 
-    if((pts = bgav_id3v2_get_pts(id3)) != GAVL_TIME_UNDEFINED)
-      {
-      ctx->input_pts = pts;
-      //      fprintf(stderr, "Got PTS from ID3: %"PRId64"\n", pts);
-      }
-#if 0 // The ID3 clock time is sometimes terriblly wrong. Lets use the time from the m3u8 instead
-    if((pts = bgav_id3v2_get_clock_time(id3)) != GAVL_TIME_UNDEFINED)
-      {
-      // fprintf(stderr, "Clock time: %"PRId64" %"PRId64" %"PRId64"\n", ctx->clock_time, pts, ctx->clock_time - pts);
-      ctx->clock_time = pts;
-      }
-#endif
-    
 #if 0
-    fprintf(stderr, "Got ID3V2 %"PRId64"\n", gavl_time_unscale(90000, ctx->input_pts));
+    fprintf(stderr, "Got ID3V2\n");
     bgav_id3v2_dump(id3);
 #endif
+
+    if(p->flags & NEED_PTS)
+      {
+      if((pts = bgav_id3v2_get_pts(id3)) != GAVL_TIME_UNDEFINED)
+        {
+        ctx->input_pts = pts;
+        fprintf(stderr, "Got PTS from ID3: %"PRId64"\n", pts);
+        }
+#if 0 // The ID3 clock time is sometimes terriblly wrong. Lets use the time from the m3u8 instead
+      if((pts = bgav_id3v2_get_clock_time(id3)) != GAVL_TIME_UNDEFINED)
+        {
+        /* Sometimes the calendar time is in local time instead of UTC. We try to correct this here */
+        while(pts - ctx->clock_time > 900 * GAVL_TIME_SCALE)
+          pts -= 1800 * GAVL_TIME_SCALE;
+        while(pts - ctx->clock_time < -900 * GAVL_TIME_SCALE)
+          pts += 1800 * GAVL_TIME_SCALE;
+      
+        fprintf(stderr, "Clock time: %"PRId64" %"PRId64" %"PRId64"\n", ctx->clock_time, pts, pts - ctx->clock_time);
+        // ctx->clock_time = pts;
+
+        ctx->input_pts += gavl_time_scale(90000, ctx->clock_time - pts);
+        gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Shifting PTS according to ID3 data by %f seconds",
+                 gavl_time_to_seconds(ctx->clock_time - pts));
+        }
+#endif
+      }
     
     bgav_id3v2_2_metadata(id3, &ctx->m);
     bgav_id3v2_destroy(id3);
@@ -942,6 +973,8 @@ static void init_segment_io(bgav_input_context_t * ctx)
   
   /* Some streams (NDR3) have two id3 tags with different infos */
   handle_id3(ctx);
+
+  p->flags &= ~NEED_PTS;
   
   }
 
@@ -1034,6 +1067,8 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   
   priv->seq_start = -1;
   priv->seq_cur = -1;
+
+  priv->flags |= NEED_PTS;
   
   //  if(!load_m3u8(ctx))
   //    goto fail;
@@ -1065,6 +1100,7 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
     gavl_dictionary_set_string(src, GAVL_META_MIMETYPE,
                                gavl_dictionary_get_string_i(resp, "Content-Type"));
     }
+
   
   ret = 1;
   fail:
@@ -1143,6 +1179,8 @@ static void seek_time_hls(bgav_input_context_t * ctx, gavl_time_t *t1)
     }
 
   fprintf(stderr, "seek_time_hls: time: %"PRId64", idx %d\n", *t1, idx);
+
+  p->flags |= NEED_PTS;
   
   jump_to_idx(ctx, idx);
   }
