@@ -274,6 +274,8 @@ static gavl_sink_status_t sink_put_func_full(void * priv, gavl_packet_t * pkt)
       /* Parse frame (must be done *after* pes_pts is set) */
       if(!do_parse_frame(p, pkt))
         {
+        /* Undo gavl_packet_sink_get_packet */
+        gavl_packet_sink_put_packet(p->next, NULL);
         return GAVL_SINK_ERROR;
         }
       if(p->stream_flags & STREAM_RAW_PACKETS)

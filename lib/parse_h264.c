@@ -802,6 +802,9 @@ static int parse_frame_h264(bgav_packet_parser_t * parser, bgav_packet_t * p)
     
     nal_start = nal_end;
     }
+
+  gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Didn't find slice NAL in H.264 frame");
+  
   return 0;
 
   ok:

@@ -43,6 +43,8 @@
 #define SEGMENT_CIPHER_KEY_URI "cipherkeyuri"
 #define SEGMENT_CIPHER_IV      "cipheriv"
 
+#define DISCONTINUITY_SEQUENCE "dseq"
+
 /* States for opening the next source. */
 
 #define NEXT_STATE_START           0
@@ -53,7 +55,10 @@
 #define NEXT_STATE_START_OPEN_TS   5
 #define NEXT_STATE_OPEN_TS         6
 #define NEXT_STATE_DONE            7
-#define NEXT_STATE_LOST_SYNC       8
+#define NEXT_STATE_DISCONT         8 // Encountered discontinuity, client must reopen us with a proper dseq argument
+#define NEXT_STATE_ERROR           9 // Error, client must reopen us with a proper clock-time
+
+// #define NEXT_STATE_LOST_SYNC       8
 
 #define END_OF_SEQUENCE (1<<0)
 #define HAVE_HEADER     (1<<1)
@@ -102,11 +107,12 @@ typedef struct
   int64_t header_offset;
   int64_t header_length;
   gavl_buffer_t header_buf;
+
+  int64_t dseq;
   
   } hls_priv_t;
 
 #define HAVE_HEADER_BYTES(p) ((p->flags & (HAVE_HEADER | SENT_HEADER)) == HAVE_HEADER)
-
 
 static gavl_io_t * create_http_client(bgav_input_context_t * ctx)
   {
@@ -259,6 +265,7 @@ static int parse_m3u8(bgav_input_context_t * ctx)
   char ** lines;
   int idx;
   int64_t new_seq = -1;
+  int64_t dseq = -1;
   int skip;
   gavl_value_t val;
   gavl_dictionary_t * dict;
@@ -281,14 +288,19 @@ static int parse_m3u8(bgav_input_context_t * ctx)
 
   while(lines[idx])
     {
-    if(gavl_string_starts_with(lines[idx], "#EXT-X-MEDIA-SEQUENCE:"))
-      {
+    if(gavl_string_starts_with(lines[idx],      "#EXT-X-MEDIA-SEQUENCE:"))
       new_seq = strtoll(lines[idx] + 22, NULL, 10);
+    else if(gavl_string_starts_with(lines[idx], "#EXT-X-DISCONTINUITY-SEQUENCE:"))
+      dseq = strtoll(lines[idx] + 30, NULL, 10);
+
+    if((new_seq >= 0) && (dseq >= 0))
       break;
-      }
     idx++;
     }
 
+  if(dseq < 0)
+    dseq = 0;
+  
   if(new_seq < 0)
     goto fail;
 
@@ -321,6 +333,9 @@ static int parse_m3u8(bgav_input_context_t * ctx)
     {
     gavl_strtrim(lines[idx]);
 
+    if(!strcmp(lines[idx], "#EXT-X-DISCONTINUITY"))
+      dseq++;
+    
     if((*(lines[idx]) != '\0') &&
        !gavl_string_starts_with(lines[idx], "#"))
       skip--;
@@ -332,19 +347,27 @@ static int parse_m3u8(bgav_input_context_t * ctx)
   while(lines[idx])
     {
     gavl_strtrim(lines[idx]);
-
+    
     if(*(lines[idx]) == '\0')
       {
       idx++;
       continue;
       }
 
+    if(!strcmp(lines[idx], "#EXT-X-DISCONTINUITY"))
+      {
+      dseq++;
+      idx++;
+      continue;
+      }
+    
     /* Skip header lines to suppress fake warnings */
-    if(gavl_string_starts_with(lines[idx], "#EXTM3U") ||
-       gavl_string_starts_with(lines[idx], "#EXT-X-VERSION") ||
-       gavl_string_starts_with(lines[idx], "#ENCODER") ||
-       gavl_string_starts_with(lines[idx], "#EXT-X-MEDIA-SEQUENCE") ||
-       gavl_string_starts_with(lines[idx], "#EXT-X-TARGETDURATION"))
+    else if(gavl_string_starts_with(lines[idx], "#EXTM3U") ||
+            gavl_string_starts_with(lines[idx], "#EXT-X-VERSION") ||
+            gavl_string_starts_with(lines[idx], "#ENCODER") ||
+            gavl_string_starts_with(lines[idx], "#EXT-X-MEDIA-SEQUENCE") ||
+            gavl_string_starts_with(lines[idx], "#EXT-X-TARGETDURATION") ||
+            gavl_string_starts_with(lines[idx], "#EXT-X-DISCONTINUITY-SEQUENCE"))
       {
       idx++;
       continue;
@@ -457,6 +480,9 @@ static int parse_m3u8(bgav_input_context_t * ctx)
       uri = gavl_url_append_http_vars(uri, &p->http_vars);
       
       gavl_dictionary_set_string_nocopy(dict, GAVL_META_URI, uri);
+
+      gavl_dictionary_set_long(dict, DISCONTINUITY_SEQUENCE, dseq);
+      
       gavl_array_splice_val_nocopy(&p->segments, -1, 0, &val);
 
       if(segment_start_time_abs != GAVL_TIME_UNDEFINED)
@@ -821,6 +847,7 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
   
   if(p->next_state == NEXT_STATE_GOT_TS)
     {
+    int64_t dseq;
     const gavl_dictionary_t * dict;
     //    const char * uri = NULL;
     const char * cipher_key_uri = NULL;
@@ -845,6 +872,18 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
       
     dict = gavl_value_get_dictionary(&p->segments.entries[idx]);
 
+    dseq = -1;
+    gavl_dictionary_get_long(dict, DISCONTINUITY_SEQUENCE, &dseq);
+
+    if(p->dseq < 0)
+      p->dseq = dseq;
+    else if(p->dseq != dseq)
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Detected discontinuity");
+      p->flags |= END_OF_SEQUENCE;
+      return -1;
+      }
+    
     //    uri = gavl_dictionary_get_string(dict, GAVL_META_URI);
     
 
@@ -1039,7 +1078,8 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   gavl_dictionary_t * src;
 
   hls_priv_t * priv = calloc(1, sizeof(*priv));
-  
+
+  priv->dseq = -1;
   //  fprintf(stderr, "Open HLS: %s\n", url1);
   
   ctx->priv = priv;
@@ -1353,7 +1393,11 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
     if((p->next_state != NEXT_STATE_DONE) && !(p->flags & END_OF_SEQUENCE))
       {
       if(open_next_async(ctx, 0) < 0)
+        {
         gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Opening next segment failed");
+        p->flags |= END_OF_SEQUENCE;
+        return bytes_read;
+        }
       }
 
     bytes_read += result;
@@ -1395,7 +1439,11 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
           if(open_next_sync(ctx))
             init_segment_io(ctx);
           else
+            {
             gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Open next segment failed");
+            p->flags |= END_OF_SEQUENCE;
+            return bytes_read;
+            }
           }
         else
           init_segment_io(ctx);
