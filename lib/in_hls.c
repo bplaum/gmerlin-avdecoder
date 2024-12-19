@@ -787,8 +787,10 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
       {
       if(result < 0)
         {
-        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Downloading m3u8 failed");
-
+        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
+                 "Downloading m3u8 failed (client state: %d)",
+                 gavl_http_client_get_state(p->m3u_io));
+        
         if(p->seq_cur >= 0)
           {
           gavl_io_destroy(p->m3u_io);
