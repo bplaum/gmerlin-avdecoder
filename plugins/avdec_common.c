@@ -114,6 +114,8 @@ bg_media_source_t * bg_avdec_get_src(void * priv)
 
 void * bg_avdec_create()
   {
+  pthread_mutexattr_t attr;
+
   avdec_priv * ret = calloc(1, sizeof(*ret));
   ret->opt = bgav_options_create();
   
@@ -122,9 +124,12 @@ void * bg_avdec_create()
                        bg_msg_hub_create(1));
 
   //  bgav_options_set_msg_callback(ret->opt, handle_evt, ret);
+
+  pthread_mutexattr_init(&attr);
+  pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
   
-  pthread_mutex_init(&ret->mutex, NULL);
-  
+  pthread_mutex_init(&ret->mutex, &attr);
+  pthread_mutexattr_destroy(&attr); 
   return ret;
   }
 
@@ -391,6 +396,7 @@ void bg_avdec_lock(void * priv)
   {
   avdec_priv * avdec = priv;
 
+  //  fprintf(stderr, "bg_avdec_lock %ld\n", pthread_self());
   pthread_mutex_lock(&avdec->mutex);
   //  fprintf(stderr, "bg_avdec_lock %ld\n", pthread_self());
   }
@@ -399,7 +405,7 @@ void bg_avdec_unlock(void * priv)
   {
   avdec_priv * avdec = priv;
   
-  // fprintf(stderr, "bg_avdec_unlock %ld\n", pthread_self());
+  //  fprintf(stderr, "bg_avdec_unlock %ld\n", pthread_self());
   pthread_mutex_unlock(&avdec->mutex);
   
   }
