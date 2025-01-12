@@ -367,7 +367,8 @@ static int parse_m3u8(bgav_input_context_t * ctx)
             gavl_string_starts_with(lines[idx], "#ENCODER") ||
             gavl_string_starts_with(lines[idx], "#EXT-X-MEDIA-SEQUENCE") ||
             gavl_string_starts_with(lines[idx], "#EXT-X-TARGETDURATION") ||
-            gavl_string_starts_with(lines[idx], "#EXT-X-DISCONTINUITY-SEQUENCE"))
+            gavl_string_starts_with(lines[idx], "#EXT-X-DISCONTINUITY-SEQUENCE") ||
+            gavl_string_starts_with(lines[idx], "#PLUTO"))
       {
       idx++;
       continue;
@@ -835,9 +836,7 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
 
     if(p->seq_cur >= p->seq_start + p->segments.num_entries)
       {
-      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Next segment not available in m3u8, cur: %"PRId64", last: %"PRId64,
-               p->seq_cur, p->seq_start + p->segments.num_entries);
-      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Trying again in 1 sec.");
+      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Next segment not available in m3u8, cur: %"PRId64", last: %"PRId64". Trying again in 1 sec.", p->seq_cur, p->seq_start + p->segments.num_entries);
       p->m3u_time = gavl_timer_get(p->m3u_timer) + GAVL_TIME_SCALE;
       p->next_state = NEXT_STATE_WAIT_M3U;
       return 0;
@@ -1428,7 +1427,7 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
         if(p->flags & END_OF_SEQUENCE)
           {
           if(!bytes_read)
-            gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Detected EOF 1");
+            gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Got end of sequence");
           
           return bytes_read;
           }

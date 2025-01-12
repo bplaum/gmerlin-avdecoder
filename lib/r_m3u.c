@@ -41,18 +41,27 @@ static int probe_m3u(bgav_input_context_t * input)
   const char * mimetype = NULL;
 
   const char * uri = gavl_dictionary_get_string(&input->m, GAVL_META_REAL_URI);
-
+  
   if(!uri)
     uri = input->location;
 
+  //  fprintf(stderr, "Probe_m3u: %s\n", uri);
+  //  gavl_dictionary_dump(&input->m, 2);
+                       
   /* Don't add .m3u8 here since it will break hls */
   if(uri &&
      (gavl_string_ends_with_i(uri, ".m3u") ||
       gavl_string_ends_with_i(uri, ".ram")))
     return 1;
+
+  /* Some servers (e.g. Pluto) sometimes send content type "application/x-mpegURL"
+     for HLS segment lists. These have hls or hlss as protocol. */
+  if(gavl_string_starts_with(uri, "hls://") ||
+     gavl_string_starts_with(uri, "hlss://"))
+    return 0; // Will be MPEG2 TS or ADTS
   
   /* Most likely, we get this via http, so we can check the mimetype */
-
+  
   if(gavl_metadata_get_src(&input->m, GAVL_META_SRC, 0, &mimetype, NULL) && mimetype)
     {
     if(!strcasecmp(mimetype, "audio/x-pn-realaudio-plugin") ||
@@ -62,8 +71,8 @@ static int probe_m3u(bgav_input_context_t * input)
        !strcasecmp(mimetype, "audio/x-mpegurl") ||
        !strcasecmp(mimetype, "audio/mpegurl") ||
        !strcasecmp(mimetype, "audio/m3u") ||
-       !strncasecmp(mimetype, "application/x-mpegurl", 21) || // HLS
-       !strncasecmp(mimetype, "application/vnd.apple.mpegurl", 29)) // HLS
+       gavl_string_starts_with_i(mimetype, "application/x-mpegurl") || // HLS
+       gavl_string_starts_with_i(mimetype, "application/vnd.apple.mpegurl")) // HLS
       return 1;
     }
   
@@ -111,6 +120,9 @@ static char * make_hls_uri(const char * uri)
 static bgav_track_t * append_track(bgav_track_table_t * tt)
   {
   bgav_track_t * ret = bgav_track_table_append_track(tt);
+
+  //  fprintf(stderr, "Adding m3u track\n");
+
   gavl_dictionary_set_string(ret->metadata, GAVL_META_CLASS, GAVL_META_CLASS_LOCATION);
   return ret;
   }
@@ -236,7 +248,8 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
     free(tmp_string);
     }
 
-  //  fprintf(stderr, "Got global http vars %s:\n", input->url);
+  //  fprintf(stderr, "Parse m3u: %s\n", input->location);
+  //  fprintf(stderr, "Got global http vars:\n");
   //  gavl_dictionary_dump(&http_vars_global, 2);
   
   tt = bgav_track_table_create(0);
@@ -515,7 +528,7 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
       const char * stream_uri;
 
       uri = bgav_input_absolute_url(input, pos);
-
+      
       if(hls)
         {
         gavl_dictionary_t * variant;
@@ -618,7 +631,9 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
           t = append_track(tt);
 
         gavl_dictionary_merge2(&http_vars, &http_vars_global);
-        
+
+        //        fprintf(stderr, "Adding track %s\n", tmp_string);
+                
         tmp_string = gavl_url_append_http_vars(tmp_string, &http_vars);
         gavl_dictionary_reset(&http_vars);
 
@@ -627,6 +642,9 @@ static bgav_track_table_t * parse_m3u(bgav_input_context_t * input)
         gavl_dictionary_reset(&metadata);
         
         gavl_metadata_add_src(t->metadata, GAVL_META_SRC, NULL, tmp_string);
+
+        //        fprintf(stderr, "Added track %s\n", tmp_string);
+
         free(tmp_string);
         }
       free(uri);
