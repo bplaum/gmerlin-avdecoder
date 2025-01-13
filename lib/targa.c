@@ -1036,6 +1036,7 @@ tga_result tga_desaturate(tga_image *img, const int cr, const int cg,
 {
     uint8_t bpp = img->pixel_depth / 8; /* bytes per pixel */
     uint8_t *dest, *src, *tmp;
+    uint8_t b = 0, g = 0, r = 0;
 
     if (tga_is_mono(img)) return TGAERR_MONO;
     if (tga_is_colormapped(img))
@@ -1050,7 +1051,6 @@ tga_result tga_desaturate(tga_image *img, const int cr, const int cg,
          src < img->image_data + img->width*img->height*bpp;
          src += bpp)
     {
-        uint8_t b, g, r;
         (void)tga_unpack_pixel(src, img->pixel_depth, &b, &g, &r, NULL);
 
         *dest = (uint8_t)( ( (int)b * cb +
@@ -1100,6 +1100,7 @@ tga_result tga_convert_depth(tga_image *img, const uint8_t bits)
     size_t src_size, dest_size;
     uint8_t src_bpp, dest_bpp;
     uint8_t *src, *dest;
+    uint8_t r=0,g=0,b=0,a=0;
 
     if (!UNMAP_DEPTH(bits) ||
         !SANE_DEPTH(img->pixel_depth)
@@ -1129,7 +1130,6 @@ tga_result tga_convert_depth(tga_image *img, const uint8_t bits)
              src < img->image_data + img->width * img->height * src_bpp;
              src += src_bpp)
         {
-            uint8_t r,g,b,a;
             (void)tga_unpack_pixel(src, img->pixel_depth, &r, &g, &b, &a);
             (void)tga_pack_pixel(dest, bits, r, g, b, a);
             dest += dest_bpp;
@@ -1154,7 +1154,6 @@ tga_result tga_convert_depth(tga_image *img, const uint8_t bits)
              src >= img->image_data;
              src -= src_bpp)
         {
-            uint8_t r,g,b,a;
             (void)tga_unpack_pixel(src, img->pixel_depth, &r, &g, &b, &a);
             (void)tga_pack_pixel(dest, bits, r, g, b, a);
             dest -= dest_bpp;
