@@ -937,11 +937,7 @@ void bgav_track_compute_info(bgav_track_t * t)
     }
   for(i = 0; i < t->num_video_streams; i++)
     {
-    s = bgav_track_get_video_stream(t, i);
-    gavl_stream_stats_apply_video(&s->stats, s->data.video.format,
-                                  s->ci, s->m);
-    gavl_dictionary_set_int(s->m, GAVL_META_STREAM_PACKET_TIMESCALE, s->timescale);
-    gavl_dictionary_set_int(s->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, s->data.video.format->timescale);
+    bgav_video_compute_info(bgav_track_get_video_stream(t, i));
     }
   
   for(i = 0; i < t->num_text_streams; i++)

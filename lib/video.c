@@ -945,3 +945,11 @@ int bgav_video_packet_skip(gavl_packet_t * p, int skip_mode)
     }
   return 0;
   }
+
+void bgav_video_compute_info(bgav_stream_t * s)
+  {
+  gavl_stream_stats_apply_video(&s->stats, s->data.video.format,
+                                s->ci, s->m);
+  gavl_dictionary_set_int(s->m, GAVL_META_STREAM_PACKET_TIMESCALE, s->timescale);
+  gavl_dictionary_set_int(s->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, s->data.video.format->timescale);
+  }

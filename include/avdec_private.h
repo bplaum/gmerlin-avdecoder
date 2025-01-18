@@ -1438,6 +1438,9 @@ int bgav_video_init(bgav_stream_t * s);
 int bgav_video_start(bgav_stream_t * s);
 void bgav_video_stop(bgav_stream_t * s);
 
+void bgav_video_compute_info(bgav_stream_t * s);
+
+
 /* Resynchronize the stream to the next point
  * where decoding can start again.
  * After calling this, the out_time *must* be valid
