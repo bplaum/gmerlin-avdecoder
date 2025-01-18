@@ -562,6 +562,7 @@ static void handle_sps(bgav_packet_parser_t * parser)
     {
     parser->vfmt->timescale = priv->sps.vui.time_scale;
     parser->vfmt->frame_duration = priv->sps.vui.num_units_in_tick * 2;
+    gavl_dictionary_set_int(parser->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, parser->vfmt->timescale);
     }
   
   // bgav_packet_parser_set_framerate(parser);
@@ -577,7 +578,9 @@ static void handle_sps(bgav_packet_parser_t * parser)
     parser->ci.flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
   else
     parser->ci.flags &= ~GAVL_COMPRESSION_HAS_B_FRAMES;
-    
+
+  //  bgav_video_compute_info(parser->info);
+  
   }
 
 static const uint8_t * get_nal_end(bgav_packet_t * p,
@@ -610,6 +613,8 @@ static int parse_frame_h264(bgav_packet_parser_t * parser, bgav_packet_t * p)
   h264_priv_t * priv = parser->priv;
 
   //  fprintf(stderr, "parse_frame h264\n");
+  //  gavl_packet_dump(p);
+  //  gavl_hexdump(p->buf.buf, 64, 16);
   
   nal_start = p->buf.buf; // Assume that we have a startcode
   
@@ -712,7 +717,7 @@ static int parse_frame_h264(bgav_packet_parser_t * parser, bgav_packet_t * p)
         if((priv->flags & (FLAG_HAVE_SPS|FLAG_HAVE_PPS)) != (FLAG_HAVE_SPS|FLAG_HAVE_PPS))
           {
           PACKET_SET_SKIP(p);
-          fprintf(stderr, "Skipping frame before SPS and PPS\n");
+          gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Skipping frame before SPS and PPS");
           return 1;
           }
 #if 0

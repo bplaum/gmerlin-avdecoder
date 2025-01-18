@@ -108,8 +108,9 @@ static int extract_header(bgav_packet_parser_t * parser, bgav_packet_t * p,
         parser->vfmt->framerate_mode = GAVL_FRAMERATE_VARIABLE;
         }
       }
+    gavl_dictionary_set_int(parser->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, parser->vfmt->timescale);
     }
-
+  
   /* Set picture size */
   
   if(!parser->vfmt->image_width)

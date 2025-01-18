@@ -88,9 +88,8 @@ static void handle_sequence(bgav_packet_parser_t * parser,
     {
     parser->vfmt->timescale = priv->sh.h.adv.timescale;
     parser->vfmt->frame_duration = priv->sh.h.adv.frame_duration;
+    gavl_dictionary_set_int(parser->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, parser->vfmt->timescale);
     }
-
-  
   priv->have_sh = 1;
   }
 

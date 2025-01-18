@@ -63,6 +63,7 @@ static void set_format(bgav_packet_parser_t * parser)
     {
     parser->vfmt->timescale = priv->sh.timescale;
     parser->vfmt->frame_duration = priv->sh.frame_duration;
+    gavl_dictionary_set_int(parser->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, parser->vfmt->timescale);
     }
 
   /* Image size */

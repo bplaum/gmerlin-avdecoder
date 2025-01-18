@@ -94,6 +94,8 @@ static int parse_frame_cavs(bgav_packet_parser_t * parser, bgav_packet_t * p)
           bgav_mpv_get_framerate(priv->seq.frame_rate_code,
                                  &parser->vfmt->timescale,
                                  &parser->vfmt->frame_duration);
+
+          gavl_dictionary_set_int(parser->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, parser->vfmt->timescale);
           
           parser->vfmt->image_width  = priv->seq.horizontal_size;
           parser->vfmt->image_height = priv->seq.vertical_size;

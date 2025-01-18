@@ -179,6 +179,7 @@ static int do_parse_frame(bgav_packet_parser_t * p, gavl_packet_t * pkt)
 static gavl_packet_t * sink_get_func_frame(void * priv)
   {
   bgav_packet_parser_t * p = priv;
+  //  fprintf(stderr, "parser: get_packet\n");
   return gavl_packet_sink_get_packet(p->next);
   }
 
@@ -188,6 +189,14 @@ static gavl_sink_status_t sink_put_func_frame(void * priv, gavl_packet_t * pkt)
   
   if(!do_parse_frame(p, pkt))
     return GAVL_SINK_ERROR;
+
+  if(PACKET_GET_SKIP(pkt))
+    {
+    /* Undo gavl_packet_sink_get_packet */
+    //    fprintf(stderr, "parser: put_packet\n");
+    gavl_packet_sink_put_packet(p->next, NULL);
+    return GAVL_SINK_OK;
+    }
   
   return gavl_packet_sink_put_packet(p->next, pkt);
   }
@@ -253,7 +262,11 @@ static gavl_sink_status_t sink_put_func_full(void * priv, gavl_packet_t * pkt)
     else
       {
       /* Get new packet */
-      gavl_packet_t * pkt = gavl_packet_sink_get_packet(p->next);
+      gavl_packet_t * pkt;
+
+      //      fprintf(stderr, "parser: get_packet\n");
+
+      pkt= gavl_packet_sink_get_packet(p->next);
       gavl_buffer_append_data_pad(&pkt->buf, p->buf.buf, p->buf.pos, GAVL_PACKET_PADDING);
       
       pkt->id = p->stream_id;
@@ -275,17 +288,33 @@ static gavl_sink_status_t sink_put_func_full(void * priv, gavl_packet_t * pkt)
       if(!do_parse_frame(p, pkt))
         {
         /* Undo gavl_packet_sink_get_packet */
+        //        fprintf(stderr, "parser: put_packet\n");
+
         gavl_packet_sink_put_packet(p->next, NULL);
         return GAVL_SINK_ERROR;
         }
-      if(p->stream_flags & STREAM_RAW_PACKETS)
-        pkt->position = p->raw_position;
 
-      if(!(p->ci.flags & GAVL_COMPRESSION_HAS_P_FRAMES))
-        PACKET_SET_KEYFRAME(pkt);
+      /* Discard skipped packets as early as possible */
+      /* This is important because skip packets can occur before the
+         timescale is known, which the packetbuffer later needs for PTS generatio */
+      if(PACKET_GET_SKIP(pkt))
+        {
+        /* Undo gavl_packet_sink_get_packet */
+        //        fprintf(stderr, "parser: put_packet\n");
+
+        gavl_packet_sink_put_packet(p->next, NULL);
+        }
+      else
+        {
+        if(p->stream_flags & STREAM_RAW_PACKETS)
+          pkt->position = p->raw_position;
+
+        if(!(p->ci.flags & GAVL_COMPRESSION_HAS_P_FRAMES))
+          PACKET_SET_KEYFRAME(pkt);
       
-      if(gavl_packet_sink_put_packet(p->next, pkt) != GAVL_SINK_OK)
-        return GAVL_SINK_ERROR;
+        if(gavl_packet_sink_put_packet(p->next, pkt) != GAVL_SINK_OK)
+          return GAVL_SINK_ERROR;
+        }
       }
     parser_flush_bytes(p);
     p->buf.pos = skip;
@@ -391,6 +420,8 @@ void bgav_packet_parser_flush(bgav_packet_parser_t * p)
 
   /* Get new packet */
   pkt = gavl_packet_sink_get_packet(p->next);
+  //  fprintf(stderr, "parser: get_packet\n");
+
   gavl_buffer_append_data_pad(&pkt->buf, p->buf.buf, p->buf.len, GAVL_PACKET_PADDING);
       
   /* Set pts */
@@ -415,6 +446,7 @@ void bgav_packet_parser_flush(bgav_packet_parser_t * p)
   if(p->stream_flags & STREAM_RAW_PACKETS)
     pkt->position = p->raw_position;
       
+  //  fprintf(stderr, "parser: put_packet\n");
   if(gavl_packet_sink_put_packet(p->next, pkt) != GAVL_SINK_OK)
     return;
   

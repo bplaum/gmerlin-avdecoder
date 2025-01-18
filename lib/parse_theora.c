@@ -159,6 +159,7 @@ void bgav_packet_parser_init_theora(bgav_packet_parser_t * parser)
     {
     parser->vfmt->timescale      = priv->ti.fps_numerator;
     parser->vfmt->frame_duration = priv->ti.fps_denominator;
+    gavl_dictionary_set_int(parser->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, parser->vfmt->timescale);
     }
 
   switch(priv->ti.pixel_fmt)

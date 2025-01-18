@@ -70,6 +70,7 @@ static void set_format(bgav_packet_parser_t * parser)
     parser->vfmt->timescale = priv->vol.vop_time_increment_resolution;
     parser->vfmt->frame_duration = priv->vol.fixed_vop_time_increment;
     priv->set_pts = 1;
+    gavl_dictionary_set_int(parser->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, parser->vfmt->timescale);
     }
 
   if(!parser->vfmt->image_width)
