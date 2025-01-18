@@ -957,7 +957,8 @@ static void free_indx(indx_t * indx)
 
 static void indx_build_superindex(bgav_demuxer_context_t * ctx)
   {
-  int num_entries, num_streams;
+  int num_entries;
+  uint32_t num_streams;
   int64_t offset, test_offset;
   int i, j;
   int num_audio_streams;

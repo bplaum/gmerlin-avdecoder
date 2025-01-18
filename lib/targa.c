@@ -57,7 +57,7 @@ static const size_t tga_id_length = 26; /* tga_id + \0 */
 
 struct read_struct
   {
-  int len;
+  uint32_t len;
   uint8_t * ptr;
   };
 
