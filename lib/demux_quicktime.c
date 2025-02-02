@@ -2102,12 +2102,6 @@ static int open_quicktime(bgav_demuxer_context_t * ctx)
   else if(ctx->input->position < ctx->si->entries[0].position)
     bgav_input_skip(ctx->input, ctx->si->entries[0].position - ctx->input->position);
 
-#if 0 // ?
-  if(priv->fragmented)
-    {
-    /* Read first mdat */
-    }
-#endif
   
   i = 0;
 
@@ -2125,7 +2119,7 @@ static int open_quicktime(bgav_demuxer_context_t * ctx)
   if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
     ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
   
-  if(priv->fragmented && (ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
+  if(priv->fragmented && !(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
     ctx->flags |= BGAV_DEMUXER_LIVE;
   
   return 1;
