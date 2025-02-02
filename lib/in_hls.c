@@ -596,7 +596,7 @@ static int handle_id3(bgav_input_context_t * ctx)
       if((pts = bgav_id3v2_get_pts(id3)) != GAVL_TIME_UNDEFINED)
         {
         ctx->input_pts = pts;
-        fprintf(stderr, "Got PTS from ID3: %"PRId64"\n", pts);
+        //        fprintf(stderr, "Got PTS from ID3: %"PRId64"\n", pts);
         }
 #if 0 // The ID3 clock time is sometimes terriblly wrong. Lets use the time from the m3u8 instead
       if((pts = bgav_id3v2_get_clock_time(id3)) != GAVL_TIME_UNDEFINED)
@@ -1256,7 +1256,7 @@ static void seek_time_hls(bgav_input_context_t * ctx, gavl_time_t *t1)
       idx = p->segments.num_entries - 1;
     }
 
-  fprintf(stderr, "seek_time_hls: time: %"PRId64", idx %d\n", *t1, idx);
+  //  fprintf(stderr, "seek_time_hls: time: %"PRId64", idx %d\n", *t1, idx);
 
   p->flags |= NEED_PTS;
   
