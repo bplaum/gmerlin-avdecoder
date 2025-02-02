@@ -211,7 +211,7 @@ static int open_adts(bgav_demuxer_context_t * ctx)
   //  fprintf(stderr, "adts_open\n");
   //  gavl_dictionary_dump(ctx->tt->cur->info, 2);
 
-  if(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
+  if((ctx->input->flags & (BGAV_INPUT_CAN_SEEK_BYTE | BGAV_INPUT_CAN_SEEK_TIME)))
     ctx->flags |= BGAV_DEMUXER_CAN_SEEK;
   
   return 1;
