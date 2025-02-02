@@ -36,7 +36,6 @@
 
 #define LOG_DOMAIN "in_hls"
 
-#define SEGMENT_START_TIME_ABS "start_abs"
 #define SEGMENT_DURATION        "duration"
 
 #define SEGMENT_CIPHER         "cipher"
@@ -64,6 +63,7 @@
 #define HAVE_HEADER     (1<<1)
 #define SENT_HEADER     (1<<2)
 #define NEED_PTS        (1<<3)
+#define INIT            (1<<4)
 
 typedef struct
   {
@@ -101,7 +101,9 @@ typedef struct
   
   int have_clock_time;
   gavl_time_t clock_time_start;
+  int64_t dseq_start;
 
+  
   /* Global header */
   char * header_uri;
   int64_t header_offset;
@@ -129,11 +131,24 @@ static gavl_time_t get_segment_clock_time(bgav_input_context_t * ctx, int idx)
   hls_priv_t * p = ctx->priv;
   
   if((d = gavl_value_get_dictionary(&p->segments.entries[idx])) &&
-     gavl_dictionary_get_long(d, SEGMENT_START_TIME_ABS, &ret) &&
+     gavl_dictionary_get_long(d, GAVL_URL_VAR_CLOCK_TIME, &ret) &&
      (ret > 0))
     return ret;
   else
     return GAVL_TIME_UNDEFINED;
+  }
+
+static int64_t get_segment_dseq(bgav_input_context_t * ctx, int idx)
+  {
+  int64_t ret = -1;
+  const gavl_dictionary_t * d;
+  hls_priv_t * p = ctx->priv;
+  
+  if((d = gavl_value_get_dictionary(&p->segments.entries[idx])) &&
+     gavl_dictionary_get_long(d, DISCONTINUITY_SEQUENCE, &ret))
+    return ret;
+  else
+    return -1;
   }
 
 static gavl_time_t get_segment_duration(bgav_input_context_t * ctx, int idx)
@@ -156,51 +171,6 @@ static int clock_time_to_idx(bgav_input_context_t * ctx, gavl_time_t * time)
   gavl_time_t test_time;
   hls_priv_t * p = ctx->priv;
 
-#if 0 // Nearest
-  gavl_time_t test_diff;
-
-  gavl_time_t last_diff;
-  gavl_time_t last_time = GAVL_TIME_UNDEFINED;
-  // int last_index;
-  
-  last_time = get_segment_clock_time(ctx, 0);
-
-  if(*time <= last_time)
-    {
-    *time = last_time;
-    return 0;
-    }
-
-  for(i = 0; i < p->segments.num_entries; i++)
-    {
-    test_time = get_segment_clock_time(ctx, i);
-
-    //    if(test_time == GAVL_TIME_UNDEFINED)
-    //      continue;
-    
-    if(test_time >= *time)
-      {
-      test_diff = test_time - *time;
-      last_diff = *time - last_time;
-      
-      if(last_diff < test_diff)
-        {
-        *time = last_time;
-        return i-1;
-        }
-      else
-        {
-        *time = test_time;
-        return i;
-        }
-      }
-    
-    last_time = test_time;
-    }
-  
-  *time = last_time;
-  return p->segments.num_entries - 1;
-#else
 
   i = p->segments.num_entries-1;
   
@@ -216,9 +186,20 @@ static int clock_time_to_idx(bgav_input_context_t * ctx, gavl_time_t * time)
     }
   *time = get_segment_clock_time(ctx, 0);
   return 0;
-#endif
   }
 
+static int dseq_to_idx(bgav_input_context_t * ctx, int64_t dseq)
+  {
+  int i;
+  hls_priv_t * p = ctx->priv;
+  
+  for(i = 0; i < p->segments.num_entries; i++)
+    {
+    if(dseq == get_segment_dseq(ctx, i))
+      return i;
+    }
+  return -1;
+  }
 
 static void get_seek_window(bgav_input_context_t * ctx, gavl_time_t * start, gavl_time_t * end)
   {
@@ -272,12 +253,15 @@ static int parse_m3u8(bgav_input_context_t * ctx)
   gavl_time_t segment_start_time_abs = GAVL_TIME_UNDEFINED;
   gavl_time_t segment_duration = 0;
   int window_changed = 0;
-
+  gavl_time_t total_duration;
+  
   gavl_dictionary_t cipher_params;
 
   int num_appended = 0;
 
   gavl_dictionary_init(&cipher_params);
+
+  //  fprintf(stderr, "Parse m3u:\n%s\n", (char*)p->m3u_buf.buf);
   
   lines = gavl_strbreak((char*)p->m3u_buf.buf, '\n');
   
@@ -286,6 +270,8 @@ static int parse_m3u8(bgav_input_context_t * ctx)
   
   idx = 0;
 
+  total_duration = 0;
+  
   while(lines[idx])
     {
     if(gavl_string_starts_with(lines[idx],      "#EXT-X-MEDIA-SEQUENCE:"))
@@ -471,10 +457,12 @@ static int parse_m3u8(bgav_input_context_t * ctx)
       char * uri;
       
       if(segment_start_time_abs != GAVL_TIME_UNDEFINED)
-        gavl_dictionary_set_long(dict, SEGMENT_START_TIME_ABS, segment_start_time_abs);
+        gavl_dictionary_set_long(dict, GAVL_URL_VAR_CLOCK_TIME, segment_start_time_abs);
       if(segment_duration >  0)
+        {
         gavl_dictionary_set_long(dict, SEGMENT_DURATION, segment_duration);
-
+        total_duration += segment_duration;
+        }
       gavl_dictionary_merge2(dict, &cipher_params);
 
       uri = bgav_input_absolute_url(ctx, lines[idx]);
@@ -493,7 +481,6 @@ static int parse_m3u8(bgav_input_context_t * ctx)
         else
           segment_start_time_abs = GAVL_TIME_UNDEFINED;
         }
-      // segment_start_time_abs = GAVL_TIME_UNDEFINED;
       segment_duration = 0;
       
       gavl_value_reset(&val);
@@ -514,7 +501,14 @@ static int parse_m3u8(bgav_input_context_t * ctx)
   
   fail:
 
-  if(window_changed && p->segments.num_entries && p->have_clock_time)
+  if(p->flags & INIT)
+    {
+    /* We say if we have a total duration of more than half an hour, we are seekable */
+    if(p->have_clock_time && (total_duration > 30 * 60 * GAVL_TIME_SCALE))
+      ctx->flags |= (BGAV_INPUT_CAN_SEEK_TIME | BGAV_INPUT_CAN_PAUSE);
+    }
+  
+  if(window_changed && p->segments.num_entries && (ctx->flags & BGAV_INPUT_CAN_SEEK_TIME))
     {
     gavl_time_t start_time = 0;
     gavl_time_t end_time = 0;
@@ -720,13 +714,12 @@ static void init_seek_window(bgav_input_context_t * ctx)
   {
   gavl_time_t win_start = 0;
   gavl_time_t win_end = 0;
-  hls_priv_t * p = ctx->priv;
   gavl_value_t val;
   gavl_dictionary_t * dict;
   
-  if(!p->have_clock_time)
+  if(!(ctx->flags & BGAV_INPUT_CAN_SEEK_TIME))
     return;
-
+  
   get_seek_window(ctx, &win_start, &win_end);
   
   gavl_value_init(&val);
@@ -817,26 +810,40 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
         gavl_time_t t = p->clock_time_start;
         p->seq_cur = p->seq_start + clock_time_to_idx(ctx, &t);
         
-        gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Initialized from clock time, difference: %f secs",
-                 gavl_time_to_seconds(p->clock_time_start - t));
+        if(p->seq_cur >= 0)
+          gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Initialized from clock time, difference: %f secs",
+                   gavl_time_to_seconds(p->clock_time_start - t));
         }
-      /* Short window: Place in the middle */
-      else if(p->segments.num_entries <= 10)
-        p->seq_cur = p->seq_start + p->segments.num_entries/2;
-      /* Longer window: Place near the end */
-      else
-        p->seq_cur = p->seq_start + p->segments.num_entries - 2;
+      else if(p->dseq_start > 0)
+        {
+        p->seq_cur = p->seq_start + dseq_to_idx(ctx, p->dseq_start);
 
+        if(p->seq_cur >= 0)
+          gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Initialized from dseq (%"PRId64"): %"PRId64"\n",
+                   p->dseq_start, p->seq_cur);
+        }
+
+      if(p->seq_cur < 0)
+        {
+        /* Short window: Place in the middle */
+        
+        if(p->segments.num_entries <= 10)
+          p->seq_cur = p->seq_start + p->segments.num_entries/2;
+        /* Longer window: Place near the end */
+        else
+          p->seq_cur = p->seq_start + p->segments.num_entries - 2;
+        }
+      
       gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Initializing sequence number: %"PRId64, p->seq_cur);
 
       ctx->clock_time = get_segment_clock_time(ctx, p->seq_cur - p->seq_start);
       
-      init_seek_window(ctx);
+      //      init_seek_window(ctx);
       }
 
     if(p->seq_cur >= p->seq_start + p->segments.num_entries)
       {
-      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Next segment not available in m3u8, cur: %"PRId64", last: %"PRId64". Trying again in 1 sec.", p->seq_cur, p->seq_start + p->segments.num_entries);
+      //      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Next segment not available in m3u8, cur: %"PRId64", last: %"PRId64". Trying again in 1 sec.", p->seq_cur, p->seq_start + p->segments.num_entries);
       p->m3u_time = gavl_timer_get(p->m3u_timer) + GAVL_TIME_SCALE;
       p->next_state = NEXT_STATE_WAIT_M3U;
       return 0;
@@ -849,6 +856,8 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
   if(p->next_state == NEXT_STATE_GOT_TS)
     {
     int64_t dseq;
+    int64_t clock_time;
+    
     const gavl_dictionary_t * dict;
     //    const char * uri = NULL;
     const char * cipher_key_uri = NULL;
@@ -860,7 +869,6 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
 
     if((idx < 0) || (idx >= p->segments.num_entries))
       {
-      bgav_signal_restart(ctx->b, GAVL_MSG_SRC_RESTART_ERROR);
 
       if(idx < 0)
         gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Lost sync: Position before m3u8 segments %d", -idx);
@@ -874,14 +882,36 @@ static int open_next_async(bgav_input_context_t * ctx, int timeout)
     dict = gavl_value_get_dictionary(&p->segments.entries[idx]);
 
     dseq = -1;
+    clock_time = GAVL_TIME_UNDEFINED;
     gavl_dictionary_get_long(dict, DISCONTINUITY_SEQUENCE, &dseq);
+    gavl_dictionary_get_long(dict, GAVL_URL_VAR_CLOCK_TIME, &clock_time);
 
     if(p->dseq < 0)
       p->dseq = dseq;
     else if(p->dseq != dseq)
       {
-      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Detected discontinuity");
+      gavl_msg_t msg;
+      gavl_dictionary_t vars;
+      
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Detected discontinuity: %"PRId64" %"PRId64" %"PRId64"\n",
+               p->dseq, dseq, clock_time);
+      //      gavl_dictionary_dump(dict, 2);
+
       p->flags |= END_OF_SEQUENCE;
+
+      gavl_msg_init(&msg);
+      gavl_msg_set_id_ns(&msg, GAVL_MSG_SRC_RESTART_VARS, GAVL_MSG_NS_SRC);
+      gavl_dictionary_init(&vars);
+
+      /* Try to synchronize to the clock time of the next segment */
+      if(clock_time != GAVL_TIME_UNDEFINED)
+        gavl_dictionary_set_long(&vars, GAVL_URL_VAR_CLOCK_TIME, clock_time);
+      else
+        gavl_dictionary_set_long(&vars, DISCONTINUITY_SEQUENCE, dseq);
+      gavl_msg_set_arg_dictionary(&msg, 0, &vars);
+      bgav_send_msg(ctx->b, &msg);
+      gavl_msg_free(&msg);
+      gavl_dictionary_free(&vars);
       return -1;
       }
     
@@ -1081,6 +1111,8 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   hls_priv_t * priv = calloc(1, sizeof(*priv));
 
   priv->dseq = -1;
+  priv->dseq_start = -1;
+  
   //  fprintf(stderr, "Open HLS: %s\n", url1);
   
   ctx->priv = priv;
@@ -1092,10 +1124,17 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   ctx->location = gavl_url_extract_var_long(ctx->location,
                                             GAVL_URL_VAR_CLOCK_TIME,
                                             &priv->clock_time_start);
+
+  ctx->location = gavl_url_extract_var_long(ctx->location,
+                                            DISCONTINUITY_SEQUENCE,
+                                            &priv->dseq_start);
   
   if(priv->clock_time_start > 0)
     gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got clock time: %"PRId64, priv->clock_time_start);
-    
+
+  if(priv->dseq_start > 0)
+    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got dseq: %"PRId64, priv->dseq_start);
+  
   url = gavl_strdup(url1);
   url = gavl_url_extract_http_vars(url, &priv->http_vars);
   free(url);
@@ -1109,7 +1148,7 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
   priv->seq_start = -1;
   priv->seq_cur = -1;
 
-  priv->flags |= NEED_PTS;
+  priv->flags |= (NEED_PTS|INIT);
   
   //  if(!load_m3u8(ctx))
   //    goto fail;
@@ -1129,12 +1168,7 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Could not download global header");
     goto fail;
     }
-  
-  if(priv->have_clock_time)
-    ctx->flags |= BGAV_INPUT_CAN_SEEK_TIME;
-  
-  ctx->flags |= BGAV_INPUT_CAN_PAUSE;
-  
+
   if((src = gavl_metadata_get_src_nc(&ctx->m, GAVL_META_SRC, 0)))
     {
     const gavl_dictionary_t * resp = gavl_http_client_get_response(priv->ts_io);
@@ -1142,6 +1176,9 @@ static int open_hls(bgav_input_context_t * ctx, const char * url1, char ** r)
                                gavl_dictionary_get_string_i(resp, "Content-Type"));
     }
 
+  init_seek_window(ctx);
+  
+  priv->flags &= ~INIT;
   
   ret = 1;
   fail:
@@ -1408,7 +1445,6 @@ static int do_read_hls(bgav_input_context_t* ctx, uint8_t * buffer, int len, int
       if(gavl_io_got_error(p->io))
         {
         gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Got I/O error from underlying stream");
-        bgav_signal_restart(ctx->b, GAVL_MSG_SRC_RESTART_ERROR);
 
         if(!bytes_read)
           gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Detected EOF 3");
