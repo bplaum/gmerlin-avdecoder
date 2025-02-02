@@ -281,18 +281,7 @@ static int read_data(bgav_input_context_t* ctx,
   {
   int ret;
   http_priv * p = ctx->priv;
-  
   ret = gavl_io_read_data(p->io, buffer, len);
-
-  if(ret < len)
-    {
-    if(gavl_io_got_error(p->io))
-      {
-      /* TODO: Re-open */
-      bgav_signal_restart(ctx->b, GAVL_MSG_SRC_RESTART_ERROR);
-      }
-    //  fprintf(stderr, "Got %d exprected %d %d\n", ret, len, gavl_io_got_error(p->io));
-    }
   return ret;
   }
 
