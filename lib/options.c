@@ -438,27 +438,21 @@ static void state_changed(bgav_t * b,
   
   }
 
-void bgav_signal_restart(bgav_t * b, int reason)
+
+void bgav_send_msg(bgav_t * b, gavl_msg_t * msg)
   {
   bgav_stream_t * s;
 
   if(!b->tt)
     return;
-  
+
   if((s = bgav_track_get_msg_stream_by_id(b->tt->cur, GAVL_META_STREAM_ID_MSG_PROGRAM)) &&
      s->data.msg.msg_callback)
     {
-    gavl_msg_t msg;
-
-    gavl_msg_init(&msg);
-    gavl_msg_set_id_ns(&msg, GAVL_MSG_SRC_RESTART, GAVL_MSG_NS_SRC);
-    gavl_msg_set_arg_int(&msg, 0, reason);
-    s->data.msg.msg_callback(s->data.msg.msg_callback_data, &msg);
-    gavl_msg_free(&msg);
+    s->data.msg.msg_callback(s->data.msg.msg_callback_data, msg);
     }
-
-  
   }
+
 
 void bgav_metadata_changed(bgav_t * b,
                            const gavl_dictionary_t * new_metadata)

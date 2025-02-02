@@ -1283,7 +1283,8 @@ int bgav_init(bgav_t * b);
 
 void bgav_metadata_changed(bgav_t * b,
                            const gavl_dictionary_t * new_metadata);
-void bgav_signal_restart(bgav_t * b, int reason);
+
+void bgav_send_msg(bgav_t * b, gavl_msg_t * msg);
 
 void bgav_seek_window_changed(bgav_t * b,
                               gavl_time_t start, gavl_time_t end);
