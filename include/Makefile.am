@@ -34,6 +34,7 @@ mpegts_common.h \
 mpv_header.h \
 mxf.h \
 nanosoft.h \
+ogg_header.h \
 opus_header.h \
 os.h \
 packettimer.h \

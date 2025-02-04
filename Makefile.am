@@ -18,4 +18,4 @@ SUBDIRS = lib $(gmerlin_subdirs) tests include m4 po utils $(DOC_SUBDIRS)
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = gmerlin_avdec.pc
 
-EXTRA_DIST = config.rpath  autogen.sh cvs_clean.sh gmerlin_avdec.pc.in gmerlin_avdec.spec.in make_potfiles
+EXTRA_DIST = config.rpath  autogen.sh gmerlin_avdec.pc.in make_potfiles
