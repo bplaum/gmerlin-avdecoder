@@ -349,11 +349,6 @@ dnl
 
 GMERLIN_CHECK_LIBUDF
 
-dnl
-dnl Linux DVB support
-dnl 
-
-GMERLIN_CHECK_LINUXDVB
 
 dnl
 dnl Option for disabling libgsm

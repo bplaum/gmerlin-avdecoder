@@ -784,26 +784,6 @@ AM_CONDITIONAL(HAVE_LIBJPEG, test x$have_libjpeg = xtrue)
 ])
 
 dnl
-dnl Linux DVB
-dnl
-
-AC_DEFUN([GMERLIN_CHECK_LINUXDVB],[
-AH_TEMPLATE([HAVE_LINUXDVB],
-            [Linux DVB Support available])
-
-have_linuxdvb="true"
-AC_CHECK_HEADERS([linux/dvb/frontend.h linux/dvb/dmx.h], [],
-[have_linuxdvb="false"; break] )
-
-if test "x$have_linuxdvb" = "xtrue"; then
-AC_DEFINE(HAVE_LINUXDVB)
-fi
-
-AM_CONDITIONAL(HAVE_LINUXDVB, test x$have_linuxdvb = xtrue)
-
-])
-
-dnl
 dnl Video4linux2
 dnl
 

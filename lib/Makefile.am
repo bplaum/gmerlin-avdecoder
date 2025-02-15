@@ -189,11 +189,6 @@ vaapi_cflags =
 endif
 
 
-if HAVE_LINUXDVB
-dvb_sources = dvb_channels.c
-else 	 
-dvb_sources = 	 
-endif	
 
 if HAVE_LIBGSM
 gsm_sources = audio_gsm.c
@@ -279,7 +274,6 @@ $(avcodec_sources) \
 $(mjpegtools_sources) \
 $(theora_sources) \
 $(speex_sources) \
-$(dvb_sources) \
 $(vaapi_sources) \
 $(v4l_sources) \
 $(gsm_sources) \
