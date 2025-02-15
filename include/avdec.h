@@ -2239,7 +2239,6 @@ int bgav_seek_scaled(bgav_t * bgav, int64_t * time, int scale);
  *  \brief Time value indicating an invalid time
  */
 
-#define BGAV_TIMESTAMP_UNDEFINED GAVL_TIME_UNDEFINED // Don't change this
 /** \ingroup sampleseek
  *  \brief Check if a track is seekabkle with sample accuracy
  *  \param bgav A decoder handle

@@ -678,7 +678,7 @@ int bgav_skip_video(bgav_t * bgav, int stream,
   bgav_stream_t * s;
 
   s = bgav_track_get_video_stream(bgav->tt->cur, stream);
-  retur bgav_video_skipto(s, time, scale);
+  return bgav_video_skipto(s, time, scale);
   }
 
 gavl_video_source_t * bgav_get_video_source(bgav_t * bgav, int stream)
