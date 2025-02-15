@@ -782,7 +782,7 @@ struct bgav_input_s
    * stricktly linear. Time is changed to the actual seeked time.
    */
   
-  void (*seek_time)(bgav_input_context_t*, gavl_time_t * time);
+  int (*seek_time)(bgav_input_context_t*, gavl_time_t * time);
   
   /* Some inputs autoscan the available devices */
   bgav_device_info_t (*find_devices)();
@@ -981,11 +981,8 @@ void bgav_input_seek(bgav_input_context_t * ctx,
                      int64_t position,
                      int whence);
 
-void bgav_input_seek_time(bgav_input_context_t * ctx,
-                          gavl_time_t time);
-
-
-
+int bgav_input_seek_time(bgav_input_context_t * ctx,
+                         gavl_time_t time);
 
 // void bgav_input_buffer(bgav_input_context_t * ctx);
 

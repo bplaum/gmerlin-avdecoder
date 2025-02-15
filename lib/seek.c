@@ -32,11 +32,15 @@
 
 // #define DUMP_ITERATIVE
 
-static void skip_to(bgav_t * b, bgav_track_t * track, int64_t * time, int scale)
+static int skip_to(bgav_t * b, bgav_track_t * track, int64_t * time, int scale)
   {
   //  fprintf(stderr, "Skip to: %ld\n", *time);
   if(!bgav_track_skipto(track, time, scale))
+    {
     b->flags |= BGAV_FLAG_EOF;
+    return 0;
+    }
+  return 1;
   //  fprintf(stderr, "Skipped to: %ld\n", *time);
   }
 
@@ -61,8 +65,8 @@ static int get_start(bgav_stream_t ** s, int num)
   return ret;
   }
 
-static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
-                    int64_t time, int scale)
+static int seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
+                   int64_t time, int scale)
   {
   int64_t orig_time;
   uint32_t j;
@@ -95,7 +99,7 @@ static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
     if(s->index_position < 0)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Seeking failed");
-      return;
+      return 0;
       }
     
     time = gavl_time_rescale(sample_scale, scale, b->demuxer->si->entries[s->index_position].pts);
@@ -126,7 +130,7 @@ static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
     if(s->index_position < 0)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Seeking failed");
-      return;
+      return 0;
       }
     
     }
@@ -154,11 +158,11 @@ static void seek_si(bgav_t * b, bgav_demuxer_context_t * ctx,
     }
   
   bgav_track_resync(track);
-  skip_to(b, track, &orig_time, scale);
+  return skip_to(b, track, &orig_time, scale);
   }
 
 
-static void seek_once(bgav_t * b, int64_t * time, int scale)
+static int seek_once(bgav_t * b, int64_t * time, int scale)
   {
   bgav_track_t * track = b->tt->cur;
   int64_t sync_time;
@@ -171,11 +175,13 @@ static void seek_once(bgav_t * b, int64_t * time, int scale)
   sync_time = bgav_track_sync_time(track, scale);
 
   if(*time > sync_time)
-    skip_to(b, track, time, scale);
+    return skip_to(b, track, time, scale);
   else
     {
-    skip_to(b, track, &sync_time, scale);
+    if(!skip_to(b, track, &sync_time, scale))
+      return 0;
     *time = sync_time;
+    return 1;
     }
   
   //  return sync_time;
@@ -218,7 +224,7 @@ static int64_t position_from_percentage(bgav_t * b,
   return position;
   }
 
-static void seek_generic(bgav_t * b, int64_t * time, int scale)
+static int seek_generic(bgav_t * b, int64_t * time, int scale)
   {
   int i;
   
@@ -261,8 +267,10 @@ static void seek_generic(bgav_t * b, int64_t * time, int scale)
     sync_time = seek_test(b, position, scale);
     num_seeks++;
     if(sync_time == GAVL_TIME_UNDEFINED)
-      break;
-    
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Failed to re-sync during iterative seek");
+      return 0;
+      }
     if(sync_time < *time)
       {
       /* Return if we are less than 1 second before the seek point */
@@ -297,111 +305,13 @@ static void seek_generic(bgav_t * b, int64_t * time, int scale)
   bgav_track_resync(b->tt->cur);
 
   if(*time > sync_time)
-    skip_to(b, b->tt->cur, time, scale);
-  else
-    *time = sync_time;
+    return skip_to(b, b->tt->cur, time, scale);
   
+  *time = sync_time;
+  return 1;
   }
 
-#if 0
-static void build_seek_index(bgav_t * b)
-  {
-  int i;
-  gavl_packet_t * p;
-  bgav_stream_t * s;
-
-  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Building seek index");
-  
-  bgav_track_clear(b->tt->cur);
-  bgav_input_seek(b->input, b->tt->cur->data_start, SEEK_SET);
-  bgav_track_resync(b->tt->cur);
-
-  /* TODO: This gets a bit more complicated when we build seek indices for files with more than one A/V stream */
-  for(i = 0; i < b->tt->cur->num_streams; i++)
-    {
-    s = b->tt->cur->streams[i];
-    if((s->type == GAVL_STREAM_AUDIO) || (s->type == GAVL_STREAM_VIDEO))
-      break;
-    }
-  
-  while(1)
-    {
-    p = NULL;
-    if(bgav_stream_get_packet_read(s, &p) != GAVL_SOURCE_OK)
-      break;
-    gavl_seek_index_append_packet(&s->index, p, s->ci->flags);
-    }
-  b->demuxer->flags |= BGAV_DEMUXER_HAS_SEEK_INDEX;
-  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Built seek index: %d entries", s->index.num_entries);
-  gavl_seek_index_dump(&s->index);
-  
-  }
-#endif
-
-#if 0
-static void seek_with_index(bgav_t * b, int64_t * time, int scale)
-  {
-  int i;
-  int64_t file_pos = -1;
-  int stream_scale;
-
-  if(b->tt->cur->num_audio_streams + b->tt->cur->num_video_streams > 1)
-    {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-             "Seeking with seek index and more than one A/V stream is not implemented");
-    return;
-    }
-  
-  if(!(b->demuxer->flags & BGAV_DEMUXER_HAS_SEEK_INDEX))
-    build_seek_index(b);
-
-  bgav_track_clear(b->tt->cur);
-  
-    
-  /* Get right file position */
-  for(i = 0; i < b->tt->cur->num_streams; i++)
-    {
-    bgav_stream_t * s = b->tt->cur->streams[i];
-    
-    stream_scale = -1;
-    if(((s->type != GAVL_STREAM_AUDIO) && (s->type != GAVL_STREAM_VIDEO)) ||
-       !gavl_dictionary_get_int(s->m, GAVL_META_STREAM_SAMPLE_TIMESCALE, &stream_scale) ||
-       (stream_scale <= 0))
-      {
-      s->index_position = -1;
-      continue;
-      }
-    else
-      {
-      s->index_position = gavl_seek_index_seek(&s->index,
-                                               gavl_time_rescale(scale, stream_scale, *time));
-
-      if((file_pos < 0) || (file_pos > s->index.entries[s->index_position].position))
-        file_pos = s->index.entries[s->index_position].position;
-      }
-    }
-
-  /* Seek to file position */
-  bgav_input_seek(b->input, file_pos, SEEK_SET);
-  
-  /* Resync streams */
-
-  for(i = 0; i < b->tt->cur->num_streams; i++)
-    {
-    bgav_stream_t * s = b->tt->cur->streams[i];
-    
-    if(s->index_position >= 0)
-      {
-      STREAM_SET_SYNC(s, s->index.entries[s->index_position].pts);
-      }
-    }
-  
-  bgav_track_resync(b->tt->cur);
-  skip_to(b, b->tt->cur, time, scale);
-  }
-#endif
-
-static void seek_input(bgav_t * b, int64_t * time, int scale)
+static int seek_input(bgav_t * b, int64_t * time, int scale)
   {
   gavl_time_t seek_time;
   //  gavl_time_t time_offset = gavl_track_get_display_time_offset(b->tt->cur->info);
@@ -409,10 +319,12 @@ static void seek_input(bgav_t * b, int64_t * time, int scale)
   bgav_track_clear(b->tt->cur);
 
   seek_time = gavl_time_unscale(scale, *time);
-  bgav_input_seek_time(b->input, seek_time);
+
+  if(!bgav_input_seek_time(b->input, seek_time))
+    return 0;
   bgav_track_resync(b->tt->cur);
   //  skip_to(b, b->tt->cur, time, scale);
-  
+  return 1;
   }
 
 int bgav_ensure_index(bgav_t * b)
@@ -445,7 +357,7 @@ int bgav_ensure_index(bgav_t * b)
   return 0;
   }
 
-void
+int
 bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
   {
   bgav_track_t * track = b->tt->cur;
@@ -453,7 +365,7 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
   if(b->flags & BGAV_FLAG_PAUSED)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "bgav_seek_scaled failed: Decoder paused");
-    return;
+    return 0;
     }
   
   //  fprintf(stderr, "bgav_seek_scaled: %f\n",
@@ -479,17 +391,17 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
     }
     
   if(b->demuxer->si)
-    seek_si(b, b->demuxer, *time, scale);
+    return seek_si(b, b->demuxer, *time, scale);
   else if(b->input->flags & BGAV_INPUT_CAN_SEEK_TIME)
     {
-    seek_input(b, time, scale);
+    return seek_input(b, time, scale);
     }
   /* Seek once */
   else if(b->demuxer->demuxer->seek)
-    seek_once(b, time, scale);
+    return seek_once(b, time, scale);
   /* Seek iterative */
   else if(b->demuxer->demuxer->post_seek_resync)
-    seek_generic(b, time, scale);
+    return seek_generic(b, time, scale);
   /* Build seek index */
   else if((b->demuxer->index_mode == INDEX_MODE_SIMPLE) &&
           (b->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
@@ -497,13 +409,16 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
     if(!bgav_ensure_index(b) || !b->demuxer->si)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Building packet index failed");
-      return;
+      return 0;
       }
-    seek_si(b, b->demuxer, *time, scale);
+    return seek_si(b, b->demuxer, *time, scale);
     }
+  
+  gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Don't know how to seek");
+  return 0;
   }
 
-void
+int
 bgav_seek_to_video_frame(bgav_t * b, int stream, int frame)
   {
   int64_t pts;
@@ -518,14 +433,14 @@ bgav_seek_to_video_frame(bgav_t * b, int stream, int frame)
                                                  s->stream_id,
                                                  frame);
     if(pts == GAVL_TIME_UNDEFINED)
-      return;
+      return 0;
     }
   else /* B-frames and nonconstant framerate */
     {
     if(!s->data.video.frame_table)
       {
       if(!bgav_ensure_index(b))
-        return;
+        return 0;
       
       s->data.video.frame_table = gavl_packet_index_create(0);
       
@@ -539,11 +454,11 @@ bgav_seek_to_video_frame(bgav_t * b, int stream, int frame)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Frame index %d out of range (must be between zero and %"PRId64")",
                frame, bgav_get_num_video_frames(b, stream));
-      return;
+      return 0;
       }
     pts = s->data.video.frame_table->entries[frame].pts;
     }
-  bgav_seek_scaled(b, &pts, s->data.video.format->timescale);
+  return bgav_seek_scaled(b, &pts, s->data.video.format->timescale);
   }
 
 void

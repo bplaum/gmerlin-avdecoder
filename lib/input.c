@@ -1109,11 +1109,11 @@ void bgav_input_seek(bgav_input_context_t * ctx,
   gavl_buffer_reset(&ctx->buf);
   }
 
-void bgav_input_seek_time(bgav_input_context_t * ctx,
+int bgav_input_seek_time(bgav_input_context_t * ctx,
                           gavl_time_t time)
   {
   gavl_buffer_reset(&ctx->buf);
-  ctx->input->seek_time(ctx, &time);
+  return ctx->input->seek_time(ctx, &time);
   }
 
 int bgav_input_read_string_pascal(bgav_input_context_t * ctx,

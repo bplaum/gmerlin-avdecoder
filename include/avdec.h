@@ -2013,6 +2013,8 @@ int bgav_read_video(bgav_t * bgav, gavl_video_frame_t * frame, int stream);
     \param time The time to skip to (will be changed to the true time)
     \param scale Scale by which the time is scaled
     \param exact 1 if an exact skip should be done, 0 for faster approximate skip
+
+    \returns 0 if EOF was reached, 1 else
     
     Use this function if it turns out, that the machine is too weak to
     decode all frames. Set exact to 0 to make the skipping even faster
@@ -2023,7 +2025,7 @@ int bgav_read_video(bgav_t * bgav, gavl_video_frame_t * frame, int stream);
 */
 
 BGAV_PUBLIC
-void bgav_skip_video(bgav_t * bgav, int stream,
+int bgav_skip_video(bgav_t * bgav, int stream,
                      int64_t * time, int scale,
                      int exact);
 
@@ -2211,6 +2213,8 @@ void bgav_seek(bgav_t * bgav, gavl_time_t * time);
  *  \param time The time to seek to. 
  *  \param scale Timescale
  *
+ *  \returns 0 if EOF was reached, 1 else
+ *
  * This function allows sample and frame accurate seeking, if
  * the following conditions are met:
  * - The formats allows sample accurate seeking at all
@@ -2229,9 +2233,8 @@ void bgav_seek(bgav_t * bgav, gavl_time_t * time);
  */
 
 BGAV_PUBLIC
-void bgav_seek_scaled(bgav_t * bgav, int64_t * time, int scale);
+int bgav_seek_scaled(bgav_t * bgav, int64_t * time, int scale);
 
-  
 /** \ingroup sampleseek
  *  \brief Time value indicating an invalid time
  */
@@ -2242,15 +2245,6 @@ void bgav_seek_scaled(bgav_t * bgav, int64_t * time, int scale);
  *  \param bgav A decoder handle
  *  \returns 1 if the track is seekable with sample accuracy, 0 else.
  *
- *  If this function returns zero,  applications, which rely on
- *  \ref bgav_seek_audio \ref bgav_seek_video and \ref bgav_seek_subtitle
- *  should consider the file as unsupported.
- *
- *  The ability of sample accurate seeking also implies, that streams can
- *  be positioned indepentently.
- *
- *  If \ref bgav_options_set_sample_accurate was not called, this function will
- *  return zero for any file.
  */
 
 BGAV_PUBLIC
@@ -2360,11 +2354,11 @@ int64_t bgav_get_num_video_frames(bgav_t * bgav, int stream);
  *  \param bgav A decoder handle
  *  \param stream Video stream index (starting with 0)
  *  \param idx Frame index (starting with zero)
- *  \returns Time of the previous keyframe.
+ *  \returns 0 if EOF was reached, 1 else
  */
 
 BGAV_PUBLIC
-void bgav_seek_to_video_frame(bgav_t * bgav, int stream, int frame);
+int bgav_seek_to_video_frame(bgav_t * bgav, int stream, int frame);
 
 /** \ingroup sampleseek
  *  \brief Get the time of the closest keyframe before a given time
@@ -2401,47 +2395,6 @@ int64_t bgav_video_keyframe_before(bgav_t * bgav, int stream, int64_t time);
 
 BGAV_PUBLIC
 int64_t bgav_video_keyframe_after(bgav_t * bgav, int stream, int64_t time);
-
-
-/** \ingroup sampleseek
- *  \brief Seek to a specific subtitle position
- *  \param bgav A decoder handle
- *  \param stream Subtitle stream index (starting with 0)
- *  \param time Time
- *
- *  Use this only after \ref bgav_can_seek_sample returned 1.
- *  If time is between 2 subtitles, the earlier one will be chosen.
- */
-
-BGAV_PUBLIC
-void bgav_seek_subtitle(bgav_t * bgav, int stream, int64_t time);
-
-/** \ingroup sampleseek
- *  \brief Seek to a specific text position
- *  \param bgav A decoder handle
- *  \param stream text stream index (starting with 0)
- *  \param time Time
- *
- *  Use this only after \ref bgav_can_seek_sample returned 1.
- *  If time is between 2 subtitles, the earlier one will be chosen.
- */
-  
-BGAV_PUBLIC
-void bgav_seek_text(bgav_t * bgav, int stream, int64_t time);
-
-/** \ingroup sampleseek
- *  \brief Seek to a specific overlay position
- *  \param bgav A decoder handle
- *  \param stream Overlay stream index (starting with 0)
- *  \param time Time
- *
- *  Use this only after \ref bgav_can_seek_sample returned 1.
- *  If time is between 2 subtitles, the earlier one will be chosen.
- */
-  
-BGAV_PUBLIC
-void bgav_seek_overlay(bgav_t * bgav, int stream, int64_t time);
-
   
 /** \defgroup codec Standalone stream decoders
  *

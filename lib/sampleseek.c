@@ -86,38 +86,6 @@ int64_t bgav_video_start_time(bgav_t * bgav, int stream)
   return s->stats.pts_start;
   }
 
-#if 0
-static void sync_stream(bgav_t * bgav, bgav_stream_t * s)
-  {
-  if(s->flags & STREAM_EXTERN)
-    return;
-  
-  if(bgav->demuxer->demuxer->resync)
-    bgav->demuxer->demuxer->resync(bgav->demuxer, s);
-  }
-#endif
-
-#if 0
-/* TODO: Let these functions do something useful or remove them */
-
-void bgav_seek_audio(bgav_t * bgav, int stream, int64_t sample)
-  {
-  
-  }
-
-void bgav_seek_video(bgav_t * bgav, int stream, int64_t time)
-  {
-  
-  }
-
-/* New sample accurate seeking functions */
-
-void bgav_seek_to_video_frame(bgav_t * bgav, int stream, int64_t frame)
-  {
-  
-  }
-#endif
-
 static int64_t bgav_video_stream_keyframe_before(bgav_stream_t * s, int64_t time)
   {
   int pos;
@@ -179,21 +147,5 @@ int64_t bgav_video_keyframe_after(bgav_t * bgav, int stream, int64_t time)
   
   s = bgav_track_get_video_stream(bgav->tt->cur, stream);
   return bgav_video_stream_keyframe_after(s, time);
-  }
-
-
-void bgav_seek_subtitle(bgav_t * bgav, int stream, int64_t time)
-  {
-
-  }
-
-void bgav_seek_text(bgav_t * bgav, int stream, int64_t time)
-  {
-  
-  }
-
-void bgav_seek_overlay(bgav_t * bgav, int stream, int64_t time)
-  {
-  
   }
 

@@ -315,7 +315,6 @@ void bgav_audio_dump(bgav_stream_t * s)
   gavl_audio_format_dump(s->data.audio.format);
   }
 
-
 void bgav_audio_resync(bgav_stream_t * s)
   {
   gavl_packet_t * p = NULL;
@@ -346,7 +345,9 @@ int bgav_audio_skipto(bgav_stream_t * s, int64_t * t, int scale)
   int64_t num_samples;
   // int samples_skipped = 0;  
   int64_t skip_time;
-
+  gavl_source_status_t st;
+  gavl_packet_t * p = NULL;
+  
   skip_time = gavl_time_rescale(scale,
                                 s->data.audio.format->samplerate,
                                 *t);
@@ -362,10 +363,27 @@ int bgav_audio_skipto(bgav_stream_t * s, int64_t * t, int scale)
     }
 
   gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Skipping: %"PRId64" samples\n", num_samples);
-    
-  //  fprintf(stderr, "bgav_audio_skipto... %"PRId64"...", num_samples);
-  gavl_audio_source_skip(s->data.audio.source, num_samples);
-  //  fprintf(stderr, "done\n");
+
+  /* Skip packets */
+  while(1)
+    {
+    st = bgav_stream_peek_packet_read(s, &p);
+    if(st != GAVL_SOURCE_OK)
+      return 0;
+
+    if(p->pts > skip_time)
+      {
+      break;
+      }
+    else if((p->duration > 0) && (p->pts + p->duration > skip_time))
+      {
+      if(p->pts < skip_time)
+        gavl_audio_source_skip(s->data.audio.source, skip_time - p->pts);
+      break;
+      }
+    bgav_stream_get_packet_read(s, &p);
+    bgav_stream_done_packet_read(s, p);
+    }
   return 1;
   }
 

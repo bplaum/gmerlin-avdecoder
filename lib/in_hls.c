@@ -1235,7 +1235,7 @@ static int jump_to_idx(bgav_input_context_t * ctx, int idx)
   return 1;
   }
 
-static void seek_time_hls(bgav_input_context_t * ctx, gavl_time_t *t1)
+static int seek_time_hls(bgav_input_context_t * ctx, gavl_time_t *t1)
   {
   int idx;
   hls_priv_t * p = ctx->priv;
@@ -1243,7 +1243,7 @@ static void seek_time_hls(bgav_input_context_t * ctx, gavl_time_t *t1)
   if(!p->segments.num_entries)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "No segments loaded");
-    return;
+    return 0;
     }
   
   idx = clock_time_to_idx(ctx, t1);
@@ -1261,6 +1261,7 @@ static void seek_time_hls(bgav_input_context_t * ctx, gavl_time_t *t1)
   p->flags |= NEED_PTS;
   
   jump_to_idx(ctx, idx);
+  return 1;
   }
 
 static void pause_hls(bgav_input_context_t * ctx)
