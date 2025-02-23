@@ -133,6 +133,8 @@ typedef struct
   int constraint_set1_flag;
   int constraint_set2_flag;
   int constraint_set3_flag;
+  int constraint_set4_flag;
+  int constraint_set5_flag;
   int level_idc;
   int seq_parameter_set_id;
   
@@ -143,8 +145,7 @@ typedef struct
   int bit_depth_chroma_minus8;
   int qpprime_y_zero_transform_bypass_flag;
   int seq_scaling_matrix_present_flag;
-  
-  
+    
   int log2_max_frame_num_minus4;
   int pic_order_cnt_type;
 
@@ -187,9 +188,11 @@ void bgav_h264_sps_free(bgav_h264_sps_t *);
 
 void bgav_h264_sps_dump(bgav_h264_sps_t *);
 
-void bgav_h264_sps_get_image_size(bgav_h264_sps_t * sps,
+void bgav_h264_sps_get_image_size(const bgav_h264_sps_t * sps,
                                   gavl_video_format_t * format);
 
+void bgav_h264_sps_get_profile_level(const bgav_h264_sps_t * sps,
+                                     gavl_dictionary_t * m);
 
 #if 0 /* Not needed */
 

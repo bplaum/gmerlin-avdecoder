@@ -570,6 +570,8 @@ static void handle_sps(bgav_packet_parser_t * parser)
   bgav_h264_sps_get_image_size(&priv->sps,
                                parser->vfmt);
   
+  bgav_h264_sps_get_profile_level(&priv->sps, parser->m);
+  
   if(!priv->sps.frame_mbs_only_flag)
     parser->ci.flags |= GAVL_COMPRESSION_HAS_FIELD_PICTURES;
   
@@ -871,6 +873,8 @@ static int parse_avc_extradata(bgav_packet_parser_t * parser)
     bgav_h264_sps_get_image_size(&priv->sps,
                                  parser->vfmt);
     }
+
+  bgav_h264_sps_get_profile_level(&priv->sps, parser->m);
   
   return 1;
   }
