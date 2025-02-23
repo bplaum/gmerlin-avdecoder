@@ -2349,6 +2349,34 @@ static void put_frame_yuvp14_nocopy(bgav_stream_t * s, gavl_video_frame_t * f)
   gavl_dsp_video_frame_shift_bits(priv->dsp, s->vframe, s->data.video.format, 2);
   }
 
+/* Copy */
+static void put_frame_yuvp10(bgav_stream_t * s, gavl_video_frame_t * f)
+  {
+  ffmpeg_video_priv * priv = s->decoder_priv;
+  if(!priv->dsp)
+    priv->dsp = gavl_dsp_context_create();
+
+  gavl_dsp_video_frame_shift_bits_copy(priv->dsp, f, priv->gavl_frame, s->data.video.format, 6);
+  }
+
+static void put_frame_yuvp12(bgav_stream_t * s, gavl_video_frame_t * f)
+  {
+  ffmpeg_video_priv * priv = s->decoder_priv;
+  if(!priv->dsp)
+    priv->dsp = gavl_dsp_context_create();
+
+  gavl_dsp_video_frame_shift_bits_copy(priv->dsp, f, priv->gavl_frame, s->data.video.format, 4);
+  }
+
+static void put_frame_yuvp14(bgav_stream_t * s, gavl_video_frame_t * f)
+  {
+  ffmpeg_video_priv * priv = s->decoder_priv;
+  if(!priv->dsp)
+    priv->dsp = gavl_dsp_context_create();
+
+  gavl_dsp_video_frame_shift_bits_copy(priv->dsp, f, priv->gavl_frame, s->data.video.format, 2);
+  }
+
 /* Copy/flip internal frame to output */
 static void init_put_frame(bgav_stream_t * s)
   {
@@ -2390,6 +2418,8 @@ static void init_put_frame(bgav_stream_t * s)
         priv->put_frame = put_frame_yuvp10_nocopy;
         s->vframe = priv->gavl_frame;
         }
+      else
+        priv->put_frame = put_frame_yuvp10;
       break;
     case AV_PIX_FMT_YUV422P12:
     case AV_PIX_FMT_YUV444P12:
@@ -2398,6 +2428,8 @@ static void init_put_frame(bgav_stream_t * s)
         priv->put_frame = put_frame_yuvp12_nocopy;
         s->vframe = priv->gavl_frame;
         }
+      else
+        priv->put_frame = put_frame_yuvp12;
       break;
     case AV_PIX_FMT_YUV422P14:
     case AV_PIX_FMT_YUV444P14:
@@ -2406,6 +2438,8 @@ static void init_put_frame(bgav_stream_t * s)
         priv->put_frame = put_frame_yuvp14_nocopy;
         s->vframe = priv->gavl_frame;
         }
+      else
+        priv->put_frame = put_frame_yuvp14;
       break;
     default:
       if(priv->flags & FLIP_Y)
