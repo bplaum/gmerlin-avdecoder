@@ -153,6 +153,70 @@ static int extract_header(bgav_packet_parser_t * parser, bgav_packet_t * p,
   return 1;
   }
 
+
+
+
+
+
+
+
+static void store_profile_level(bgav_packet_parser_t * parser, int profile, int level)
+  {
+  const char * profile_str = NULL;
+  const char * level_str = NULL;
+
+  switch(profile)
+    {
+    case 0:
+      profile_str = GAVL_META_MPEG2_PROFILE_422;
+      break;
+    case 1:
+      profile_str = GAVL_META_MPEG2_PROFILE_HIGH;
+      break;
+    case 2:
+      profile_str = GAVL_META_MPEG2_PROFILE_SPATIALLY_SCALABLE;
+      break;
+    case 3:
+      profile_str = GAVL_META_MPEG2_PROFILE_SNR_SCALABLE;
+      break;
+    case 4:
+      profile_str = GAVL_META_MPEG2_PROFILE_MAIN;
+      break;
+    case 5:
+      profile_str = GAVL_META_MPEG2_PROFILE_SIMPLE;
+      break;
+    default:
+      break;
+    }
+
+  /* 4: High
+     6: High 1440
+     8: Main
+     10: Low
+  */
+  switch(level)
+    {
+    case 4:
+      level_str = GAVL_META_MPEG2_LEVEL_HIGH;
+      break;
+    case 6:
+      level_str = GAVL_META_MPEG2_LEVEL_HIGH1440;
+      break;
+    case 8:
+      level_str = GAVL_META_MPEG2_LEVEL_MAIN;
+      break;
+    case 10:
+      level_str = GAVL_META_MPEG2_LEVEL_LOW;
+      break;
+    }
+  
+  if(profile_str)
+    gavl_dictionary_set_string(parser->m, GAVL_META_PROFILE, profile_str);
+  
+  if(level_str)
+    gavl_dictionary_set_string(parser->m, GAVL_META_LEVEL, level_str);
+  }
+
 static int parse_frame_mpeg12(bgav_packet_parser_t * parser, bgav_packet_t * p)
   {
   const uint8_t * sc;
@@ -222,8 +286,11 @@ static int parse_frame_mpeg12(bgav_packet_parser_t * parser, bgav_packet_t * p)
 
         break;
       case MPEG_CODE_SEQUENCE_EXT:
-        if((priv->flags |= FLAG_HAVE_SH) && !priv->sh.mpeg2)
+        if((priv->flags & FLAG_HAVE_SH) && !priv->sh.mpeg2)
           {
+          int profile;
+          int level;
+          
           len =
             bgav_mpv_sequence_extension_parse(&priv->sh.ext,
                                               start, end - start);
@@ -231,6 +298,10 @@ static int parse_frame_mpeg12(bgav_packet_parser_t * parser, bgav_packet_t * p)
             return 0;
           priv->sh.mpeg2 = 1;
           start += len;
+
+          profile = priv->sh.ext.profile_level_id >> 4 & 0x07;
+          level   = priv->sh.ext.profile_level_id & 0x0f;
+          store_profile_level(parser, profile, level);
           }
         else
           start += 4;

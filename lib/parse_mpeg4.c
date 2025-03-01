@@ -45,7 +45,9 @@ typedef struct
   {
   /* Sequence header */
   bgav_mpeg4_vol_header_t vol;
+  bgav_mpeg4_vos_header_t vos;
   int have_vol;
+  int have_vos;
   int has_picture_start;
   int state;
 
@@ -89,6 +91,76 @@ static void set_format(bgav_packet_parser_t * parser)
   
   if(!priv->vol.low_delay)
     parser->ci.flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
+  }
+
+static void set_profile_level(bgav_packet_parser_t * parser)
+  {
+  int level_i;
+  int profile_i;
+
+  const char * profile_str = NULL;
+  
+  mpeg4_priv_t * priv = parser->priv;
+
+  profile_i = priv->vos.profile_and_level_indication >> 4;
+  level_i = priv->vos.profile_and_level_indication & 0x0f;
+  if((profile_i == 0) && (level_i == 8))
+    level_i = 0;
+  
+  switch(profile_i)
+    {
+    case 0:
+      profile_str = GAVL_META_MPEG4_PROFILE_SIMPLE;
+      break;
+    case 1:
+      profile_str = GAVL_META_MPEG4_PROFILE_SIMPLE_SCALABLE;
+      break;
+    case 2:
+      profile_str = GAVL_META_MPEG4_PROFILE_CORE;
+      break;
+    case 3:
+      profile_str = GAVL_META_MPEG4_PROFILE_MAIN;
+      break;
+    case 4:
+      profile_str = GAVL_META_MPEG4_PROFILE_N_BIT;
+      break;
+    case 5:
+      profile_str = GAVL_META_MPEG4_PROFILE_SCALABLE_TEXTURE;
+      break;
+    case 6:
+      profile_str = GAVL_META_MPEG4_PROFILE_SIMPLE_FACE_ANIMATION;
+      break;
+    case 7:
+      profile_str = GAVL_META_MPEG4_PROFILE_BASIC_ANIMATED_TEXTURE;
+      break;
+    case 8:
+      profile_str = GAVL_META_MPEG4_PROFILE_HYBRID;
+      break;
+    case 9:
+      profile_str = GAVL_META_MPEG4_PROFILE_ADVANCED_REAL_TIME;
+      break;
+    case 10:
+      profile_str = GAVL_META_MPEG4_PROFILE_CORE_SCALABLE;
+      break;
+    case 11:
+      profile_str = GAVL_META_MPEG4_PROFILE_ADVANCED_CODING;
+      break;
+    case 12:
+      profile_str = GAVL_META_MPEG4_PROFILE_ADVANCED_CORE;
+      break;
+    case 13:
+      profile_str = GAVL_META_MPEG4_PROFILE_ADVANCED_SCALABLE_TEXTURE;
+      break;
+    case 14:
+      profile_str = GAVL_META_MPEG4_PROFILE_SIMPLE_STUDIO;
+      break;
+    case 15:
+      profile_str = GAVL_META_MPEG4_PROFILE_ADVANCED_SIMPLE;
+      break;
+    }
+
+  gavl_dictionary_set_string(parser->m, GAVL_META_PROFILE, profile_str);
+  gavl_dictionary_set_string_nocopy(parser->m, GAVL_META_LEVEL, gavl_sprintf("%d", level_i));
   }
 
 static void reset_mpeg4(bgav_packet_parser_t * parser)
@@ -185,6 +257,21 @@ static int parse_header_mpeg4(bgav_packet_parser_t * parser)
         set_format(parser);
         pos += len;
         break;
+      case MPEG4_CODE_VOS_START:
+        fprintf(stderr, "Got VOS header\n");
+        len = bgav_mpeg4_vos_header_read(&priv->vos, pos,
+                                         parser->ci.codec_header.len -
+                                         (pos - parser->ci.codec_header.buf));
+        if(!len)
+          return 0;
+        priv->have_vos = 1;
+        set_profile_level(parser);
+        
+#ifdef DUMP_HEADERS
+        bgav_mpeg4_vol_header_dump(&priv->vol);
+#endif
+        pos += len;
+        break;
       case MPEG4_CODE_USER_DATA:
         pos += extract_user_data(parser, pos,
                                  parser->ci.codec_header.buf +
@@ -260,6 +347,27 @@ static int parse_frame_mpeg4(bgav_packet_parser_t * parser, bgav_packet_t * p)
       {
       case MPEG4_CODE_VO_START:
         data += 4;
+        break;
+      case MPEG4_CODE_VOS_START:
+        fprintf(stderr, "Got VOS header\n");
+
+        if(!priv->have_vos)
+          {
+          result = bgav_mpeg4_vos_header_read(&priv->vos, data,
+                                              data_end - data);
+          if(!result)
+            return 0;
+          data += result;
+
+#ifdef DUMP_HEADERS
+          bgav_mpeg4_vos_header_dump(&priv->vos);
+#endif
+          priv->have_vos = 1;
+          set_profile_level(parser);
+          }
+        else
+          data += 4;
+        
         break;
       case MPEG4_CODE_VOL_START:
         if(!priv->have_vol)

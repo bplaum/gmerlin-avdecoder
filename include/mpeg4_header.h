@@ -110,5 +110,15 @@ int bgav_mpeg4_vop_header_read(bgav_mpeg4_vop_header_t * ret,
 
 void bgav_mpeg4_vop_header_dump(bgav_mpeg4_vop_header_t * h);
 
+typedef struct
+  {
+  int profile_and_level_indication;
+  } bgav_mpeg4_vos_header_t;
+
+int bgav_mpeg4_vos_header_read(bgav_mpeg4_vos_header_t * ret,
+                               const uint8_t * buffer, int len);
+
+void bgav_mpeg4_vos_header_dump(bgav_mpeg4_vos_header_t * h);
+
 #endif // BGAV_MPEG4_HEADER_H_INCLUDED
 

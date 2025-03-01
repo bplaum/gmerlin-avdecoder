@@ -652,14 +652,6 @@ void bgav_h264_sps_get_image_size(const bgav_h264_sps_t * sps,
 #endif
   }
 
-#define GAVL_META_H264_PROFILE_BASELINE             "Baseline"
-#define GAVL_META_H264_PROFILE_CONSTRAINED_BASELINE "ConstrainedBaseline"
-#define GAVL_META_H264_PROFILE_MAIN                 "Main"
-#define GAVL_META_H264_PROFILE_HIGH                 "High"
-#define GAVL_META_H264_PROFILE_CONSTRAINED_HIGH     "ConstrainedHigh"
-#define GAVL_META_H264_PROFILE_PROGRESSIVE_HIGH     "ProgressiveHigh"
-#define GAVL_META_H264_PROFILE_HIGH_10              "High10"
-#define GAVL_META_H264_PROFILE_HIGH_422             "High422"
 
 // http://blog.comrite.com/2019/06/05/h-264-profile-level-id-packetization-mode-nal/
 
@@ -756,9 +748,9 @@ void bgav_h264_sps_get_profile_level(const bgav_h264_sps_t * sps,
     }
   
   if(profile)
-    gavl_dictionary_set_string(m, GAVL_META_H264_PROFILE, profile);
+    gavl_dictionary_set_string(m, GAVL_META_PROFILE, profile);
   else  
-    gavl_dictionary_set_string_nocopy(m, GAVL_META_H264_PROFILE,
+    gavl_dictionary_set_string_nocopy(m, GAVL_META_PROFILE,
                                       gavl_sprintf("Unknown (%d)", sps->profile_idc));
   
   if(!level)
@@ -769,7 +761,7 @@ void bgav_h264_sps_get_profile_level(const bgav_h264_sps_t * sps,
       level = gavl_sprintf("%d", sps->level_idc/10);
     }
   
-  gavl_dictionary_set_string_nocopy(m, GAVL_META_H264_LEVEL, level);
+  gavl_dictionary_set_string_nocopy(m, GAVL_META_LEVEL, level);
   }
 
 int bgav_h264_decode_sei_message_header(const uint8_t * data, int len,

@@ -413,3 +413,18 @@ int bgav_mpeg4_remove_packed_flag(gavl_buffer_t * buf)
     }
   return 0;
   }
+
+int bgav_mpeg4_vos_header_read(bgav_mpeg4_vos_header_t * ret,
+                               const uint8_t * buffer, int len)
+  {
+  if(len < 5)
+    return 0;
+  ret->profile_and_level_indication = buffer[4];
+  return 5;
+  }
+
+void bgav_mpeg4_vos_header_dump(bgav_mpeg4_vos_header_t * vos)
+  {
+  gavl_dprintf("VOS header\n");
+  gavl_dprintf("  profile_and_level_indication: %d\n", vos->profile_and_level_indication);
+  }
