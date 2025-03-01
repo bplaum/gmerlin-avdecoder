@@ -606,7 +606,7 @@ void bgav_track_remove_unsupported(bgav_track_t * track)
     {
     s = bgav_track_get_video_stream(track, i);
 
-    if(!bgav_find_video_decoder(s->fourcc))
+    if(!bgav_find_video_decoder(s->fourcc, s->info))
       {
       gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
                "No video decoder found for fourcc %c%c%c%c (0x%08x)",

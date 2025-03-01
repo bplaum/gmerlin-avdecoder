@@ -43,14 +43,19 @@ typedef struct
   //  gavl_packet_source_t * psrc;
   
   } v4l2_t;
-  
+
+static int probe_v4l2(const gavl_dictionary_t * dict)
+  {
+  return !!gavl_v4l2_get_decoder(v4l_devices, GAVL_CODEC_ID_NONE, dict);
+  }
+
 static int init_v4l2(bgav_stream_t * s)
   {
   const gavl_dictionary_t * dev_file;
 
   v4l2_t * priv;
   
-  if(!(dev_file = gavl_v4l2_get_decoder(v4l_devices, s->ci->id)))
+  if(!(dev_file = gavl_v4l2_get_decoder(v4l_devices, s->ci->id, s->info)))
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Couldn't find decoder for %d", s->ci->id);
     return 0;
@@ -124,12 +129,13 @@ static void resync_v4l2(bgav_stream_t * s)
 
 #define V4L_DECODER(n, f) \
   { \
-  .name = "V4L2 M2M " n " Decoder", \
-  .fourccs = (uint32_t[]){ f, 0x00 },\
-  .init =   init_v4l2,               \
-  .decode = decode_v4l2,             \
-  .close =  close_v4l2,              \
-  .resync = resync_v4l2,             \
+  .name = "V4L2 M2M " n " Decoder",             \
+  .fourccs = (uint32_t[]){ f, 0x00 },         \
+  .probe = probe_v4l2,                        \
+  .init =   init_v4l2,             \
+  .decode = decode_v4l2,           \
+  .close =  close_v4l2,            \
+  .resync = resync_v4l2,         \
   }
 
 static struct
@@ -162,7 +168,7 @@ void bgav_init_video_decoders_v4l2()
   
   while(decoders[idx].codec_id)
     {
-    if(gavl_v4l2_get_decoder(v4l_devices, decoders[idx].codec_id))
+    if(gavl_v4l2_get_decoder(v4l_devices, decoders[idx].codec_id, NULL))
       {
       //      fprintf(stderr, "Registering %s\n", decoders[idx].decoder.name);
       bgav_video_decoder_register(&decoders[idx].decoder);

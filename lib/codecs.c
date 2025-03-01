@@ -110,13 +110,13 @@ void bgav_codecs_init(bgav_options_t * opt)
     return;
     }
   codecs_initialized = 1;
+  
+#ifdef HAVE_V4L2
+  bgav_init_video_decoders_v4l2();
+#endif
 
 #ifdef HAVE_MAD
   bgav_init_audio_decoders_mad();
-#endif
-
-#ifdef HAVE_V4L2
-  bgav_init_video_decoders_v4l2();
 #endif
   
   /* ffmpeg codecs should be initialized BEFORE any DLL codecs */
@@ -243,7 +243,7 @@ bgav_audio_decoder_t * bgav_find_audio_decoder(uint32_t fourcc)
   return NULL;
   }
 
-bgav_video_decoder_t * bgav_find_video_decoder(uint32_t fourcc)
+bgav_video_decoder_t * bgav_find_video_decoder(uint32_t fourcc, const gavl_dictionary_t * stream)
   {
   bgav_video_decoder_t * cur;
   int i;
@@ -261,8 +261,13 @@ bgav_video_decoder_t * bgav_find_video_decoder(uint32_t fourcc)
       {
       if(cur->fourccs[i] == fourcc)
         {
-        codecs_unlock();
-        return cur;
+        if(!cur->probe || !stream || cur->probe(stream))
+          {
+          codecs_unlock();
+          return cur;
+          }
+        else
+          i++;
         }
       else
         i++;
@@ -319,7 +324,7 @@ gavl_codec_id_t * bgav_supported_video_compressions()
     {
     id = gavl_get_compression(i);
     fourcc = bgav_compression_id_2_fourcc(id);
-    if(bgav_find_video_decoder(fourcc))
+    if(bgav_find_video_decoder(fourcc, NULL))
       {
       ret[ret_num] = id;
       ret_num++;

@@ -91,8 +91,9 @@ struct bgav_video_decoder_s
   {
   const uint32_t * fourccs;
   const char * name;
-  int flags;
-
+  
+  int (*probe)(const gavl_dictionary_t * stream);
+  
   int (*init)(bgav_stream_t*);
 
 
@@ -1486,7 +1487,7 @@ extern const uint32_t bgav_dvdsub_fourccs[];
 void bgav_codecs_init(bgav_options_t * opt);
 
 bgav_audio_decoder_t * bgav_find_audio_decoder(uint32_t fourcc);
-bgav_video_decoder_t * bgav_find_video_decoder(uint32_t fourcc);
+bgav_video_decoder_t * bgav_find_video_decoder(uint32_t fourcc, const gavl_dictionary_t * stream);
 
 void bgav_audio_decoder_register(bgav_audio_decoder_t * dec);
 void bgav_video_decoder_register(bgav_video_decoder_t * dec);

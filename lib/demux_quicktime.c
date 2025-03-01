@@ -1612,6 +1612,7 @@ static void init_video(bgav_demuxer_context_t * ctx,
   
   if((bg_vs->fourcc == BGAV_MK_FOURCC('m','j','p','a')) ||
      (bg_vs->fourcc == BGAV_MK_FOURCC('j','p','e','g')) ||
+     (bg_vs->fourcc == BGAV_MK_FOURCC('m','p','4','v')) ||
      (bg_vs->fourcc == BGAV_MK_FOURCC('m', 'x', '5', 'p')) ||
      (bg_vs->fourcc == BGAV_MK_FOURCC('m', 'x', '4', 'p')) ||
      (bg_vs->fourcc == BGAV_MK_FOURCC('m', 'x', '3', 'p')) ||

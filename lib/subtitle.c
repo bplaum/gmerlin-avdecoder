@@ -261,7 +261,7 @@ int bgav_overlay_start(bgav_stream_t * s)
   
   if(s->action == BGAV_STREAM_DECODE)
     {
-    dec = bgav_find_video_decoder(s->fourcc);
+    dec = bgav_find_video_decoder(s->fourcc, s->info);
     if(!dec)
       {
       gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
