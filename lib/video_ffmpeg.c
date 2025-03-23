@@ -210,6 +210,7 @@ static int vaapi_supported(const AVCodec *codec)
 static int init_vaapi(bgav_stream_t * s)
   {
   AVHWDeviceContext* c;
+  VADisplay dpy;
   AVVAAPIDeviceContext * vaapi_ctx;
   ffmpeg_video_priv * priv = s->decoder_priv;
   
@@ -217,13 +218,22 @@ static int init_vaapi(bgav_stream_t * s)
      !(priv->hwctx = gavl_hw_ctx_create_vaapi_x11(NULL)))
     return 0;
 
+  dpy = gavl_hw_ctx_vaapi_x11_get_va_display(priv->hwctx);
+  
+  if(!gavl_vaapi_can_decode(dpy, s->info))
+    {
+    gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Vaapi decodin not supported, falling back to software");
+    gavl_hw_ctx_destroy(priv->hwctx);
+    priv->hwctx = NULL;
+    return 0;
+    }
+    
   priv->devctx = av_hwdevice_ctx_alloc(AV_HWDEVICE_TYPE_VAAPI);
-
+  
   c = (AVHWDeviceContext*)priv->devctx->data;
   
   vaapi_ctx = c->hwctx;
-  
-  vaapi_ctx->display = gavl_hw_ctx_vaapi_x11_get_va_display(priv->hwctx);
+  vaapi_ctx->display = dpy;
   
   if(av_hwdevice_ctx_init(priv->devctx))
     return 0;
