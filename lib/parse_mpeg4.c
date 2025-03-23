@@ -258,7 +258,7 @@ static int parse_header_mpeg4(bgav_packet_parser_t * parser)
         pos += len;
         break;
       case MPEG4_CODE_VOS_START:
-        fprintf(stderr, "Got VOS header\n");
+        //        fprintf(stderr, "Got VOS header\n");
         len = bgav_mpeg4_vos_header_read(&priv->vos, pos,
                                          parser->ci.codec_header.len -
                                          (pos - parser->ci.codec_header.buf));
@@ -349,7 +349,7 @@ static int parse_frame_mpeg4(bgav_packet_parser_t * parser, bgav_packet_t * p)
         data += 4;
         break;
       case MPEG4_CODE_VOS_START:
-        fprintf(stderr, "Got VOS header\n");
+        //        fprintf(stderr, "Got VOS header\n");
 
         if(!priv->have_vos)
           {
