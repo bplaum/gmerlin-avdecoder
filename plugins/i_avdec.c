@@ -434,9 +434,9 @@ const bg_input_plugin_t the_plugin =
       .set_parameter =  bg_avdec_set_parameter,
       .get_controllable = bg_avdec_get_controllable,
       .get_extensions = get_extensions,
+      .get_protocols = get_protocols,
       
     },
-    .get_protocols = get_protocols,
     .get_mimetypes = get_mimetypes,
     /* Open file/device */
     .open = open_avdec,

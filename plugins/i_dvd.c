@@ -99,8 +99,8 @@ const bg_input_plugin_t the_plugin =
       .get_parameters = get_parameters_dvd,
       .set_parameter =  bg_avdec_set_parameter,
       .get_controllable = bg_avdec_get_controllable,
+      .get_protocols = get_protocols,
     },
-    .get_protocols = get_protocols,
     /* Open file/device */
     .open = open_dvd,
 
