@@ -485,6 +485,9 @@ int bgav_set_audio_compression_info(bgav_stream_t * s)
   //  int need_bitrate = 1;
   uint32_t codec_tag = 0;
   gavl_codec_id_t id = GAVL_CODEC_ID_NONE;
+
+  if(s->flags & STREAM_GOT_CI)
+    return 1;
   
   //  bgav_track_get_compression(bgav->tt->cur);
   

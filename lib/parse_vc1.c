@@ -183,9 +183,9 @@ static int parse_frame_vc1(bgav_packet_parser_t * parser, bgav_packet_t * p)
           PACKET_SET_SKIP(p);
           return 1;
           }
-        else if(sh_start && !parser->ci.codec_header.len)
+        else if(sh_start && !parser->ci->codec_header.len)
           {
-          gavl_buffer_append_data(&parser->ci.codec_header, sh_start, chunk_end - sh_start);
+          gavl_buffer_append_data(&parser->ci->codec_header, sh_start, chunk_end - sh_start);
 #if 0
           fprintf(stderr, "Setting extradata %ld bytes\n",
                   chunk_end - sh_start);

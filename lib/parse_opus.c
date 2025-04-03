@@ -35,8 +35,8 @@ static int get_format(bgav_packet_parser_t * parser)
   bgav_opus_header_t h;
   bgav_input_context_t * input_mem;
   
-  input_mem = bgav_input_open_memory(parser->ci.codec_header.buf,
-                                     parser->ci.codec_header.len);
+  input_mem = bgav_input_open_memory(parser->ci->codec_header.buf,
+                                     parser->ci->codec_header.len);
   
   if(!bgav_opus_header_read(input_mem, &h))
     goto fail;
@@ -49,7 +49,7 @@ static int get_format(bgav_packet_parser_t * parser)
   //  if(parser->s->opt->dump_headers)
   //    bgav_opus_header_dump(&h);
 
-  parser->ci.pre_skip = h.pre_skip;
+  parser->ci->pre_skip = h.pre_skip;
   ret = 1;
   fail:
   

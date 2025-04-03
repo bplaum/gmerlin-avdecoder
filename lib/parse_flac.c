@@ -93,18 +93,18 @@ void bgav_packet_parser_init_flac(bgav_packet_parser_t * parser)
   flac_priv_t * priv;
   
   /* Get stream info */
-  if(parser->ci.codec_header.len != 42)
+  if(parser->ci->codec_header.len != 42)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-             "Corrupted flac header, expected 42 bytes, got %d", parser->ci.codec_header.len);
-    gavl_hexdump(parser->ci.codec_header.buf, parser->ci.codec_header.len, 16);
+             "Corrupted flac header, expected 42 bytes, got %d", parser->ci->codec_header.len);
+    gavl_hexdump(parser->ci->codec_header.buf, parser->ci->codec_header.len, 16);
     return;
     }
 
   priv = calloc(1, sizeof(*priv));
   parser->priv = priv;
   
-  bgav_flac_streaminfo_read(parser->ci.codec_header.buf + 8, &priv->si);
+  bgav_flac_streaminfo_read(parser->ci->codec_header.buf + 8, &priv->si);
   bgav_flac_streaminfo_init_stream(&priv->si, parser->info);
   
   parser->parse_frame         = parse_frame_flac;

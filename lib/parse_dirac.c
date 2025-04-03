@@ -118,8 +118,8 @@ static int parse_frame_dirac(bgav_packet_parser_t * parser,
       case DIRAC_CODE_SEQUENCE:
         if(!priv->have_sh)
           {
-          if(!parser->ci.codec_header.len)
-            gavl_buffer_append_data(&parser->ci.codec_header, start, len);
+          if(!parser->ci->codec_header.len)
+            gavl_buffer_append_data(&parser->ci->codec_header, start, len);
           
           if(!bgav_dirac_sequence_header_parse(&priv->sh,
                                                start, end - start))
@@ -187,11 +187,11 @@ void bgav_packet_parser_init_dirac(bgav_packet_parser_t * parser)
   priv = calloc(1, sizeof(*priv));
   parser->priv        = priv;
 
-  if(parser->ci.codec_header.len)
+  if(parser->ci->codec_header.len)
     {
     if(bgav_dirac_sequence_header_parse(&priv->sh,
-                                        parser->ci.codec_header.buf,
-                                        parser->ci.codec_header.len))
+                                        parser->ci->codec_header.buf,
+                                        parser->ci->codec_header.len))
       {
       priv->have_sh = 1;
       set_format(parser);

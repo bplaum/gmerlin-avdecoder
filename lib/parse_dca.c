@@ -52,7 +52,7 @@ static int parse_frame_dca(bgav_packet_parser_t * parser,
 
   if(!(parser->parser_flags & PARSER_HAS_HEADER))
     {
-    parser->ci.bitrate = bit_rate;
+    parser->ci->bitrate = bit_rate;
     parser->afmt->samplerate = sample_rate;
     
     bgav_dca_flags_2_channel_setup(flags, parser->afmt);

@@ -573,13 +573,13 @@ static void handle_sps(bgav_packet_parser_t * parser)
   bgav_h264_sps_get_profile_level(&priv->sps, parser->m);
   
   if(!priv->sps.frame_mbs_only_flag)
-    parser->ci.flags |= GAVL_COMPRESSION_HAS_FIELD_PICTURES;
+    parser->ci->flags |= GAVL_COMPRESSION_HAS_FIELD_PICTURES;
   
   if(!priv->sps.vui.bitstream_restriction_flag ||
      priv->sps.vui.num_reorder_frames)
-    parser->ci.flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
+    parser->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
   else
-    parser->ci.flags &= ~GAVL_COMPRESSION_HAS_B_FRAMES;
+    parser->ci->flags &= ~GAVL_COMPRESSION_HAS_B_FRAMES;
 
   //  bgav_video_compute_info(parser->info);
   
@@ -706,10 +706,10 @@ static int parse_frame_h264(bgav_packet_parser_t * parser, bgav_packet_t * p)
         if(sps_start && sps_end &&
            pps_start && pps_end)
           {
-          if(!parser->ci.codec_header.len)
+          if(!parser->ci->codec_header.len)
             {
-            gavl_buffer_append_data(&parser->ci.codec_header, sps_start, sps_end - sps_start);
-            gavl_buffer_append_data(&parser->ci.codec_header, pps_start, pps_end - pps_start);
+            gavl_buffer_append_data(&parser->ci->codec_header, sps_start, sps_end - sps_start);
+            gavl_buffer_append_data(&parser->ci->codec_header, pps_start, pps_end - pps_start);
             }
           
           }
@@ -835,7 +835,7 @@ static int parse_avc_extradata(bgav_packet_parser_t * parser)
   int nal_len;
   h264_priv_t * priv = parser->priv;
   
-  ptr = parser->ci.codec_header.buf;
+  ptr = parser->ci->codec_header.buf;
   //  end = ptr + parser->s->ci->global_header_len;
 
   ptr += 4; // Version, profile, profile compat, level
@@ -929,7 +929,7 @@ void bgav_packet_parser_init_h264(bgav_packet_parser_t * parser)
   /* Parse avc1 extradata */
   if(parser->fourcc == BGAV_MK_FOURCC('a', 'v', 'c', '1'))
     {
-    if(!parser->ci.codec_header.len)
+    if(!parser->ci->codec_header.len)
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
                "avc1 stream needs extradata");

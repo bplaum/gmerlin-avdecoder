@@ -56,8 +56,8 @@ void bgav_packet_parser_init_speex(bgav_packet_parser_t * parser)
   parser->reset = reset_speex;
   
   /* Get samples per packet */
-  header = speex_packet_to_header((char*)parser->ci.codec_header.buf,
-                                  parser->ci.codec_header.len);
+  header = speex_packet_to_header((char*)parser->ci->codec_header.buf,
+                                  parser->ci->codec_header.len);
 
   if(!header)
     return;
@@ -72,7 +72,7 @@ void bgav_packet_parser_init_speex(bgav_packet_parser_t * parser)
   
   speex_decoder_ctl(dec_state, SPEEX_GET_FRAME_SIZE, &frame_size);
   speex_decoder_ctl(dec_state, SPEEX_GET_LOOKAHEAD,
-                    &parser->ci.pre_skip);
+                    &parser->ci->pre_skip);
   
   parser->afmt->samplerate = header->rate;
   parser->afmt->samples_per_frame = header->frames_per_packet * frame_size;

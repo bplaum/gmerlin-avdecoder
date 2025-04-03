@@ -156,7 +156,7 @@ static int do_parse_frame(bgav_packet_parser_t * p, gavl_packet_t * pkt)
   /* Set format and compression */
   if(!(p->parser_flags & PARSER_HAS_HEADER))
     {
-    gavl_stream_set_compression_info(p->info, &p->ci);
+    gavl_stream_set_compression_info(p->info, p->ci);
     gavl_stream_set_default_packet_timescale(p->info);
     gavl_stream_set_sample_timescale(p->info);
     
@@ -309,7 +309,7 @@ static gavl_sink_status_t sink_put_func_full(void * priv, gavl_packet_t * pkt)
         if(p->stream_flags & STREAM_RAW_PACKETS)
           pkt->position = p->raw_position;
 
-        if(!(p->ci.flags & GAVL_COMPRESSION_HAS_P_FRAMES))
+        if(!(p->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
           PACKET_SET_KEYFRAME(pkt);
       
         if(gavl_packet_sink_put_packet(p->next, pkt) != GAVL_SINK_OK)
@@ -333,7 +333,7 @@ gavl_packet_sink_t * bgav_packet_parser_connect(bgav_packet_parser_t * p,
   }
 
 bgav_packet_parser_t * bgav_packet_parser_create(gavl_dictionary_t * stream_info,
-                                                 int stream_flags)
+                                                 int stream_flags, gavl_compression_info_t * ci)
   {
   bgav_packet_parser_t * ret = NULL;
   int idx = 0;
@@ -345,21 +345,16 @@ bgav_packet_parser_t * bgav_packet_parser_create(gavl_dictionary_t * stream_info
     if(parsers[idx].fourcc == fourcc)
       {
       ret = calloc(1, sizeof(*ret));
-
-      //     fprintf(stderr, "bgav_packet_parser_create\n");
-      //     gavl_dictionary_dump(stream_info, 2);
-      
+      ret->ci = ci;
       ret->info = stream_info;
       ret->m = gavl_stream_get_metadata_nc(stream_info);
       ret->afmt = gavl_stream_get_audio_format_nc(ret->info);
       ret->vfmt = gavl_stream_get_video_format_nc(ret->info);
-      gavl_stream_get_compression_info(ret->info, &ret->ci);
       
       gavl_dictionary_get_int(ret->m, GAVL_META_STREAM_PACKET_TIMESCALE, &ret->packet_timescale);
       
       ret->stream_flags = stream_flags;
       ret->fourcc = fourcc;
-      gavl_stream_get_compression_info(ret->info, &ret->ci);
       
       parsers[idx].func(ret);
       break;
@@ -401,8 +396,6 @@ void bgav_packet_parser_destroy(bgav_packet_parser_t * p)
   gavl_buffer_free(&p->buf);
   gavl_packet_free(&p->in_packet);
 
-  gavl_compression_info_free(&p->ci);
-
   if(p->cleanup)
     p->cleanup(p);
   
@@ -436,7 +429,7 @@ void bgav_packet_parser_flush(bgav_packet_parser_t * p)
   pkt->id = p->stream_id;
   pkt->position = p->packets[0].position;
 
-  if(!(p->ci.flags & GAVL_COMPRESSION_HAS_P_FRAMES))
+  if(!(p->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
     PACKET_SET_KEYFRAME(pkt);
   
   /* Parse frame (must be done *after* pes_pts is set) */

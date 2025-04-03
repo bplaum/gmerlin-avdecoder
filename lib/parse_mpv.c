@@ -65,10 +65,10 @@ static int extract_header(bgav_packet_parser_t * parser, bgav_packet_t * p,
   if(!p->header_size)
     p->header_size = header_end - p->buf.buf;
 
-  if(parser->ci.codec_header.len)
+  if(parser->ci->codec_header.len)
     return 1;
   
-  gavl_buffer_append_data(&parser->ci.codec_header, p->buf.buf, header_end - p->buf.buf);
+  gavl_buffer_append_data(&parser->ci->codec_header, p->buf.buf, header_end - p->buf.buf);
   
   if(parser->fourcc == BGAV_MK_FOURCC('m','p','g','v'))
     {
@@ -134,21 +134,21 @@ static int extract_header(bgav_packet_parser_t * parser, bgav_packet_t * p,
 
   /* Other stuff */
   if(priv->sh.mpeg2 && priv->sh.ext.low_delay)
-    parser->ci.flags &= ~GAVL_COMPRESSION_HAS_B_FRAMES;
+    parser->ci->flags &= ~GAVL_COMPRESSION_HAS_B_FRAMES;
   
   /* Bitrate */
-  parser->ci.bitrate = priv->sh.bitrate * 400;
+  parser->ci->bitrate = priv->sh.bitrate * 400;
   if(priv->sh.mpeg2)
-    parser->ci.bitrate += (priv->sh.ext.bitrate_ext << 18) * 400;
+    parser->ci->bitrate += (priv->sh.ext.bitrate_ext << 18) * 400;
   
   /* VBV buffer size */
-  parser->ci.video_buffer_size = priv->sh.vbv_buffer_size_value;
+  parser->ci->video_buffer_size = priv->sh.vbv_buffer_size_value;
   if(priv->sh.mpeg2)
-    parser->ci.video_buffer_size +=
+    parser->ci->video_buffer_size +=
       (priv->sh.ext.vbv_buffer_size_ext<<10);
   
-  parser->ci.video_buffer_size *= (1024 * 16);
-  parser->ci.video_buffer_size /= 8; // bits -> bytes
+  parser->ci->video_buffer_size *= (1024 * 16);
+  parser->ci->video_buffer_size /= 8; // bits -> bytes
   
   return 1;
   }
@@ -274,7 +274,7 @@ static int parse_frame_mpeg12(bgav_packet_parser_t * parser, bgav_packet_t * p)
               {
               gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Detected still image");
               parser->vfmt->framerate_mode = GAVL_FRAMERATE_STILL;
-              parser->ci.flags &= ~(GAVL_COMPRESSION_HAS_P_FRAMES|GAVL_COMPRESSION_HAS_B_FRAMES);
+              parser->ci->flags &= ~(GAVL_COMPRESSION_HAS_P_FRAMES|GAVL_COMPRESSION_HAS_B_FRAMES);
               }
             }
           priv->flags |= FLAG_HAVE_SH;
@@ -527,7 +527,7 @@ void bgav_packet_parser_init_mpeg12(bgav_packet_parser_t * parser)
   parser->reset       = reset_mpeg12;
   parser->find_frame_boundary = find_frame_boundary_mpeg12;
 
-  parser->ci.flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
+  parser->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
   
   if((parser->fourcc == BGAV_MK_FOURCC('m', 'x', '5', 'p')) ||
      (parser->fourcc == BGAV_MK_FOURCC('m', 'x', '4', 'p')) ||
@@ -536,10 +536,10 @@ void bgav_packet_parser_init_mpeg12(bgav_packet_parser_t * parser)
      (parser->fourcc == BGAV_MK_FOURCC('m', 'x', '4', 'n')) ||
      (parser->fourcc == BGAV_MK_FOURCC('m', 'x', '3', 'n')))
     {
-    parser->ci.bitrate =
+    parser->ci->bitrate =
       (((parser->fourcc & 0x0000FF00) >> 8) - '0') * 10000000;
     priv->flags |= FLAG_D10;
-    parser->ci.flags &= ~(GAVL_COMPRESSION_HAS_P_FRAMES|
+    parser->ci->flags &= ~(GAVL_COMPRESSION_HAS_P_FRAMES|
                           GAVL_COMPRESSION_HAS_B_FRAMES);
     parser->vfmt->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
     }

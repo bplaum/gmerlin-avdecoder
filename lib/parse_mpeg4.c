@@ -90,7 +90,7 @@ static void set_format(bgav_packet_parser_t * parser)
     }
   
   if(!priv->vol.low_delay)
-    parser->ci.flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
+    parser->ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES;
   }
 
 static void set_profile_level(bgav_packet_parser_t * parser)
@@ -233,12 +233,12 @@ static int extract_user_data(bgav_packet_parser_t * parser,
 static int parse_header_mpeg4(bgav_packet_parser_t * parser)
   {
   mpeg4_priv_t * priv = parser->priv;
-  const uint8_t * pos = parser->ci.codec_header.buf;
+  const uint8_t * pos = parser->ci->codec_header.buf;
   int len;
   while(1)
     {
-    pos = bgav_mpv_find_startcode(pos, parser->ci.codec_header.buf +
-                                  parser->ci.codec_header.len);
+    pos = bgav_mpv_find_startcode(pos, parser->ci->codec_header.buf +
+                                  parser->ci->codec_header.len);
     if(!pos)
       return priv->have_vol;
     
@@ -246,8 +246,8 @@ static int parse_header_mpeg4(bgav_packet_parser_t * parser)
       {
       case MPEG4_CODE_VOL_START:
         len = bgav_mpeg4_vol_header_read(&priv->vol, pos,
-                                         parser->ci.codec_header.len -
-                                         (pos - parser->ci.codec_header.buf));
+                                         parser->ci->codec_header.len -
+                                         (pos - parser->ci->codec_header.buf));
         if(!len)
           return 0;
         priv->have_vol = 1;
@@ -260,8 +260,8 @@ static int parse_header_mpeg4(bgav_packet_parser_t * parser)
       case MPEG4_CODE_VOS_START:
         //        fprintf(stderr, "Got VOS header\n");
         len = bgav_mpeg4_vos_header_read(&priv->vos, pos,
-                                         parser->ci.codec_header.len -
-                                         (pos - parser->ci.codec_header.buf));
+                                         parser->ci->codec_header.len -
+                                         (pos - parser->ci->codec_header.buf));
         if(!len)
           return 0;
         priv->have_vos = 1;
@@ -274,8 +274,8 @@ static int parse_header_mpeg4(bgav_packet_parser_t * parser)
         break;
       case MPEG4_CODE_USER_DATA:
         pos += extract_user_data(parser, pos,
-                                 parser->ci.codec_header.buf +
-                                 parser->ci.codec_header.len);
+                                 parser->ci->codec_header.buf +
+                                 parser->ci->codec_header.len);
         break;
       default:
         pos += 4;
@@ -292,9 +292,9 @@ static void set_header_end(bgav_packet_parser_t * parser,
   if(p->header_size)
     return;
   
-  if(!parser->ci.codec_header.len)
+  if(!parser->ci->codec_header.len)
     {
-    gavl_buffer_append_data(&parser->ci.codec_header,
+    gavl_buffer_append_data(&parser->ci->codec_header,
                             p->buf.buf, pos);
     }
   p->header_size = pos;
@@ -567,7 +567,7 @@ void bgav_packet_parser_init_mpeg4(bgav_packet_parser_t * parser)
   parser->priv = priv;
   priv->state = STATE_SYNC;
   
-  if(parser->ci.codec_header.len)
+  if(parser->ci->codec_header.len)
     parse_header_mpeg4(parser);
 
   gavl_packet_init(&priv->saved_packet);

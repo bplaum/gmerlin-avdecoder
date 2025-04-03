@@ -56,7 +56,7 @@ static int parse_frame_a52(bgav_packet_parser_t * parser,
     if(!bgav_a52_header_read(&h, p->buf.buf))
       return 0;
     bgav_a52_header_get_format(&h, parser->afmt);
-    parser->ci.bitrate = h.bitrate;
+    parser->ci->bitrate = h.bitrate;
     }
   p->duration = FRAME_SAMPLES;
   return 1;

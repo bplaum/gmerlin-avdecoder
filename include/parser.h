@@ -57,7 +57,7 @@ struct bgav_packet_parser_s
 
   gavl_audio_format_t * afmt;
   gavl_video_format_t * vfmt;
-  gavl_compression_info_t ci;
+  gavl_compression_info_t * ci;
   
   gavl_packet_t in_packet;
 
@@ -89,7 +89,10 @@ struct bgav_packet_parser_s
   };
 
 gavl_packet_sink_t * bgav_packet_parser_connect(bgav_packet_parser_t * p, gavl_packet_sink_t * dst);
-bgav_packet_parser_t * bgav_packet_parser_create(gavl_dictionary_t * stream_info, int stream_flags);
+
+bgav_packet_parser_t * bgav_packet_parser_create(gavl_dictionary_t * stream_info, int stream_flags,
+                                                 gavl_compression_info_t * ci);
+
 void bgav_packet_parser_destroy(bgav_packet_parser_t * p);
 
 /* Signal EOF, might send some more packets */

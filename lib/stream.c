@@ -140,7 +140,7 @@ static int create_parser(bgav_stream_t * s)
     gavl_dictionary_set_int(s->m, GAVL_META_STREAM_PACKET_TIMESCALE, s->timescale);
   
   /* Create parser */
-  if((s->parser = bgav_packet_parser_create(s->info, s->flags)) &&
+  if((s->parser = bgav_packet_parser_create(s->info, s->flags, s->ci)) &&
      (s->psink = bgav_packet_parser_connect(s->parser, s->psink)))
     return 1;
   else

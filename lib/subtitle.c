@@ -483,6 +483,9 @@ int bgav_get_overlay_compression_info(bgav_t * bgav, int stream,
 int bgav_set_overlay_compression_info(bgav_stream_t * s)
   {
   gavl_codec_id_t id = GAVL_CODEC_ID_NONE;
+
+  if(s->flags & STREAM_GOT_CI)
+    return 1;
   
   //  bgav_track_get_compression(b->tt->cur);
   

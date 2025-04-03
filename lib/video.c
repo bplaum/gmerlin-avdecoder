@@ -765,7 +765,11 @@ int bgav_set_video_compression_info(bgav_stream_t * s)
   gavl_codec_id_t id;
   uint32_t codec_tag = 0;
   int need_bitrate = 0;
-  //  bgav_bsf_t * bsf = NULL;
+
+  if(s->flags & (STREAM_GOT_CI || STREAM_GOT_NO_CI))
+    return 1;
+
+  fprintf(stderr, "bgav_set_video_compression_info\n");
   
   if(bgav_check_fourcc(s->fourcc, bgav_png_fourccs))
     id = GAVL_CODEC_ID_PNG;
@@ -824,10 +828,6 @@ int bgav_set_video_compression_info(bgav_stream_t * s)
     bgav_mpeg4_remove_packed_flag(&s->ci->codec_header);
     }
   
-  /* Restore everything */
-  //  if(bsf)
-  //    bgav_bsf_destroy(bsf);
-  
   if(s->codec_bitrate)
     s->ci->bitrate = s->codec_bitrate;
   else if(s->container_bitrate)
@@ -843,8 +843,9 @@ int bgav_set_video_compression_info(bgav_stream_t * s)
   
   s->flags |= STREAM_GOT_CI;
 
-  gavl_stream_set_compression_info(s->info, s->ci);
+  fprintf(stderr, "Setting compression info: %d\n", s->ci->id);
   
+  gavl_stream_set_compression_info(s->info, s->ci);
   return 1;
   }
 

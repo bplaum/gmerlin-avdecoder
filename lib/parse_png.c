@@ -61,7 +61,7 @@ static int parse_frame_png(bgav_packet_parser_t * parser, bgav_packet_t * p)
   if(!priv->have_format)
     {
     priv->have_format = 1;
-    parser->ci.flags &= ~GAVL_COMPRESSION_HAS_P_FRAMES;
+    parser->ci->flags &= ~GAVL_COMPRESSION_HAS_P_FRAMES;
 
     if(!get_format(p, parser->vfmt))
       return 0;
