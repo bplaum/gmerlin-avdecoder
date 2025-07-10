@@ -281,8 +281,7 @@ int bgav_open(bgav_t * ret, const char * location)
 
   if(ret->input)
     {
-    bgav_input_close(ret->input);
-    free(ret->input);
+    bgav_input_destroy(ret->input);
     ret->input = NULL;
     }
   return 0;
@@ -305,11 +304,8 @@ void bgav_close(bgav_t * b)
     bgav_demuxer_destroy(b->demuxer);
 
   if(b->input)
-    {
-    bgav_input_close(b->input);
-    free(b->input);
-    }
-
+    bgav_input_destroy(b->input);
+  
   bgav_options_free(&b->opt);
 
   gavl_dictionary_free(&b->state);

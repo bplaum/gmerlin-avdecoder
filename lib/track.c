@@ -489,6 +489,7 @@ void bgav_track_dump(bgav_track_t * t)
 void bgav_track_free(bgav_track_t * t)
   {
   int i;
+    
   
   if(t->streams)
     {

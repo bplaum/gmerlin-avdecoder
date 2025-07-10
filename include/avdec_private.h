@@ -696,11 +696,6 @@ struct bgav_options_s
   int rtp_port_base;
   int rtp_try_tcp; /* try TCP before falling back to UDP */
   
-  /* ftp options */
-    
-  char * ftp_anonymous_password;
-  int ftp_anonymous;
-
   /* Default character set for text subtitles */
   char * default_subtitle_encoding;
   
@@ -710,8 +705,6 @@ struct bgav_options_s
   /* Postprocessing level (0.0 .. 1.0) */
   
   float pp_level;
-
-  char * dvb_channels_file;
 
   /* Prefer ffmpeg demuxers over native demuxers */
   int prefer_ffmpeg_demuxers;
@@ -743,6 +736,12 @@ struct bgav_options_s
   
   bgav_index_callback index_callback;
   void * index_callback_data;
+
+  //  int audio_storage;
+  //  int video_storage;
+
+  gavl_hw_context_t * video_hwctx;
+  
   };
 
 BGAV_PUBLIC void bgav_options_set_defaults(bgav_options_t*opt);

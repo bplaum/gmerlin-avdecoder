@@ -438,6 +438,7 @@ const bg_input_plugin_t the_plugin =
       
     },
     .get_mimetypes = get_mimetypes,
+    .set_video_hw_context = bg_avdec_set_video_hw_context,
     /* Open file/device */
     .open = open_avdec,
     .open_io = open_io_avdec,

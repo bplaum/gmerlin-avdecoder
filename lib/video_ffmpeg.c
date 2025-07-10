@@ -64,6 +64,7 @@
 // #define DUMP_EXTRADATA
 // #define DUMP_PACKET
 
+
 #define HAS_DELAY       (1<<0)
 #define SWAP_FIELDS_IN  (1<<1)
 #define SWAP_FIELDS_OUT (1<<2)
@@ -73,7 +74,8 @@
 #define GOT_EOS         (1<<6) // Got end of sequence
 #define NEED_FORMAT     (1<<7)
 #define FLUSH_EOF       (1<<8)
-#define HAVE_DR          (1<<9)
+#define HAVE_DR         (1<<9)
+#define DR_INIT         (1<<10)
 
 /* Skip handling */
 
@@ -96,12 +98,6 @@ typedef struct
   const uint32_t * fourccs;
   } codec_info_t;
 
-
-typedef struct
-  {
-  AVBufferRef *refs[GAVL_MAX_PLANES];
-  } pool_el_t;
-
 typedef struct
   {
   AVCodecContext * ctx;
@@ -111,9 +107,6 @@ typedef struct
   gavl_video_frame_t * gavl_frame;
   gavl_video_frame_t * gavl_frame_priv;
 
-  pool_el_t * pool_el;
-  int pool_el_alloc;
-  
   /* Real video ugliness */
 
   uint32_t rv_extradata[2+AV_INPUT_BUFFER_PADDING_SIZE/4];
@@ -158,6 +151,12 @@ typedef struct
 
   gavl_hw_context_t * hwctx;
 
+#ifdef HAVE_LIBVA
+  VASurfaceID * va_surface_ids;
+  int num_va_surface_ids;
+  int va_surface_ids_alloc;
+#endif
+  
   AVBufferRef * devctx;
 
 
@@ -172,12 +171,78 @@ typedef struct
   
   gavl_dsp_context_t * dsp;
 
-  gavl_video_frame_pool_t * fp;
-  
   } ffmpeg_video_priv;
 
 
+/* Pixel formats */
+
+static const struct
+  {
+  enum AVPixelFormat  ffmpeg_csp;
+  gavl_pixelformat_t gavl_csp;
+  } pixelformats[] =
+  {
+    { AV_PIX_FMT_YUV420P,       GAVL_YUV_420_P },  ///< Planar YUV 4:2:0 (1 Cr & Cb sample per 2x2 Y samples)
+    { AV_PIX_FMT_YUYV422,       GAVL_YUY2      },
+    { AV_PIX_FMT_RGB24,         GAVL_RGB_24    },  ///< Packed pixel, 3 bytes per pixel, RGBRGB...
+    { AV_PIX_FMT_BGR24,         GAVL_BGR_24    },  ///< Packed pixel, 3 bytes per pixel, BGRBGR...
+    { AV_PIX_FMT_YUV422P,       GAVL_YUV_422_P },  ///< Planar YUV 4:2:2 (1 Cr & Cb sample per 2x1 Y samples)
+    { AV_PIX_FMT_YUV444P,       GAVL_YUV_444_P }, ///< Planar YUV 4:4:4 (1 Cr & Cb sample per 1x1 Y samples)
+    { AV_PIX_FMT_RGB32,         GAVL_RGBA_32   },  ///< Packed pixel, 4 bytes per pixel, BGRABGRA..., stored in cpu endianness
+    { AV_PIX_FMT_YUV410P,       GAVL_YUV_410_P }, ///< Planar YUV 4:1:0 (1 Cr & Cb sample per 4x4 Y samples)
+    { AV_PIX_FMT_YUV411P,       GAVL_YUV_411_P }, ///< Planar YUV 4:1:1 (1 Cr & Cb sample per 4x1 Y samples)
+    { AV_PIX_FMT_RGB565,        GAVL_RGB_16 }, ///< always stored in cpu endianness
+    { AV_PIX_FMT_RGB555,        GAVL_RGB_15 }, ///< always stored in cpu endianness, most significant bit to 1
+    { AV_PIX_FMT_GRAY8,         GAVL_PIXELFORMAT_NONE },
+    { AV_PIX_FMT_MONOWHITE,     GAVL_PIXELFORMAT_NONE }, ///< 0 is white
+    { AV_PIX_FMT_MONOBLACK,     GAVL_PIXELFORMAT_NONE }, ///< 0 is black
+    // { PIX_FMT_PAL8,          GAVL_RGB_24     }, ///< 8 bit with RGBA palette
+    { AV_PIX_FMT_YUVJ420P,      GAVL_YUVJ_420_P }, ///< Planar YUV 4:2:0 full scale (jpeg)
+    { AV_PIX_FMT_YUVJ422P,      GAVL_YUVJ_422_P }, ///< Planar YUV 4:2:2 full scale (jpeg)
+    { AV_PIX_FMT_YUVJ444P,      GAVL_YUVJ_444_P }, ///< Planar YUV 4:4:4 full scale (jpeg)
+
+    { AV_PIX_FMT_YUVA420P,      GAVL_YUVA_32 },
+    { AV_PIX_FMT_VAAPI,         GAVL_YUV_420_P },  ///< Planar YUV 4:2:0 (1 Cr & Cb sample per 2x2 Y samples)
+    /* Higher accuracy */
+    { AV_PIX_FMT_YUV422P10,     GAVL_YUV_422_P_16 },
+    { AV_PIX_FMT_YUV422P12,     GAVL_YUV_422_P_16 },
+    { AV_PIX_FMT_YUV422P14,     GAVL_YUV_422_P_16 },
+    { AV_PIX_FMT_YUV422P16,     GAVL_YUV_422_P_16 },
+    { AV_PIX_FMT_YUV444P10,     GAVL_YUV_444_P_16 },
+    { AV_PIX_FMT_YUV444P12,     GAVL_YUV_444_P_16 },
+    { AV_PIX_FMT_YUV444P14,     GAVL_YUV_444_P_16 },
+    { AV_PIX_FMT_YUV444P16,     GAVL_YUV_444_P_16 },
+    
+    { AV_PIX_FMT_NB, GAVL_PIXELFORMAT_NONE },
+
+
+  };
+
+
 #ifdef HAVE_LIBVA // NEW libva API
+
+static int get_vaapi_surface_index(ffmpeg_video_priv * priv, VASurfaceID surf)
+  {
+  int i;
+  for(i = 0; i < priv->num_va_surface_ids; i++)
+    {
+    if(priv->va_surface_ids[i] == surf)
+      return i;
+    }
+
+  if(priv->num_va_surface_ids == priv->va_surface_ids_alloc)
+    {
+    priv->va_surface_ids_alloc += 16;
+    priv->va_surface_ids = realloc(priv->va_surface_ids, priv->va_surface_ids_alloc * sizeof(*priv->va_surface_ids));
+    memset(priv->va_surface_ids + priv->num_va_surface_ids, 0,
+           (priv->va_surface_ids_alloc - priv->num_va_surface_ids) * sizeof(*priv->va_surface_ids));
+    }
+
+  priv->va_surface_ids[priv->num_va_surface_ids] = surf;
+  priv->num_va_surface_ids++;
+  return priv->num_va_surface_ids-1;
+  }
+
 static int vaapi_supported(const AVCodec *codec)
   {
   const AVCodecHWConfig * cfg = NULL;
@@ -246,31 +311,29 @@ static int init_vaapi(bgav_stream_t * s)
 
 static void put_frame_vaapi(bgav_stream_t * s, gavl_video_frame_t * f1)
   {
+  int idx;
+  VASurfaceID * surf;
   //  VAStatus result;
   ffmpeg_video_priv * priv = s->decoder_priv;
 
   //  id = (VASurfaceID)(uintptr_t)priv->frame->data[0];
-
-  s->vframe = priv->gavl_frame;
-  priv->gavl_frame->storage = (VASurfaceID*)(&priv->frame->data[3]);
-
-  // fprintf(stderr, "put_frame_vaapi %08x\n", *((VASurfaceID*)priv->gavl_frame->user_data));
   
-  priv->gavl_frame->hwctx = priv->hwctx;
+  surf = (VASurfaceID*)(&priv->frame->data[3]);
+
+  idx = get_vaapi_surface_index(priv, *surf);
+  
+  if(!(s->vframe = gavl_hw_ctx_get_imported_vframe(priv->hwctx, idx)))
+    {
+    gavl_vaapi_video_frame_t * fp;
+    s->vframe = gavl_hw_ctx_create_import_vframe(priv->hwctx, idx);
+    fp  = s->vframe->storage;
+    fp->surface = *surf;
+    }
+  gavl_video_frame_copy_metadata(s->vframe, priv->gavl_frame);
   }
 
 
 #endif
-
-static void put_frame_fp(bgav_stream_t * s, gavl_video_frame_t * f1)
-  {
-  //  VAStatus result;
-  ffmpeg_video_priv * priv = s->decoder_priv;
-
-  //  id = (VASurfaceID)(uintptr_t)priv->frame->data[0];
-
-  s->vframe = priv->gavl_frame;
-  }
 
 
 static codec_info_t * lookup_codec(bgav_stream_t * s);
@@ -514,6 +577,8 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
   int result;
 
   priv = s->decoder_priv;
+
+  //  fprintf(stderr, "Decode picture\n");
   
   if(priv->flags & GOT_EOS)
     {
@@ -534,11 +599,14 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
     else if(result == AVERROR(EAGAIN))
       {
       /* Get data, flush the decoder after the last packet */
+      //      fprintf(stderr, "Get packet\n");
+
       st = get_packet(s);
 
       /* Nothing we can do right now */
-      if(st == GAVL_SOURCE_AGAIN)
+      if(st != GAVL_SOURCE_OK)
         return st;
+      
       }
     else if(result == AVERROR_EOF)
       {
@@ -578,7 +646,7 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
     }
 #endif
 
-#if 0 // TODO: Decode second field ()if we need this at all */
+#if 0 // TODO: Decode second field (if we need this at all) */
     
   /* Decode 2nd field for field pictures */
   if(p && p->field2_offset && (bytes_used > 0))
@@ -615,7 +683,7 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
       }
 #endif
     }
-#endif // End (second field
+#endif // End (second field)
     
   if(!result)
     {
@@ -624,7 +692,12 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
 
     if(priv->flags & HAVE_DR)
       {
-      priv->gavl_frame = priv->frame->opaque;
+      s->vframe = priv->frame->opaque;
+      gavl_packet_pts_cache_get_first(priv->pts_cache, s->vframe);
+
+      gavl_hw_video_frame_unmap(s->vframe);
+      gavl_hw_video_frame_map(s->vframe, 1);
+      
       }
     else
       {
@@ -635,7 +708,7 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
         priv->gavl_frame->strides[i] = priv->frame->linesize[i];
         }
       }
-
+    
     gavl_packet_pts_cache_get_first(priv->pts_cache, priv->gavl_frame);
     
     if(gavl_interlace_mode_is_mixed(s->data.video.format->interlace_mode))
@@ -739,95 +812,150 @@ static const AVCodec * find_decoder(bgav_stream_t * s, enum AVCodecID id)
   return avcodec_find_decoder(id);
   }
 
-#if 0
-
-
-static void buffer_free_func(void *opaque, uint8_t *data)
+static void buffer_release_cb(void *opaque, uint8_t *data)
   {
-  /* NOP */
+  gavl_video_frame_t *f = opaque;
+  //  fprintf(stderr, "buffer_release_cb\n");
+  gavl_hw_video_frame_unref(f);
   }
 
-static int get_buffer(struct AVCodecContext *ctx, AVFrame *frame, int flags)
+static int get_buffer2_cb(struct AVCodecContext *ctx, AVFrame *frame, int flags)
   {
-  gavl_video_frame_t * vframe;
-  ffmpeg_video_priv * priv;
-  bgav_stream_t * s = ctx->opaque;
   int i;
-  int frame_height;
-  const gavl_video_format_t * vfmt;
+  int num_planes;
+  bgav_stream_t * s = ctx->opaque;
+  gavl_video_frame_t *f;
+  ffmpeg_video_priv * priv = s->decoder_priv;
 
-  priv = s->decoder_priv;
+  //  fprintf(stderr, "get_buffer2_cb\n");
   
-  if(!priv->fp)
+  /* Set format for hw context */
+  if(!(priv->flags & DR_INIT))
     {
+    int w, h;
     gavl_video_format_t fmt;
-    priv->fp = gavl_video_frame_pool_create(priv->hwctx);
+    memset(&fmt, 0, sizeof(fmt));
 
-    /* Set format */
-    fmt.image_width = priv->ctx->width;
-    fmt.image_height = priv->ctx->height;
-    fmt.pixelformat = get_pixelformat(priv->ctx->pix_fmt, GAVL_PIXELFORMAT_NONE);
+    fmt.image_width = frame->width;
+    fmt.image_height = frame->height;
+
+    w = fmt.image_width;
+    h = fmt.image_height;
+
+    avcodec_align_dimensions(ctx, &w, &h);
+
+    fmt.frame_width = w;
+    fmt.frame_height = h;
     
-    gavl_video_frame_pool_set_format(priv->fp, &fmt);
+    fmt.pixelformat = s->data.video.format->pixelformat;
+    gavl_hw_ctx_set_video(s->opt->video_hwctx, &fmt, GAVL_HW_FRAME_MODE_MAP);
+    
+    priv->flags |= DR_INIT;
     }
   
-  memset(frame->data, 0, sizeof(frame->data));
-  frame->extended_data = frame->data;
-
-  vframe = gavl_video_frame_pool_get(priv->fp);
-
-  if(vframe->buf_idx >= priv->pool_el_alloc)
-    {
-    int inc = vframe->buf_idx - priv->pool_el_alloc + 1;
-    inc = ((inc + 7)/8)*8;
-    
-    priv->pool_el = realloc(priv->pool_el,
-                            (priv->pool_el_alloc + inc)*sizeof(*priv->pool_el));
-    memset(priv->pool_el + priv->pool_el_alloc, 0, inc*sizeof(*priv->pool_el));
-    priv->pool_el_alloc += inc;
-    }
-
-  if(!priv->pool_el[vframe->buf_idx].refs[0])
-    {
-    vfmt = gavl_video_frame_pool_get_format(priv->fp);
-    frame_height = vfmt->frame_height;
+  f = gavl_hw_video_frame_get(s->opt->video_hwctx);
   
-    for(i = 0; i < GAVL_MAX_PLANES; i++)
+  //  fprintf(stderr, "Blupp\n");
+  
+  num_planes = gavl_pixelformat_num_planes(s->data.video.format->pixelformat);
+  
+  for(i = 0; i < num_planes; i++)
+    {
+    frame->data[i] = f->planes[i];
+    frame->linesize[i] = f->strides[i];
+    }
+  frame->opaque = f;
+
+  // Setup buffer reference for automatic cleanup
+  frame->buf[0] = av_buffer_create((uint8_t*)f, sizeof(*f),
+                                   buffer_release_cb, f, 0);
+  return 0;
+  }
+
+static int pixfmt_supported(const gavl_pixelformat_t * fmts, enum AVPixelFormat fmt,
+                            gavl_pixelformat_t * pfmt)
+  {
+  int j, k;
+  const AVPixFmtDescriptor *desc;
+
+  desc = av_pix_fmt_desc_get(fmt);
+  if(desc->flags & AV_PIX_FMT_FLAG_HWACCEL)
+    return 0;
+    
+  j = 0;
+
+  /* Find gavl format */
+  for(j = 0; j < sizeof(pixelformats)/sizeof(pixelformats[0]); j++)
+    {
+    if(pixelformats[j].ffmpeg_csp == fmt)
       {
-      if(!vframe->strides[i])
-        break;
+      /* Check if format is supported by hardware context */
+      k = 0;
 
-      if(i == 1)
+      while(fmts[k] != GAVL_PIXELFORMAT_NONE)
         {
-        int sub_v;
-        gavl_pixelformat_chroma_sub(vfmt->pixelformat, NULL, &sub_v);
-        frame_height /= sub_v;
+        if(fmts[k] == pixelformats[j].gavl_csp)
+          {
+          if(pfmt)
+            *pfmt = pixelformats[j].gavl_csp;
+          return 1;
+          }
+        k++;
         }
-    
-      frame->linesize[i] = vframe->strides[i];
-
-      priv->pool_el[vframe->buf_idx].refs[i] = 
-        av_buffer_create(vframe->planes[i],
-                         vframe->strides[i] * frame_height,
-                         buffer_free_func,
-                         NULL, 0);
-    
-      }
-    }
-  else
-    {
-    for(i = 0; i < GAVL_MAX_PLANES; i++)
-      {
-      if(!vframe->strides[i])
-        break;
-
-      frame->buf[i]  = av_buffer_ref(priv->pool_el[vframe->buf_idx].refs[i]);
-      frame->data[i] = frame->buf[i]->data;
       }
     }
   return 0;
   }
+                            
+
+static enum AVPixelFormat get_format_cb(AVCodecContext *ctx, const enum AVPixelFormat *pix)
+  {
+  bgav_stream_t * s = ctx->opaque;
+  const gavl_pixelformat_t * fmts;
+  int i = 0;
+  ffmpeg_video_priv * priv;
+
+  gavl_pixelformat_t pfmt = GAVL_PIXELFORMAT_NONE;
+  fmts = gavl_hw_ctx_get_image_formats(s->opt->video_hwctx, GAVL_HW_FRAME_MODE_MAP);
+  /* Copied from avcodec_default_get_format() */
+  // If the last element of the list is a software format, choose it
+  // (this should be best software format if any exist).
+  for(i = 0; pix[i] != AV_PIX_FMT_NONE; i++);
+
+  i--;
+  
+  if(pixfmt_supported(fmts, pix[i], &pfmt))
+    goto found;
+  
+  i = 0;
+
+  while(pix[i] != AV_PIX_FMT_NONE)
+    {
+    if(pixfmt_supported(fmts, pix[i], &pfmt))
+      goto found;
+    
+    i++;
+    }
+  
+  return avcodec_default_get_format(ctx, pix);
+
+  found:
+
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Rendering to hardware surface in %s", gavl_pixelformat_to_string(pfmt));
+
+  s->data.video.format->pixelformat = pfmt;
+
+  priv = s->decoder_priv;
+  priv->flags |= HAVE_DR;
+  
+  ctx->get_buffer2 = get_buffer2_cb;
+
+#if LIBAVCODEC_VERSION_MAJOR < 60
+  ctx->thread_safe_callbacks = 1;
 #endif
+  
+  return pix[i];
+  }
 
 static int init_ffmpeg(bgav_stream_t * s)
   {
@@ -838,6 +966,8 @@ static int init_ffmpeg(bgav_stream_t * s)
   AVDictionary * options = NULL;
   
   //  av_log_set_level(AV_LOG_DEBUG);
+
+  //  fprintf(stderr, "init_ffmpeg %p\n", s->opt->video_hwctx);
   
   priv = calloc(1, sizeof(*priv));
   priv->skip_time = GAVL_TIME_UNDEFINED;
@@ -878,26 +1008,33 @@ static int init_ffmpeg(bgav_stream_t * s)
   /* Threads (disabled for VAAPI) */
   priv->ctx->thread_count = gavl_num_cpus();
   
+  //  priv->ctx->thread_count = 1;
+  
+  
 #ifdef HAVE_LIBVA
-  if(s->opt->vaapi && vaapi_supported(codec) && init_vaapi(s))
+  if(vaapi_supported(codec) && init_vaapi(s))
     {
     priv->ctx->thread_count = 1;
     }
   else
 #endif
-
-#if 0    
-  if(codec->capabilities & AV_CODEC_CAP_DR1)
-    {
-    fprintf(stderr, "Direct rendering supported\n");
-
-    priv->ctx->get_buffer2 = get_buffer;
-    priv->flags |= HAVE_DR;
-    
-    /* TODO: Allocate HW context */
-    
-    }
+    if((codec->capabilities & AV_CODEC_CAP_DR1) &&
+       s->opt->video_hwctx &&
+       gavl_hw_ctx_get_image_formats(s->opt->video_hwctx, GAVL_HW_FRAME_MODE_MAP))
+      {
+#if 1
+      gavl_log(GAVL_LOG_INFO, LOG_DOMAIN,
+               "Codec supports direct rendering, trying to render to hardware surface");
+      
+      priv->ctx->get_format = get_format_cb;
+      
 #endif
+    
+      }
+  /* Frame based threading doesn't work with
+     direct rendering */
+  if(priv->ctx->thread_count > 1)
+    priv->ctx->thread_type = FF_THREAD_SLICE;
   
   /* Check if there might be B-frames */
   if(codec->capabilities & AV_CODEC_CAP_DELAY)
@@ -947,7 +1084,6 @@ static int init_ffmpeg(bgav_stream_t * s)
   if(!(priv->flags & HAVE_DR))
     {
     priv->gavl_frame_priv = gavl_video_frame_create(NULL);
-    priv->gavl_frame_priv = priv->gavl_frame_priv;
     priv->gavl_frame = priv->gavl_frame_priv;
     }
   
@@ -990,6 +1126,8 @@ static int init_ffmpeg(bgav_stream_t * s)
   
   priv->ctx->workaround_bugs = FF_BUG_AUTODETECT;
   priv->ctx->error_concealment = 3;
+
+  
   
   //  priv->ctx->error_resilience = 3;
   
@@ -1054,7 +1192,7 @@ static int init_ffmpeg(bgav_stream_t * s)
 
   init_put_frame(s);
 
-  if(!priv->put_frame)
+  if((!priv->put_frame) && !(priv->flags & HAVE_DR))
     s->vframe = priv->gavl_frame;
   
   return 1;
@@ -1115,23 +1253,7 @@ static void close_ffmpeg(bgav_stream_t * s)
     priv->gavl_frame_priv->hwctx = NULL;
     gavl_video_frame_destroy(priv->gavl_frame_priv);
     }
-
-  if(priv->fp)
-    gavl_video_frame_pool_destroy(priv->fp);
-
-  if(priv->pool_el)
-    {
-    int i, j;
-    for(i = 0; i < priv->pool_el_alloc; i++)
-      {
-      for(j = 0; j < GAVL_MAX_PLANES; j++)
-        {
-        if(priv->pool_el[i].refs[j])
-          av_buffer_unref(&priv->pool_el[i].refs[j]);
-        }
-      }
-    free(priv->pool_el);
-    }
+  
   
   if(priv->src_field)
     {
@@ -1144,7 +1266,6 @@ static void close_ffmpeg(bgav_stream_t * s)
     gavl_video_frame_null(priv->dst_field);
     gavl_video_frame_destroy(priv->dst_field);
     }
-
   
   if(priv->hwctx)
     gavl_hw_ctx_destroy(priv->hwctx);
@@ -1164,6 +1285,11 @@ static void close_ffmpeg(bgav_stream_t * s)
   if(priv->pts_cache)
     gavl_packet_pts_cache_destroy(priv->pts_cache);
 
+#ifdef  HAVE_LIBVA
+  if(priv->va_surface_ids)
+    free(priv->va_surface_ids);
+#endif
+  
   free(priv);
   }
 
@@ -2096,49 +2222,6 @@ static void rgba32_to_rgba32(gavl_video_frame_t * dst, AVFrame * src,
     }
   }
 
-/* Pixel formats */
-
-static const struct
-  {
-  enum AVPixelFormat  ffmpeg_csp;
-  gavl_pixelformat_t gavl_csp;
-  } pixelformats[] =
-  {
-    { AV_PIX_FMT_YUV420P,       GAVL_YUV_420_P },  ///< Planar YUV 4:2:0 (1 Cr & Cb sample per 2x2 Y samples)
-    { AV_PIX_FMT_YUYV422,       GAVL_YUY2      },
-    { AV_PIX_FMT_RGB24,         GAVL_RGB_24    },  ///< Packed pixel, 3 bytes per pixel, RGBRGB...
-    { AV_PIX_FMT_BGR24,         GAVL_BGR_24    },  ///< Packed pixel, 3 bytes per pixel, BGRBGR...
-    { AV_PIX_FMT_YUV422P,       GAVL_YUV_422_P },  ///< Planar YUV 4:2:2 (1 Cr & Cb sample per 2x1 Y samples)
-    { AV_PIX_FMT_YUV444P,       GAVL_YUV_444_P }, ///< Planar YUV 4:4:4 (1 Cr & Cb sample per 1x1 Y samples)
-    { AV_PIX_FMT_RGB32,         GAVL_RGBA_32   },  ///< Packed pixel, 4 bytes per pixel, BGRABGRA..., stored in cpu endianness
-    { AV_PIX_FMT_YUV410P,       GAVL_YUV_410_P }, ///< Planar YUV 4:1:0 (1 Cr & Cb sample per 4x4 Y samples)
-    { AV_PIX_FMT_YUV411P,       GAVL_YUV_411_P }, ///< Planar YUV 4:1:1 (1 Cr & Cb sample per 4x1 Y samples)
-    { AV_PIX_FMT_RGB565,        GAVL_RGB_16 }, ///< always stored in cpu endianness
-    { AV_PIX_FMT_RGB555,        GAVL_RGB_15 }, ///< always stored in cpu endianness, most significant bit to 1
-    { AV_PIX_FMT_GRAY8,         GAVL_PIXELFORMAT_NONE },
-    { AV_PIX_FMT_MONOWHITE,     GAVL_PIXELFORMAT_NONE }, ///< 0 is white
-    { AV_PIX_FMT_MONOBLACK,     GAVL_PIXELFORMAT_NONE }, ///< 0 is black
-    // { PIX_FMT_PAL8,          GAVL_RGB_24     }, ///< 8 bit with RGBA palette
-    { AV_PIX_FMT_YUVJ420P,      GAVL_YUVJ_420_P }, ///< Planar YUV 4:2:0 full scale (jpeg)
-    { AV_PIX_FMT_YUVJ422P,      GAVL_YUVJ_422_P }, ///< Planar YUV 4:2:2 full scale (jpeg)
-    { AV_PIX_FMT_YUVJ444P,      GAVL_YUVJ_444_P }, ///< Planar YUV 4:4:4 full scale (jpeg)
-
-    { AV_PIX_FMT_YUVA420P,      GAVL_YUVA_32 },
-    { AV_PIX_FMT_VAAPI,         GAVL_YUV_420_P },  ///< Planar YUV 4:2:0 (1 Cr & Cb sample per 2x2 Y samples)
-    /* Higher accuracy */
-    { AV_PIX_FMT_YUV422P10,     GAVL_YUV_422_P_16 },
-    { AV_PIX_FMT_YUV422P12,     GAVL_YUV_422_P_16 },
-    { AV_PIX_FMT_YUV422P14,     GAVL_YUV_422_P_16 },
-    { AV_PIX_FMT_YUV422P16,     GAVL_YUV_422_P_16 },
-    { AV_PIX_FMT_YUV444P10,     GAVL_YUV_444_P_16 },
-    { AV_PIX_FMT_YUV444P12,     GAVL_YUV_444_P_16 },
-    { AV_PIX_FMT_YUV444P14,     GAVL_YUV_444_P_16 },
-    { AV_PIX_FMT_YUV444P16,     GAVL_YUV_444_P_16 },
-    
-    { AV_PIX_FMT_NB, GAVL_PIXELFORMAT_NONE },
-
-
-  };
 
 
 static gavl_pixelformat_t get_pixelformat(enum AVPixelFormat p,
@@ -2393,73 +2476,79 @@ static void init_put_frame(bgav_stream_t * s)
   
   ffmpeg_video_priv * priv;
   priv = s->decoder_priv;
-  if(priv->hwctx)
+
+  if(priv->flags & HAVE_DR)
     {
-    s->data.video.format->hwctx = priv->hwctx;
+    s->data.video.format->hwctx = s->opt->video_hwctx;
     s->src_flags |= GAVL_SOURCE_SRC_ALLOC;
     }
-
-  if(priv->fp)
+  else
     {
-    priv->put_frame = put_frame_fp;
-    return;
-    }
-  switch(priv->ctx->pix_fmt)
-    {
-    case AV_PIX_FMT_PAL8:
-      priv->put_frame = put_frame_palette;
-      break;
+    if(priv->hwctx)
+      {
+      s->data.video.format->hwctx = priv->hwctx;
+      s->src_flags |= GAVL_SOURCE_SRC_ALLOC;
+      }
+  
+    switch(priv->ctx->pix_fmt)
+      {
+      case AV_PIX_FMT_PAL8:
+        priv->put_frame = put_frame_palette;
+        break;
 #ifdef HAVE_LIBVA
-    case AV_PIX_FMT_VAAPI:
-      priv->put_frame = put_frame_vaapi;
-      gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Using VAAPI");
-      break;
+      case AV_PIX_FMT_VAAPI:
+        priv->put_frame = put_frame_vaapi;
+        gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Using VAAPI");
+        break;
 #endif
-    case AV_PIX_FMT_RGB32:
-      priv->put_frame = put_frame_rgba32;
-      break;
-    case AV_PIX_FMT_YUVA420P:
-      priv->put_frame = put_frame_yuva420;
-      break;
-    case AV_PIX_FMT_YUV422P10:
-    case AV_PIX_FMT_YUV444P10:
-      if(!(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
-        {
-        priv->put_frame = put_frame_yuvp10_nocopy;
-        s->vframe = priv->gavl_frame;
-        }
-      else
-        priv->put_frame = put_frame_yuvp10;
-      break;
-    case AV_PIX_FMT_YUV422P12:
-    case AV_PIX_FMT_YUV444P12:
-      if(!(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
-        {
-        priv->put_frame = put_frame_yuvp12_nocopy;
-        s->vframe = priv->gavl_frame;
-        }
-      else
-        priv->put_frame = put_frame_yuvp12;
-      break;
-    case AV_PIX_FMT_YUV422P14:
-    case AV_PIX_FMT_YUV444P14:
-      if(!(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
-        {
-        priv->put_frame = put_frame_yuvp14_nocopy;
-        s->vframe = priv->gavl_frame;
-        }
-      else
-        priv->put_frame = put_frame_yuvp14;
-      break;
-    default:
-      if(priv->flags & FLIP_Y)
-        priv->put_frame = put_frame_flip;
-      else if(priv->flags & SWAP_FIELDS_OUT)
-        priv->put_frame = put_frame_swapfields;
-      else
-        priv->put_frame = NULL;
-      break;
+      case AV_PIX_FMT_RGB32:
+        priv->put_frame = put_frame_rgba32;
+        break;
+      case AV_PIX_FMT_YUVA420P:
+        priv->put_frame = put_frame_yuva420;
+        break;
+      case AV_PIX_FMT_YUV422P10:
+      case AV_PIX_FMT_YUV444P10:
+        if(!(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
+          {
+          priv->put_frame = put_frame_yuvp10_nocopy;
+          s->vframe = priv->gavl_frame;
+          }
+        else
+          priv->put_frame = put_frame_yuvp10;
+        break;
+      case AV_PIX_FMT_YUV422P12:
+      case AV_PIX_FMT_YUV444P12:
+        if(!(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
+          {
+          priv->put_frame = put_frame_yuvp12_nocopy;
+          s->vframe = priv->gavl_frame;
+          }
+        else
+          priv->put_frame = put_frame_yuvp12;
+        break;
+      case AV_PIX_FMT_YUV422P14:
+      case AV_PIX_FMT_YUV444P14:
+        if(!(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
+          {
+          priv->put_frame = put_frame_yuvp14_nocopy;
+          s->vframe = priv->gavl_frame;
+          }
+        else
+          priv->put_frame = put_frame_yuvp14;
+        break;
+      default:
+        if(priv->flags & FLIP_Y)
+          priv->put_frame = put_frame_flip;
+        else if(priv->flags & SWAP_FIELDS_OUT)
+          priv->put_frame = put_frame_swapfields;
+        else
+          priv->put_frame = NULL;
+        break;
+      }
+
     }
+
   }
 
 /* Global locking */

@@ -234,6 +234,9 @@ static int bg_avdec_start(void * priv)
   avdec_priv * avdec = priv;
   bg_media_source_stream_t * st;
 
+  /* Re-apply the options because they might got changed */
+  bgav_options_copy(bgav_get_options(avdec->dec), avdec->opt);
+  
   if(!avdec->src.track)
     num = 0;
   else
@@ -409,3 +412,10 @@ void bg_avdec_unlock(void * priv)
   pthread_mutex_unlock(&avdec->mutex);
   
   }
+
+void bg_avdec_set_video_hw_context(void * priv, gavl_hw_context_t * hwctx)
+  {
+  avdec_priv * avdec = priv;
+  bgav_options_set_video_hw_context(avdec->opt, hwctx);
+  }
+                                   

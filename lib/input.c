@@ -1000,6 +1000,9 @@ void bgav_input_close(bgav_input_context_t * ctx)
 void bgav_input_destroy(bgav_input_context_t * ctx)
   {
   bgav_input_close(ctx);
+
+  bgav_options_free(&ctx->opt);
+
   free(ctx);
   }
 

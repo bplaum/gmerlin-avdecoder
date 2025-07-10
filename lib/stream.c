@@ -327,6 +327,9 @@ void bgav_stream_free(bgav_stream_t * s)
     gavl_packet_source_destroy(s->psrc_priv);
   
   gavl_compression_info_free(&s->ci_orig);
+
+  gavl_dictionary_free(&s->in_info);
+
   }
 
 void bgav_stream_dump(bgav_stream_t * s)

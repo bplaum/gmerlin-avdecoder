@@ -689,7 +689,10 @@ BGAV_PUBLIC
 void bgav_options_set_dump_packets(bgav_options_t* opt,
                                    int enable);
 
+BGAV_PUBLIC
+void bgav_options_set_video_hw_context(bgav_options_t * opt, gavl_hw_context_t * hwctx);
 
+  
 /** \ingroup options
  *  \brief Enumeration for log levels
  *

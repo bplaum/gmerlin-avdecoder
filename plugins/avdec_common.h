@@ -77,21 +77,9 @@ bg_avdec_set_parameter(void * p, const char * name,
 
 gavl_dictionary_t * bg_avdec_get_media_info(void * p);
 
-
-
-#if 0
-int bg_avdec_get_audio_compression_info(void * priv, int stream,
-                                        gavl_compression_info_t * info);
-
-int bg_avdec_get_overlay_compression_info(void * priv, int stream,
-                                          gavl_compression_info_t * info);
-
-
-int bg_avdec_get_video_compression_info(void * priv, int stream,
-                                        gavl_compression_info_t * info);
-#endif
-
 int bg_avdec_read_audio_packet(void * priv, int stream, gavl_packet_t * p);
+
+void bg_avdec_set_video_hw_context(void * priv, gavl_hw_context_t * hwctx);
 
 
 #include "options.h"

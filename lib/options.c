@@ -107,14 +107,12 @@ void bgav_options_set_http_shoutcast_metadata(bgav_options_t*b, int m)
 
 void bgav_options_set_ftp_anonymous_password(bgav_options_t*b, const char * h)
   {
-  if(b->ftp_anonymous_password)
-    free(b->ftp_anonymous_password);
-  b->ftp_anonymous_password = gavl_strdup(h);
+
   }
 
 void bgav_options_set_ftp_anonymous(bgav_options_t*b, int anonymous)
   {
-  b->ftp_anonymous = anonymous;
+  
   }
 
 
@@ -128,9 +126,7 @@ void bgav_options_set_audio_dynrange(bgav_options_t* opt, int audio_dynrange)
 void bgav_options_set_default_subtitle_encoding(bgav_options_t* b,
                                                 const char* encoding)
   {
-  if(b->default_subtitle_encoding)
-    free(b->default_subtitle_encoding);
-  b->default_subtitle_encoding = gavl_strdup(encoding);
+  b->default_subtitle_encoding = gavl_strrep(b->default_subtitle_encoding, encoding);
   }
 
 void bgav_options_set_seek_subtitles(bgav_options_t* opt,
@@ -162,9 +158,6 @@ void bgav_options_set_postprocessing_level(bgav_options_t* opt,
 void bgav_options_set_dvb_channels_file(bgav_options_t* opt,
                                         const char * file)
   {
-  if(opt->dvb_channels_file)
-    free(opt->dvb_channels_file);
-  opt->dvb_channels_file = gavl_strdup(file);
   }
 
 void bgav_options_set_prefer_ffmpeg_demuxers(bgav_options_t* opt,
@@ -225,9 +218,7 @@ void bgav_options_set_dump_packets(bgav_options_t* opt,
 
 void bgav_options_free(bgav_options_t*opt)
   {
-  FREE(opt->ftp_anonymous_password);
   FREE(opt->default_subtitle_encoding);
-  FREE(opt->dvb_channels_file);
   }
 
 void bgav_options_set_defaults(bgav_options_t * b)
@@ -235,8 +226,7 @@ void bgav_options_set_defaults(bgav_options_t * b)
   memset(b, 0, sizeof(*b));
   b->connect_timeout = 10000;
   b->read_timeout = 10000;
-  b->ftp_anonymous = 1;
-  b->default_subtitle_encoding = gavl_strdup("LATIN1");
+  b->default_subtitle_encoding = gavl_strrep(b->default_subtitle_encoding, "LATIN1");
   b->audio_dynrange = 1;
   b->cache_time = 500;
   b->cache_size = 20;
@@ -283,17 +273,13 @@ void bgav_options_copy(bgav_options_t * dst, const bgav_options_t * src)
   /* Generic network options */
   CP_INT(connect_timeout);
   CP_INT(read_timeout);
+  CP_INT(video_hwctx);
 
   CP_INT(network_bandwidth);
   
   CP_INT(rtp_try_tcp);
   CP_INT(rtp_port_base);
   
-  /* ftp options */
-    
-  CP_STR(ftp_anonymous_password);
-  CP_INT(ftp_anonymous);
-
   /* Subtitle */
   
   CP_STR(default_subtitle_encoding);
@@ -303,9 +289,6 @@ void bgav_options_copy(bgav_options_t * dst, const bgav_options_t * src)
   
   /* DVD */
 
-  /* DVB */
-  
-  CP_STR(dvb_channels_file);
   
   /* Audio */
 
@@ -480,3 +463,8 @@ void bgav_seek_window_changed(bgav_t * b,
   state_changed(b, GAVL_STATE_SRC_SEEK_WINDOW, &val);
   }
 
+
+void bgav_options_set_video_hw_context(bgav_options_t * opt, gavl_hw_context_t * hwctx)
+  {
+  opt->video_hwctx = hwctx;
+  }

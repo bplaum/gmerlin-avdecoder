@@ -89,6 +89,8 @@ const bg_input_plugin_t the_plugin =
       .get_controllable = bg_avdec_get_controllable,
       .get_protocols = get_protocols,
     },
+
+    .set_video_hw_context = bg_avdec_set_video_hw_context,
     
     /* Open file/device */
     .open = open_vcd,
