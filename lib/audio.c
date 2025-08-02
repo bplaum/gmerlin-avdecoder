@@ -371,12 +371,16 @@ int bgav_audio_skipto(bgav_stream_t * s, int64_t * t, int scale)
     if(st != GAVL_SOURCE_OK)
       return 0;
 
+    
     if(p->pts > skip_time)
       {
+      s->out_time = p->pts;
       break;
       }
     else if((p->duration > 0) && (p->pts + p->duration > skip_time))
       {
+      s->out_time = p->pts;
+      
       if(p->pts < skip_time)
         gavl_audio_source_skip(s->data.audio.source, skip_time - p->pts);
       break;
