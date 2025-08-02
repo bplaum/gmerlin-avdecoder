@@ -45,7 +45,7 @@ static int parse_frame_theora(bgav_packet_parser_t * parser, bgav_packet_t * p)
   
   p->duration = parser->vfmt->frame_duration;
 
-  if(!(p->buf.buf[0] & 0x40))
+  if((p->buf.len > 0) && !(p->buf.buf[0] & 0x40))
     {
     PACKET_SET_KEYFRAME(p);
     PACKET_SET_CODING_TYPE(p, GAVL_PACKET_TYPE_I);
