@@ -75,7 +75,8 @@
 #define NEED_FORMAT     (1<<7)
 #define FLUSH_EOF       (1<<8)
 #define HAVE_DR         (1<<9)
-#define DR_INIT         (1<<10)
+#define HAVE_VAAPI      (1<<10)
+#define DR_INIT         (1<<11)
 
 /* Skip handling */
 
@@ -104,6 +105,7 @@ typedef struct
   AVFrame * frame;
   //  enum CodecID ffmpeg_id;
   codec_info_t * info;
+
   gavl_video_frame_t * gavl_frame;
   gavl_video_frame_t * gavl_frame_priv;
 
@@ -308,7 +310,9 @@ static int init_vaapi(bgav_stream_t * s)
   return 1;
   
   }
+#endif
 
+#if 0
 static void put_frame_vaapi(bgav_stream_t * s, gavl_video_frame_t * f1)
   {
   int idx;
@@ -316,8 +320,6 @@ static void put_frame_vaapi(bgav_stream_t * s, gavl_video_frame_t * f1)
   //  VAStatus result;
   ffmpeg_video_priv * priv = s->decoder_priv;
 
-  //  id = (VASurfaceID)(uintptr_t)priv->frame->data[0];
-  
   surf = (VASurfaceID*)(&priv->frame->data[3]);
 
   idx = get_vaapi_surface_index(priv, *surf);
@@ -569,6 +571,51 @@ static gavl_source_status_t get_packet(bgav_stream_t * s)
   return GAVL_SOURCE_OK;
   }
 
+static void set_frame_metadata(bgav_stream_t * s, gavl_video_frame_t * dst)
+  {
+  ffmpeg_video_priv * priv;
+  priv = s->decoder_priv;
+
+  /* Data from the packet */
+  gavl_packet_pts_cache_get_first(priv->pts_cache, dst);
+  
+  /* Interlace mode */
+  if(gavl_interlace_mode_is_mixed(s->data.video.format->interlace_mode))
+    {
+    /* Newer version */
+#if defined (AV_FRAME_FLAG_INTERLACED) && defined (AV_FRAME_FLAG_TOP_FIELD_FIRST)
+    if(priv->frame->flags & AV_FRAME_FLAG_INTERLACED)
+      {
+      if(priv->frame->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST)
+        priv->gavl_frame->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
+      else
+        priv->gavl_frame->interlace_mode = GAVL_INTERLACE_BOTTOM_FIRST;
+        
+      }
+#else
+    if(priv->frame->interlaced_frame)
+      {
+      if(priv->frame->top_field_first)
+        dst->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
+      else
+        dst->interlace_mode = GAVL_INTERLACE_BOTTOM_FIRST;
+      }
+#endif
+    else
+      dst->interlace_mode = GAVL_INTERLACE_NONE;
+    }
+
+  
+  }
+
+/* Called at the beginning, during skipping and
+   (surprise!) during decoding */
+
+/*
+ *  After decoding, the decoded (but not yet preprocessed) frame
+ *  is (with correct metadata) in gavl_frame
+ */
+
 static gavl_source_status_t decode_picture(bgav_stream_t * s)
   {
   ffmpeg_video_priv * priv;
@@ -692,15 +739,43 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
 
     if(priv->flags & HAVE_DR)
       {
-      s->vframe = priv->frame->opaque;
-      gavl_packet_pts_cache_get_first(priv->pts_cache, s->vframe);
-
-      gavl_hw_video_frame_unmap(s->vframe);
-      gavl_hw_video_frame_map(s->vframe, 1);
+      priv->gavl_frame = priv->frame->opaque;
+      s->vframe = priv->gavl_frame;
       
+      /* Make sure everything is synchronized */
+      gavl_hw_video_frame_unmap(priv->gavl_frame);
+      gavl_hw_video_frame_map(priv->gavl_frame, 1);
       }
+#ifdef HAVE_LIBVA
+    else if(priv->flags & HAVE_VAAPI)
+      {
+      int idx;
+      VASurfaceID * surf;
+      //  VAStatus result;
+      ffmpeg_video_priv * priv = s->decoder_priv;
+
+      surf = (VASurfaceID*)(&priv->frame->data[3]);
+
+      idx = get_vaapi_surface_index(priv, *surf);
+  
+      if(!(priv->gavl_frame = gavl_hw_ctx_get_imported_vframe(priv->hwctx, idx)))
+        {
+        gavl_vaapi_video_frame_t * fp;
+        priv->gavl_frame = gavl_hw_ctx_create_import_vframe(priv->hwctx, idx);
+        fp  = priv->gavl_frame->storage;
+        fp->surface = *surf;
+        }
+      s->vframe = priv->gavl_frame;
+      }
+#endif
     else
       {
+      if(!priv->gavl_frame)
+        {
+        priv->gavl_frame_priv = gavl_video_frame_create(NULL);
+        priv->gavl_frame = priv->gavl_frame_priv;
+        s->vframe = priv->gavl_frame;
+        }
       /* Set our internal frame */
       for(i = 0; i < 3; i++)
         {
@@ -708,35 +783,11 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
         priv->gavl_frame->strides[i] = priv->frame->linesize[i];
         }
       }
-    
-    gavl_packet_pts_cache_get_first(priv->pts_cache, priv->gavl_frame);
-    
-    if(gavl_interlace_mode_is_mixed(s->data.video.format->interlace_mode))
-      {
-/* Newer version */
-#if defined (AV_FRAME_FLAG_INTERLACED) && defined (AV_FRAME_FLAG_TOP_FIELD_FIRST)
-      if(priv->frame->flags & AV_FRAME_FLAG_INTERLACED)
-        {
-        if(priv->frame->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST)
-          priv->gavl_frame->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
-        else
-          priv->gavl_frame->interlace_mode = GAVL_INTERLACE_BOTTOM_FIRST;
-        
-        }
-#else
-      if(priv->frame->interlaced_frame)
-        {
-        if(priv->frame->top_field_first)
-          priv->gavl_frame->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
-        else
-          priv->gavl_frame->interlace_mode = GAVL_INTERLACE_BOTTOM_FIRST;
-        }
-#endif
-      else
-        priv->gavl_frame->interlace_mode = GAVL_INTERLACE_NONE;
-      }
+    set_frame_metadata(s, priv->gavl_frame);
+    return GAVL_SOURCE_OK;
     }
-  return GAVL_SOURCE_OK;
+  else
+    return GAVL_SOURCE_EOF;
   }
 
 static int skipto_ffmpeg(bgav_stream_t * s, int64_t time)
@@ -815,7 +866,7 @@ static const AVCodec * find_decoder(bgav_stream_t * s, enum AVCodecID id)
 static void buffer_release_cb(void *opaque, uint8_t *data)
   {
   gavl_video_frame_t *f = opaque;
-  //  fprintf(stderr, "buffer_release_cb\n");
+  //  fprintf(stderr, "buffer_release_cb %"PRId64"\n", f->timestamp);
   gavl_hw_video_frame_unref(f);
   }
 
@@ -971,7 +1022,7 @@ static int init_ffmpeg(bgav_stream_t * s)
   
   priv = calloc(1, sizeof(*priv));
   priv->skip_time = GAVL_TIME_UNDEFINED;
-
+  
   priv->pts_cache = gavl_packet_pts_cache_create(-1);
   
   s->decoder_priv = priv;
@@ -979,7 +1030,10 @@ static int init_ffmpeg(bgav_stream_t * s)
   /* Set up coded specific details */
   
   if(s->fourcc == BGAV_MK_FOURCC('W','V','1','F'))
-    s->flags |= FLIP_Y;
+    {
+    /* Flip vertically */
+    s->data.video.format->orientation = GAVL_IMAGE_ORIENT_FH_ROT180_CW;
+    }
   
   priv->info = lookup_codec(s);
 
@@ -1015,6 +1069,7 @@ static int init_ffmpeg(bgav_stream_t * s)
   if(vaapi_supported(codec) && init_vaapi(s))
     {
     priv->ctx->thread_count = 1;
+    priv->flags |= HAVE_VAAPI;
     }
   else
 #endif
@@ -1080,12 +1135,6 @@ static int init_ffmpeg(bgav_stream_t * s)
   //  gavl_hexdump(s->ci->global_header, s->ci->global_header_len, 16);
   
   priv->frame = av_frame_alloc();
-
-  if(!(priv->flags & HAVE_DR))
-    {
-    priv->gavl_frame_priv = gavl_video_frame_create(NULL);
-    priv->gavl_frame = priv->gavl_frame_priv;
-    }
   
   priv->pkt = av_packet_alloc();
   
@@ -1191,8 +1240,8 @@ static int init_ffmpeg(bgav_stream_t * s)
                       priv->info->format_name);
 
   init_put_frame(s);
-
-  if((!priv->put_frame) && !(priv->flags & HAVE_DR))
+  
+  if((s->src_flags & GAVL_SOURCE_SRC_ALLOC) && !(priv->flags & HAVE_DR))
     s->vframe = priv->gavl_frame;
   
   return 1;
@@ -1202,8 +1251,9 @@ static void resync_ffmpeg(bgav_stream_t * s)
   {
   ffmpeg_video_priv * priv;
   priv = s->decoder_priv;
-  
+  //  fprintf(stderr, "Flush buffers\n");
   avcodec_flush_buffers(priv->ctx);
+  //  fprintf(stderr, "Flush buffers done\n");
   
   gavl_packet_pts_cache_clear(priv->pts_cache);
   
@@ -1252,8 +1302,8 @@ static void close_ffmpeg(bgav_stream_t * s)
     priv->gavl_frame_priv->storage = NULL;
     priv->gavl_frame_priv->hwctx = NULL;
     gavl_video_frame_destroy(priv->gavl_frame_priv);
+    priv->gavl_frame_priv = NULL;
     }
-  
   
   if(priv->src_field)
     {
@@ -1275,7 +1325,7 @@ static void close_ffmpeg(bgav_stream_t * s)
   
   if(priv->p)
     bgav_packet_destroy(priv->p);
-  
+
   if(priv->extradata)
     free(priv->extradata);
 
@@ -2362,21 +2412,6 @@ static void put_frame_yuva420(bgav_stream_t * s, gavl_video_frame_t * f)
   }
 
 
-static void put_frame_flip(bgav_stream_t * s, gavl_video_frame_t * f)
-  {
-  ffmpeg_video_priv * priv = s->decoder_priv;
-  priv->gavl_frame->planes[0]  = priv->frame->data[0];
-  priv->gavl_frame->planes[1]  = priv->frame->data[1];
-  priv->gavl_frame->planes[2]  = priv->frame->data[2];
-          
-  priv->gavl_frame->strides[0] = priv->frame->linesize[0];
-  priv->gavl_frame->strides[1] = priv->frame->linesize[1];
-  priv->gavl_frame->strides[2] = priv->frame->linesize[2];
-  gavl_video_frame_copy_flip_y(s->data.video.format,
-                               f, priv->gavl_frame);
-  
-  }
-
 static void put_frame_swapfields(bgav_stream_t * s, gavl_video_frame_t * f)
   {
   ffmpeg_video_priv * priv = s->decoder_priv;
@@ -2476,7 +2511,7 @@ static void init_put_frame(bgav_stream_t * s)
   
   ffmpeg_video_priv * priv;
   priv = s->decoder_priv;
-
+  /* Software rendering into hardware surface */
   if(priv->flags & HAVE_DR)
     {
     s->data.video.format->hwctx = s->opt->video_hwctx;
@@ -2484,12 +2519,13 @@ static void init_put_frame(bgav_stream_t * s)
     }
   else
     {
+    /* hardware rendering into hardware surface */
     if(priv->hwctx)
       {
       s->data.video.format->hwctx = priv->hwctx;
       s->src_flags |= GAVL_SOURCE_SRC_ALLOC;
       }
-  
+    
     switch(priv->ctx->pix_fmt)
       {
       case AV_PIX_FMT_PAL8:
@@ -2512,7 +2548,7 @@ static void init_put_frame(bgav_stream_t * s)
         if(!(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
           {
           priv->put_frame = put_frame_yuvp10_nocopy;
-          s->vframe = priv->gavl_frame;
+          s->src_flags |= GAVL_SOURCE_SRC_ALLOC;
           }
         else
           priv->put_frame = put_frame_yuvp10;
@@ -2522,7 +2558,7 @@ static void init_put_frame(bgav_stream_t * s)
         if(!(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
           {
           priv->put_frame = put_frame_yuvp12_nocopy;
-          s->vframe = priv->gavl_frame;
+          s->src_flags |= GAVL_SOURCE_SRC_ALLOC;
           }
         else
           priv->put_frame = put_frame_yuvp12;
@@ -2532,18 +2568,19 @@ static void init_put_frame(bgav_stream_t * s)
         if(!(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
           {
           priv->put_frame = put_frame_yuvp14_nocopy;
-          s->vframe = priv->gavl_frame;
+          s->src_flags |= GAVL_SOURCE_SRC_ALLOC;
           }
         else
           priv->put_frame = put_frame_yuvp14;
         break;
       default:
-        if(priv->flags & FLIP_Y)
-          priv->put_frame = put_frame_flip;
-        else if(priv->flags & SWAP_FIELDS_OUT)
+        if(priv->flags & SWAP_FIELDS_OUT)
           priv->put_frame = put_frame_swapfields;
         else
+          {
+          s->src_flags |= GAVL_SOURCE_SRC_ALLOC;
           priv->put_frame = NULL;
+          }
         break;
       }
 
