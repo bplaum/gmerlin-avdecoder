@@ -42,7 +42,6 @@
 #include <va/va.h>
 #include <libavutil/hwcontext_vaapi.h>
 #include <gavl/hw_vaapi.h>
-#include <gavl/hw_vaapi_x11.h>
 #endif
 
 /* TODO: configure check */
@@ -226,12 +225,17 @@ static const struct
 static int get_vaapi_surface_index(ffmpeg_video_priv * priv, VASurfaceID surf)
   {
   int i;
+
+  //  fprintf(stderr, "get_vaapi_surface_index %x ", surf);
+
   for(i = 0; i < priv->num_va_surface_ids; i++)
     {
     if(priv->va_surface_ids[i] == surf)
+      {
+      //      fprintf(stderr, "-> %d\n", i);
       return i;
+      }
     }
-
   if(priv->num_va_surface_ids == priv->va_surface_ids_alloc)
     {
     priv->va_surface_ids_alloc += 16;
@@ -242,6 +246,8 @@ static int get_vaapi_surface_index(ffmpeg_video_priv * priv, VASurfaceID surf)
 
   priv->va_surface_ids[priv->num_va_surface_ids] = surf;
   priv->num_va_surface_ids++;
+  //  fprintf(stderr, "-> %d\n", priv->num_va_surface_ids-1);
+  
   return priv->num_va_surface_ids-1;
   }
 
@@ -282,14 +288,14 @@ static int init_vaapi(bgav_stream_t * s)
   ffmpeg_video_priv * priv = s->decoder_priv;
   
   if(!priv->hwctx &&
-     !(priv->hwctx = gavl_hw_ctx_create_vaapi_x11(NULL)))
+     !(priv->hwctx = gavl_hw_ctx_create_vaapi()))
     return 0;
 
-  dpy = gavl_hw_ctx_vaapi_x11_get_va_display(priv->hwctx);
+  dpy = gavl_hw_ctx_vaapi_get_va_display(priv->hwctx);
   
   if(!gavl_vaapi_can_decode(dpy, s->info))
     {
-    gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Vaapi decodin not supported, falling back to software");
+    gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Vaapi decoding not supported, falling back to software");
     gavl_hw_ctx_destroy(priv->hwctx);
     priv->hwctx = NULL;
     return 0;
@@ -310,9 +316,7 @@ static int init_vaapi(bgav_stream_t * s)
   return 1;
   
   }
-#endif
 
-#if 0
 static void put_frame_vaapi(bgav_stream_t * s, gavl_video_frame_t * f1)
   {
   int idx;
@@ -774,7 +778,6 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
         {
         priv->gavl_frame_priv = gavl_video_frame_create(NULL);
         priv->gavl_frame = priv->gavl_frame_priv;
-        s->vframe = priv->gavl_frame;
         }
       /* Set our internal frame */
       for(i = 0; i < 3; i++)
@@ -1002,7 +1005,10 @@ static enum AVPixelFormat get_format_cb(AVCodecContext *ctx, const enum AVPixelF
   ctx->get_buffer2 = get_buffer2_cb;
 
 #if LIBAVCODEC_VERSION_MAJOR < 60
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   ctx->thread_safe_callbacks = 1;
+#pragma GCC diagnostic pop
 #endif
   
   return pix[i];
@@ -1251,9 +1257,20 @@ static void resync_ffmpeg(bgav_stream_t * s)
   {
   ffmpeg_video_priv * priv;
   priv = s->decoder_priv;
-  //  fprintf(stderr, "Flush buffers\n");
+  fprintf(stderr, "Flush buffers\n");
   avcodec_flush_buffers(priv->ctx);
-  //  fprintf(stderr, "Flush buffers done\n");
+  fprintf(stderr, "Flush buffers done\n");
+
+  /* Forget about all imported frames as they might
+     get re-created */
+  
+  if(priv->hwctx)
+    gavl_hw_ctx_resync(priv->hwctx);
+  
+#ifdef HAVE_LIBVA
+  priv->num_va_surface_ids = 0;
+#endif
+  
   
   gavl_packet_pts_cache_clear(priv->pts_cache);
   
@@ -2450,6 +2467,7 @@ static void put_frame_swapfields(bgav_stream_t * s, gavl_video_frame_t * f)
   
   }
 
+#if 0
 static void put_frame_yuvp10_nocopy(bgav_stream_t * s, gavl_video_frame_t * f)
   {
   ffmpeg_video_priv * priv = s->decoder_priv;
@@ -2476,6 +2494,7 @@ static void put_frame_yuvp14_nocopy(bgav_stream_t * s, gavl_video_frame_t * f)
 
   gavl_dsp_video_frame_shift_bits(priv->dsp, s->vframe, s->data.video.format, 2);
   }
+#endif
 
 /* Copy */
 static void put_frame_yuvp10(bgav_stream_t * s, gavl_video_frame_t * f)
@@ -2545,33 +2564,15 @@ static void init_put_frame(bgav_stream_t * s)
         break;
       case AV_PIX_FMT_YUV422P10:
       case AV_PIX_FMT_YUV444P10:
-        if(!(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
-          {
-          priv->put_frame = put_frame_yuvp10_nocopy;
-          s->src_flags |= GAVL_SOURCE_SRC_ALLOC;
-          }
-        else
-          priv->put_frame = put_frame_yuvp10;
+        priv->put_frame = put_frame_yuvp10;
         break;
       case AV_PIX_FMT_YUV422P12:
       case AV_PIX_FMT_YUV444P12:
-        if(!(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
-          {
-          priv->put_frame = put_frame_yuvp12_nocopy;
-          s->src_flags |= GAVL_SOURCE_SRC_ALLOC;
-          }
-        else
-          priv->put_frame = put_frame_yuvp12;
+        priv->put_frame = put_frame_yuvp12;
         break;
       case AV_PIX_FMT_YUV422P14:
       case AV_PIX_FMT_YUV444P14:
-        if(!(s->ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES))
-          {
-          priv->put_frame = put_frame_yuvp14_nocopy;
-          s->src_flags |= GAVL_SOURCE_SRC_ALLOC;
-          }
-        else
-          priv->put_frame = put_frame_yuvp14;
+        priv->put_frame = put_frame_yuvp14;
         break;
       default:
         if(priv->flags & SWAP_FIELDS_OUT)
