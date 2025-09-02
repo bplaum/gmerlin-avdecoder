@@ -273,7 +273,7 @@ void bgav_options_copy(bgav_options_t * dst, const bgav_options_t * src)
   /* Generic network options */
   CP_INT(connect_timeout);
   CP_INT(read_timeout);
-  CP_INT(video_hwctx);
+  CP_INT(hwctx_video);
 
   CP_INT(network_bandwidth);
   
@@ -466,5 +466,5 @@ void bgav_seek_window_changed(bgav_t * b,
 
 void bgav_options_set_video_hw_context(bgav_options_t * opt, gavl_hw_context_t * hwctx)
   {
-  opt->video_hwctx = hwctx;
+  opt->hwctx_video = hwctx;
   }

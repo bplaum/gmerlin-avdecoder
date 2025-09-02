@@ -740,7 +740,7 @@ struct bgav_options_s
   //  int audio_storage;
   //  int video_storage;
 
-  gavl_hw_context_t * video_hwctx;
+  gavl_hw_context_t * hwctx_video;
   
   };
 

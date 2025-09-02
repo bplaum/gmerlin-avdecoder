@@ -902,14 +902,15 @@ static int get_buffer2_cb(struct AVCodecContext *ctx, AVFrame *frame, int flags)
     fmt.frame_height = h;
     
     fmt.pixelformat = s->data.video.format->pixelformat;
-    gavl_hw_ctx_set_video(s->opt->video_hwctx, &fmt, GAVL_HW_FRAME_MODE_MAP);
+
+    gavl_hw_ctx_set_video(priv->hwctx, &fmt, GAVL_HW_FRAME_MODE_MAP);
     
     priv->flags |= DR_INIT;
     }
   
-  f = gavl_hw_video_frame_get(s->opt->video_hwctx);
+  f = gavl_hw_video_frame_get(priv->hwctx);
   
-  //  fprintf(stderr, "Blupp\n");
+  //  fprintf(stderr, "Blupp %p %p %p\n", f, f->hwctx, f->storage);
   
   num_planes = gavl_pixelformat_num_planes(s->data.video.format->pixelformat);
   
@@ -970,7 +971,10 @@ static enum AVPixelFormat get_format_cb(AVCodecContext *ctx, const enum AVPixelF
   ffmpeg_video_priv * priv;
 
   gavl_pixelformat_t pfmt = GAVL_PIXELFORMAT_NONE;
-  fmts = gavl_hw_ctx_get_image_formats(s->opt->video_hwctx, GAVL_HW_FRAME_MODE_MAP);
+
+  priv = s->decoder_priv;
+  
+  fmts = gavl_hw_ctx_get_image_formats(s->opt->hwctx_video, GAVL_HW_FRAME_MODE_MAP);
   /* Copied from avcodec_default_get_format() */
   // If the last element of the list is a software format, choose it
   // (this should be best software format if any exist).
@@ -978,14 +982,16 @@ static enum AVPixelFormat get_format_cb(AVCodecContext *ctx, const enum AVPixelF
 
   i--;
   
-  if(pixfmt_supported(fmts, pix[i], &pfmt))
+  if(pixfmt_supported(fmts, pix[i], &pfmt) &&
+     (priv->hwctx = gavl_hw_ctx_create(gavl_hw_ctx_get_type((s->opt->hwctx_video)))))
     goto found;
   
   i = 0;
 
   while(pix[i] != AV_PIX_FMT_NONE)
     {
-    if(pixfmt_supported(fmts, pix[i], &pfmt))
+    if(pixfmt_supported(fmts, pix[i], &pfmt) &&
+       (priv->hwctx = gavl_hw_ctx_create(gavl_hw_ctx_get_type((s->opt->hwctx_video)))))
       goto found;
     
     i++;
@@ -999,7 +1005,6 @@ static enum AVPixelFormat get_format_cb(AVCodecContext *ctx, const enum AVPixelF
 
   s->data.video.format->pixelformat = pfmt;
 
-  priv = s->decoder_priv;
   priv->flags |= HAVE_DR;
   
   ctx->get_buffer2 = get_buffer2_cb;
@@ -1080,8 +1085,8 @@ static int init_ffmpeg(bgav_stream_t * s)
   else
 #endif
     if((codec->capabilities & AV_CODEC_CAP_DR1) &&
-       s->opt->video_hwctx &&
-       gavl_hw_ctx_get_image_formats(s->opt->video_hwctx, GAVL_HW_FRAME_MODE_MAP))
+       s->opt->hwctx_video &&
+       gavl_hw_ctx_get_image_formats(s->opt->hwctx_video, GAVL_HW_FRAME_MODE_MAP))
       {
 #if 1
       gavl_log(GAVL_LOG_INFO, LOG_DOMAIN,
@@ -2533,7 +2538,7 @@ static void init_put_frame(bgav_stream_t * s)
   /* Software rendering into hardware surface */
   if(priv->flags & HAVE_DR)
     {
-    s->data.video.format->hwctx = s->opt->video_hwctx;
+    s->data.video.format->hwctx = priv->hwctx;
     s->src_flags |= GAVL_SOURCE_SRC_ALLOC;
     }
   else
