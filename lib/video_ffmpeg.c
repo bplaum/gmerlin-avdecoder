@@ -982,17 +982,29 @@ static enum AVPixelFormat get_format_cb(AVCodecContext *ctx, const enum AVPixelF
 
   i--;
   
-  if(pixfmt_supported(fmts, pix[i], &pfmt) &&
-     (priv->hwctx = gavl_hw_ctx_create(gavl_hw_ctx_get_type((s->opt->hwctx_video)))))
-    goto found;
+  if(pixfmt_supported(fmts, pix[i], &pfmt))
+    {
+    if(priv->hwctx) // Sometimes, get_format is called after flush_buffers
+      return pix[i];
+    
+    else if((priv->hwctx = gavl_hw_ctx_create(gavl_hw_ctx_get_type((s->opt->hwctx_video)))))
+      goto found;
+    
+    }
   
   i = 0;
 
   while(pix[i] != AV_PIX_FMT_NONE)
     {
-    if(pixfmt_supported(fmts, pix[i], &pfmt) &&
-       (priv->hwctx = gavl_hw_ctx_create(gavl_hw_ctx_get_type((s->opt->hwctx_video)))))
-      goto found;
+    if(pixfmt_supported(fmts, pix[i], &pfmt))
+      {
+      if(priv->hwctx) // Sometimes, get_format is called after flush_buffers
+        return pix[i];
+      
+      else if((priv->hwctx = gavl_hw_ctx_create(gavl_hw_ctx_get_type((s->opt->hwctx_video)))))
+        goto found;
+      
+      }
     
     i++;
     }
