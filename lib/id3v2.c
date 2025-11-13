@@ -881,6 +881,15 @@ static const uint32_t station_tags[] =
     0x0
   };
 
+static gavl_charset_converter_t * create_cnv_bom(const uint8_t * data)
+  {
+  if((data[0] == 0xFF) && (data[1] == 0xFE))
+    return gavl_charset_converter_create("UTF16LE", GAVL_UTF8);
+  else if((data[1] == 0xFF) && (data[0] == 0xFE))
+    return gavl_charset_converter_create("UTF16BE", GAVL_UTF8);
+  else
+    return NULL;
+  }
 
 static char * get_comment(const bgav_options_t * opt,
                           bgav_id3v2_frame_t* frame)
@@ -904,13 +913,23 @@ static char * get_comment(const bgav_options_t * opt,
       pos = frame->data + 4;
       break;
     case ENCODING_UTF16_BOM:
+      {
       bytes_per_char = 2;
 
-      if((frame->data[4] == 0xFF) && (frame->data[5] == 0xFE))
-        cnv = gavl_charset_converter_create("UTF16LE", GAVL_UTF8);
-      else if((frame->data[5] == 0xFF) && (frame->data[4] == 0xFE))
-        cnv = gavl_charset_converter_create("UTF16BE", GAVL_UTF8);
-      pos = frame->data + 6;
+      if((frame->data[4] == 0x00) && (frame->data[5] == 0x00))
+        {
+        cnv = create_cnv_bom(frame->data + 6);
+        /* Set to 0x00 0x00 which will be skipped later on */
+        pos = frame->data + 4;
+        }
+      else
+        {
+        cnv = create_cnv_bom(frame->data + 4);
+        /* Set to first byte after description BOM */
+        pos = frame->data + 6;
+        }
+      
+      }
       break;
     case ENCODING_UTF16_BE:
       bytes_per_char = 2;
@@ -1086,7 +1105,15 @@ void bgav_id3v2_2_metadata(bgav_id3v2_tag_t * t, gavl_dictionary_t*m)
           gavl_dictionary_set_string(m, GAVL_META_SOFTWARE, t->frames[i].strings[1]);
         else if(!strcmp(t->frames[i].strings[0], "dev"))
           gavl_dictionary_set_string(m, GAVL_META_DEVICE, t->frames[i].strings[1]);
-
+        else if(!strcmp(t->frames[i].strings[0], "description"))
+          gavl_dictionary_set_string(m, GAVL_META_DESCRIPTION, t->frames[i].strings[1]);
+        else if(!strcmp(t->frames[i].strings[0], "author"))
+          gavl_dictionary_set_string(m, GAVL_META_AUTHOR, t->frames[i].strings[1]);
+        else
+          {
+          fprintf(stderr, "unknown TXXX tag: %s\n%s\n",
+                  t->frames[i].strings[0], t->frames[i].strings[1]);
+          }
         break;
         }
       j++;
