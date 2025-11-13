@@ -1109,11 +1109,13 @@ void bgav_id3v2_2_metadata(bgav_id3v2_tag_t * t, gavl_dictionary_t*m)
           gavl_dictionary_set_string(m, GAVL_META_DESCRIPTION, t->frames[i].strings[1]);
         else if(!strcmp(t->frames[i].strings[0], "author"))
           gavl_dictionary_set_string(m, GAVL_META_AUTHOR, t->frames[i].strings[1]);
+#if 0
         else
           {
           fprintf(stderr, "unknown TXXX tag: %s\n%s\n",
                   t->frames[i].strings[0], t->frames[i].strings[1]);
           }
+#endif
         break;
         }
       j++;
