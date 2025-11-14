@@ -39,7 +39,7 @@ bg_media_source_t * bg_avdec_get_src(void * priv);
 
 // const gavl_dictionary_t * bg_avdec_get_edl(void * priv);
 
-void * bg_avdec_create();
+void * bg_avdec_create(void);
 
 void bg_avdec_close(void * priv);
 void bg_avdec_destroy(void * priv);

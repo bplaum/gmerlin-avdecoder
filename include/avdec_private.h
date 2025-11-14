@@ -156,7 +156,7 @@ dst[0] = pal.b >> 8;
 
 /* packet.c */
 
-bgav_packet_t * bgav_packet_create();
+bgav_packet_t * bgav_packet_create(void);
 
 void bgav_packet_destroy(bgav_packet_t*);
 
@@ -1567,7 +1567,7 @@ int bgav_bytebuffer_append_read(gavl_buffer_t * b, bgav_input_context_t * input,
 
 /* Translation specific stuff */
 
-void bgav_translation_init();
+void bgav_translation_init(void);
 
 /* For dynamic strings */
 #define TRD(s) dgettext(PACKAGE, (s))
@@ -1587,8 +1587,8 @@ int bgav_video_is_divx4(uint32_t fourcc);
    Defined in video_ffmpeg.c, used from audio_ffmpeg.c as well
 */
 
-void bgav_ffmpeg_lock();
-void bgav_ffmpeg_unlock();
+void bgav_ffmpeg_lock(void);
+void bgav_ffmpeg_unlock(void);
 
 gavl_packet_index_t * bgav_get_packet_index(const char * url);
 

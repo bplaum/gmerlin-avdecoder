@@ -30,7 +30,7 @@ typedef struct
   uint32_t * codec_tags;
   } bg_avdec_codec_t;
 
-void * bg_avdec_codec_create();
+void * bg_avdec_codec_create(void);
 void bg_avdec_codec_destroy(void *);
 void bg_avdec_codec_reset(void*);
 int64_t bg_avdec_codec_skip(void*, int64_t t, int scale);

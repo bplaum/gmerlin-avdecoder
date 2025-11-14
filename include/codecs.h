@@ -28,78 +28,78 @@ void bgav_init_audio_decoders_ffmpeg(bgav_options_t * opt);
 void bgav_init_video_decoders_ffmpeg(bgav_options_t * opt);
 #endif
 #ifdef HAVE_VORBIS
-void bgav_init_audio_decoders_vorbis();
+void bgav_init_audio_decoders_vorbis(void);
 #endif
 
 #ifdef HAVE_OPUS
-void bgav_init_audio_decoders_opus();
+void bgav_init_audio_decoders_opus(void);
 #endif
 
 
 #ifdef HAVE_LIBA52
-void bgav_init_audio_decoders_a52();
+void bgav_init_audio_decoders_a52(void);
 #endif
 
 #ifdef HAVE_DCA
-void bgav_init_audio_decoders_dca();
+void bgav_init_audio_decoders_dca(void);
 #endif
 
 #ifdef HAVE_MAD
-void bgav_init_audio_decoders_mad();
+void bgav_init_audio_decoders_mad(void);
 #endif
 
 #ifdef HAVE_LIBPNG
-void bgav_init_video_decoders_png();
+void bgav_init_video_decoders_png(void);
 #endif
 
 #ifdef HAVE_OPENJPEG
-void bgav_init_video_decoders_openjpeg();
+void bgav_init_video_decoders_openjpeg(void);
 #endif
 
 #ifdef HAVE_LIBTIFF
-void bgav_init_video_decoders_tiff();
+void bgav_init_video_decoders_tiff(void);
 #endif
 
 #ifdef HAVE_THEORADEC
-void bgav_init_video_decoders_theora();
+void bgav_init_video_decoders_theora(void);
 #endif
 
 #ifdef HAVE_SCHROEDINGER
-void bgav_init_video_decoders_schroedinger();
+void bgav_init_video_decoders_schroedinger(void);
 #endif
 
 #ifdef HAVE_SPEEX
-void bgav_init_audio_decoders_speex();
+void bgav_init_audio_decoders_speex(void);
 #endif
 
 #ifdef HAVE_FLAC
-void bgav_init_audio_decoders_flac();
+void bgav_init_audio_decoders_flac(void);
 #endif
 
 #ifdef HAVE_V4L2
-void bgav_init_video_decoders_v4l2();
+void bgav_init_video_decoders_v4l2(void);
 #endif
 
 /* The following are always supported */
 
-void bgav_init_audio_decoders_gavl();
-void bgav_init_audio_decoders_pcm();
+void bgav_init_audio_decoders_gavl(void);
+void bgav_init_audio_decoders_pcm(void);
 
 #ifdef HAVE_LIBGSM
-void bgav_init_audio_decoders_gsm();
+void bgav_init_audio_decoders_gsm(void);
 #endif
 
-void bgav_init_video_decoders_aviraw();
-void bgav_init_video_decoders_qtraw();
-void bgav_init_video_decoders_yuv();
-void bgav_init_video_decoders_y4m();
-void bgav_init_video_decoders_tga();
-void bgav_init_video_decoders_rtjpeg();
-void bgav_init_video_decoders_gavl();
-void bgav_init_video_decoders_dvdsub();
+void bgav_init_video_decoders_aviraw(void);
+void bgav_init_video_decoders_qtraw(void);
+void bgav_init_video_decoders_yuv(void);
+void bgav_init_video_decoders_y4m(void);
+void bgav_init_video_decoders_tga(void);
+void bgav_init_video_decoders_rtjpeg(void);
+void bgav_init_video_decoders_gavl(void);
+void bgav_init_video_decoders_dvdsub(void);
 
-void bgav_init_audio_decoders_gavf();
-void bgav_init_video_decoders_gavf();
+void bgav_init_audio_decoders_gavf(void);
+void bgav_init_video_decoders_gavf(void);
 
 #endif // BGAV_CODECS_H_INCLUDED
 

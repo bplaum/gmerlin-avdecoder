@@ -85,7 +85,7 @@ typedef struct bgav_s bgav_t;
  */
 
 BGAV_PUBLIC
-bgav_t * bgav_create();
+bgav_t * bgav_create(void);
 
 /** \defgroup options Configuration of a decoder
  *  \ingroup decoding
@@ -251,7 +251,7 @@ bgav_options_t * bgav_get_options(bgav_t * bgav);
  */
 
 BGAV_PUBLIC
-bgav_options_t * bgav_options_create();
+bgav_options_t * bgav_options_create(void);
 
 /** \ingroup options
  *  \brief Destroy option cotainer.
@@ -869,7 +869,7 @@ typedef struct
  */
 
 BGAV_PUBLIC
-bgav_device_info_t * bgav_find_devices_vcd();
+bgav_device_info_t * bgav_find_devices_vcd(void);
 
 /** \ingroup devices
  *  \brief Test if a device is VCD capable
@@ -889,7 +889,7 @@ int bgav_check_device_vcd(const char * device, char ** name);
  */
 
 BGAV_PUBLIC
-bgav_device_info_t * bgav_find_devices_dvd();
+bgav_device_info_t * bgav_find_devices_dvd(void);
 
 /** \ingroup devices
  *  \brief Test if a device is DVD capable
@@ -909,7 +909,7 @@ int bgav_check_device_dvd(const char * device, char ** name);
  */
 
 BGAV_PUBLIC
-bgav_device_info_t * bgav_find_devices_dvb();
+bgav_device_info_t * bgav_find_devices_dvb(void);
 
 /** \ingroup devices
  *  \brief Test if a device is DVB capable
@@ -2422,7 +2422,7 @@ typedef struct bgav_stream_decoder_s bgav_stream_decoder_t;
  */
   
 BGAV_PUBLIC
-bgav_stream_decoder_t * bgav_stream_decoder_create();
+bgav_stream_decoder_t * bgav_stream_decoder_create(void);
 
 /** \brief Get options for a stream decoder
  *  \param dec A stream decoder
@@ -2534,7 +2534,7 @@ bgav_stream_decoder_destroy(bgav_stream_decoder_t * dec);
 
   
 BGAV_PUBLIC gavl_codec_id_t *
-bgav_supported_audio_compressions();
+bgav_supported_audio_compressions(void);
 
 /** \brief Get supported video compressions
  *  \returns The supported video compressions
@@ -2545,13 +2545,13 @@ bgav_supported_audio_compressions();
  */
 
 BGAV_PUBLIC
-gavl_codec_id_t * bgav_supported_video_compressions();
+gavl_codec_id_t * bgav_supported_video_compressions(void);
 
 BGAV_PUBLIC
-uint32_t * bgav_supported_audio_fourccs();
+uint32_t * bgav_supported_audio_fourccs(void);
 
 BGAV_PUBLIC
-uint32_t * bgav_supported_video_fourccs();
+uint32_t * bgav_supported_video_fourccs(void);
 
   
 BGAV_PUBLIC
@@ -2587,7 +2587,7 @@ void bgav_dump(bgav_t * bgav);
  */
 
 BGAV_PUBLIC
-void bgav_codecs_dump();
+void bgav_codecs_dump(void);
 
 /* Dump known media formats */
 
@@ -2599,7 +2599,7 @@ void bgav_codecs_dump();
  */
 
 BGAV_PUBLIC
-void bgav_formats_dump();
+void bgav_formats_dump(void);
 
 /** \ingroup debugging
  *  \brief Dump informations about all available input modules to stderr
@@ -2609,7 +2609,7 @@ void bgav_formats_dump();
  */
 
 BGAV_PUBLIC
-void bgav_inputs_dump();
+void bgav_inputs_dump(void);
 
 /** \ingroup debugging
  *  \brief Dump informations about all available redirectors to stderr
@@ -2619,7 +2619,7 @@ void bgav_inputs_dump();
  */
 
 BGAV_PUBLIC
-void bgav_redirectors_dump();
+void bgav_redirectors_dump(void);
 
 /** \ingroup debugging
  *  \brief Dump informations about all available subtitle readers to stderr
@@ -2629,7 +2629,7 @@ void bgav_redirectors_dump();
  */
 
 BGAV_PUBLIC
-void bgav_subreaders_dump();
+void bgav_subreaders_dump(void);
 
 
 #ifdef __cplusplus

@@ -112,7 +112,7 @@ typedef struct {
 #define RTJ_YUV422 1
 #define RTJ_RGB8 2
 
-extern RTjpeg_t *RTjpeg_init();
+extern RTjpeg_t *RTjpeg_init(void);
 extern void RTjpeg_close(RTjpeg_t *rtj);
 extern int RTjpeg_set_quality(RTjpeg_t *rtj, int *quality);
 extern int RTjpeg_set_format(RTjpeg_t *rtj, int *format);

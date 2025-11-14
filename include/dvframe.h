@@ -35,7 +35,7 @@
 
 typedef struct bgav_dv_dec_s bgav_dv_dec_t;
 
-bgav_dv_dec_t * bgav_dv_dec_create();
+bgav_dv_dec_t * bgav_dv_dec_create(void);
 void bgav_dv_dec_destroy(bgav_dv_dec_t*);
 
 /* Sets the header for parsing. Data must be DV_HEADER_SIZE bytes long */
