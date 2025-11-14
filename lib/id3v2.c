@@ -772,6 +772,7 @@ static bgav_id3v2_frame_t * bgav_id3v2_find_frame(bgav_id3v2_tag_t*t,
   return NULL;
   }
 
+  
 static const uint32_t title_tags[] =
   {
     BGAV_MK_FOURCC('T','I','T','2'),
@@ -976,7 +977,7 @@ void bgav_id3v2_2_metadata(bgav_id3v2_tag_t * t, gavl_dictionary_t*m)
   int i_tmp;
   bgav_id3v2_frame_t * frame;
   char * artwork_uris[4];
-
+  
   memset(artwork_uris, 0, sizeof(artwork_uris));
   
   /* Title */
@@ -1082,9 +1083,34 @@ void bgav_id3v2_2_metadata(bgav_id3v2_tag_t * t, gavl_dictionary_t*m)
     gavl_dictionary_set_string_nocopy(m, GAVL_META_COMMENT, get_comment(t->opt, frame));
 
   /* Cover */
-  if((frame = bgav_id3v2_find_frame(t, cover_tags)) &&
-     frame->picture && (frame->picture->picture_type == 3))
+
+  frame = NULL;
+
+  for(i = 0; i < t->num_frames; i++)
     {
+    int j = 0;
+
+    while(cover_tags[j])
+      {
+      if(t->frames[i].header.fourcc == cover_tags[j])
+        break;
+      j++;
+      }
+
+    if(cover_tags[j] && t->frames[i].picture && (t->frames[i].picture->picture_type == 3))
+      {
+      frame = &t->frames[i];
+      break;
+      }
+    }
+
+  /* Take first frame */
+  if(!frame)
+    frame = bgav_id3v2_find_frame(t, cover_tags);
+  
+  if(frame && frame->picture)
+    {
+    /* TODO: Replace this by image buffer */
     gavl_metadata_add_image_embedded(m, GAVL_META_COVER_EMBEDDED, 
                                      -1, -1, frame->picture->mimetype,
                                      frame->picture->data_offset + frame->header.header_size + frame->header.start,
