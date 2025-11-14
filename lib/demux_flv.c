@@ -56,7 +56,7 @@ struct meta_object_s
   union
     {
     double number;
-    uint8_t bool;
+    uint8_t Bool;
     char * string;
 
     struct
@@ -309,7 +309,7 @@ static void dump_meta_object(meta_object_t * obj, int num_spaces)
       gavl_dprintf("%f\n", obj->data.number);
       break;
     case TYPE_BOOL:
-      gavl_dprintf("%s\n", (obj->data.bool ? "True" : "False"));
+      gavl_dprintf("%s\n", (obj->data.Bool ? "True" : "False"));
       break;
     case TYPE_STRING:
       gavl_dprintf("%s\n", obj->data.string);
@@ -374,7 +374,7 @@ static int read_meta_object(bgav_input_context_t * input,
       ret->data.number = int2dbl(i64);
       break;
     case TYPE_BOOL:
-      if(!bgav_input_read_data(input, &ret->data.bool, 1))
+      if(!bgav_input_read_data(input, &ret->data.Bool, 1))
         return 0;
       break;
     case TYPE_STRING:
