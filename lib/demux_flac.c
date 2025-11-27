@@ -231,6 +231,7 @@ static int open_flac(bgav_demuxer_context_t * ctx)
         uint32_t height;
         uint32_t type;
         char * mimetype = NULL;
+        uint8_t * image_data;
         
         if(!bgav_input_read_32_be(ctx->input, &type) ||
            !bgav_input_read_32_be(ctx->input, &len))
@@ -257,15 +258,18 @@ static int open_flac(bgav_demuxer_context_t * ctx)
         if(!bgav_input_read_32_be(ctx->input, &len)) // Data len
           goto image_fail;
 
+        image_data = malloc(len);
+        if(bgav_input_read_data(ctx->input, image_data, len) < len)
+          goto image_fail;
+          
         gavl_metadata_add_image_embedded(ctx->tt->cur->metadata,
                                          GAVL_META_COVER_EMBEDDED,
                                          width, height,
                                          mimetype,
-                                         ctx->input->position,
+                                         image_data,
                                          len);
-
-        bgav_input_skip(ctx->input, len); // Skip actual image data
-
+        free(image_data);
+        
         free(mimetype);
         break;
 
