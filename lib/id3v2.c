@@ -44,7 +44,7 @@ typedef struct
   int picture_type;
   char * description;
 
-  int data_offset; // From frame data start
+  uint8_t * data; 
   int data_size;
 
   } bgav_id3v2_picture_t;
@@ -77,17 +77,20 @@ typedef struct
 #define ID3V2_TAG_EXPERIMENTAL    (1<<5)
 #define ID3V2_TAG_FOOTER_PRESENT  (1<<4)
 
+typedef struct id3v2_header_s
+  {
+  uint8_t major_version;
+  uint8_t minor_version;
+  uint8_t flags;
+  uint32_t data_size;
+  uint32_t header_size;
+  
+  } id3v2_header_t;
+
 struct bgav_id3v2_tag_s
   {
-  struct
-    {
-    uint8_t major_version;
-    uint8_t minor_version;
-    uint8_t flags;
-    uint32_t data_size;
-    uint32_t header_size;
-    } header;
-
+  id3v2_header_t header;
+  
   struct
     {
     uint32_t data_size;
@@ -169,7 +172,6 @@ static void dump_frame(bgav_id3v2_frame_t * frame)
     gavl_dprintf("Picture:\n");
     gavl_dprintf("  Mimetype: %s\n", frame->picture->mimetype);
     gavl_dprintf("  Size:     %d\n", frame->picture->data_size);
-    gavl_dprintf("  Offset:   %d\n", frame->picture->data_offset);
     gavl_dprintf("  Type:     ");
     switch(frame->picture->picture_type)
       {
@@ -267,6 +269,8 @@ static void free_frame(bgav_id3v2_frame_t * frame)
       free(frame->picture->mimetype);
     if(frame->picture->description)
       free(frame->picture->description);
+    if(frame->picture->data)
+      free(frame->picture->data);
     free(frame->picture);
     } 
   }
@@ -477,10 +481,10 @@ read_picture(uint8_t * data, int data_size)
   char * end_pos;
   uint8_t * data_start = data;
   uint8_t * data_end = data + data_size;
-  
   bgav_id3v2_picture_t * ret;
   gavl_charset_converter_t * cnv = NULL;
-
+  int data_offset;
+  
   ret = calloc(1, sizeof(*ret));
 
   charset = *data;
@@ -523,26 +527,29 @@ read_picture(uint8_t * data, int data_size)
 
   pos = end_pos + bytes_per_char;
 
-  ret->data_offset = (pos - (char*)data_start);
-  ret->data_size = data_size - ret->data_offset;
+  data_offset = (pos - (char*)data_start);
+  
+  ret->data_size = data_size - data_offset;
 
+  ret->data = malloc(ret->data_size);
+  memcpy(ret->data, pos, ret->data_size);
   return ret;
   }
 
 static int read_frame(bgav_input_context_t * input,
                       bgav_id3v2_frame_t * ret,
                       uint8_t * probe_data,
-                      int major_version,
-                      int tag_header_size)
+                      const id3v2_header_t * tag_header)
   {
   uint8_t buf[4];
   uint8_t * data;
-
+  int do_unsync = 0;
+  
   ret->header.start = input->position - 3; 
  
-  if(major_version < 4)
+  if(tag_header->major_version < 4)
     {
-    switch(major_version)
+    switch(tag_header->major_version)
       {
       case 2:
         /* 3 bytes for ID and size */
@@ -599,11 +606,59 @@ static int read_frame(bgav_input_context_t * input,
     return 0;
 
   ret->header.header_size = input->position - ret->header.start;
-  
+
+  switch(tag_header->major_version)
+    {
+    case 3:
+      if(tag_header->flags & 0x80)
+        do_unsync = 1;
+      break;
+    case 4:
+      if((tag_header->flags & 0x80) ||
+         (ret->header.flags & ID3V2_FRAME_UNSYNCHRONIZED))
+        do_unsync = 1;
+      break;
+    }
+
   data = calloc(ret->header.data_size+2, 1);
   if(bgav_input_read_data(input, data, ret->header.data_size) <
      ret->header.data_size)
     return 0;
+  
+  if(do_unsync)
+    {
+    uint8_t * dst;
+    const uint8_t * src;
+    uint8_t * data_new = calloc(ret->header.data_size+2, 1);
+    int size_new = 0;
+    int i;
+    
+    src = data;
+    dst = data_new;
+
+    i = 0;
+    
+    while(i < ret->header.data_size-1)
+      {
+      dst[size_new++] = src[i];
+      
+      if((src[i] == 0xff) &&
+         (src[i+1] == 0x00))
+        i+=2;
+      else
+        i++;
+      }
+
+    if(i == ret->header.data_size-1)
+      dst[size_new++] = src[i];
+
+    /* Be string friendly */
+    dst[size_new] = 0x00;
+    dst[size_new+1] = 0x00;
+    ret->header.data_size = size_new;
+    free(data);
+    data = data_new;
+    }
   
   if(((ret->header.fourcc & 0xFF000000) ==
      BGAV_MK_FOURCC('T', 0x00, 0x00, 0x00)) ||
@@ -625,7 +680,7 @@ static int read_frame(bgav_input_context_t * input,
   if(data)
     free(data);
 
-  ret->header.start += tag_header_size;
+  ret->header.start += tag_header->header_size;
 
 //  dump_frame(ret);  
   return 1;
@@ -715,7 +770,7 @@ bgav_id3v2_tag_t * bgav_id3v2_read(bgav_input_context_t * input)
     if(!read_frame(input_mem,
                    &ret->frames[ret->num_frames],
                    probe_data,
-                   ret->header.major_version, ret->header.header_size))
+                   &ret->header))
       {
       free_frame(&ret->frames[ret->num_frames]);
       break;
@@ -815,6 +870,20 @@ static const uint32_t year_tags[] =
     0x00,
   };
 
+static const uint32_t date_tags[] =
+  {
+    BGAV_MK_FOURCC('T', 'D', 'R', 'L'),
+    0x00,
+  };
+
+static const uint32_t creation_date_tags[] =
+  {
+    BGAV_MK_FOURCC('T', 'D', 'R', 'C'),
+    0x00,
+  };
+
+
+
 static const uint32_t track_tags[] =
   {
     BGAV_MK_FOURCC('T', 'R', 'C', 'K'),
@@ -879,6 +948,12 @@ static const uint32_t wxxx_tags[] =
 static const uint32_t station_tags[] =
   {
     BGAV_MK_FOURCC('T','R','S','N'),
+    0x0
+  };
+
+static const uint32_t podcast_tags[] =
+  {
+    BGAV_MK_FOURCC('P','C','S','T'),
     0x0
   };
 
@@ -979,6 +1054,7 @@ void bgav_id3v2_2_metadata(bgav_id3v2_tag_t * t, gavl_dictionary_t*m)
   char * artwork_uris[4];
   
   memset(artwork_uris, 0, sizeof(artwork_uris));
+
   
   /* Title */
 
@@ -987,10 +1063,23 @@ void bgav_id3v2_2_metadata(bgav_id3v2_tag_t * t, gavl_dictionary_t*m)
     gavl_dictionary_set_string(m, GAVL_META_TITLE, frame->strings[0]);
 
   /* Album */
-    
-  frame = bgav_id3v2_find_frame(t, album_tags);
-  if(frame && frame->strings)
-    gavl_dictionary_set_string(m, GAVL_META_ALBUM, frame->strings[0]);
+
+  if(bgav_id3v2_find_frame(t, podcast_tags))
+    {
+    gavl_dictionary_set_string(m, GAVL_META_CLASS, GAVL_META_CLASS_AUDIO_PODCAST_EPISODE);
+
+    frame = bgav_id3v2_find_frame(t, album_tags);
+    if(frame && frame->strings)
+      gavl_dictionary_set_string(m, GAVL_META_PODCAST, frame->strings[0]);
+    }
+  else
+    {
+    frame = bgav_id3v2_find_frame(t, album_tags);
+    if(frame && frame->strings)
+      gavl_dictionary_set_string(m, GAVL_META_ALBUM, frame->strings[0]);
+
+    }
+  
 
   /* Copyright */
     
@@ -1036,12 +1125,38 @@ void bgav_id3v2_2_metadata(bgav_id3v2_tag_t * t, gavl_dictionary_t*m)
       }
     }
   
-  /* Year */
-  
-  frame = bgav_id3v2_find_frame(t, year_tags);
-  if(frame && frame->strings)
-    gavl_dictionary_set_string(m, GAVL_META_YEAR, frame->strings[0]);
+  /* Date or Year */
 
+  if((frame = bgav_id3v2_find_frame(t, date_tags)))
+    {
+    if(frame->strings)
+      {
+      char * pos;
+      gavl_dictionary_set_string(m, GAVL_META_DATE, frame->strings[0]);
+      if((pos = strchr(gavl_dictionary_get_string_nc(m, GAVL_META_DATE), 'T')))
+        *pos = ' ';
+      }
+    }
+  else
+    {
+    frame = bgav_id3v2_find_frame(t, year_tags);
+    if(frame && frame->strings)
+      gavl_dictionary_set_string(m, GAVL_META_YEAR, frame->strings[0]);
+    }
+
+  /* Creation Date */
+  
+  if((frame = bgav_id3v2_find_frame(t, creation_date_tags)))
+    {
+    if(frame->strings)
+      {
+      char * pos;
+      gavl_dictionary_set_string(m, GAVL_META_DATE_CREATE, frame->strings[0]);
+      if((pos = strchr(gavl_dictionary_get_string_nc(m, GAVL_META_DATE_CREATE), 'T')))
+        *pos = ' ';
+      }
+    }
+  
   /* Station */
   
   frame = bgav_id3v2_find_frame(t, station_tags);
@@ -1113,7 +1228,7 @@ void bgav_id3v2_2_metadata(bgav_id3v2_tag_t * t, gavl_dictionary_t*m)
     /* TODO: Replace this by image buffer */
     gavl_metadata_add_image_embedded(m, GAVL_META_COVER_EMBEDDED, 
                                      -1, -1, frame->picture->mimetype,
-                                     frame->picture->data_offset + frame->header.header_size + frame->header.start,
+                                     frame->picture->data,
                                      frame->picture->data_size);
     }
 
