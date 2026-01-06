@@ -769,7 +769,7 @@ int bgav_set_video_compression_info(bgav_stream_t * s)
   if(s->flags & (STREAM_GOT_CI || STREAM_GOT_NO_CI))
     return 1;
 
-  fprintf(stderr, "bgav_set_video_compression_info\n");
+  //  fprintf(stderr, "bgav_set_video_compression_info\n");
   
   if(bgav_check_fourcc(s->fourcc, bgav_png_fourccs))
     id = GAVL_CODEC_ID_PNG;
@@ -843,7 +843,7 @@ int bgav_set_video_compression_info(bgav_stream_t * s)
   
   s->flags |= STREAM_GOT_CI;
 
-  fprintf(stderr, "Setting compression info: %d\n", s->ci->id);
+  //  fprintf(stderr, "Setting compression info: %d\n", s->ci->id);
   
   gavl_stream_set_compression_info(s->info, s->ci);
   return 1;
