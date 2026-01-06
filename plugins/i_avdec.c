@@ -403,7 +403,7 @@ static char const * const mimetypes =
   "video/3gpp "
   "video/3gpp2 "
   "application/x-cue "
-  "application/x-subrip ";
+  "application/x-subrip";
 
 static const char * get_mimetypes(void * priv)
   {
