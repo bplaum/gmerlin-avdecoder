@@ -867,7 +867,7 @@ gavl_packet_index_t * bgav_get_packet_index(const char * url)
   /* Read cached entry */
   gavl_md5_buffer_str(url, strlen(url), hash);
   
-  cache_dir = gavl_search_cache_dir(PACKAGE, "indices");
+  cache_dir = gavl_search_cache_dir(PACKAGE, NULL, "indices");
   filename = gavl_sprintf("%s/%s", cache_dir, hash);
   
   if(!stat(filename, &st_idx) &&
