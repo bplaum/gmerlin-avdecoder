@@ -190,6 +190,7 @@ static void convert_channel_layout(gavl_audio_format_t * fmt,
       gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Ambisonic channel order not supported");
       break;
     case AV_CHANNEL_ORDER_UNSPEC:
+    default:
       gavl_set_channel_setup(fmt);
       break;
     }
@@ -532,10 +533,16 @@ static void close_ffmpeg(bgav_stream_t * s)
     }
   if(priv->ctx)
     {
+#if LIBAVCODEC_VERSION_MAJOR < 61    
     bgav_ffmpeg_lock();
     avcodec_close(priv->ctx);
     bgav_ffmpeg_unlock();
-    free(priv->ctx);
+    av_free(priv->ctx);
+#else
+    bgav_ffmpeg_lock();
+    avcodec_free_context(&priv->ctx);
+    bgav_ffmpeg_unlock();
+#endif
     }
   av_frame_unref(priv->f);
   av_frame_free(&priv->f);

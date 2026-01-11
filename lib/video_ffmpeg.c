@@ -1324,10 +1324,16 @@ static void close_ffmpeg(bgav_stream_t * s)
   
   if(priv->ctx)
     {
+#if LIBAVCODEC_VERSION_MAJOR < 61    
     bgav_ffmpeg_lock();
     avcodec_close(priv->ctx);
     bgav_ffmpeg_unlock();
     av_free(priv->ctx);
+#else
+    bgav_ffmpeg_lock();
+    avcodec_free_context(&priv->ctx);
+    bgav_ffmpeg_unlock();
+#endif
     }
   if(priv->gavl_frame_priv)
     {
