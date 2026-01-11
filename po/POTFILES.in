@@ -76,7 +76,6 @@ lib/qt_stts.c
 lib/qt_gmin.c
 lib/demux_p2xml.c
 lib/qt_rmra.c
-lib/video_xadll.c
 lib/packetbuffer.c
 lib/vorbis_comment.c
 lib/parse_adts.c
@@ -281,7 +280,6 @@ lib/qt_wave.c
 lib/bsf_avcc.c
 lib/audio_vorbis.c
 lib/demux_dxa.c
-lib/in_sub.c
 lib/demux_rawaudio.c
 lib/rtcp.c
 lib/qt_useratoms.c
@@ -304,7 +302,6 @@ lib/rtpbuffer.c
 lib/demux_r3d.c
 lib/a52_header.c
 lib/win32codec.c
-lib/demux_mpegts.c
 lib/qt_timecode.c
 lib/demux_dv.c
 lib/frametype.c
@@ -673,7 +670,6 @@ raspi-build-debug/gmerlin-avdecoder-2.0.0pre1/lib/audio_dca.c
 raspi-build-debug/gmerlin-avdecoder-2.0.0pre1/lib/parse_a52.c
 raspi-build-debug/gmerlin-avdecoder-2.0.0pre1/lib/demux_ircam.c
 raspi-build-debug/gmerlin-avdecoder-2.0.0pre1/lib/parse_opus.c
-raspi-build-debug/gmerlin-avdecoder-2.0.0pre1/lib/dvb_channels.c
 raspi-build-debug/gmerlin-avdecoder-2.0.0pre1/lib/mpa_header.c
 raspi-build-debug/gmerlin-avdecoder-2.0.0pre1/lib/qt_mdia.c
 raspi-build-debug/gmerlin-avdecoder-2.0.0pre1/lib/audio_pcm.c
