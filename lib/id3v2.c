@@ -668,8 +668,8 @@ static int read_frame(bgav_input_context_t * input,
     }
   else if(ret->header.fourcc == BGAV_MK_FOURCC('A', 'P', 'I', 'C'))
     {
-    ret->picture = read_picture(data, ret->header.data_size);
-    
+    if(ret->header.data_size > 2)
+      ret->picture = read_picture(data, ret->header.data_size);
     }
   else /* Copy raw data */
     {
