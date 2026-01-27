@@ -60,68 +60,6 @@ bgav_stream_decoder_get_options(bgav_stream_decoder_t * dec)
   return &dec->opt;
   }
 
-#if 0
-static void packet_from_gavl(gavl_packet_t * src,
-                             bgav_packet_t * dst)
-  {
-  bgav_packet_from_gavl(src, dst);
-  dst->buf.buf = src->buf.buf;
-  dst->buf.len = src->buf.len; 
-  }
-
-static gavl_source_status_t get_func(void * priv, bgav_packet_t ** ret)
-  {
-  gavl_source_status_t st;
-  gavl_packet_t * gp = NULL;
-  
-  bgav_stream_decoder_t * dec = priv;
-  
-  if(dec->out_packet)
-    {
-    if(ret)
-      {
-      *ret = dec->out_packet;
-      }
-    dec->out_packet = NULL;
-    return GAVL_SOURCE_OK;
-    }
-  
-  if((st = gavl_packet_source_read_packet(dec->src, &gp)) != GAVL_SOURCE_OK)
-    return st;
-  
-  packet_from_gavl(gp, &dec->p);
-  
-  *ret = &dec->p;
-  return GAVL_SOURCE_OK;
-  }
-
-static gavl_source_status_t peek_func(void * priv, bgav_packet_t ** ret, int force)
-  {
-  gavl_source_status_t st;
-  gavl_packet_t * gp = NULL;
-  
-  bgav_stream_decoder_t * dec = priv;
-
-  if(dec->out_packet)
-    {
-    if(ret)
-      *ret = dec->out_packet;
-    
-    return GAVL_SOURCE_OK;
-    }
-  
-  if((st = gavl_packet_source_read_packet(dec->src, &gp)) != GAVL_SOURCE_OK)
-    return st;
-  
-  packet_from_gavl(gp, &dec->p);
-  dec->out_packet = &dec->p;
-  
-  if(ret)
-    *ret = dec->out_packet;
-  return GAVL_SOURCE_OK;
-  }
-#endif
-
 static int init_common(bgav_stream_decoder_t * dec,
                        gavl_packet_source_t * src)
   {
@@ -205,7 +143,6 @@ bgav_stream_decoder_reset(bgav_stream_decoder_t * dec)
   dec->s.out_time = GAVL_TIME_UNDEFINED;
   dec->out_packet = NULL;
   
-#if 1
   if(bgav_stream_peek_packet_read(&dec->s, &p) != GAVL_SOURCE_OK)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Cannot get packet after reset");
@@ -216,17 +153,17 @@ bgav_stream_decoder_reset(bgav_stream_decoder_t * dec)
     {
     case GAVL_STREAM_AUDIO:
       bgav_audio_resync(&dec->s);
-      fprintf(stderr, "Audio resync: %"PRId64"\n", dec->s.out_time);
+      gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Audio resync: %"PRId64, dec->s.out_time);
       break;
     case GAVL_STREAM_VIDEO:
       bgav_video_resync(&dec->s);
-      fprintf(stderr, "Video resync: %"PRId64"\n", dec->s.out_time);
+      gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Video resync: %"PRId64, dec->s.out_time);
       break;
     default:
       break;
     }
-#endif
-  
+
+  //  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Resync %"PRId64, p->pts);
   }
 
 
