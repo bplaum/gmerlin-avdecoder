@@ -1274,9 +1274,9 @@ static void resync_ffmpeg(bgav_stream_t * s)
   {
   ffmpeg_video_priv * priv;
   priv = s->decoder_priv;
-  fprintf(stderr, "Flush buffers\n");
+  //  fprintf(stderr, "Flush buffers\n");
   avcodec_flush_buffers(priv->ctx);
-  fprintf(stderr, "Flush buffers done\n");
+  //  fprintf(stderr, "Flush buffers done\n");
 
   /* Forget about all imported frames as they might
      get re-created */
