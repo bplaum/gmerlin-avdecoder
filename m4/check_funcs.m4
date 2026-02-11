@@ -516,6 +516,9 @@ CFLAGS=""
 
 PKG_CHECK_MODULES(MAD, mad >= $MAD_REQUIRED, have_mad="true", have_mad="false")
 
+CFLAGS=$OLD_CFLAGS
+LIBS=$OLD_LIBS
+
 fi
 
 AC_SUBST(MAD_CFLAGS)
