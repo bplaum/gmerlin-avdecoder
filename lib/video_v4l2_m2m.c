@@ -38,10 +38,6 @@ static gavl_array_t * v4l_devices = NULL;
 typedef struct
   {
   gavl_v4l2_device_t * dev;
-  gavl_hw_context_t * hwctx;
-  
-  //  gavl_packet_source_t * psrc;
-  
   } v4l2_t;
 
 static int probe_v4l2(const gavl_dictionary_t * dict)
@@ -65,10 +61,7 @@ static int init_v4l2(bgav_stream_t * s)
 
   priv = calloc(1, sizeof(*priv));
 
-  priv->hwctx = gavl_hw_ctx_create_v4l2(dev_file);
-  
-  priv->dev = gavl_hw_ctx_v4l2_get_device(priv->hwctx);
-  
+  priv->dev = gavl_v4l2_device_open(dev_file);
   
   if(!gavl_v4l2_device_init_decoder(priv->dev, s->info_ext, s->psrc))
     {
@@ -99,11 +92,8 @@ static void close_v4l2(bgav_stream_t * s)
   priv = s->decoder_priv;
 
   /* dev is owned by hwctx */
-  //  if(priv->dev)
-  //    gavl_v4l2_device_close(priv->dev);
-  
-  if(priv->hwctx)
-    gavl_hw_ctx_destroy(priv->hwctx);
+  if(priv->dev)
+    gavl_v4l2_device_close(priv->dev);
   
   free(priv);
      

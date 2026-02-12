@@ -37,6 +37,8 @@
 
 // #undef HAVE_LIBVA
 
+#include <gavl/hw.h>
+
 
 #ifdef HAVE_LIBVA
 #include <va/va.h>
@@ -890,6 +892,8 @@ static int get_buffer2_cb(struct AVCodecContext *ctx, AVFrame *frame, int flags)
     gavl_video_format_t fmt;
     memset(&fmt, 0, sizeof(fmt));
 
+    gavl_video_format_copy(&fmt, s->data.video.format);
+    
     fmt.image_width = frame->width;
     fmt.image_height = frame->height;
 
@@ -901,14 +905,14 @@ static int get_buffer2_cb(struct AVCodecContext *ctx, AVFrame *frame, int flags)
     fmt.frame_width = w;
     fmt.frame_height = h;
     
-    fmt.pixelformat = s->data.video.format->pixelformat;
+    //  fmt.pixelformat = s->data.video.format->pixelformat;
 
-    gavl_hw_ctx_set_video(priv->hwctx, &fmt, GAVL_HW_FRAME_MODE_MAP);
+    gavl_hw_ctx_set_video_creator(priv->hwctx, &fmt, GAVL_HW_FRAME_MODE_MAP);
     
     priv->flags |= DR_INIT;
     }
   
-  f = gavl_hw_video_frame_get(priv->hwctx);
+  f = gavl_hw_video_frame_get_write(priv->hwctx);
   
   //  fprintf(stderr, "Blupp %p %p %p\n", f, f->hwctx, f->storage);
   
