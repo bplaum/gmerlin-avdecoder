@@ -152,8 +152,7 @@ static int open_flac(bgav_demuxer_context_t * ctx)
 
         s->ci->codec_header.len = BGAV_FLAC_STREAMINFO_SIZE + 8;
         
-        
-        if(ctx->opt->dump_headers)
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
           bgav_flac_streaminfo_dump(&priv->streaminfo);
         
         bgav_flac_streaminfo_init_stream(&priv->streaminfo, s->info);
@@ -191,7 +190,7 @@ static int open_flac(bgav_demuxer_context_t * ctx)
       case 3: // SEEKTABLE
         if(!bgav_flac_seektable_read(ctx->input, &priv->seektable, size))
           goto fail;
-        if(ctx->opt->dump_indices)
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_INDICES))
           bgav_flac_seektable_dump(&priv->seektable);
         break;
       case 4: // VORBIS_COMMENT
@@ -213,7 +212,7 @@ static int open_flac(bgav_demuxer_context_t * ctx)
         if(s)
           gavl_dictionary_set_string(s->m, GAVL_META_SOFTWARE, vc.vendor);
         
-        if(ctx->opt->dump_headers)
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
           bgav_vorbis_comment_dump(&vc);
         
         bgav_vorbis_comment_free(&vc);

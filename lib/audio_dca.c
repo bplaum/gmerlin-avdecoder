@@ -47,6 +47,7 @@ typedef struct
   int frame_length;
 
   int need_format;
+  int dynrange;
   } dts_priv;
 
 #define MAX_FRAME_SIZE 3840
@@ -124,7 +125,7 @@ static gavl_source_status_t decode_frame_dts(bgav_stream_t * s)
     dts_frame(priv->state, priv->packet->buf.buf, &flags, &level, 0.0);
     //    fprintf(stderr, "done\n");
     
-    if(!s->opt->audio_dynrange)
+    if(!priv->dynrange)
       dts_dynrng(priv->state, NULL, NULL);
     priv->blocks_left = dts_blocks_num(priv->state);
     //    fprintf(stderr, "DTS samples: %d\n", priv->blocks_left * 256);
@@ -182,6 +183,8 @@ static int init_dts(bgav_stream_t * s)
   
   s->decoder_priv = priv;
 
+  gavl_dictionary_get_int(s->opt, BGAV_OPT_DYNRANGE, &priv->dynrange);
+  
   //  dts_header_dump(&priv->header);
     
   /* Get format */

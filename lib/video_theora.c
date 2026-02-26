@@ -97,29 +97,6 @@ static int init_theora(bgav_stream_t * s)
   /* Initialize the decoder */
 
   priv->ctx = th_decode_alloc(&priv->ti, priv->ts);
-
-  /* Set postprocessing level */
-  
-  if(s->opt->pp_level > 0.0)
-    {
-    int level, max_level = 0;
-    
-    th_decode_ctl(priv->ctx,
-                  TH_DECCTL_GET_PPLEVEL_MAX,
-                  &max_level,
-                  sizeof(max_level));
-
-    if(max_level)
-      {
-      level = (int)((float)max_level * s->opt->pp_level + 0.5);
-      if(level > max_level)
-        level = max_level;
-      th_decode_ctl(priv->ctx,
-                    TH_DECCTL_SET_PPLEVEL,
-                    &level,
-                    sizeof(level));
-      }
-    }
   
   /* Get format */
 

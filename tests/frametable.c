@@ -24,12 +24,6 @@
 
 #define VIDEO_STREAM 0
 
-static void index_callback(void * data, float perc)
-  {
-  fprintf(stdout, "Building index %.2f %% completed\r",
-          perc * 100.0);
-  fflush(stdout);
-  }
 
 int main(int argc, char ** argv)
   {
@@ -42,8 +36,6 @@ int main(int argc, char ** argv)
   file = bgav_create();
   opt = bgav_get_options(file);
   bgav_options_set_sample_accurate(opt, 1);
-  bgav_options_set_index_callback(opt, index_callback, NULL);
-  
   if(!bgav_open(file, argv[1]))
     return -1;
 

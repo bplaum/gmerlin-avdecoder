@@ -59,13 +59,6 @@
 
 #endif
 
-static void index_callback(void * data, float perc)
-  {
-  fprintf(stdout, "Building index %.2f %% completed\r",
-          perc * 100.0);
-  fflush(stdout);
-  }
-
 static int read_callback(void * priv, uint8_t * data, int len)
   {
   FILE * f = (FILE*)priv;
@@ -80,72 +73,18 @@ static int64_t seek_callback(void * priv, int64_t pos, int whence)
   return BGAV_FTELL(f);
   }
 
-/* Taken from the Unix programmer FAQ: http://www.faqs.org/faqs/unix-faq/programmer/faq/ */
-
-#ifndef _WIN32
-static struct termios stored_settings;
-static void echo_off(void)
-  {
-  struct termios new_settings;
-  tcgetattr(0,&stored_settings);
-  new_settings = stored_settings;
-  new_settings.c_lflag &= (~ECHO);
-  tcsetattr(0,TCSANOW,&new_settings);
-  return;
-  }
-
-static void echo_on(void)
-  {
-  tcsetattr(0,TCSANOW,&stored_settings);
-  return;
-  }
 
 /* Ok this is not so clean. But the library allows arbitrary string lengths */
 
 char buf[1024];
 
-static int user_pass_func(void * data, const char * resource, char ** user, char ** pass)
-  {
-  char * pos;
-  fprintf(stderr, "Enter authentication for \"%s\"\n", resource);
-  fprintf(stderr, "Username: ");
-
-  fgets(buf, 1024, stdin);
-
-  pos = strchr(buf, '\n');
-  if(pos)
-    *pos = '\0';
-  if(buf[0] == '\0')
-    return 0;
-  *user = gavl_strndup(buf, NULL);
-    
-  fprintf(stderr, "Password: ");
-  echo_off();
-  fgets(buf, 1024, stdin);
-  echo_on();
-  fprintf(stderr, "\n");
-
-  pos = strchr(buf, '\n');
-  if(pos)
-    *pos = '\0';
-  if(buf[0] == '\0')
-    return 0;
-  *pass = gavl_strndup(buf, NULL);
-  return 1;
-  }
-#endif
 
 /* Configuration data */
 
-static int connect_timeout   = 5000;
-static int read_timeout      = 5000;
-static int network_bandwidth = 524300; /* 524.3 Kbps (Cable/DSL) */
-static int seek_subtitles    = 2;
 static int frames_to_read    = 10;
 static int do_audio          = 1;
 static int do_video          = 1;
 static int sample_accurate = 0;
-static int vdpau = 0;
 static int64_t audio_seek = GAVL_TIME_UNDEFINED;
 static int64_t video_seek = GAVL_TIME_UNDEFINED;
 static int64_t frameno = -1;
@@ -517,7 +456,6 @@ int main(int argc, char ** argv)
   opt = bgav_get_options(file);
 
   /* Never delete cache entries */
-  bgav_options_set_cache_size(opt, INT_MAX);
   
   arg_index = 1;
   while(arg_index < argc - 1)
@@ -530,12 +468,6 @@ int main(int argc, char ** argv)
     if(!strcmp(argv[arg_index], "-s"))
       {
       sample_accurate = 1;
-      bgav_options_set_index_callback(opt, index_callback, NULL);
-      arg_index++;
-      }
-    else if(!strcmp(argv[arg_index], "-vdpau"))
-      {
-      vdpau = 1;
       arg_index++;
       }
     else if(!strcmp(argv[arg_index], "-na"))
@@ -613,24 +545,11 @@ int main(int argc, char ** argv)
     }
   
   /* Configure */
-
-  bgav_options_set_connect_timeout(opt,   connect_timeout);
-  bgav_options_set_read_timeout(opt,      read_timeout);
-  bgav_options_set_network_bandwidth(opt, network_bandwidth);
-  bgav_options_set_seek_subtitles(opt, seek_subtitles);
-  bgav_options_set_http_shoutcast_metadata(opt, 1);
-
   
-  bgav_options_set_seek_subtitles(opt, 1);
-
+  
   if(sample_accurate)
     bgav_options_set_sample_accurate(opt, 1);
 
-  bgav_options_set_vdpau(opt, vdpau);
-  
-#ifndef _WIN32 
-  bgav_options_set_user_pass_callback(opt, user_pass_func, NULL);
-#endif
   
   if(!strncmp(argv[argc-1], "vcd://", 6))
     {

@@ -148,7 +148,7 @@ static int open_thp(bgav_demuxer_context_t * ctx)
   if(!read_header(ctx->input, &priv->h))
     return 0;
 
-  if(ctx->opt->dump_headers)
+  if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
     dump_header(&priv->h);
   
   bgav_input_seek(ctx->input, priv->h.componentDataOffset, SEEK_SET);

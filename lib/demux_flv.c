@@ -597,7 +597,8 @@ static gavl_source_status_t next_packet_flv(bgav_demuxer_context_t * ctx)
           init_video_stream(ctx);
         }
 #endif
-      if(ctx->opt->dump_headers)
+
+      if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
         dump_meta_object(&priv->metadata, 0);
       }
     else

@@ -584,7 +584,7 @@ static int open_mxf(bgav_demuxer_context_t * ctx)
              "Parsing MXF file failed, please report");
     return 0;
     }
-  if(ctx->opt->dump_headers)
+  if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
     bgav_mxf_file_dump(&priv->mxf);
   
   if(priv->mxf.header.max_source_sequence_components == 1)

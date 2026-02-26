@@ -68,10 +68,9 @@ connect_decode_overlay(void * priv,
   return bgav_stream_decoder_connect_overlay(c->dec, src, s);
   }
 
-
+#if 0
 static const bg_parameter_info_t parameters[] =
   {
-    PARAM_VIDEO_GENERIC,
     { /* End */  }
   };
 
@@ -79,6 +78,7 @@ static const bg_parameter_info_t * get_parameters(void * priv)
   {
   return parameters;
   }
+#endif
 
 const bg_codec_plugin_t the_plugin =
   {
@@ -93,8 +93,8 @@ const bg_codec_plugin_t the_plugin =
       .priority =       BG_PLUGIN_PRIORITY_MAX,
       .create =         bg_avdec_codec_create,
       .destroy =        bg_avdec_codec_destroy,
-      .get_parameters = get_parameters,
-      .set_parameter =  bg_avdec_codec_set_parameter,
+      //      .get_parameters = get_parameters,
+      //      .set_parameter =  bg_avdec_codec_set_parameter,
     },
     .get_compressions     = get_compressions,
     .get_codec_tags       = get_codec_tags,

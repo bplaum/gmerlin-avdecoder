@@ -384,7 +384,8 @@ bgav_seek_scaled(bgav_t * b, int64_t * time, int scale)
    * AVIs with mp3 audio will also have b->tt->cur->sample_accurate = 1
    */
 
-  if(b->opt.sample_accurate && !(b->demuxer->flags & BGAV_DEMUXER_SAMPLE_ACCURATE))
+  if(bgav_options_get_bool(&b->opt, BGAV_OPT_SAMPLE_ACCURATE) &&
+     !(b->demuxer->flags & BGAV_DEMUXER_SAMPLE_ACCURATE))
     {
     if(!bgav_ensure_index(b))
       gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Sample accurate seeking not supported for format");

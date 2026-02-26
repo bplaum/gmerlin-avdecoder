@@ -2016,7 +2016,7 @@ static int open_quicktime(bgav_demuxer_context_t * ctx)
           }
         have_moov = 1;
         bgav_qt_atom_skip(ctx->input, &h);
-        if(ctx->opt->dump_headers)
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
           bgav_qt_moov_dump(0, &priv->moov);
         break;
       case BGAV_MK_FOURCC('f','r','e','e'):

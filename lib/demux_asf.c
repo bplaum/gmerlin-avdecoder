@@ -604,8 +604,8 @@ static int open_asf(bgav_demuxer_context_t * ctx)
            type_specific_size)
           goto fail;
         bgav_WAVEFORMAT_read(&wf, buf, type_specific_size);
-
-        if(ctx->opt->dump_headers)
+        
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
           bgav_WAVEFORMAT_dump(&wf);
         bgav_WAVEFORMAT_get_format(&wf, bgav_as);
         bgav_WAVEFORMAT_free(&wf);
@@ -677,7 +677,7 @@ static int open_asf(bgav_demuxer_context_t * ctx)
 
         bgav_BITMAPINFOHEADER_read(&bh, &pos);
         
-        if(ctx->opt->dump_headers)
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
           bgav_BITMAPINFOHEADER_dump(&bh);
         bgav_BITMAPINFOHEADER_get_format(&bh, bgav_vs);
         /* Fill in the remeaining values */

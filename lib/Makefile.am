@@ -363,7 +363,6 @@ dirac_header.c \
 dvframe.c \
 flac_header.c \
 h264_header.c \
-http.c \
 id3v1.c \
 id3v2.c \
 in_cb.c \
@@ -371,7 +370,6 @@ in_file.c \
 in_hls.c \
 in_http.c \
 in_memory.c \
-in_mms.c \
 input.c \
 languages.c \
 matroska.c \
@@ -380,7 +378,6 @@ mpa_header.c \
 mpeg4_header.c \
 mpegts_common.c \
 mpv_header.c \
-mms.c \
 mxf.c \
 nanosoft.c \
 options.c \
@@ -467,12 +464,8 @@ r_asx.c \
 r_m3u.c \
 r_pls.c \
 r_qtl.c \
-r_rtsptext.c \
 r_ref.c \
 r_smil.c \
-rtcp.c \
-rtp.c \
-rtpbuffer.c \
 sampleseek.c \
 seek.c \
 sdp.c \
@@ -483,12 +476,10 @@ subtitle.c \
 subtitleconverter.c \
 superindex.c \
 targa.c \
-tcp.c \
 timecode.c \
 track.c \
 tracktable.c \
 translation.c \
-udp.c \
 utils.c \
 vc1_header.c \
 video.c \

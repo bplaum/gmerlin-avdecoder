@@ -931,54 +931,59 @@ static int get_buffer2_cb(struct AVCodecContext *ctx, AVFrame *frame, int flags)
   return 0;
   }
 
-static int pixfmt_supported(const gavl_pixelformat_t * fmts, enum AVPixelFormat fmt,
-                            gavl_pixelformat_t * pfmt)
+static gavl_pixelformat_t get_gavl_pfmt(enum AVPixelFormat fmt)
   {
-  int j, k;
-  const AVPixFmtDescriptor *desc;
-
-  desc = av_pix_fmt_desc_get(fmt);
-  if(desc->flags & AV_PIX_FMT_FLAG_HWACCEL)
-    return 0;
-    
-  j = 0;
-
-  /* Find gavl format */
+  int j;
   for(j = 0; j < sizeof(pixelformats)/sizeof(pixelformats[0]); j++)
     {
     if(pixelformats[j].ffmpeg_csp == fmt)
       {
-      /* Check if format is supported by hardware context */
-      k = 0;
-
-      while(fmts[k] != GAVL_PIXELFORMAT_NONE)
-        {
-        if(fmts[k] == pixelformats[j].gavl_csp)
-          {
-          if(pfmt)
-            *pfmt = pixelformats[j].gavl_csp;
-          return 1;
-          }
-        k++;
-        }
+      return pixelformats[j].gavl_csp;
       }
     }
-  return 0;
+  return GAVL_PIXELFORMAT_NONE;
   }
-                            
+
+static const gavl_dictionary_t * pixfmt_supported(bgav_stream_t * s, enum AVPixelFormat fmt,
+                                                  gavl_pixelformat_t * pfmt)
+  {
+  const AVPixFmtDescriptor *desc;
+  const gavl_dictionary_t * ret;
+  const gavl_array_t * arr;
+  gavl_video_format_t vfmt;
+  
+  
+  desc = av_pix_fmt_desc_get(fmt);
+  if(desc->flags & AV_PIX_FMT_FLAG_HWACCEL)
+    return NULL;
+
+  if((*pfmt = get_gavl_pfmt(fmt)) == GAVL_PIXELFORMAT_NONE)
+    return NULL;
+  
+  gavl_video_format_copy(&vfmt, s->data.video.format);
+  vfmt.pixelformat = *pfmt;
+  
+  arr = gavl_dictionary_get_array(s->opt, BGAV_OPT_VIDEOBUFFER);
+  if(arr && (ret = gavl_hw_buf_desc_supports_video_format(arr, &vfmt)))
+    return ret;
+  else
+    return NULL;
+  }
+
 
 static enum AVPixelFormat get_format_cb(AVCodecContext *ctx, const enum AVPixelFormat *pix)
   {
   bgav_stream_t * s = ctx->opaque;
-  const gavl_pixelformat_t * fmts;
   int i = 0;
   ffmpeg_video_priv * priv;
 
+  const gavl_dictionary_t * dict;
+  
   gavl_pixelformat_t pfmt = GAVL_PIXELFORMAT_NONE;
 
   priv = s->decoder_priv;
   
-  fmts = gavl_hw_ctx_get_image_formats(s->opt->hwctx_video, GAVL_HW_FRAME_MODE_MAP);
+  //  fmts = &s->opt->hwctx_video, GAVL_HW_FRAME_MODE_MAP);
   /* Copied from avcodec_default_get_format() */
   // If the last element of the list is a software format, choose it
   // (this should be best software format if any exist).
@@ -986,28 +991,24 @@ static enum AVPixelFormat get_format_cb(AVCodecContext *ctx, const enum AVPixelF
 
   i--;
   
-  if(pixfmt_supported(fmts, pix[i], &pfmt))
+  if((dict = pixfmt_supported(s, pix[i], &pfmt)))
     {
     if(priv->hwctx) // Sometimes, get_format is called after flush_buffers
       return pix[i];
-    
-    else if((priv->hwctx = gavl_hw_ctx_create(gavl_hw_ctx_get_type((s->opt->hwctx_video)))))
+    else
       goto found;
-    
     }
   
   i = 0;
 
   while(pix[i] != AV_PIX_FMT_NONE)
     {
-    if(pixfmt_supported(fmts, pix[i], &pfmt))
+    if((dict = pixfmt_supported(s, pix[i], &pfmt)))
       {
       if(priv->hwctx) // Sometimes, get_format is called after flush_buffers
         return pix[i];
-      
-      else if((priv->hwctx = gavl_hw_ctx_create(gavl_hw_ctx_get_type((s->opt->hwctx_video)))))
+      else
         goto found;
-      
       }
     
     i++;
@@ -1016,7 +1017,10 @@ static enum AVPixelFormat get_format_cb(AVCodecContext *ctx, const enum AVPixelF
   return avcodec_default_get_format(ctx, pix);
 
   found:
-
+  
+  if(!(priv->hwctx = gavl_hw_ctx_create_from_buffer_format(dict)))
+    return avcodec_default_get_format(ctx, pix);
+  
   gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Rendering to hardware surface in %s", gavl_pixelformat_to_string(pfmt));
 
   s->data.video.format->pixelformat = pfmt;
@@ -1038,10 +1042,9 @@ static enum AVPixelFormat get_format_cb(AVCodecContext *ctx, const enum AVPixelF
 static int init_ffmpeg(bgav_stream_t * s)
   {
   const AVCodec * codec;
-  
   ffmpeg_video_priv * priv;
-
   AVDictionary * options = NULL;
+  const gavl_array_t * arr;
   
   //  av_log_set_level(AV_LOG_DEBUG);
 
@@ -1101,8 +1104,8 @@ static int init_ffmpeg(bgav_stream_t * s)
   else
 #endif
     if((codec->capabilities & AV_CODEC_CAP_DR1) &&
-       s->opt->hwctx_video &&
-       gavl_hw_ctx_get_image_formats(s->opt->hwctx_video, GAVL_HW_FRAME_MODE_MAP))
+       (arr = gavl_dictionary_get_array(s->opt, BGAV_OPT_VIDEOBUFFER)) &&
+       (arr->num_entries > 0))
       {
 #if 1
       gavl_log(GAVL_LOG_INFO, LOG_DOMAIN,

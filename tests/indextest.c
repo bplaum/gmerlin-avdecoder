@@ -27,11 +27,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void index_callback(void * data, float perc)
-  {
-  fprintf(stderr, "Building index %.2f %% completed\n",
-          perc * 100.0);
-  }
 
 int main(int argc, char ** argv)
   {
@@ -41,8 +36,7 @@ int main(int argc, char ** argv)
   b = bgav_create();
   opt = bgav_get_options(b);
   bgav_options_set_sample_accurate(opt, 1);
-  bgav_options_set_index_callback(opt, index_callback, NULL);
-
+  
 
   if(!bgav_open(b, argv[1]))
     return -1;

@@ -249,7 +249,7 @@ static int open_mpegaudio(bgav_demuxer_context_t * ctx)
   priv->data_start = ctx->input->position;
   if(ctx->input->id3v2)
     {
-    if(ctx->input->opt.dump_headers)
+    if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
       bgav_id3v2_dump(ctx->input->id3v2);
     
     bgav_id3v2_2_metadata(ctx->input->id3v2, &metadata_v2);

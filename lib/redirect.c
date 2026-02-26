@@ -32,7 +32,6 @@ extern const bgav_redirector_t bgav_redirector_m3u;
 extern const bgav_redirector_t bgav_redirector_pls;
 extern const bgav_redirector_t bgav_redirector_ref;
 extern const bgav_redirector_t bgav_redirector_smil;
-extern const bgav_redirector_t bgav_redirector_rtsptext;
 extern const bgav_redirector_t bgav_redirector_qtl;
 
 void bgav_redirectors_dump()
@@ -44,7 +43,6 @@ void bgav_redirectors_dump()
   gavl_dprintf( "<li>%s\n", bgav_redirector_pls.name);
   gavl_dprintf( "<li>%s\n", bgav_redirector_ref.name);
   gavl_dprintf( "<li>%s\n", bgav_redirector_smil.name);
-  gavl_dprintf( "<li>%s\n", bgav_redirector_rtsptext.name);
   gavl_dprintf( "<li>%s\n", bgav_redirector_qtl.name);
   gavl_dprintf( "</ul>\n");
   }
@@ -63,7 +61,6 @@ const redir_t redirectors[] =
     { &bgav_redirector_ref, "MS Referece" },
     { &bgav_redirector_smil, "smil" },
     { &bgav_redirector_m3u, "m3u" },
-    { &bgav_redirector_rtsptext, "rtsptext" },
     { &bgav_redirector_qtl, "qtl" },
   };
 

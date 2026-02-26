@@ -545,7 +545,7 @@ static void dump_avih(avih_t * h)
   }
 
 static int read_avih(bgav_input_context_t* input,
-              avih_t * ret, chunk_header_t * ch)
+                     avih_t * ret, chunk_header_t * ch)
   {
   int64_t start_pos;
   int result;
@@ -570,8 +570,6 @@ static int read_avih(bgav_input_context_t* input,
     {
     bgav_input_skip(input, PADD(ch->ckSize) - (input->position - start_pos));
     }
-  if(input->opt.dump_headers)
-    dump_avih(ret);
   return result;
   }
 
@@ -681,8 +679,6 @@ static int read_strh(bgav_input_context_t * input, strh_t * ret,
     {
     bgav_input_skip(input, PADD(ch->ckSize) - (input->position - start_pos));
     }
-  if(input->opt.dump_headers)
-    dump_strh(ret);
   return result;
   }
 
@@ -755,8 +751,6 @@ static int read_odml(bgav_input_context_t * input, odml_t * ret,
     {
     bgav_input_skip(input, ch->ckSize - 4 - input->position - start_pos);
     }
-  if(input->opt.dump_headers)
-    dump_odml(ret);
   return 1;
   }
 
@@ -1207,7 +1201,8 @@ static int init_audio_stream(bgav_demuxer_context_t * ctx,
           return 0;
         bgav_WAVEFORMAT_read(&wf, buf, ch->ckSize);
         bgav_WAVEFORMAT_get_format(&wf, bg_as);
-        if(ctx->opt->dump_headers)
+
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
           bgav_WAVEFORMAT_dump(&wf);
         bgav_WAVEFORMAT_free(&wf);
         //        bg_as->fourcc = BGAV_WAVID_2_FOURCC(wf.wFormatTag);
@@ -1234,7 +1229,7 @@ static int init_audio_stream(bgav_demuxer_context_t * ctx,
       case ID_INDX:
         if(!read_indx(ctx->input, &avi_as->indx, ch))
           return 0;
-        if(ctx->opt->dump_indices)
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
           dump_indx(&avi_as->indx);
         avi_as->has_indx = 1;
         break;
@@ -1285,7 +1280,7 @@ static int init_video_stream(bgav_demuxer_context_t * ctx,
         pos = buf;
         bgav_BITMAPINFOHEADER_read(&bh, &pos);
         bgav_BITMAPINFOHEADER_get_format(&bh, bg_vs);
-        if(ctx->opt->dump_headers)
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
           bgav_BITMAPINFOHEADER_dump(&bh);
         
         /* We don't add extradata if the fourcc is MJPG */
@@ -1327,7 +1322,8 @@ static int init_video_stream(bgav_demuxer_context_t * ctx,
       case ID_INDX:
         if(!read_indx(ctx->input, &avi_vs->indx, ch))
           return 0;
-        if(ctx->opt->dump_indices)
+
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_INDICES))
           dump_indx(&avi_vs->indx);
         avi_vs->has_indx = 1;
         break;
@@ -1537,8 +1533,10 @@ static int open_avi(bgav_demuxer_context_t * ctx)
   p = calloc(1, sizeof(*p));
   ctx->priv = p;
   read_avih(ctx->input, &p->avih, &ch);
-  //  dump_avih(&p->avih);
-      
+
+  if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
+    dump_avih(&p->avih);
+
   /* Streams */
 
   read_chunk_header(ctx->input, &ch);
@@ -1558,7 +1556,9 @@ static int open_avi(bgav_demuxer_context_t * ctx)
       goto fail;
     
     read_strh(ctx->input, &strh, &ch);
-    //    dump_strh(&strh);
+
+    if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
+      dump_strh(&strh);
 
     if(strh.fccType == ID_AUDS)
       init_audio_stream(ctx, &strh, &ch);
@@ -1603,6 +1603,10 @@ static int open_avi(bgav_demuxer_context_t * ctx)
 
         if(!read_odml(ctx->input, &p->odml, &ch))
           goto fail;
+
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
+          dump_odml(&p->odml);
+        
         p->has_odml = 1;
 
         //        dump_odml(&p->odml);
@@ -1623,7 +1627,9 @@ static int open_avi(bgav_demuxer_context_t * ctx)
     if(!read_chunk_header(ctx->input, &ch))
       goto fail;
     }
-  if(ctx->opt->dump_headers)
+
+
+  if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
     {
     gavl_dprintf("movi:\n");
     dump_chunk_header(&ch);
@@ -1645,7 +1651,8 @@ static int open_avi(bgav_demuxer_context_t * ctx)
     if(probe_idx1(ctx->input) && read_idx1(ctx->input, &p->idx1))
       {
       p->has_idx1 = 1;
-      if(ctx->opt->dump_indices)
+
+      if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_INDICES))
         dump_idx1(&p->idx1);
       }
     bgav_input_seek(ctx->input, ctx->tt->cur->data_start, SEEK_SET);

@@ -124,7 +124,7 @@ static int open_wavpack(bgav_demuxer_context_t * ctx)
 
   parse_header(&h, header);
 
-  if(ctx->opt->dump_headers)
+  if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
     dump_header(&h);
   
   /* Create the track and the stream */

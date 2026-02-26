@@ -10,7 +10,6 @@ bgavsave \
 frametable \
 indexdump \
 indextest \
-mmstest \
 vcdtest \
 ymltest \
 count_frames \
@@ -50,7 +49,3 @@ ymltest_LDADD = $(top_builddir)/lib/libgmerlin_avdec.la
 
 bgavsave_SOURCES = bgavsave.c
 bgavsave_LDADD = $(top_builddir)/lib/libgmerlin_avdec.la
-
-
-mmstest_SOURCES = mmstest.c
-mmstest_LDADD = $(top_builddir)/lib/libgmerlin_avdec.la

@@ -45,6 +45,7 @@ typedef struct
 
   gavl_audio_frame_t * frame;
   int need_format;
+  int dynrange;
   } a52_priv;
 
 static gavl_source_status_t decode_frame_a52(bgav_stream_t * s)
@@ -116,7 +117,7 @@ static gavl_source_status_t decode_frame_a52(bgav_stream_t * s)
     return GAVL_SOURCE_EOF;
     }
   a52_frame(priv->state, p->buf.buf, &flags, &level, 0.0);
-  if(!s->opt->audio_dynrange)
+  if(!priv->dynrange)
     {
     a52_dynrng(priv->state, NULL, NULL);
     }
@@ -172,12 +173,15 @@ static int init_a52(bgav_stream_t * s)
   priv->state = a52_init(0);
   priv->samples = a52_samples(priv->state);
   memset(priv->samples, 0, 256*6*sizeof(*priv->samples));
+
+  gavl_dictionary_get_int(s->opt, BGAV_OPT_DYNRANGE, &priv->dynrange);
   
   priv->need_format = 1;
   decode_frame_a52(s);
   priv->need_format = 0;
 
   s->data.audio.sync_samples = 32 * FRAME_SAMPLES;
+
   
   return 1;
   }

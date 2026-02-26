@@ -251,7 +251,7 @@ static int open_ape(bgav_demuxer_context_t * ctx)
   if(!ape_header_read(ctx->input, &priv->h))
     return 0;
 
-  if(ctx->opt->dump_headers)
+  if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
     ape_header_dump(&priv->h);
   
   /* Sanity checks */

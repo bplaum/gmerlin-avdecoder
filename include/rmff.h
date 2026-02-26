@@ -280,13 +280,6 @@ void bgav_rmff_header_destroy(bgav_rmff_header_t * h);
 int bgav_demux_rm_open_with_header(bgav_demuxer_context_t * ctx,
                                    bgav_rmff_header_t * h);
   
-/* Create an rmdff header from an sdp structure */
-
-bgav_rmff_header_t *
-bgav_rmff_header_create_from_sdp(const bgav_options_t*opt,
-                                 bgav_sdp_t * sdp,
-                                 char ** stream_rules);
-
 void bgav_rmff_header_dump(bgav_rmff_header_t * header);
 
 #endif // BGAV_RMFF_H_INCLUDED

@@ -199,6 +199,9 @@ void bgav_packet_destroy(bgav_packet_t*);
 // Set by the ogg demultiplexer to specify that the pts_end is set by the demuxer backend
 #define STREAM_DEMUXER_SETS_PTS_END  (1<<24)
 
+#define STREAM_DUMP_PACKETS          (1<<25)
+
+
 
 /* Stream could not get extract compression info from the
  * demuxer
@@ -675,6 +678,7 @@ void bgav_track_table_export_infos(bgav_track_table_t * t);
 
 /* Options (shared between inputs, demuxers and decoders) */
 
+#if 0
 struct bgav_options_s
   {
   /* Try sample accurate processing */
@@ -713,8 +717,6 @@ struct bgav_options_s
   
   int shrink;
 
-  int vaapi;
-
   int log_level;
 
   int dump_headers;
@@ -740,9 +742,13 @@ struct bgav_options_s
   //  int audio_storage;
   //  int video_storage;
 
-  gavl_hw_context_t * hwctx_video;
+  //  gavl_array_t audio_buffer_formats;
+  gavl_array_t video_buffer_formats;
   
   };
+#endif
+
+int bgav_options_get_bool(const bgav_options_t*opt, const char * key);
 
 BGAV_PUBLIC void bgav_options_set_defaults(bgav_options_t*opt);
 

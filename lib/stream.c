@@ -254,7 +254,7 @@ read_packet_continuous(void * priv, bgav_packet_t ** ret)
       return st1; // Return for now
     }
   
-  if((st == GAVL_SOURCE_OK) && s->opt->dump_packets)
+  if((st == GAVL_SOURCE_OK) && (s->flags & STREAM_DUMP_PACKETS))
     {
     gavl_dprintf("Packet out (stream %d): ", s->stream_id);
     gavl_packet_dump(*ret);
@@ -291,6 +291,9 @@ void bgav_stream_init(bgav_stream_t * stream, const bgav_options_t * opt)
   stream->ci = &stream->ci_orig;
   
   gavl_stream_stats_init(&stream->stats);
+
+  if(bgav_options_get_bool(stream->opt, BGAV_OPT_DUMP_PACKETS))
+    stream->flags |= STREAM_DUMP_PACKETS;
   }
 
 void bgav_stream_free(bgav_stream_t * s)

@@ -126,7 +126,7 @@ dnl
 dnl Check for Libraries
 dnl
 
-GAVL_REQUIRED="2.0.0"
+GAVL_REQUIRED="2.1.0"
 
 PKG_CHECK_MODULES(GAVL, gavl >= $GAVL_REQUIRED, , AC_MSG_ERROR("gavl not found"))
 AC_SUBST(GAVL_REQUIRED)
@@ -161,7 +161,7 @@ dnl
 
 have_gmerlin="false"
 
-GMERLIN_REQUIRED="2.0.0"
+GMERLIN_REQUIRED="2.1.0"
 
 AC_ARG_ENABLE(gmerlin,
 [AS_HELP_STRING([--disable-gmerlin],[Disable gmerlin plugins (default: autodetect)])],

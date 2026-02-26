@@ -196,23 +196,16 @@ static int open_http(bgav_input_context_t * ctx, const char * url1, char ** r)
   gavl_dictionary_t * info;
   const gavl_dictionary_t * res;
 
-  //  char * url;
-  
   gavl_dictionary_t extra_header;
   gavl_dictionary_init(&extra_header);
 
   ctx->location = gavl_strdup(url1);
   
-  //  url = gavl_strdup(url1);
-  
   p = calloc(1, sizeof(*p));
   ctx->priv = p;
 
-  //  url = gavl_url_extract_http_vars(url, &extra_header);
-
   create_header(&extra_header, &ctx->opt);
   
-  // p->h = bgav_http_open(url, ctx->opt, r, &extra_header);
   p->io = gavl_http_client_create();
 
   gavl_http_client_set_req_vars(p->io, &extra_header);

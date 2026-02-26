@@ -134,7 +134,7 @@ static int open_wav(bgav_demuxer_context_t * ctx)
   
   bgav_WAVEFORMAT_read(&wf, buf, format_size);
 
-  if(ctx->opt->dump_headers)
+  if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
     bgav_WAVEFORMAT_dump(&wf);
   
   bgav_WAVEFORMAT_get_format(&wf, s);

@@ -228,7 +228,8 @@ static bgav_stream_t * add_text_stream(bgav_track_t * t,
       gavl_strdup(charset);
   else
     ret->data.subtitle.charset =
-      gavl_strdup(ret->opt->default_subtitle_encoding);
+      gavl_strdup(gavl_dictionary_get_string(ret->opt,
+                                             BGAV_OPT_DEFAULT_SUBTITLE_ENCODING));
 
   ret->info_ext = gavl_track_append_text_stream(t->info);
   ret->info = &ret->in_info;

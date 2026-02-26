@@ -763,7 +763,7 @@ static int open_matroska(bgav_demuxer_context_t * ctx)
                                          &p->meta_seek_info,
                                          &e))
           return 0;
-        if(ctx->opt->dump_headers)
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
           bgav_mkv_meta_seek_info_dump(&p->meta_seek_info);
         break;
       case MKV_ID_Info:
@@ -771,7 +771,7 @@ static int open_matroska(bgav_demuxer_context_t * ctx)
         e.end += pos;
         if(!bgav_mkv_segment_info_read(ctx->input, &p->segment_info, &e))
           return 0;
-        if(ctx->opt->dump_headers)
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
           bgav_mkv_segment_info_dump(&p->segment_info);
         break;
       case MKV_ID_Tracks:
@@ -779,7 +779,7 @@ static int open_matroska(bgav_demuxer_context_t * ctx)
         e.end += pos;
         if(!bgav_mkv_tracks_read(ctx->input, &p->tracks, &p->num_tracks, &e))
           return 0;
-        if(ctx->opt->dump_headers)
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
           {
           for(i = 0; i < p->num_tracks; i++)
             bgav_mkv_track_dump(&p->tracks[i]);
@@ -788,7 +788,7 @@ static int open_matroska(bgav_demuxer_context_t * ctx)
       case MKV_ID_Cues:
         if(!bgav_mkv_cues_read(ctx->input, &p->cues, p->num_tracks))
           return 0;
-        if(ctx->opt->dump_indices)
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_INDICES))
           bgav_mkv_cues_dump(&p->cues);
         p->have_cues = 1;
         break;
@@ -800,7 +800,7 @@ static int open_matroska(bgav_demuxer_context_t * ctx)
         e.end += pos;
         if(!bgav_mkv_chapters_read(ctx->input, &p->chapters, &e)) 
           return 0;
-        if(ctx->opt->dump_headers)
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
           bgav_mkv_chapters_dump(&p->chapters);
         break;
       case MKV_ID_Tags:
@@ -808,7 +808,7 @@ static int open_matroska(bgav_demuxer_context_t * ctx)
         e.end += pos;
         if(!bgav_mkv_tags_read(ctx->input, &p->tags, &p->num_tags, &e))
           return 0;
-        if(ctx->opt->dump_headers)
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
           bgav_mkv_tags_dump(p->tags, p->num_tags);
         break;
       default:
@@ -894,7 +894,8 @@ static int open_matroska(bgav_demuxer_context_t * ctx)
           if(bgav_mkv_cues_read(ctx->input, &p->cues, p->num_tracks))
             {
             p->have_cues = 1;
-            if(ctx->opt->dump_indices)
+
+            if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_INDICES))
               bgav_mkv_cues_dump(&p->cues);
             }
           bgav_input_seek(ctx->input, pos, SEEK_SET);

@@ -680,11 +680,8 @@ int bgav_input_get_double_64_le(bgav_input_context_t * ctx, double * ret)
 
 extern const bgav_input_t bgav_input_file;
 extern const bgav_input_t bgav_input_stdin;
-// extern const bgav_input_t bgav_input_rtsp;
-extern const bgav_input_t bgav_input_mms;
 extern const bgav_input_t bgav_input_http;
 extern const bgav_input_t bgav_input_hls;
-//extern const bgav_input_t bgav_input_mmsh;
 
 #ifdef HAVE_CDIO
 extern const bgav_input_t bgav_input_vcd;
@@ -704,9 +701,6 @@ void bgav_inputs_dump()
   gavl_dprintf( "<ul>\n");
   gavl_dprintf( "<li>%s\n", bgav_input_file.name);
   gavl_dprintf( "<li>%s\n", bgav_input_stdin.name);
-  //  gavl_dprintf( "<li>%s\n", bgav_input_rtsp.name);
-  gavl_dprintf( "<li>%s\n", bgav_input_mms.name);
-  //  gavl_dprintf( "<li>%s\n", bgav_input_mmsh.name);
   gavl_dprintf( "<li>%s\n", bgav_input_http.name);
   gavl_dprintf( "<li>%s\n", bgav_input_hls.name);
 
@@ -798,16 +792,9 @@ static int input_open(bgav_input_context_t * ctx,
                     NULL,
                     NULL))
     {
-    //    if(!strcasecmp(protocol, "rtsp"))
-    //      ctx->input = &bgav_input_rtsp;
-    if(!strcasecmp(protocol, "mms") ||
-       !strcasecmp(protocol, "mmst")
-       //            || !strcasecmp(protocol, "mmsu")
-       )
-      ctx->input = &bgav_input_mms;
-    else if(!strcasecmp(protocol, "http") ||
-            !strcasecmp(protocol, "icyx") ||
-            !strcasecmp(protocol, "https"))
+    if(!strcasecmp(protocol, "http") ||
+       !strcasecmp(protocol, "icyx") ||
+       !strcasecmp(protocol, "https"))
       ctx->input = &bgav_input_http;
     else if(!strcasecmp(protocol, "hls") ||
             !strcasecmp(protocol, "hlss"))
@@ -927,31 +914,9 @@ int bgav_input_open(bgav_input_context_t * ctx,
 
   gavl_metadata_add_src(&ctx->m, GAVL_META_SRC, NULL, url);
 
-  ret = do_open(ctx, url);
+  if(!(ret = do_open(ctx, url)))
+    return 0;
   
-  
-  if(!ret)
-    {
-    if(ctx->input == &bgav_input_mms)
-      {
-      char * new_url;
-      char * pos;
-      if(ctx->priv)
-        {
-        ctx->input->close(ctx);
-        ctx->priv = NULL;
-        }
-      pos = strstr(url, "://");
-      if(!pos)
-        return 0;
-      new_url = gavl_sprintf("http%s", pos);
-      gavl_log(GAVL_LOG_INFO, LOG_DOMAIN,
-               "mms connection failed, trying http");
-      ret = do_open(ctx, new_url);
-      free(new_url);
-      }
-    }
-
   /* Signal fast seeking support */
   if((ctx->flags & (BGAV_INPUT_CAN_SEEK_BYTE|BGAV_INPUT_SEEK_SLOW)) == 
      BGAV_INPUT_CAN_SEEK_BYTE)

@@ -369,7 +369,8 @@ static int vivo_header_read(vivo_header_t * ret, bgav_input_context_t * input)
     }
 
   result = 1;
-  if(input->opt.dump_headers)
+
+  if(bgav_options_get_bool(&input->opt, BGAV_OPT_DUMP_HEADERS))
     vivo_header_dump(ret);
   fail:
   gavl_buffer_free(&buf);

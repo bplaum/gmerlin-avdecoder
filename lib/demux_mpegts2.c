@@ -148,7 +148,7 @@ static int init_psi(bgav_demuxer_context_t * ctx)
         return 0;
         }
 
-      if(ctx->opt->dump_headers)
+      if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
         bgav_pat_section_dump(&pats);
       if(pats.section_number || pats.last_section_number)
         {
@@ -228,7 +228,8 @@ static int init_psi(bgav_demuxer_context_t * ctx)
                    "PMT section spans multiple packets, please report");
           goto fail;
           }
-        if(ctx->opt->dump_headers)
+
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
           bgav_pmt_section_dump(&pmts);
         if(pmts.section_number ||
            pmts.last_section_number)

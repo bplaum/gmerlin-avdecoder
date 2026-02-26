@@ -21,6 +21,8 @@
 
 
 // #define DUMP_SUPERINDEX
+#include <config.h>
+
 #include <avdec_private.h>
 #include <parser.h>
 
@@ -111,7 +113,7 @@ extern const bgav_demuxer_t bgav_demuxer_mpc;
 #endif
 
 
-#ifdef HAVE_LIBAVFORMAT
+#ifdef HAVE_AVFORMAT
 extern const bgav_demuxer_t bgav_demuxer_ffmpeg;
 #endif
 
@@ -233,13 +235,6 @@ const bgav_demuxer_t * bgav_demuxer_probe(bgav_input_context_t * input)
   int bytes_skipped;
   uint8_t skip;
   const char * mimetype = NULL;
-#ifdef HAVE_LIBAVFORMAT
-  if(input->opt->prefer_ffmpeg_demuxers)
-    {
-    if(bgav_demuxer_ffmpeg.probe(input))
-      return &bgav_demuxer_ffmpeg;
-    }
-#endif
 
   //  fprintf(stderr, "bgav_demuxer_probe\n");
   //  gavl_dictionary_dump(&input->m, 2);
@@ -301,14 +296,12 @@ const bgav_demuxer_t * bgav_demuxer_probe(bgav_input_context_t * input)
     
     }
   
-#ifdef HAVE_LIBAVFORMAT
-  if(!input->opt->prefer_ffmpeg_demuxers && (input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
+  if(input->flags & BGAV_INPUT_CAN_SEEK_BYTE)
     {
     bgav_input_seek(input, 0, SEEK_SET);
     if(bgav_demuxer_ffmpeg.probe(input))
       return &bgav_demuxer_ffmpeg;
     }
-#endif
   
   return NULL;
   }
@@ -551,8 +544,8 @@ int bgav_demuxer_start(bgav_demuxer_context_t * ctx)
                "Non interleaved file from non seekable source");
       return 0;
       }
-    
-    if(ctx->opt->dump_indices)
+
+    if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_INDICES))
       gavl_packet_index_dump(ctx->si);
     }
   return 1;

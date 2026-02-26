@@ -418,7 +418,8 @@ static int open_nsv(bgav_demuxer_context_t * ctx)
       else
         {
         p->has_fh = 1;
-        if(ctx->opt->dump_headers)
+
+        if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
           nsv_file_header_dump(&p->fh);
         }
       }
@@ -426,7 +427,7 @@ static int open_nsv(bgav_demuxer_context_t * ctx)
       {
       if(!nsv_sync_header_read(ctx->input, &sh))
         return 0;
-      if(ctx->opt->dump_headers)
+      if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
         nsv_sync_header_dump(&sh);
       done = 1;
       }
@@ -627,7 +628,7 @@ static gavl_source_status_t next_packet_nsv(bgav_demuxer_context_t * ctx)
         }
       if(!nsv_sync_header_read(ctx->input, &sh))
         return GAVL_SOURCE_EOF;
-      if(ctx->opt->dump_headers)
+      if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_HEADERS))
         nsv_sync_header_dump(&sh);
       have_sync_header = 1;
       }

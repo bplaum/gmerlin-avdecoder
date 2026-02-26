@@ -98,6 +98,23 @@ static int handle_cmd(void * data, gavl_msg_t * msg)
           mode = gavl_msg_get_arg_int(msg, 1);
           bgav_set_video_skip_mode(avdec->dec, stream, mode);
           }
+        case GAVL_CMD_SRC_SET_BUFFER_FORMATS:
+          {
+          gavl_dictionary_t * opt;
+          
+          gavl_stream_type_t t = gavl_msg_get_arg_int(msg, 0);
+
+          opt = bgav_get_options(avdec->dec);
+                    
+          if(t == GAVL_STREAM_AUDIO)
+            {
+            gavl_dictionary_set(opt, BGAV_OPT_AUDIOBUFFER, gavl_msg_get_arg_c(msg, 1));
+            }
+          else if(t == GAVL_STREAM_VIDEO)
+            {
+            gavl_dictionary_set(opt, BGAV_OPT_VIDEOBUFFER, gavl_msg_get_arg_c(msg, 1));
+            }
+          }
         }
       
       break;
@@ -122,8 +139,6 @@ void * bg_avdec_create()
   bg_controllable_init(&ret->ctrl,
                        bg_msg_sink_create(handle_cmd, ret, 1),
                        bg_msg_hub_create(1));
-
-  //  bgav_options_set_msg_callback(ret->opt, handle_evt, ret);
 
   pthread_mutexattr_init(&attr);
   pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
@@ -413,9 +428,3 @@ void bg_avdec_unlock(void * priv)
   
   }
 
-void bg_avdec_set_video_hw_context(void * priv, gavl_hw_context_t * hwctx)
-  {
-  avdec_priv * avdec = priv;
-  bgav_options_set_video_hw_context(avdec->opt, hwctx);
-  }
-                                   

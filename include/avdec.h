@@ -222,7 +222,7 @@ int bgav_metadata_get_track(const bgav_metadata_t * metadata);
  * \brief Opaque option container
  */
 
-typedef struct bgav_options_s bgav_options_t;
+typedef gavl_dictionary_t bgav_options_t;
 
 /** \ingroup options
  * \brief Get the options of a decoder instance
@@ -250,30 +250,29 @@ bgav_options_t * bgav_get_options(bgav_t * bgav);
  *
  */
 
-BGAV_PUBLIC
-bgav_options_t * bgav_options_create(void);
+/* Options are now passed as dictionary */
+  
+#define bgav_options_destroy gavl_dictionary_destroy
+#define bgav_options_copy gavl_dictionary_copy
 
-/** \ingroup options
- *  \brief Destroy option cotainer.
- *  \param opt option cotainer
- *
- * Use the only to destroy options, you created with \ref bgav_options_create.
- * Options returned by \ref bgav_get_options are owned by the \ref bgav_t instance,
- * and must not be freed by you.
- */
+#define BGAV_OPT_DYNRANGE    "dynrange"      // int, 0..1
+#define BGAV_OPT_AUDIOBUFFER "audiobuffer"   // gavl_array_t
+#define BGAV_OPT_VIDEOBUFFER "videobuffer"   // gavl_array_t
 
-BGAV_PUBLIC
-void bgav_options_destroy(bgav_options_t * opt);
+#define BGAV_OPT_DUMP_INDICES "dump-indices"   // int, 0..1
+#define BGAV_OPT_DUMP_PACKETS "dump-packets"   // int, 0..1
+#define BGAV_OPT_DUMP_HEADERS "dump-headers"   // int, 0..1
 
-/** \ingroup options
- *  \brief Copy options
- *  \param dst Destination
- *  \param src Source
- */
+#define BGAV_OPT_SAMPLE_ACCURATE "sample-accurate"   // int, 0..1
+#define BGAV_OPT_DEFAULT_SUBTITLE_ENCODING "subtile-encoding"   // String
+  
+  // #define BGAV_OPT_READ_TIMEOUT "conntimeout"
 
-BGAV_PUBLIC
-void bgav_options_copy(bgav_options_t * dst, const bgav_options_t * src);
-
+  
+  //#define BGAV_OPT_CONN_TIMEOUT "conntimeout"
+  // #define BGAV_OPT_READ_TIMEOUT "conntimeout"
+  
+  
 /** \ingroup options
  *  \brief Set connect timeout
  *  \param opt Option container
@@ -299,185 +298,6 @@ BGAV_PUBLIC
 void bgav_options_set_read_timeout(bgav_options_t * opt, int timeout);
 
 /** \ingroup options
- *  \brief Set RTP port pase
- *  \param opt Option container
- *  \param p Port base
- *
- *  Values below and including 1024 enable random
- *  ports. Random ports should be used if you have no or an
- *  RTSP aware firewall. Values above 1024 enable a fixed base port.
- *  For usual videos (one audio- one videostream) you need 4 consecutive
- *  open ports starting with the base port. If your firewall blocks all UDP
- *  traffic, use \ref bgav_options_set_rtp_try_tcp.
- */
-
-
-BGAV_PUBLIC
-void bgav_options_set_rtp_port_base(bgav_options_t * opt, int p);
-
-/** \ingroup options
- *  \brief Try TCP before UDP
- *  \param opt Option container
- *  \param enable 1 to try TCP, 0 else
- *
- *  Use this if your firewall blocks all UDP traffic. Not all servers,
- *  however, support TCP fallback.
- */
-
-BGAV_PUBLIC
-void bgav_options_set_rtp_try_tcp(bgav_options_t * opt, int enable);
-
-/** \ingroup options
- *  \brief Set network bandwidth
- *  \param opt Option container
- *  \param bandwidth Bandwidth of your internet connection (in bits per second)
- *
- *  Some network protocols allow
- *  to select among multiple streams according to the speed of the internet connection.
- */
-
-BGAV_PUBLIC
-void bgav_options_set_network_bandwidth(bgav_options_t * opt, int bandwidth);
-
-
-/* HTTP Options */
-
-/** \ingroup options
- *  \brief Set proxy usage
- *  \param opt Option container
- *  \param enable Set 1 of you use a http proxy, 0 else.
- *
- *  Set usage of a http proxy. If you enable proxies, you must specify the proxy
- *  host with \ref bgav_options_set_http_proxy_host and the proxy port with
- *  \ref bgav_options_set_http_proxy_port.
- */
-
-BGAV_PUBLIC
-void bgav_options_set_http_use_proxy(bgav_options_t* opt, int enable);
-
-/** \ingroup options
- *  \brief Set proxy host
- *  \param opt Option container
- *  \param host Hostname of the proxy.
- *
- *  Note that you must enable proxies with \ref bgav_options_set_http_use_proxy before
- *  it's actually used.
- */
-
-BGAV_PUBLIC
-void bgav_options_set_http_proxy_host(bgav_options_t* opt, const char * host);
-
-/** \ingroup options
- *  \brief Set proxy port
- *  \param opt Option container
- *  \param port Port of the proxy.
- *
- *  Note that you must enable proxies with \ref bgav_options_set_http_use_proxy before
- *  it's actually used.
- */
-
-BGAV_PUBLIC
-void bgav_options_set_http_proxy_port(bgav_options_t* opt, int port);
-
-/** \ingroup options
- *  \brief Enable or disable proxy authentication.
- *  \param opt Option container
- *  \param enable Set 1 if your http proxy needs authentication, 0 else.
- *
- *  If you enable http proxy authentication, you must specify the username
- *  host with \ref bgav_options_set_http_proxy_user and the proxy password with
- *  \ref bgav_options_set_http_proxy_pass.
- */
-
-BGAV_PUBLIC
-void bgav_options_set_http_proxy_auth(bgav_options_t* opt, int enable);
-
-/** \ingroup options
- *  \brief Set proxy username
- *  \param opt Option container
- *  \param user The username for the proxy.
- *
- *  Note that you must enable proxy authentication with \ref bgav_options_set_http_proxy_auth.
- */
-
-BGAV_PUBLIC
-void bgav_options_set_http_proxy_user(bgav_options_t* opt, const char * user);
-
-/** \ingroup options
- *  \brief Set proxy password
- *  \param opt Option container
- *  \param pass The password for the proxy.
- *
- *  Note that you must enable proxy authentication with \ref bgav_options_set_http_proxy_auth.
- */
-
-BGAV_PUBLIC
-void bgav_options_set_http_proxy_pass(bgav_options_t* opt, const char * pass);
-
-/** \ingroup options
- *  \brief Enable or disable shoutcast metadata streaming
- *  \param opt Option container
- *  \param enable Set to 1 if the decoder should try to get shoutcast metadata, 0 else
- *
- * Normally it's ok to enable shoutcast metadata streaming even if we connect to non-shoutcast servers.
- */
-
-BGAV_PUBLIC
-void bgav_options_set_http_shoutcast_metadata(bgav_options_t* opt, int enable);
-
-/* Set FTP options */
-
-/** \ingroup options
- *  \brief Enable or disable anonymous ftp login
- *  \param opt Option container
- *  \param enable Set to 1 if the decoder should try log anonymously into ftp servers, 0 else
- */
-
-BGAV_PUBLIC
-void bgav_options_set_ftp_anonymous(bgav_options_t* opt, int enable);
-
-/** \ingroup options
- *  \brief Set anonymous password
- *  \param opt Option container
- *  \param pass
- *
- *  Note that you must enable anonymous ftp login with \ref bgav_options_set_ftp_anonymous.
- */
-
-BGAV_PUBLIC
-void bgav_options_set_ftp_anonymous_password(bgav_options_t* opt, const char* pass);
-
-/** \ingroup options
- *  \brief Set default subtitle encoding
- *  \param opt Option container
- *  \param encoding Encoding
- *
- *  This sets the default encoding for text subtitles, when the right
- *  encoding is unknown. It must be a character set name recognized by
- *  iconv. Type "iconv -l" at the commandline for a list of supported
- *  encodings).
- */
-
-BGAV_PUBLIC
-void bgav_options_set_default_subtitle_encoding(bgav_options_t* opt,
-                                                const char* encoding);
-
-/** \ingroup options
- *  \brief Enable dynamic range control
- *  \param opt Option container
- *  \param audio_dynrange 1 for enabling dynamic range control.
- *
- *  This enables dynamic range control for codecs, which supports it.
- *  By default dynamic range control is enabled. Use this function to switch it
- *  off for the case, that you have a better dynamic range control in your processing pipe.
- */
-
-BGAV_PUBLIC
-void bgav_options_set_audio_dynrange(bgav_options_t* opt,
-                                     int audio_dynrange);
-
-
-/** \ingroup options
  *  \brief Try to be sample accurate
  *  \param opt Option container
  *  \param enable Specifies how sample accurate mode should be enabled (see below)
@@ -490,167 +310,18 @@ BGAV_PUBLIC
 void bgav_options_set_sample_accurate(bgav_options_t*opt, int enable);
 
 /** \ingroup options
- *  \brief Set the index creation time for caching
+ *  \brief Set dynamic range control
  *  \param opt Option container
- *  \param t Time (in milliseconds) needed for creating the index
+ *  \param enable 1 (default): enable, 0: disable
  *
- *  This option controls, which indices are cached, based on the
- *  time needed for creating the index. Indices, whose creation takes
- *  longer than the specified time will be cached. If you set this to
- *  zero, all indices are cached.
+ *   This controls dynamic range control on codec level (AC3 and DTS)
  */
-
-BGAV_PUBLIC
-void bgav_options_set_cache_time(bgav_options_t*opt, int t);
-
-/** \ingroup options
- *  \brief Set the maximum total size of the index cache
- *  \param opt Option container
- *  \param s Maximum size (in megabytes) of the whole cache directory
- *
- *  If a new index is created and the size becomes larger than
- *  the maximum size, older indices will be deleted. Zero means infinite.
- */
-
-BGAV_PUBLIC
-void bgav_options_set_cache_size(bgav_options_t*opt, int s);
-
-/** \ingroup options
- *  \brief Enable external subtitle files
- *  \param opt Option container
- *  \param seek_subtitles If 1, subtitle files will be seeked for video files. If 2, subtitles
-        will be seeked for all files.
- *
- *  If the input is a regular file, gmerlin_avdecoder can scan the
- *  directory for matching subtitle files. For a file movie.mpg, possible
- *  subtitle files are e.g. movie_english.srt, movie_german.srt. The
- *  rule is, that the first part of the filename of the subtitle file
- *  must be equal to the movie filename up to the extension (hiere: .mpg).
- *  Furthermore, the subtitle filename must have an extension supported by
- *  any of the subtitle readers.
- */
-
-BGAV_PUBLIC
-void bgav_options_set_seek_subtitles(bgav_options_t* opt,
-                                    int seek_subtitles);
-
-/** \ingroup options
- *  \brief Set postprocessing level
- *  \param opt Option container
- *  \param pp_level Value between 0 (no postprocessing) and 6 (maximum postprocessing)
- *
- *  Warning: This function is depracated, use \ref bgav_options_set_postprocessing_level
- *  instead.
- */
-
-BGAV_PUBLIC
-void bgav_options_set_pp_level(bgav_options_t* opt,
-                               int pp_level);
-
-/** \ingroup options
- *  \brief Set postprocessing level
- *  \param opt Option container
- *  \param pp_level Value between 0.0 (no postprocessing) and 1.0 (maximum postprocessing)
- *
- *  Since 1.0.2
- */
-
-BGAV_PUBLIC
-void bgav_options_set_postprocessing_level(bgav_options_t* opt,
-                                           float pp_level);
-
-/** \ingroup options
- *  \brief Set number of threads
- *  \param opt Option container
- *  \param threads Number of threads to use
- *
- *   Not all codecs support this
- */
-
-BGAV_PUBLIC
-void bgav_options_set_threads(bgav_options_t * opt, int threads);
 
   
-/** \ingroup options
- *  \brief Set DVB channels file
- *  \param opt Option container
- *  \param file Name of the channel configurations file
- *
- *  The channels file must have the format of the dvb-utils
- *  programs (like szap, tzap). If you don't set this file,
- *  several locations like $HOME/.tzap/channels.conf will be
- *  searched.
- */
-
 BGAV_PUBLIC
-void bgav_options_set_dvb_channels_file(bgav_options_t* opt,
-                                        const char * file);
+void bgav_options_set_audio_dynrange(bgav_options_t* opt, int enable);
 
-/** \ingroup options
- *  \brief Preference of ffmpeg demultiplexers
- *  \param opt Option container
- *  \param prefer 1 to prefer ffmpeg demultiplexers, 0 else
- *
- *  Usually, native demultiplexers are prefered over the
- *  ffmpeg ones. This function allows you to chnage that.
- *  If gmerlin_avdecoder was compiled without libavformat support,
- *  this function is meaningless.
- */
-
-BGAV_PUBLIC
-void bgav_options_set_prefer_ffmpeg_demuxers(bgav_options_t* opt,
-                                             int prefer);
-
-/** \ingroup options
- *  \brief Exports the date and time as timecode field of DV streams
- *  \param opt Option container
- *  \param datetime 1 to export date and time as timecodes, 0 else
- */
-
-BGAV_PUBLIC
-void bgav_options_set_dv_datetime(bgav_options_t* opt,
-                                  int datetime);
-
-/** \ingroup options
- *  \brief Shrink factor
- *  \param opt Option container
- *  \param factor Exponent of the shrink factor
- *
- *  This enables downscaling of images while decoding.
- *  Currently only supported for JPEG-2000.
- */
-
-BGAV_PUBLIC
-void bgav_options_set_shrink(bgav_options_t* opt,
-                             int factor);
-
-/** \ingroup options
- *  \brief VDPAU acceleration
- *  \param opt Option container
- *  \param vdpau 1 to enable vdpau, 0 else
- *
- *  Since 1.0.2
- *
- *  This is a noop now since VDPAU support was removed. Might get enabled
- *  again in the future.
- */
-
-BGAV_PUBLIC
-void bgav_options_set_vdpau(bgav_options_t* opt,
-                            int vdpau);
-
-/** \ingroup options
- *  \brief VAAPI acceleration
- *  \param opt Option container
- *  \param vaapi 1 to enable vaapi, 0 else
- *
- *  Since 1.0.2
- *
- */
-
-BGAV_PUBLIC
-void bgav_options_set_vaapi(bgav_options_t* opt,
-                            int vaapi);
+  
 
 /** \ingroup options
  *  \brief Dump file headers
@@ -690,16 +361,21 @@ void bgav_options_set_dump_packets(bgav_options_t* opt,
                                    int enable);
 
 BGAV_PUBLIC
-void bgav_options_set_video_hw_context(bgav_options_t * opt, gavl_hw_context_t * hwctx);
+void bgav_options_set_audio_buffer_info(bgav_options_t * opt,
+                                        const gavl_array_t * arr);
+
+BGAV_PUBLIC
+void bgav_options_set_video_buffer_info(bgav_options_t * opt,
+                                        const gavl_array_t * arr);
+
+BGAV_PUBLIC
+void bgav_options_set_default_subtitle_encoding(bgav_options_t* b,
+                                                const char* encoding);
+
+BGAV_PUBLIC
+bgav_options_t * bgav_options_create(void);
 
   
-/** \ingroup options
- *  \brief Enumeration for log levels
- *
- * These will be called from within log callbacks
- */
- 
-
 /* Set callbacks */
 
 /** \ingroup options
