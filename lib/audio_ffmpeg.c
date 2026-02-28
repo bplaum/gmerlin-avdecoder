@@ -218,7 +218,7 @@ typedef struct
   
   /* ffmpeg changes the extradata sometimes,
      so we save them locally here */
-  uint8_t * ext_data;
+  //  uint8_t * ext_data;
 
   AVPacket * pkt;
   int sample_size;
@@ -431,12 +431,16 @@ static int init_ffmpeg_audio(bgav_stream_t * s)
   
   if(s->ci->codec_header.len)
     {
+#if 0
     priv->ext_data = calloc(1, s->ci->codec_header.len +
                             AV_INPUT_BUFFER_PADDING_SIZE);
     memcpy(priv->ext_data, s->ci->codec_header.buf, s->ci->codec_header.len);
-    
-    priv->ctx->extradata = priv->ext_data;
+#endif
+    priv->ctx->extradata = av_malloc(s->ci->codec_header.len + AV_INPUT_BUFFER_PADDING_SIZE);
     priv->ctx->extradata_size = s->ci->codec_header.len;
+
+    memcpy(priv->ctx->extradata, s->ci->codec_header.buf, priv->ctx->extradata_size);
+    memset(priv->ctx->extradata + priv->ctx->extradata_size, 0, AV_INPUT_BUFFER_PADDING_SIZE);
     }
   
 #ifdef DUMP_EXTRADATA
@@ -523,8 +527,6 @@ static void close_ffmpeg(bgav_stream_t * s)
 
   if(!priv)
     return;
-  if(priv->ext_data)
-    free(priv->ext_data);
   
   if(priv->frame)
     {
@@ -534,6 +536,10 @@ static void close_ffmpeg(bgav_stream_t * s)
   if(priv->ctx)
     {
 #if LIBAVCODEC_VERSION_MAJOR < 61    
+
+    if(priv->ctx->extradata)
+      av_freep(&priv->ctx->extradata);
+    priv->ctx->extradata_size = 0;
     bgav_ffmpeg_lock();
     avcodec_close(priv->ctx);
     bgav_ffmpeg_unlock();

@@ -77,7 +77,8 @@
 #define FLUSH_EOF       (1<<8)
 #define HAVE_DR         (1<<9)
 #define HAVE_VAAPI      (1<<10)
-#define DR_INIT         (1<<11)
+#define VAAPI_INIT      (1<<11)
+#define DR_INIT         (1<<12)
 
 /* Skip handling */
 
@@ -319,6 +320,7 @@ static int init_vaapi(bgav_stream_t * s)
   
   }
 
+#if 0
 static void put_frame_vaapi(bgav_stream_t * s, gavl_video_frame_t * f1)
   {
   int idx;
@@ -328,6 +330,13 @@ static void put_frame_vaapi(bgav_stream_t * s, gavl_video_frame_t * f1)
 
   surf = (VASurfaceID*)(&priv->frame->data[3]);
 
+  if(!(priv->flags & VAAPI_INIT))
+    {
+    gavl_hw_ctx_set_video_importer(priv->hwctx,
+                                   NULL, s->data.video.format);
+    priv->flags |= VAAPI_INIT;
+    }
+  
   idx = get_vaapi_surface_index(priv, *surf);
   
   if(!(s->vframe = gavl_hw_ctx_get_imported_vframe(priv->hwctx, idx)))
@@ -339,6 +348,7 @@ static void put_frame_vaapi(bgav_stream_t * s, gavl_video_frame_t * f1)
     }
   gavl_video_frame_copy_metadata(s->vframe, priv->gavl_frame);
   }
+#endif
 
 
 #endif
@@ -625,7 +635,6 @@ static void set_frame_metadata(bgav_stream_t * s, gavl_video_frame_t * dst)
 static gavl_source_status_t decode_picture(bgav_stream_t * s)
   {
   ffmpeg_video_priv * priv;
-  //  bgav_pts_cache_entry_t * e;
   gavl_source_status_t st;
   int result;
 
@@ -753,6 +762,7 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
       gavl_hw_video_frame_map(priv->gavl_frame, 1);
       }
 #ifdef HAVE_LIBVA
+    // #if 0
     else if(priv->flags & HAVE_VAAPI)
       {
       int idx;
@@ -762,8 +772,15 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
 
       surf = (VASurfaceID*)(&priv->frame->data[3]);
 
+      if(!(priv->flags & VAAPI_INIT))
+        {
+        gavl_hw_ctx_set_video_importer(priv->hwctx,
+                                       NULL, s->data.video.format);
+        priv->flags |= VAAPI_INIT;
+        }
+      
       idx = get_vaapi_surface_index(priv, *surf);
-  
+      
       if(!(priv->gavl_frame = gavl_hw_ctx_get_imported_vframe(priv->hwctx, idx)))
         {
         gavl_vaapi_video_frame_t * fp;
@@ -772,8 +789,15 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
         fp->surface = *surf;
         }
       s->vframe = priv->gavl_frame;
+
+      /*
+      if(priv->gavl_frame->buf_idx > 0)
+        fprintf(stderr, "Got vaapi frame: %d %d %p %d\n", *surf, idx,
+                priv->gavl_frame, priv->gavl_frame->buf_idx);
+      */
       }
 #endif
+    //    else if(!(priv->flags & HAVE_VAAPI))
     else
       {
       if(!priv->gavl_frame)
@@ -1277,7 +1301,7 @@ static int init_ffmpeg(bgav_stream_t * s)
 
 static void resync_ffmpeg(bgav_stream_t * s)
   {
-  ffmpeg_video_priv * priv;
+ ffmpeg_video_priv * priv;
   priv = s->decoder_priv;
   //  fprintf(stderr, "Flush buffers\n");
   avcodec_flush_buffers(priv->ctx);
@@ -2581,7 +2605,7 @@ static void init_put_frame(bgav_stream_t * s)
         break;
 #ifdef HAVE_LIBVA
       case AV_PIX_FMT_VAAPI:
-        priv->put_frame = put_frame_vaapi;
+        // priv->put_frame = put_frame_vaapi;
         gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Using VAAPI");
         break;
 #endif
