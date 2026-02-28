@@ -119,8 +119,8 @@ typedef struct
 #endif
   
 
-  uint8_t * extradata;
-  int extradata_size;
+  //  uint8_t * extradata;
+  //  int extradata_size;
   
   /* State variables */
   int flags;
@@ -1133,15 +1133,13 @@ static int init_ffmpeg(bgav_stream_t * s)
   
   if(s->ci->codec_header.len)
     {
-    priv->extradata = calloc(s->ci->codec_header.len + AV_INPUT_BUFFER_PADDING_SIZE, 1);
-    memcpy(priv->extradata, s->ci->codec_header.buf, s->ci->codec_header.len);
-    priv->extradata_size = s->ci->codec_header.len;
-
     //    if(bgav_video_is_divx4(s->fourcc))
     //      bgav_mpeg4_remove_packed_flag(priv->extradata, &priv->extradata_size, &priv->extradata_size);
     
-    priv->ctx->extradata      = priv->extradata;
-    priv->ctx->extradata_size = priv->extradata_size;
+    priv->ctx->extradata      = av_malloc(s->ci->codec_header.len + AV_INPUT_BUFFER_PADDING_SIZE);
+    priv->ctx->extradata_size = s->ci->codec_header.len;
+    memcpy(priv->ctx->extradata, s->ci->codec_header.buf, priv->ctx->extradata_size);
+    memset(priv->ctx->extradata + priv->ctx->extradata_size, 0, AV_INPUT_BUFFER_PADDING_SIZE);
     
 #ifdef DUMP_EXTRADATA
     gavl_dprintf("video_ffmpeg: Adding extradata %d bytes\n",
@@ -1332,6 +1330,9 @@ static void close_ffmpeg(bgav_stream_t * s)
   if(priv->ctx)
     {
 #if LIBAVCODEC_VERSION_MAJOR < 61    
+    if(priv->ctx->extradata)
+      av_freep(&priv->ctx->extradata);
+    priv->ctx->extradata_size = 0;
     bgav_ffmpeg_lock();
     avcodec_close(priv->ctx);
     bgav_ffmpeg_unlock();
@@ -1373,8 +1374,6 @@ static void close_ffmpeg(bgav_stream_t * s)
   if(priv->p)
     bgav_packet_destroy(priv->p);
 
-  if(priv->extradata)
-    free(priv->extradata);
 
   if(priv->dsp)
     gavl_dsp_context_destroy(priv->dsp);
