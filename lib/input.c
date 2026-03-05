@@ -682,6 +682,7 @@ extern const bgav_input_t bgav_input_file;
 extern const bgav_input_t bgav_input_stdin;
 extern const bgav_input_t bgav_input_http;
 extern const bgav_input_t bgav_input_hls;
+extern const bgav_input_t bgav_input_sdp;
 
 #ifdef HAVE_CDIO
 extern const bgav_input_t bgav_input_vcd;
@@ -774,6 +775,10 @@ static int is_dvd_iso(const char * path)
   }
 #endif // HAVE_DVDREAD
 
+/* Handling of sdp:// urls */
+
+
+
 static int input_open(bgav_input_context_t * ctx,
                       const char *url, char ** redir)
   {
@@ -799,8 +804,8 @@ static int input_open(bgav_input_context_t * ctx,
     else if(!strcasecmp(protocol, "hls") ||
             !strcasecmp(protocol, "hlss"))
       ctx->input = &bgav_input_hls;
-    //    else if(!strcasecmp(protocol, "mmsh"))
-    //      ctx->input = &bgav_input_mmsh;
+    else if(!strcasecmp(protocol, "sdp"))
+      ctx->input = &bgav_input_sdp;
     else if(!strcasecmp(protocol, "file"))
       ctx->input = &bgav_input_file;
     else if(!strcasecmp(protocol, "stdin") || !strcmp(url, "-"))
@@ -905,7 +910,6 @@ static int do_open(bgav_input_context_t * ctx,
   free(tmp_url);
   return ret;
   }
-
 
 int bgav_input_open(bgav_input_context_t * ctx,
                     const char *url)
@@ -1094,8 +1098,6 @@ int bgav_input_read_string_pascal(bgav_input_context_t * ctx,
   ret[len] = '\0';
   return 1;
   }
-
-
 
 bgav_input_context_t * bgav_input_create(bgav_t * b, const bgav_options_t * opt)
   {

@@ -28,15 +28,6 @@
 
 #define LOG_DOMAIN "core"
 
-static bgav_input_context_t * create_input(bgav_t * b)
-  {
-  bgav_input_context_t * ret;
-   
-  ret = bgav_input_create(b, NULL);
-  ret->b = b;
-  return ret;
-  }
-
 int bgav_pause(bgav_t * bgav)
   {
   bgav->flags |= BGAV_FLAG_PAUSED;
@@ -166,7 +157,7 @@ int bgav_init(bgav_t * ret)
   else
     {
     ret->demuxer = ret->input->demuxer;
-    bgav_track_table_merge_metadata(ret->tt, &ret->input->m);
+    bgav_track_table_merge_metadata(ret->demuxer->tt, &ret->input->m);
     }
   
   ret->tt = ret->demuxer->tt;
@@ -257,8 +248,8 @@ bgav_t * bgav_create()
 int bgav_open(bgav_t * ret, const char * location)
   {
   bgav_codecs_init(&ret->opt);
-  ret->input = create_input(ret);
-
+  ret->input = bgav_input_create(ret, NULL);
+  
   /* Create global metadata */
   
   if(!bgav_input_open(ret->input, location))

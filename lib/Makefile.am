@@ -370,6 +370,7 @@ in_file.c \
 in_hls.c \
 in_http.c \
 in_memory.c \
+in_sdp.c \
 input.c \
 languages.c \
 matroska.c \

@@ -30,6 +30,8 @@
 typedef struct
   {
   uint8_t * data;
+  uint8_t * data_priv;
+
   uint8_t * data_ptr;
   bgav_input_context_t* input;
   
@@ -60,6 +62,10 @@ static int64_t seek_byte_mem(bgav_input_context_t * ctx,
 static void    close_mem(bgav_input_context_t * ctx)
   {
   mem_priv_t * priv = ctx->priv;
+
+  if(priv->data_priv)
+    free(priv->data_priv);
+  
   free(priv);
   }
 
@@ -87,6 +93,28 @@ bgav_input_context_t * bgav_input_open_memory(uint8_t * data,
   ret->total_bytes = data_size;
   
   return ret;
+  }
+
+bgav_input_context_t * bgav_input_open_memory_c(const uint8_t * data,
+                                                uint32_t data_size)
+  {
+  bgav_input_context_t * ret;
+  mem_priv_t * priv;
+  priv = calloc(1, sizeof(*priv));
+
+  ret = bgav_input_create(NULL, NULL);
+  ret->priv = priv;
+  ret->input = &input_mem;
+
+  priv->data_priv = malloc(data_size);
+  memcpy(priv->data_priv, data, data_size);
+  priv->data     = priv->data_priv;
+
+  priv->data_ptr = priv->data;
+  ret->total_bytes = data_size;
+  
+  return ret;
+  
   }
 
 void bgav_input_reopen_memory(bgav_input_context_t * ctx,

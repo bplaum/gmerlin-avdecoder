@@ -56,8 +56,8 @@ static int probe_m3u(bgav_input_context_t * input)
 
   /* Some servers (e.g. Pluto) sometimes send content type "application/x-mpegURL"
      for HLS segment lists. These have hls or hlss as protocol. */
-  if(gavl_string_starts_with(uri, "hls://") ||
-     gavl_string_starts_with(uri, "hlss://"))
+  if(uri && (gavl_string_starts_with(uri, "hls://") ||
+             gavl_string_starts_with(uri, "hlss://")))
     return 0; // Will be MPEG2 TS or ADTS
   
   /* Most likely, we get this via http, so we can check the mimetype */

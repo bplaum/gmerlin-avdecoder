@@ -82,16 +82,24 @@ static const AVInputFormat * get_format(bgav_input_context_t * input)
   {
   uint8_t data[PROBE_SIZE];
   AVProbeData avpd;
+  int probe_size = PROBE_SIZE;
+  if(probe_size > input->total_bytes)
+    probe_size = input->total_bytes;
 
+  memset(&avpd, 0, sizeof(avpd));
+  
   if(!input->location)
     return 0;
   
-  if(bgav_input_get_data(input, data, PROBE_SIZE) < PROBE_SIZE)
+  if(bgav_input_get_data(input, data, probe_size) < probe_size)
     return 0;
-  
-  avpd.filename= input->location;
+
+  if(gavl_string_starts_with(input->location, "sdp://"))
+    avpd.filename= "stream.sdp";
+  else
+    avpd.filename= input->location;
   avpd.buf= data;
-  avpd.buf_size= PROBE_SIZE;
+  avpd.buf_size= probe_size;
   return av_probe_input_format(&avpd, 1);
   }
 
@@ -551,7 +559,13 @@ static int open_ffmpeg(bgav_demuxer_context_t * ctx)
   char * tmp_string;
   
   AVDictionaryEntry * tag;
+  AVDictionary *opts = NULL;
+  
+  avformat_network_init();
 
+  av_dict_set(&opts, "protocol_whitelist", "file,udp,rtp", 0);
+  av_dict_set(&opts, "reorder_queue_size", "500", 0);
+  av_dict_set(&opts, "localaddr", "10.0.0.19", 0);
   
   priv = calloc(1, sizeof(*priv));
   ctx->priv = priv;
@@ -579,13 +593,17 @@ static int open_ffmpeg(bgav_demuxer_context_t * ctx)
 
   avfc->pb = priv->pb;
 
-  if(avformat_open_input(&avfc, tmp_string, priv->avif, NULL)<0)
+  if(avformat_open_input(&avfc, tmp_string, priv->avif, &opts)<0)
     {
     gavl_log(GAVL_LOG_ERROR,LOG_DOMAIN,
              "avformat_open_input failed");
     free(tmp_string);
+    av_dict_free(&opts);
     return 0;
     }
+  
+  av_dict_free(&opts);
+  
   
   free(tmp_string);
   priv->avfc= avfc;
@@ -658,10 +676,11 @@ static int open_ffmpeg(bgav_demuxer_context_t * ctx)
                                 priv->avfc->iformat->long_name);
   bgav_track_set_format(ctx->tt->cur, tmp_string, NULL);
   free(tmp_string);
+
+  //  av_dump_format(priv->avfc, 0, "RTP Stream", 0);
   
   return 1;
   }
-
 
 static void close_ffmpeg(bgav_demuxer_context_t * ctx)
   {
@@ -693,7 +712,8 @@ static gavl_source_status_t next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
   bgav_stream_t * s;
   int i_tmp;
   uint32_t * pal_i;
-
+  int result;
+  
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 137, 100)
   int pal_i_len;
 #else
@@ -702,8 +722,13 @@ static gavl_source_status_t next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
   
   priv = ctx->priv;
   
-  if(av_read_frame(priv->avfc, priv->pkt) < 0)
+  if((result = av_read_frame(priv->avfc, priv->pkt)) < 0)
+    {
+    char errbuf[128];
+    av_strerror(result, errbuf, sizeof(errbuf));
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Cannot read packet: %s", errbuf);
     return GAVL_SOURCE_EOF;
+    }
   
   s = bgav_track_find_stream(ctx, priv->pkt->stream_index);
   if(!s)
@@ -791,6 +816,12 @@ const bgav_demuxer_t bgav_demuxer_ffmpeg =
     .next_packet = next_packet_ffmpeg,
     .seek =        seek_ffmpeg,
     .close =       close_ffmpeg
+  };
 
+const bgav_demuxer_t bgav_demuxer_rtp =
+  {
+    .open =        open_ffmpeg,
+    .next_packet = next_packet_ffmpeg,
+    .close =       close_ffmpeg
   };
 

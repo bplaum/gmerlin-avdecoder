@@ -999,6 +999,11 @@ void bgav_input_ensure_buffer_size(bgav_input_context_t * ctx, int len);
 bgav_input_context_t * bgav_input_open_memory(uint8_t * data,
                                               uint32_t data_size);
 
+/* makes a local copy of data */
+bgav_input_context_t * bgav_input_open_memory_c(const uint8_t * data,
+                                                uint32_t data_size);
+
+
 bgav_input_context_t * bgav_input_open_sub(bgav_input_context_t * src,
                                            int64_t start,
                                            int64_t end);
@@ -1012,10 +1017,8 @@ void bgav_input_reopen_memory(bgav_input_context_t * ctx,
                               uint32_t data_size);
 
 
-/* Input module to read from a filedescriptor */
+bgav_input_context_t * bgav_input_open_sdp(const char * url);
 
-bgav_input_context_t *
-bgav_input_open_fd(int fd, int64_t total_bytes, const char * mimetype);
 
 /*
  *  Some demuxer will create a superindex. If this is the case,
