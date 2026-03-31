@@ -109,7 +109,9 @@ int bgav_audio_init(bgav_stream_t * s)
   gavl_compression_info_free(s->ci);
   gavl_compression_info_init(s->ci);
   gavl_stream_get_compression_info(s->info_ext, s->ci);
-
+  gavl_stream_set_stats(s->info_ext, &s->stats);
+  
+  
   //  fprintf(stderr, "Audio initialized:\n");
   //  gavl_dictionary_dump(s->info_ext, 2);
   

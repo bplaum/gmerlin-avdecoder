@@ -48,7 +48,7 @@ static int probe_v4l2(const gavl_dictionary_t * dict)
 static int init_v4l2(bgav_stream_t * s)
   {
   const gavl_dictionary_t * dev_file;
-
+  const gavl_array_t * arr;
   v4l2_t * priv;
   
   if(!(dev_file = gavl_v4l2_get_decoder(v4l_devices, s->ci->id, s->info)))
@@ -60,8 +60,11 @@ static int init_v4l2(bgav_stream_t * s)
   //  fprintf(stderr, "Got device %s\n", gavl_dictionary_get_string(dev_file, GAVL_META_URI));
 
   priv = calloc(1, sizeof(*priv));
-
+  
   priv->dev = gavl_v4l2_device_open(dev_file);
+  
+  if((arr = gavl_dictionary_get_array(s->opt, BGAV_OPT_VIDEOBUFFER)))
+    gavl_v4l2_device_set_buffer_formats(priv->dev, arr);
   
   if(!gavl_v4l2_device_init_decoder(priv->dev, s->info_ext, s->psrc))
     {
@@ -91,12 +94,11 @@ static void close_v4l2(bgav_stream_t * s)
   
   priv = s->decoder_priv;
 
-  /* dev is owned by hwctx */
   if(priv->dev)
     gavl_v4l2_device_close(priv->dev);
   
   free(priv);
-     
+  
   }
 
 static void resync_v4l2(bgav_stream_t * s)
