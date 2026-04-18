@@ -27,6 +27,9 @@
 #include <avdec_private.h>
 #include <parser.h>
 
+#include <gavl/log.h>
+#define LOG_DOMAIN "jpeg"
+
 typedef struct
   {
   int have_format;
@@ -105,22 +108,26 @@ static gavl_pixelformat_t get_pixelformat(bgav_packet_t * p)
           return GAVL_PIXELFORMAT_NONE;
           }
 
+        if(!sub_h[1] || !sub_v[1])
+          return GAVL_PIXELFORMAT_NONE;
+
+        sub_h[0] /= sub_h[1];
+        sub_v[0] /= sub_v[1];
+        
         if((sub_h[0] == 1) &&
-           (sub_v[0] == 1) &&
-           (sub_h[1] == 1) &&
-           (sub_v[1] == 1))
+           (sub_v[0] == 1))
           return GAVL_YUVJ_444_P;
         else if((sub_h[0] == 2) &&
-                (sub_v[0] == 2) &&
-                (sub_h[1] == 1) &&
-                (sub_v[1] == 1))
+                (sub_v[0] == 2))
           return GAVL_YUVJ_420_P;
         else if((sub_h[0] == 2) &&
-                (sub_v[0] == 1) &&
-                (sub_h[1] == 1) &&
-                (sub_v[1] == 1))
+                (sub_v[0] == 1))
           return GAVL_YUVJ_422_P;
-        return 1;
+        else
+          {
+          gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Weird pixelformat: %d %d", sub_h[0], sub_v[0]);
+          return GAVL_PIXELFORMAT_NONE;
+          }
         }
         break;
       case 0xFFDA: // SOS
