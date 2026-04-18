@@ -100,19 +100,19 @@ static int handle_cmd(void * data, gavl_msg_t * msg)
           }
         case GAVL_CMD_SRC_SET_BUFFER_FORMATS:
           {
-          gavl_dictionary_t * opt;
+          //          gavl_dictionary_t * opt;
           
           gavl_stream_type_t t = gavl_msg_get_arg_int(msg, 0);
 
-          opt = bgav_get_options(avdec->dec);
+          //          opt = bgav_get_options(avdec->dec);
                     
           if(t == GAVL_STREAM_AUDIO)
             {
-            gavl_dictionary_set(opt, BGAV_OPT_AUDIOBUFFER, gavl_msg_get_arg_c(msg, 1));
+            gavl_dictionary_set(avdec->opt, BGAV_OPT_AUDIOBUFFER, gavl_msg_get_arg_c(msg, 1));
             }
           else if(t == GAVL_STREAM_VIDEO)
             {
-            gavl_dictionary_set(opt, BGAV_OPT_VIDEOBUFFER, gavl_msg_get_arg_c(msg, 1));
+            gavl_dictionary_set(avdec->opt, BGAV_OPT_VIDEOBUFFER, gavl_msg_get_arg_c(msg, 1));
             }
           }
         }
@@ -248,9 +248,17 @@ static int bg_avdec_start(void * priv)
   int i, num;
   avdec_priv * avdec = priv;
   bg_media_source_stream_t * st;
+  const gavl_array_t * audio_buf;
+  const gavl_array_t * video_buf;
+  gavl_dictionary_t * opt;
 
+  opt = bgav_get_options(avdec->dec);
+  
   /* Re-apply the options because they might got changed */
-  bgav_options_copy(bgav_get_options(avdec->dec), avdec->opt);
+  bgav_options_copy(opt, avdec->opt);
+
+  audio_buf = gavl_dictionary_get_array(opt, BGAV_OPT_AUDIOBUFFER);
+  video_buf = gavl_dictionary_get_array(opt, BGAV_OPT_VIDEOBUFFER);
   
   if(!avdec->src.track)
     num = 0;
@@ -376,13 +384,8 @@ static int bg_avdec_start(void * priv)
       gavl_packet_source_set_lock_funcs(st->psrc, bg_avdec_lock, bg_avdec_unlock, avdec);
     }
   
-#if 0  
-  num = gavl_track_get_num_msg_streams(avdec->src.track);
-  for(i = 0; i < num; i++)
-    {
-    }
-#endif
-  
+  /* Initialize exporter */
+  bg_media_source_set_export(&avdec->src, audio_buf, video_buf);
   return 1;
   }
 

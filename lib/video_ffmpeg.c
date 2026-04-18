@@ -320,35 +320,6 @@ static int init_vaapi(bgav_stream_t * s)
   
   }
 
-#if 0
-static void put_frame_vaapi(bgav_stream_t * s, gavl_video_frame_t * f1)
-  {
-  int idx;
-  VASurfaceID * surf;
-  //  VAStatus result;
-  ffmpeg_video_priv * priv = s->decoder_priv;
-
-  surf = (VASurfaceID*)(&priv->frame->data[3]);
-
-  if(!(priv->flags & VAAPI_INIT))
-    {
-    gavl_hw_ctx_set_video_importer(priv->hwctx,
-                                   NULL, s->data.video.format);
-    priv->flags |= VAAPI_INIT;
-    }
-  
-  idx = get_vaapi_surface_index(priv, *surf);
-  
-  if(!(s->vframe = gavl_hw_ctx_get_imported_vframe(priv->hwctx, idx)))
-    {
-    gavl_vaapi_video_frame_t * fp;
-    s->vframe = gavl_hw_ctx_create_import_vframe(priv->hwctx, idx);
-    fp  = s->vframe->storage;
-    fp->surface = *surf;
-    }
-  gavl_video_frame_copy_metadata(s->vframe, priv->gavl_frame);
-  }
-#endif
 
 
 #endif
@@ -475,7 +446,6 @@ static gavl_source_status_t get_packet(bgav_stream_t * s)
   bgav_packet_t * p;
   gavl_source_status_t st;
   ffmpeg_video_priv * priv;
-  //  bgav_pts_cache_entry_t * e;
   gavl_palette_t * palette;
   
   priv = s->decoder_priv;
@@ -895,7 +865,7 @@ static const AVCodec * find_decoder(bgav_stream_t * s, enum AVCodecID id)
 static void buffer_release_cb(void *opaque, uint8_t *data)
   {
   gavl_video_frame_t *f = opaque;
-  //  fprintf(stderr, "buffer_release_cb %"PRId64"\n", f->timestamp);
+  //  fprintf(stderr, "buffer_release_cb %d\n", f->buf_idx);
   gavl_hw_video_frame_unref(f);
   }
 
@@ -937,8 +907,9 @@ static int get_buffer2_cb(struct AVCodecContext *ctx, AVFrame *frame, int flags)
     }
   
   f = gavl_hw_video_frame_get_write(priv->hwctx);
-  
-  //  fprintf(stderr, "Blupp %p %p %p\n", f, f->hwctx, f->storage);
+
+  if(!f)
+    fprintf(stderr, "Blupp %p\n", f);
   
   num_planes = gavl_pixelformat_num_planes(s->data.video.format->pixelformat);
   
@@ -1301,8 +1272,14 @@ static int init_ffmpeg(bgav_stream_t * s)
 
 static void resync_ffmpeg(bgav_stream_t * s)
   {
- ffmpeg_video_priv * priv;
+  ffmpeg_video_priv * priv;
   priv = s->decoder_priv;
+
+  avcodec_send_packet(priv->ctx, NULL);
+
+  while(!avcodec_receive_frame(priv->ctx, priv->frame))
+    ;
+  
   //  fprintf(stderr, "Flush buffers\n");
   avcodec_flush_buffers(priv->ctx);
   //  fprintf(stderr, "Flush buffers done\n");
