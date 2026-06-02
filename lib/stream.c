@@ -249,9 +249,23 @@ read_packet_continuous(void * priv, bgav_packet_t ** ret)
 
     st1 = bgav_demuxer_next_packet(demuxer);
     demuxer->request_stream = NULL;
-    
-    if(st1 != GAVL_SOURCE_OK)
+
+    if(st1 == GAVL_SOURCE_EOF)
+      {
+      /* Might have a last packet */
+      if(gavl_packet_source_read_packet(gavl_packet_buffer_get_source(s->pbuffer), ret) == GAVL_SOURCE_OK)
+        {
+        fprintf(stderr, "Flushing last packet\n");
+        st = GAVL_SOURCE_OK;
+        break;
+        }
+      else
+        return GAVL_SOURCE_EOF;
+      }
+    else if(st1 != GAVL_SOURCE_OK)
+      {
       return st1; // Return for now
+      }
     }
   
   if((st == GAVL_SOURCE_OK) && (s->flags & STREAM_DUMP_PACKETS))
