@@ -40,8 +40,9 @@ int main(int argc, char ** argv)
   int64_t first_pts = GAVL_TIME_UNDEFINED;
   
   
-  const gavl_audio_format_t * format;
   gavl_audio_frame_t * frame;
+  gavl_audio_source_t * src;
+
   int skip_neg = 1;
   
   if(argc == 1)
@@ -134,17 +135,16 @@ int main(int argc, char ** argv)
   else
     fprintf(stderr, "Starting decoders done\n");
 
-  format = bgav_get_audio_format(file, stream);
-
-  frame = gavl_audio_frame_create(format);
-
-  count = 0;
+  src = bgav_get_audio_source(file, stream);
   
-  while(bgav_read_audio(file, frame, stream, format->samples_per_frame))
+  count = 0;
+  frame = NULL;
+  while(gavl_audio_source_read_frame(src, &frame) == GAVL_SOURCE_OK)
     {
     if(first_pts == GAVL_TIME_UNDEFINED)
       first_pts = frame->timestamp;
     count += frame->valid_samples;
+    frame = NULL;
     }
 
   if(skip_neg)
@@ -167,6 +167,5 @@ int main(int argc, char ** argv)
               track+1, stream+1, count);
     }
   bgav_close(file);
-  gavl_audio_frame_destroy(frame);
   return 0;
   }
