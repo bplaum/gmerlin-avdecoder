@@ -344,7 +344,7 @@ static void init_superindex(bgav_demuxer_context_t * ctx)
   int i;
   
   i = 0;
-
+  
   while(i < ctx->tt->cur->num_streams)
     {
     ctx->tt->cur->streams[i]->first_index_pos =
@@ -532,17 +532,20 @@ int bgav_demuxer_start(bgav_demuxer_context_t * ctx)
   
   if(ctx->si)
     {
-    init_superindex(ctx);
-    //    check_interleave(ctx);
-
-    if((ctx->flags & BGAV_DEMUXER_NONINTERLEAVED) &&
-       !(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
+    if(!(ctx->si->flags & GAVL_PACKET_INDEX_SPARSE))
       {
-      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-               "Non interleaved file from non seekable source");
-      return 0;
-      }
+      init_superindex(ctx);
+      //    check_interleave(ctx);
 
+      if((ctx->flags & BGAV_DEMUXER_NONINTERLEAVED) &&
+         !(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
+        {
+        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
+                 "Non interleaved file from non seekable source");
+        return 0;
+        }
+      }
+    
     if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_INDICES))
       gavl_packet_index_dump(ctx->si);
     }
