@@ -296,7 +296,7 @@ static gavl_sink_status_t sink_put_func_full(void * priv, gavl_packet_t * pkt)
 
       /* Discard skipped packets as early as possible */
       /* This is important because skip packets can occur before the
-         timescale is known, which the packetbuffer later needs for PTS generatio */
+         timescale is known, which the packetbuffer later needs for PTS generation */
       if(PACKET_GET_SKIP(pkt))
         {
         /* Undo gavl_packet_sink_get_packet */
