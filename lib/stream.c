@@ -255,7 +255,7 @@ read_packet_continuous(void * priv, bgav_packet_t ** ret)
       /* Might have a last packet */
       if(gavl_packet_source_read_packet(gavl_packet_buffer_get_source(s->pbuffer), ret) == GAVL_SOURCE_OK)
         {
-        fprintf(stderr, "Flushing last packet\n");
+        //        fprintf(stderr, "Flushing last packet\n");
         st = GAVL_SOURCE_OK;
         break;
         }
