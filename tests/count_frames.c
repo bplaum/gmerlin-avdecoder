@@ -35,9 +35,8 @@ int main(int argc, char ** argv)
   
   int64_t count;
   int64_t first_pts = GAVL_TIME_UNDEFINED;
+  gavl_video_source_t * src;
   
-  
-  const gavl_video_format_t * format;
   gavl_video_frame_t * frame;
   
   if(argc == 1)
@@ -100,23 +99,23 @@ int main(int argc, char ** argv)
   else
     fprintf(stderr, "Starting decoders done\n");
 
-  format = bgav_get_video_format(file, stream);
-
-  frame = gavl_video_frame_create(format);
-
-  count = 0;
+  src = bgav_get_video_source(file, stream);
   
-  while(bgav_read_video(file, frame, stream))
+  count = 0;
+
+  frame = NULL;
+  
+  while(gavl_video_source_read_frame(src, &frame) == GAVL_SOURCE_OK)
     {
     if(first_pts == GAVL_TIME_UNDEFINED)
       first_pts = frame->timestamp;
-    count ++;
+    frame = NULL;
+    count++;
     }
   
   fprintf(stderr, "Track %d stream %d contains %"PRId64" frames\n",
           track+1, stream+1, count);
   
   bgav_close(file);
-  gavl_video_frame_destroy(frame);
   return 0;
   }
