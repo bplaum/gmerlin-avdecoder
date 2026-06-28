@@ -73,7 +73,7 @@ static int probe_matroska(bgav_input_context_t * input)
   bgav_input_context_t * input_mem;
   int ret = 0;
   
-  /* We want a complete EBML header in the first 64 bits
+  /* We want a complete EBML header in the first 64 bytes
    * with DocType either "matroska" or "webm"
    */
   uint8_t header[64];
@@ -1091,7 +1091,7 @@ static int process_block(bgav_demuxer_context_t * ctx,
   s = bgav_track_find_stream(ctx, b->track);
   if(!s)
     return 1;
-  
+ 
   if(bg)
     {
     if(!bg->num_reference_blocks)
@@ -1119,7 +1119,7 @@ static int process_block(bgav_demuxer_context_t * ctx,
         if(bg && bg->BlockDuration)
           p->duration = bg->BlockDuration;
         }
-      
+
       bgav_stream_done_packet_write(s, p);
       
       break;
@@ -1270,8 +1270,8 @@ static gavl_source_status_t next_packet_matroska(bgav_demuxer_context_t * ctx)
     pos = ctx->input->position;
     if(!bgav_mkv_element_read(ctx->input, &e))
       {
-      //      fprintf(stderr, "bgav_mkv_element_read failed %ld\n",
-      //              ctx->input->position);
+      fprintf(stderr, "bgav_mkv_element_read failed %ld\n",
+              ctx->input->position);
       return GAVL_SOURCE_EOF;
       }
     //    bgav_mkv_element_dump(&e);
@@ -1282,7 +1282,7 @@ static gavl_source_status_t next_packet_matroska(bgav_demuxer_context_t * ctx)
         //        fprintf(stderr, "Got Cluster\n");
         if(!bgav_mkv_cluster_read(ctx->input, &priv->cluster, &e))
           {
-          //          fprintf(stderr, "bgav_mkv_cluster_read failed\n");
+          fprintf(stderr, "bgav_mkv_cluster_read failed\n");
           return GAVL_SOURCE_EOF;
           }
         //        bgav_mkv_cluster_dump(&priv->cluster);
@@ -1294,7 +1294,7 @@ static gavl_source_status_t next_packet_matroska(bgav_demuxer_context_t * ctx)
       case MKV_ID_BlockGroup:
         if(!bgav_mkv_block_group_read(ctx->input, &priv->bg, &e))
           {
-          //          fprintf(stderr, "bgav_mkv_block_group_read\n");
+          fprintf(stderr, "bgav_mkv_block_group_read\n");
           return GAVL_SOURCE_EOF;
           }
         
@@ -1303,7 +1303,7 @@ static gavl_source_status_t next_packet_matroska(bgav_demuxer_context_t * ctx)
         
         if(!process_block(ctx, &priv->bg.block, &priv->bg))
           {
-          //          fprintf(stderr, "process_block failed\n");
+          fprintf(stderr, "process_block failed\n");
           return GAVL_SOURCE_EOF;
           }
         num_blocks++;
@@ -1312,7 +1312,7 @@ static gavl_source_status_t next_packet_matroska(bgav_demuxer_context_t * ctx)
       case MKV_ID_SimpleBlock:
         if(!bgav_mkv_block_read(ctx->input, &priv->bg.block, &e))
           {
-          //          fprintf(stderr, "bgav_mkv_block_read failed\n");
+          fprintf(stderr, "bgav_mkv_block_read failed\n");
           return GAVL_SOURCE_EOF;
           }
         //        fprintf(stderr, "Got Block\n");
@@ -1320,17 +1320,19 @@ static gavl_source_status_t next_packet_matroska(bgav_demuxer_context_t * ctx)
         
         if(!process_block(ctx, &priv->bg.block, NULL))
           {
-          //          fprintf(stderr, "process_block failed\n");
+          fprintf(stderr, "process_block failed\n");
           return GAVL_SOURCE_EOF;
           }
         num_blocks++;
         break;
       default:
-        //        fprintf(stderr, "End of file: %08x %ld\n", e.id,
-        //                ctx->input->position);
+        //        fprintf(stderr, "End of file: %08x %ld %d\n", e.id,
+        //                ctx->input->position, num_blocks);
         //        bgav_mkv_element_dump(&e);
-        /* Probably reached end of file */
-        return num_blocks ? GAVL_SOURCE_OK : GAVL_SOURCE_EOF;
+
+        bgav_mkv_element_skip(ctx->input, &e, NULL);
+        
+        break;
       }
 
     /* Check whether to exit */
@@ -1397,7 +1399,6 @@ const bgav_demuxer_t bgav_demuxer_matroska =
   {
     .probe =       probe_matroska,
     .open =        open_matroska,
-    // .select_track = select_track_matroska,
     .next_packet = next_packet_matroska,
     .seek =        seek_matroska,
     .close =       close_matroska

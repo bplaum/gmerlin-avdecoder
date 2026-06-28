@@ -223,9 +223,14 @@ void bgav_mkv_element_skip(bgav_input_context_t * ctx,
   if((el->id != MKV_ID_Void) &&
      (el->id != MKV_ID_CRC32))
     {
-    gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
-             "Skipping %"PRId64" (%"PRIx64") bytes of element %x in %s\n",
-             el->size, el->size, el->id, parent_name);
+    if(parent_name)
+      gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN,
+               "Skipping %"PRId64" (%"PRIx64") bytes of element %x in %s",
+               el->size, el->size, el->id, parent_name);
+    else
+      gavl_log(GAVL_LOG_DEBUG, LOG_DOMAIN,
+               "Skipping %"PRId64" (%"PRIx64") bytes of element %x",
+               el->size, el->size, el->id);
     }
   bgav_input_skip(ctx, el->size);
   }
