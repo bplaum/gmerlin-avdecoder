@@ -35,14 +35,12 @@ int main(int argc, char ** argv)
   
   int64_t count;
   int64_t first_pts = GAVL_TIME_UNDEFINED;
-  gavl_video_source_t * src;
-  
-  gavl_video_frame_t * frame;
+  bgav_stream_action_t action = BGAV_STREAM_DECODE;
   
   if(argc == 1)
     {
     fprintf(stderr,
-            "Usage: count_samples [-as stream] [-t track] <location>\n");
+            "Usage: count_samples [-vs stream] [-pkt] [-t track] <location>\n");
     return 0;
     }
   file = bgav_create();
@@ -60,6 +58,11 @@ int main(int argc, char ** argv)
       {
       track = strtol(argv[arg_index+1], NULL, 10);
       arg_index+=2;
+      }
+    else if(!strcmp(argv[arg_index], "-pkt"))
+      {
+      action = BGAV_STREAM_READRAW;
+      arg_index++;
       }
     else
       arg_index++;
@@ -89,7 +92,7 @@ int main(int argc, char ** argv)
     return -1;
     }
 
-  bgav_set_video_stream(file, stream, BGAV_STREAM_DECODE);
+  bgav_set_video_stream(file, stream, action);
 
   if(!bgav_start(file))
     {
@@ -98,19 +101,37 @@ int main(int argc, char ** argv)
     }
   else
     fprintf(stderr, "Starting decoders done\n");
-
-  src = bgav_get_video_source(file, stream);
   
   count = 0;
 
-  frame = NULL;
-  
-  while(gavl_video_source_read_frame(src, &frame) == GAVL_SOURCE_OK)
+
+  if(action == BGAV_STREAM_READRAW)
     {
-    if(first_pts == GAVL_TIME_UNDEFINED)
-      first_pts = frame->timestamp;
-    frame = NULL;
-    count++;
+    gavl_packet_source_t * psrc;
+    gavl_packet_t * pkt = NULL;
+    psrc = bgav_get_video_packet_source(file, stream);
+    
+    while(gavl_packet_source_read_packet(psrc, &pkt) == GAVL_SOURCE_OK)
+      {
+      if(first_pts == GAVL_TIME_UNDEFINED)
+        first_pts = pkt->pts;
+      pkt = NULL;
+      count++;
+      }
+    }
+  else
+    {
+    gavl_video_source_t * vsrc;
+    gavl_video_frame_t * frame = NULL;
+    vsrc = bgav_get_video_source(file, stream);
+
+    while(gavl_video_source_read_frame(vsrc, &frame) == GAVL_SOURCE_OK)
+      {
+      if(first_pts == GAVL_TIME_UNDEFINED)
+        first_pts = frame->timestamp;
+      frame = NULL;
+      count++;
+      }
     }
   
   fprintf(stderr, "Track %d stream %d contains %"PRId64" frames\n",
