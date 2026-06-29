@@ -1270,8 +1270,8 @@ static gavl_source_status_t next_packet_matroska(bgav_demuxer_context_t * ctx)
     pos = ctx->input->position;
     if(!bgav_mkv_element_read(ctx->input, &e))
       {
-      fprintf(stderr, "bgav_mkv_element_read failed %ld\n",
-              ctx->input->position);
+      //      fprintf(stderr, "bgav_mkv_element_read failed %ld\n",
+      //              ctx->input->position);
       return GAVL_SOURCE_EOF;
       }
     //    bgav_mkv_element_dump(&e);
