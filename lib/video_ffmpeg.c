@@ -481,10 +481,16 @@ static gavl_source_status_t get_packet(bgav_stream_t * s)
     /* Early EOF detection */
     if(!p)
       {
-      //   fprintf(stderr, "Flushing decoder\n");
-      avcodec_send_packet(priv->ctx, NULL);
-      priv->flags |= FLUSH_EOF;
-      return GAVL_SOURCE_EOF;
+      if(!(priv->flags & FLUSH_EOF))
+        {
+        avcodec_send_packet(priv->ctx, NULL);
+        priv->flags |= FLUSH_EOF;
+        //        fprintf(stderr, "Flushing decoder\n");
+        return GAVL_SOURCE_OK;
+        }
+      else
+        return GAVL_SOURCE_EOF;
+      
       }
     /* Check what to skip */
     
@@ -573,10 +579,9 @@ static void set_frame_metadata(bgav_stream_t * s, gavl_video_frame_t * dst)
     if(priv->frame->flags & AV_FRAME_FLAG_INTERLACED)
       {
       if(priv->frame->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST)
-        priv->gavl_frame->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
+        dst->interlace_mode = GAVL_INTERLACE_TOP_FIRST;
       else
-        priv->gavl_frame->interlace_mode = GAVL_INTERLACE_BOTTOM_FIRST;
-        
+        dst->interlace_mode = GAVL_INTERLACE_BOTTOM_FIRST;
       }
 #else
     if(priv->frame->interlaced_frame)
@@ -783,6 +788,7 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
         }
       }
     set_frame_metadata(s, priv->gavl_frame);
+    //    fprintf(stderr, "Got frame: %"PRId64"\n", priv->gavl_frame->timestamp);
     return GAVL_SOURCE_OK;
     }
   else
