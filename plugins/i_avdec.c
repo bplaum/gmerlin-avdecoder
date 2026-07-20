@@ -36,6 +36,7 @@
 
 #include "avdec_common.h"
 
+#if 0
 
 static int read_callback(void * priv, uint8_t * data, int len)
   {
@@ -64,6 +65,7 @@ static int open_io_avdec(void * priv, gavl_io_t * io)
     return 0;
   return 1;
   }
+#endif
 
 static int open_avdec(void * priv, const char * location)
   {
@@ -242,7 +244,6 @@ const bg_input_plugin_t the_plugin =
     .get_mimetypes = get_mimetypes,
     /* Open file/device */
     .open = open_avdec,
-    .open_io = open_io_avdec,
   /* For file and network plugins, this can be NULL */
     .get_media_info = bg_avdec_get_media_info,
     //    .get_edl  = bg_avdec_get_edl,
