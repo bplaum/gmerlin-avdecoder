@@ -987,8 +987,22 @@ static void sap_receiver_ping(bgav_demuxer_context_t * ctx, sap_receiver_t * r)
           gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata, GAVL_META_TITLE, str);
 
         if((str = get_sdp_string(sdp, "a=date:")))
-          gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata, GAVL_META_YEAR, str);
+          {
 
+          if(strlen(str) == 4)
+            {
+            char * str1;
+            str1 = gavl_sprintf("%s-99-99", str);
+            gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata, GAVL_META_YEAR, str);
+            gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata, GAVL_META_DATE, str1);
+            }
+          else
+            gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata, GAVL_META_DATE, str);
+          }
+        if((str = get_sdp_string(sdp, "a=artwork:")))
+          gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata, GAVL_META_LOGO_URL, str);
+
+        
         if((str = get_sdp_string(sdp, "a=album:")))
           gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata, GAVL_META_ALBUM, str);
         else
@@ -1014,8 +1028,8 @@ static void sap_receiver_ping(bgav_demuxer_context_t * ctx, sap_receiver_t * r)
 #endif            
         bgav_metadata_changed(ctx->b, ctx->tt->cur->metadata);
         
-        fprintf(stderr, "Metadata changed:\n%s\n",
-                sdp);
+        //        fprintf(stderr, "Metadata changed:\n%s\n",
+        //                sdp);
         r->version = version;
         }
       gavl_dictionary_reset(&sap_packet);
