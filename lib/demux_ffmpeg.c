@@ -25,12 +25,20 @@
 #include <config.h>
 #include <avdec_private.h>
 #include <libavformat/avformat.h>
+#include <gavl/gavlsocket.h>
+#include <gavl/sap.h>
 
 #define LOG_DOMAIN "demux_ffmpeg"
 
 #define PROBE_SIZE 2048 /* Same as in MPlayer */
 
+typedef struct sap_receiver_s sap_receiver_t;
 
+static sap_receiver_t * sap_receiver_create(const char * sdp_url);
+static void sap_receiver_destroy(sap_receiver_t *);
+
+// bgav_metadata_changed(ctx->b, ctx->tt->cur->metadata);
+static void sap_receiver_ping(bgav_demuxer_context_t * ctx, sap_receiver_t *);
 
 static void cleanup_stream_ffmpeg(bgav_stream_t * s)
   {
@@ -54,6 +62,9 @@ typedef struct
   unsigned char * buffer;
 
   AVPacket * pkt;
+
+  sap_receiver_t * sap;
+  
   } ffmpeg_priv_t;
 
 /* Callbacks for URLProtocol */
@@ -565,11 +576,14 @@ static int open_ffmpeg(bgav_demuxer_context_t * ctx)
 
   av_dict_set(&opts, "protocol_whitelist", "file,udp,rtp", 0);
   av_dict_set(&opts, "reorder_queue_size", "500", 0);
-  av_dict_set(&opts, "localaddr", "10.0.0.19", 0);
+  //  av_dict_set(&opts, "localaddr", "10.0.0.19", 0);
   
   priv = calloc(1, sizeof(*priv));
   ctx->priv = priv;
-
+  
+  if(gavl_string_starts_with(ctx->input->location, "sdp://"))
+    priv->sap = sap_receiver_create(ctx->input->location);
+  
   priv->pkt = av_packet_alloc();
   
   /* With the current implementation in ffmpeg, this can be
@@ -693,6 +707,9 @@ static void close_ffmpeg(bgav_demuxer_context_t * ctx)
 #endif
 
   av_packet_free(&priv->pkt);
+
+  if(priv->sap)
+    sap_receiver_destroy(priv->sap);
   
 #ifdef NEW_IO
   if(priv->buffer)
@@ -794,6 +811,9 @@ static gavl_source_status_t next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
   if(priv->pkt->flags&AV_PKT_FLAG_KEY)
     PACKET_SET_KEYFRAME(p);
   bgav_stream_done_packet_write(s, p);
+
+  if(priv->sap)
+    sap_receiver_ping(ctx, priv->sap);
   
   
   return GAVL_SOURCE_OK;
@@ -824,4 +844,195 @@ const bgav_demuxer_t bgav_demuxer_rtp =
     .next_packet = next_packet_ffmpeg,
     .close =       close_ffmpeg
   };
+
+/* SAP Stuff */
+
+struct sap_receiver_s
+  {
+  int fd;
+  char id[GAVL_MD5_LENGTH];
+  
+  int64_t version;
+
+  gavl_buffer_t buf;
+  
+  };
+
+static sap_receiver_t * sap_receiver_create(const char * sdp_url)
+  {
+  char * sdp;
+  char * addr = NULL;
+  gavl_socket_address_t * multicast_addr;
+  gavl_socket_address_t * src_addr;
+  sap_receiver_t * ret;
+
+  ret = calloc(1, sizeof(*ret));
+  ret->fd = -1;
+  ret->version = -1;
+
+  gavl_buffer_alloc(&ret->buf, 4096);
+  
+  sdp = gavl_uri_to_sdp(sdp_url);
+  
+  if(!gavl_parse_sdp_o(sdp,
+                       NULL,
+                       NULL,
+                       NULL,
+                       NULL,
+                       NULL,
+                       &addr))
+    goto fail;
+
+  gavl_sdp_get_session_id(sdp, ret->id, NULL);
+
+  //  fprintf(stderr, "Creating SDP receiver: %s\n", sdp);
+  
+  free(sdp);
+
+  multicast_addr = gavl_socket_address_create();
+  src_addr = gavl_socket_address_create();
+
+  gavl_socket_address_set(src_addr, addr, 0, SOCK_DGRAM);
+  gavl_socket_address_set(multicast_addr, "239.255.255.255", 9875, SOCK_DGRAM);
+  
+  ret->fd =
+    gavl_udp_socket_create_multicast_source(multicast_addr,
+                                            NULL,
+                                            src_addr);
+
+  gavl_socket_address_destroy(multicast_addr);
+  gavl_socket_address_destroy(src_addr);
+
+  free(addr);
+  
+  return ret;
+
+  fail:
+  sap_receiver_destroy(ret);
+  
+  return NULL;
+  }
+
+static void sap_receiver_destroy(sap_receiver_t * r)
+  {
+  if(r->fd >= 0)
+    gavl_socket_close(r->fd);
+
+  gavl_buffer_free(&r->buf);
+  
+  free(r);
+  }
+
+static char * get_sdp_string(const char * sdp, const char * key)
+  {
+  const char * start;
+  const char * end;
+  
+  if(!(start = strstr(sdp, key)))
+    return NULL;
+
+  start += strlen(key);
+  
+  if(!(end = strchr(start, '\r')))
+    end = start + strlen(start);
+
+  return gavl_strndup(start, end);
+  
+  }
+
+// bgav_metadata_changed(ctx->b, ctx->tt->cur->metadata);
+static void sap_receiver_ping(bgav_demuxer_context_t * ctx, sap_receiver_t * r)
+  {
+  int del;
+  gavl_dictionary_t sap_packet;
+  const char * id;
+  int64_t version;
+  
+  gavl_dictionary_init(&sap_packet);
+  
+  while(gavl_fd_can_read(r->fd, 0))
+    {
+    del = 0;
+    
+    r->buf.len = gavl_udp_socket_receive(r->fd, r->buf.buf, r->buf.alloc-1, NULL);
+    r->buf.buf[r->buf.len] = '\0';
+
+    //  fprintf(stderr, "Got SAP packet, %d bytes %s\n", r->buf.len, r->id);
+    
+    /* Parse SAP packet */
+    if(gavl_sap_decode(&r->buf, &del, &sap_packet) &&
+       (id = gavl_dictionary_get_string(&sap_packet, GAVL_META_ID)) &&
+       (gavl_dictionary_get_long(&sap_packet, GAVL_SAP_SESSION_VERSION, &version)) &&
+       !strcmp(id, r->id) &&
+       (version != r->version))
+      {
+      if(del)
+        {
+        
+        }
+      else
+        {
+        const char * sdp;
+        char * str;
+        
+        sdp = gavl_dictionary_get_string(&sap_packet, GAVL_SAP_SDP);
+
+        if((str = get_sdp_string(sdp, "i=")))
+          gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata, GAVL_META_LABEL, str);
+
+        if((str = get_sdp_string(sdp, "s=")))
+          gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata, GAVL_META_STATION, str);
+
+        if((str = get_sdp_string(sdp, "a=title:")))
+          gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata, GAVL_META_TITLE, str);
+
+        if((str = get_sdp_string(sdp, "a=date:")))
+          gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata, GAVL_META_YEAR, str);
+
+        if((str = get_sdp_string(sdp, "a=album:")))
+          gavl_dictionary_set_string_nocopy(ctx->tt->cur->metadata, GAVL_META_ALBUM, str);
+        else
+          gavl_dictionary_set_nocopy(ctx->tt->cur->metadata, GAVL_META_ALBUM, NULL);
+        
+        if((str = get_sdp_string(sdp, "a=artist:")))
+          {
+          gavl_metadata_set_from_string(ctx->tt->cur->metadata, GAVL_META_ARTIST, str);
+          free(str);
+          }
+        if((str = get_sdp_string(sdp, "a=genre:")))
+          {
+          gavl_metadata_set_from_string(ctx->tt->cur->metadata, GAVL_META_GENRE, str);
+          free(str);
+          }
+
+#if 0        
+        if(gavl_dictionary_get(ctx->tt->cur->metadata, GAVL_META_ARTIST) &&
+           gavl_dictionary_get(ctx->tt->cur->metadata, GAVL_META_TITLE))
+          {
+          
+          }
+#endif            
+        bgav_metadata_changed(ctx->b, ctx->tt->cur->metadata);
+        
+        fprintf(stderr, "Metadata changed:\n%s\n",
+                sdp);
+        r->version = version;
+        }
+      gavl_dictionary_reset(&sap_packet);
+      }
+    else
+      {
+      //      fprintf(stderr, "No update\n");
+      //      gavl_dictionary_dump(&sap_packet, 2);
+      }
+    
+    }
+
+
+  
+  return;
+
+
+  
+  }
 
