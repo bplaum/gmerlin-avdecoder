@@ -957,7 +957,7 @@ static void sap_receiver_ping(bgav_demuxer_context_t * ctx, sap_receiver_t * r)
     r->buf.len = gavl_udp_socket_receive(r->fd, r->buf.buf, r->buf.alloc-1, NULL);
     r->buf.buf[r->buf.len] = '\0';
 
-    //  fprintf(stderr, "Got SAP packet, %d bytes %s\n", r->buf.len, r->id);
+    fprintf(stderr, "Got SAP packet, %d bytes\n", r->buf.len);
     
     /* Parse SAP packet */
     if(gavl_sap_decode(&r->buf, &del, &sap_packet) &&
