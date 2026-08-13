@@ -1029,21 +1029,18 @@ static void sap_receiver_ping(bgav_demuxer_context_t * ctx, sap_receiver_t * r)
 #endif            
         bgav_metadata_changed(ctx->b, ctx->tt->cur->metadata);
         
-        //        fprintf(stderr, "Metadata changed:\n%s\n",
-        //                sdp);
+        fprintf(stderr, "Metadata changed:\n%s\n",
+                sdp);
         r->version = version;
         }
-      gavl_dictionary_reset(&sap_packet);
       }
     else
       {
-      //      fprintf(stderr, "No update\n");
-      //      gavl_dictionary_dump(&sap_packet, 2);
+      fprintf(stderr, "No update\n");
+      gavl_dictionary_dump(&sap_packet, 2);
       }
-    
+    gavl_dictionary_reset(&sap_packet);
     }
-
-
   
   return;
 
