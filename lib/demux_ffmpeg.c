@@ -576,13 +576,14 @@ static int open_ffmpeg(bgav_demuxer_context_t * ctx)
 
   av_dict_set(&opts, "protocol_whitelist", "file,udp,rtp", 0);
   av_dict_set(&opts, "reorder_queue_size", "500", 0);
-  //  av_dict_set(&opts, "localaddr", "10.0.0.19", 0);
   
   priv = calloc(1, sizeof(*priv));
   ctx->priv = priv;
   
   if(gavl_string_starts_with(ctx->input->location, "sdp://"))
     priv->sap = sap_receiver_create(ctx->input->location);
+
+  //  fprintf(stderr, "open_ffmpeg: %s %p\n", ctx->input->location, priv->sap);
   
   priv->pkt = av_packet_alloc();
   
