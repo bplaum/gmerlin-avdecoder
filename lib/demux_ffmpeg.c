@@ -711,6 +711,13 @@ static void close_ffmpeg(bgav_demuxer_context_t * ctx)
 
   if(priv->sap)
     sap_receiver_destroy(priv->sap);
+
+  if(priv->pb)
+    av_free(priv->pb);
+
+  if(priv->buffer)
+    av_free(priv->buffer);
+  
   
 #ifdef NEW_IO
   if(priv->buffer)
@@ -815,7 +822,8 @@ static gavl_source_status_t next_packet_ffmpeg(bgav_demuxer_context_t * ctx)
 
   if(priv->sap)
     sap_receiver_ping(ctx, priv->sap);
-  
+
+  av_packet_unref(priv->pkt);
   
   return GAVL_SOURCE_OK;
   }

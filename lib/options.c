@@ -121,7 +121,7 @@ bgav_set_msg_callback_by_id(bgav_t * bgav,
 
 static void state_changed(bgav_t * b,
                           const char * var,
-                          gavl_value_t * val)
+                          const gavl_value_t * val)
   {
   bgav_stream_t * s;
 
@@ -140,7 +140,7 @@ static void state_changed(bgav_t * b,
     gavl_msg_t msg;
 
     gavl_msg_init(&msg);
-    gavl_msg_set_state_nocopy(&msg, GAVL_MSG_STATE_CHANGED, 1, GAVL_STATE_CTX_SRC, var, val);
+    gavl_msg_set_state(&msg, GAVL_MSG_STATE_CHANGED, 1, GAVL_STATE_CTX_SRC, var, val);
     s->data.msg.msg_callback(s->data.msg.msg_callback_data, &msg);
     gavl_msg_free(&msg);
     }
@@ -174,6 +174,7 @@ void bgav_metadata_changed(bgav_t * b,
   gavl_dictionary_copy(dict, new_metadata);
 
   state_changed(b, GAVL_STATE_SRC_METADATA, &val);
+  gavl_value_free(&val);
   }
 
 void bgav_seek_window_changed(bgav_t * b,
