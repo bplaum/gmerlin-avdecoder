@@ -883,7 +883,7 @@ static int get_buffer2_cb(struct AVCodecContext *ctx, AVFrame *frame, int flags)
   gavl_video_frame_t *f;
   ffmpeg_video_priv * priv = s->decoder_priv;
 
-  //  fprintf(stderr, "get_buffer2_cb\n");
+  //  fprintf(stderr, "get_buffer2_cb %d\n", ctx->refs);
   
   /* Set format for hw context */
   if(!(priv->flags & DR_INIT))
@@ -893,12 +893,14 @@ static int get_buffer2_cb(struct AVCodecContext *ctx, AVFrame *frame, int flags)
     memset(&fmt, 0, sizeof(fmt));
 
     gavl_video_format_copy(&fmt, s->data.video.format);
-    
+
+#if 0 /* This can trigger spurious format conversions later on */   
     fmt.image_width = frame->width;
     fmt.image_height = frame->height;
-
-    w = fmt.image_width;
-    h = fmt.image_height;
+#endif
+    
+    w = frame->width;
+    h = frame->height;
 
     avcodec_align_dimensions(ctx, &w, &h);
 
@@ -906,7 +908,9 @@ static int get_buffer2_cb(struct AVCodecContext *ctx, AVFrame *frame, int flags)
     fmt.frame_height = h;
     
     //  fmt.pixelformat = s->data.video.format->pixelformat;
-
+    
+    gavl_hw_ctx_set_max_frames(priv->hwctx, ctx->refs + 2);
+    
     gavl_hw_ctx_set_video_creator(priv->hwctx, &fmt, GAVL_HW_FRAME_MODE_MAP);
     
     priv->flags |= DR_INIT;
@@ -914,8 +918,8 @@ static int get_buffer2_cb(struct AVCodecContext *ctx, AVFrame *frame, int flags)
   
   f = gavl_hw_video_frame_get_write(priv->hwctx);
 
-  if(!f)
-    fprintf(stderr, "Blupp %p\n", f);
+  //  if(!f)
+  //    fprintf(stderr, "Blupp %p\n", f);
   
   num_planes = gavl_pixelformat_num_planes(s->data.video.format->pixelformat);
   
@@ -1047,7 +1051,7 @@ static int init_ffmpeg(bgav_stream_t * s)
   AVDictionary * options = NULL;
   const gavl_array_t * arr;
   
-  //  av_log_set_level(AV_LOG_DEBUG);
+  av_log_set_level(AV_LOG_WARNING);
 
   //  fprintf(stderr, "init_ffmpeg %p\n", s->opt->video_hwctx);
   
