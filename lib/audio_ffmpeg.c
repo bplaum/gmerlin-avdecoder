@@ -455,7 +455,7 @@ static int init_ffmpeg_audio(bgav_stream_t * s)
 #endif
   priv->ctx->sample_rate     = s->data.audio.format->samplerate;
   priv->ctx->block_align     = s->ci->block_align;
-  priv->ctx->bit_rate        = s->codec_bitrate;
+  priv->ctx->bit_rate        = s->ci->bitrate;
   priv->ctx->bits_per_coded_sample = s->data.audio.bits_per_sample;
   if(priv->info->codec_tag != -1)
     priv->ctx->codec_tag = priv->info->codec_tag;

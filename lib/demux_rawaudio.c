@@ -199,7 +199,7 @@ static void seek_rawaudio(bgav_demuxer_context_t * ctx, int64_t time, int scale)
     }
   else
     {
-    file_position = (gavl_time_unscale(scale, time) * (s->codec_bitrate / 8)) / scale;
+    file_position = (gavl_time_unscale(scale, time) * (s->ci->bitrate / 8)) / scale;
     file_position /= s->ci->block_align;
     file_position *= s->ci->block_align;
     }

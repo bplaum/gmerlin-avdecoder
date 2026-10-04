@@ -404,6 +404,7 @@ parse_png.c \
 parse_vc1.c \
 parse_vp8.c \
 parse_vp9.c \
+parse_wma.c \
 parser.c \
 pes_header.c \
 pnm.c \

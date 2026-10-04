@@ -35,6 +35,7 @@ static void bgav_stream_set_timing(bgav_stream_t * s);
 int bgav_stream_start(bgav_stream_t * stream)
   {
   int result = 1;
+
   
   switch(stream->type)
     {
@@ -62,6 +63,15 @@ int bgav_stream_start(bgav_stream_t * stream)
 int bgav_stream_init_read(bgav_stream_t * stream)
   {
   int result = 1;
+
+  if(stream->ci && (stream->ci->flags & GAVL_COMPRESSION_HAS_B_FRAMES) &&
+     bgav_options_get_bool(stream->opt, BGAV_OPT_GEN_DTS))
+    {
+    if(stream->stats.delay_min != GAVL_TIME_UNDEFINED)
+      gavl_packet_buffer_set_calc_dts(stream->pbuffer, stream->stats.delay_min);
+    else
+      gavl_packet_buffer_set_calc_dts(stream->pbuffer, 0);
+    }
   
   if(!stream->parser)
     {
@@ -274,7 +284,13 @@ read_packet_continuous(void * priv, bgav_packet_t ** ret)
     gavl_packet_dump(*ret);
     //    gavl_hexdump((*ret)->buf.buf, (*ret)->buf.len < 16 ? (*ret)->buf.len : 16, 16);
     }
-  
+
+#if 0
+  if(s->ci && (s->ci->flags & GAVL_COMPRESSION_HAS_B_FRAMES) &&
+     (s->stats.delay_min != GAVL_TIME_UNDEFINED) &&
+     ((*ret)->dts !=  GAVL_TIME_UNDEFINED))
+    (*ret)->dts += s->stats.delay_min;
+#endif
   return st;
   }
 
@@ -284,6 +300,7 @@ void bgav_stream_create_packet_buffer(bgav_stream_t * stream)
   stream->pbuffer = gavl_packet_buffer_create(stream->info);
 
   gavl_packet_buffer_set_calc_frame_durations(stream->pbuffer, 1);
+
   
   stream->psink   = gavl_packet_buffer_get_sink(stream->pbuffer);
 
@@ -387,10 +404,10 @@ void bgav_stream_dump(bgav_stream_t * s)
           s->stream_id,
           s->stream_id);
   gavl_dprintf("  Codec bitrate:     ");
-  if(s->codec_bitrate == GAVL_BITRATE_VBR)
+  if(s->ci->bitrate == GAVL_BITRATE_VBR)
     gavl_dprintf("Variable\n");
-  else if(s->codec_bitrate)
-    gavl_dprintf("%d\n", s->codec_bitrate);
+  else if(s->ci->bitrate)
+    gavl_dprintf("%d\n", s->ci->bitrate);
   else
     gavl_dprintf("Unspecified\n");
 
@@ -678,7 +695,7 @@ gavl_sink_status_t bgav_stream_put_packet_parse(void * priv, gavl_packet_t * p)
   bgav_stream_t * s = priv;
   gavl_stream_stats_update(&s->stats, p);
   
-  gavl_packet_index_add_packet(s->demuxer->si, p);
+  gavl_packet_index_add_packet(s->demuxer->si_parse, p);
   
   return GAVL_SINK_OK;
   }

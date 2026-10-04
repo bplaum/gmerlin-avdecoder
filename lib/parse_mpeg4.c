@@ -414,7 +414,7 @@ static int parse_frame_mpeg4(bgav_packet_parser_t * parser, bgav_packet_t * p)
             /* Copy stuff back, overwriting the packet */
             packet_swap_data(&priv->saved_packet, p);
             p->flags = priv->saved_packet.flags;
-            p->position = priv->saved_packet.position;
+            //            p->position = priv->saved_packet.position;
             gavl_packet_reset(&priv->saved_packet);
             }
           else

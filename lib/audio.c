@@ -194,9 +194,9 @@ int bgav_audio_start(bgav_stream_t * s)
   //  if(s->container_bitrate == GAVL_BITRATE_VBR)
   //    gavl_dictionary_set_string(&s->m, GAVL_META_BITRATE,
   //                      "VBR");
-  else if(s->codec_bitrate)
+  else if(s->ci->bitrate)
     gavl_dictionary_set_int(s->m, GAVL_META_BITRATE,
-                          s->codec_bitrate);
+                          s->ci->bitrate);
   
   if(s->action == BGAV_STREAM_DECODE)
     s->data.audio.source =
@@ -291,8 +291,8 @@ int bgav_get_audio_bitrate(bgav_t * bgav, int stream)
   if(!(s = bgav_track_get_audio_stream(bgav->tt->cur, stream)))
     return 0;
   
-  if(s->codec_bitrate)
-    return s->codec_bitrate;
+  if(s->ci->bitrate)
+    return s->ci->bitrate;
   else if(s->container_bitrate)
     return s->container_bitrate;
   else
@@ -557,9 +557,7 @@ int bgav_set_audio_compression_info(bgav_stream_t * s)
   s->ci->id = id;
   s->ci->codec_tag = codec_tag;
   
-  if(s->codec_bitrate)
-    s->ci->bitrate = s->codec_bitrate;
-  else if(s->container_bitrate)
+  if(!s->ci->bitrate && s->container_bitrate)
     s->ci->bitrate = s->container_bitrate;
   
   gavl_stream_set_compression_info(s->info, s->ci);

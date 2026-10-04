@@ -65,8 +65,6 @@ void bgav_BITMAPINFOHEADER_read(bgav_BITMAPINFOHEADER_t * ret, uint8_t ** data);
 void bgav_BITMAPINFOHEADER_dump(bgav_BITMAPINFOHEADER_t * ret);
 void bgav_BITMAPINFOHEADER_get_format(bgav_BITMAPINFOHEADER_t * bh,
                                       bgav_stream_t * f);
-void bgav_BITMAPINFOHEADER_set_format(bgav_BITMAPINFOHEADER_t * bh,
-                                      bgav_stream_t * f);
 uint32_t bgav_BITMAPINFOHEADER_get_fourcc(bgav_BITMAPINFOHEADER_t * bh);
 
 
@@ -121,7 +119,6 @@ typedef struct
 void bgav_WAVEFORMAT_read(bgav_WAVEFORMAT_t * ret, uint8_t * data, int size);
 void bgav_WAVEFORMAT_dump(bgav_WAVEFORMAT_t * ret);
 void bgav_WAVEFORMAT_get_format(bgav_WAVEFORMAT_t * wf, bgav_stream_t * f);
-void bgav_WAVEFORMAT_set_format(bgav_WAVEFORMAT_t * wf, bgav_stream_t * f);
 void bgav_WAVEFORMAT_free(bgav_WAVEFORMAT_t * wf);
 
 

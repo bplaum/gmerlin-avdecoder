@@ -263,9 +263,21 @@ bgav_options_t * bgav_get_options(bgav_t * bgav);
 #define BGAV_OPT_DUMP_PACKETS "dump-packets"   // int, 0..1
 #define BGAV_OPT_DUMP_HEADERS "dump-headers"   // int, 0..1
 
-#define BGAV_OPT_SAMPLE_ACCURATE "sample-accurate"   // int, 0..1
 #define BGAV_OPT_DEFAULT_SUBTITLE_ENCODING "subtile-encoding"   // String
   
+/* Sample accurate seeking */
+#define BGAV_OPT_SAMPLE_ACCURATE "sample-accurate"   // int, 0..1
+/* Generate accutate decoding timestamps (might need parsing) */
+#define BGAV_OPT_GEN_DTS                      "gen-dts"   // int, 0..1
+
+/* Generate accurate packet durations (might need parsing) */
+#define BGAV_OPT_GEN_DURATION                 "gen-duration"   // int, 0..1
+
+/* Generate accurate stream statistics such as maximum packet sizes (might need parsing) */
+#define BGAV_OPT_GEN_STATS                    "gen-stats"   // int, 0..1
+
+
+
   // #define BGAV_OPT_READ_TIMEOUT "conntimeout"
 
   

@@ -32,6 +32,8 @@
 #include "avdec_common.h"
 #include <gavl/metatags.h>
 
+#define LOG_DOMAIN "avdecoder-plugin"
+
 static int bg_avdec_start(void * priv);
 
 
@@ -118,6 +120,50 @@ static int handle_cmd(void * data, gavl_msg_t * msg)
         }
       
       break;
+    case BG_MSG_NS_PARAMETER:
+      {
+      switch(msg->ID)
+        {
+        case BG_CMD_SET_PARAMETER:
+          {
+          gavl_value_t val;
+          const char * name = NULL;
+          gavl_value_init(&val);
+          bg_msg_get_parameter(msg, &name, &val);
+
+          if(!name)
+            return 1;
+          
+          if(!strcmp(name, BG_PLUGIN_PARAM_DECODING_MODE))
+            {
+            int mode = 0;
+
+            if(gavl_value_get_int(&val, &mode))
+              {
+              switch(mode)
+                {
+                case BG_PLUGIN_DECODE_RT:
+                  /* Nothing */
+                  break;
+                case BG_PLUGIN_DECODE_TRANSCODE:
+                  gavl_dictionary_set_int(avdec->opt, BGAV_OPT_GEN_DTS, 1);
+                  gavl_dictionary_set_int(avdec->opt, BGAV_OPT_GEN_STATS, 1);
+                  gavl_dictionary_set_int(avdec->opt, BGAV_OPT_GEN_DURATION, 1);
+                  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Transcoding requested: Providing exact timings");
+                  break;
+                case BG_PLUGIN_DECODE_SAMPLE_ACCURATE:
+                  gavl_dictionary_set_int(avdec->opt, BGAV_OPT_SAMPLE_ACCURATE, 1);
+                  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Sample accurary requested");
+                  break;
+                }
+              }
+            
+            }
+          gavl_value_free(&val);
+          
+          }
+        }
+      }
     }
   bg_avdec_unlock(avdec);
   return 1;

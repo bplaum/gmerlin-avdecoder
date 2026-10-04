@@ -329,10 +329,13 @@ static int seek_input(bgav_t * b, int64_t * time, int scale)
 
 int bgav_ensure_index(bgav_t * b)
   {
-  if(b->demuxer->si)
+  int i;
+  
+  if(b->demuxer->si && !(b->demuxer->flags & BGAV_DEMUXER_NEED_INDEX))
     return 1;
   
-  if(b->demuxer->index_mode == INDEX_MODE_SIMPLE)
+  if((b->demuxer->index_mode == INDEX_MODE_SIMPLE) ||
+     (b->demuxer->index_mode == INDEX_MODE_SI))
     {
     /* Build packet index */
     const char * location = NULL;
@@ -340,11 +343,22 @@ int bgav_ensure_index(bgav_t * b)
     if(!gavl_metadata_get_src(&b->input->m, GAVL_META_SRC, 0, NULL, &location) |
        !location)
       return 0;
+
+    if(b->demuxer->si)
+      gavl_packet_index_destroy(b->demuxer->si);
+    
     
     if((b->demuxer->si = bgav_get_packet_index(location)))
       {
       //      gavl_dprintf("Built packet index:\n");
       //      gavl_packet_index_dump(b->demuxer->si);
+
+      for(i = 0; i < b->demuxer->tt->cur->num_streams; i++)
+        {
+        gavl_packet_index_set_stream_stats(b->demuxer->si, b->demuxer->tt->cur->streams[i]->stream_id,
+                                           &b->demuxer->tt->cur->streams[i]->stats);
+        }
+      
       return 1;
       }
     else
@@ -352,6 +366,8 @@ int bgav_ensure_index(bgav_t * b)
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Building packet index failed");
       return 0;
       }
+
+    
     }
   gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Cannot build packet index (unsupported file format)");
   return 0;

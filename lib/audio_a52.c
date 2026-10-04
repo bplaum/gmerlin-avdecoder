@@ -86,7 +86,7 @@ static gavl_source_status_t decode_frame_a52(bgav_stream_t * s)
       }
     //    bgav_a52_header_dump(&h);
 
-    s->codec_bitrate = h.bitrate;
+    s->ci->bitrate = h.bitrate;
 
     gavl_dictionary_set_string(s->m, GAVL_META_FORMAT,
                       "AC3");

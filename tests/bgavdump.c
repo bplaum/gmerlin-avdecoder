@@ -465,9 +465,14 @@ int main(int argc, char ** argv)
       list_all();
       return 0;
       }
-    if(!strcmp(argv[arg_index], "-s"))
+    else if(!strcmp(argv[arg_index], "-s"))
       {
       sample_accurate = 1;
+      arg_index++;
+      }
+    else if(!strcmp(argv[arg_index], "-dts"))
+      {
+      gavl_dictionary_set_int(opt, BGAV_OPT_GEN_DTS, 1);
       arg_index++;
       }
     else if(!strcmp(argv[arg_index], "-na"))

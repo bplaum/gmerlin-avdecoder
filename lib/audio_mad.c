@@ -113,12 +113,12 @@ static int get_format(bgav_stream_t * s)
   s->data.audio.format->samples_per_frame =
     MAD_NSBSAMPLES(&h) * 32;
 
-  if(!s->codec_bitrate)
+  if(!s->ci->bitrate)
     {
     if(s->container_bitrate == GAVL_BITRATE_VBR)
-      s->codec_bitrate = GAVL_BITRATE_VBR;
+      s->ci->bitrate = GAVL_BITRATE_VBR;
     else
-      s->codec_bitrate = h.bitrate;
+      s->ci->bitrate = h.bitrate;
     }
   gavl_set_channel_setup(s->data.audio.format);
 

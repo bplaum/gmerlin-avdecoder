@@ -456,7 +456,7 @@ static int open_vivo(bgav_demuxer_context_t * ctx)
     audio_stream->data.audio.bits_per_sample = 16;
     }
   audio_stream->data.audio.format->num_channels = 1;
-  audio_stream->codec_bitrate = audio_stream->container_bitrate;
+  audio_stream->ci->bitrate = audio_stream->container_bitrate;
   /* Set up video stream */
   
   video_stream = bgav_track_add_video_stream(ctx->tt->cur, ctx->opt);

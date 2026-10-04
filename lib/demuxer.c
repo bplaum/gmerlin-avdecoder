@@ -385,46 +385,6 @@ static void init_superindex(bgav_demuxer_context_t * ctx)
     }
   }
 
-#if 0
-void bgav_demuxer_set_durations_from_superindex(bgav_demuxer_context_t * ctx, bgav_track_t * t)
-  {
-  int i;
-
-  i = 0;
-
-  for(i = 0; i < t->num_streams; i++)
-    {
-    i++;
-    }
-  
-  }
-
-void bgav_demuxer_check_interleave(bgav_demuxer_context_t * ctx)
-  {
-  if(!ctx->si)
-    return;
-  
-  if(bgav_track_num_media_streams(ctx->tt->cur) > 1)
-    {
-    int first_1, first_2, last_1, last_2;
-
-    first_1 = gavl_packet_index_get_first(ctx->si,
-                                          ctx->tt->cur->streams[0]->stream_id);
-    first_2 = gavl_packet_index_get_first(ctx->si,
-                                          ctx->tt->cur->streams[1]->stream_id);
-
-    last_1 = gavl_packet_index_get_last(ctx->si,
-                                         ctx->tt->cur->streams[0]->stream_id);
-    last_2 = gavl_packet_index_get_last(ctx->si,
-                                          ctx->tt->cur->streams[1]->stream_id);
-    
-    if((last_2 < first_1) || (last_1 < first_2))
-      {
-      ctx->flags = BGAV_DEMUXER_NONINTERLEAVED;
-      }
-    }
-  }
-#endif
 
 static int read_packet_superindex(bgav_demuxer_context_t * ctx, bgav_stream_t * s,
                                   gavl_packet_t * p, int pos)
@@ -535,8 +495,7 @@ int bgav_demuxer_start(bgav_demuxer_context_t * ctx)
     if(!(ctx->si->flags & GAVL_PACKET_INDEX_SPARSE))
       {
       init_superindex(ctx);
-      //    check_interleave(ctx);
-
+      
       if((ctx->flags & BGAV_DEMUXER_NONINTERLEAVED) &&
          !(ctx->input->flags & BGAV_INPUT_CAN_SEEK_BYTE))
         {
@@ -549,6 +508,9 @@ int bgav_demuxer_start(bgav_demuxer_context_t * ctx)
     if(bgav_options_get_bool(ctx->opt, BGAV_OPT_DUMP_INDICES))
       gavl_packet_index_dump(ctx->si);
     }
+
+  
+  
   return 1;
   }
 
@@ -632,7 +594,6 @@ static void parse_start(bgav_demuxer_context_t * ctx, int type_mask, int dur)
                                 bgav_stream_put_packet_get_duration,
                                 ctx->tt->cur->streams[j]);
       
-      gavl_packet_buffer_set_calc_frame_durations(ctx->tt->cur->streams[j]->pbuffer, 1);
       }
     else
       {
@@ -642,8 +603,8 @@ static void parse_start(bgav_demuxer_context_t * ctx, int type_mask, int dur)
                                 ctx->tt->cur->streams[j]);
 
       gavl_packet_buffer_set_mark_last(ctx->tt->cur->streams[j]->pbuffer, 1);
-      gavl_packet_buffer_set_calc_frame_durations(ctx->tt->cur->streams[j]->pbuffer, 1);
       }
+    gavl_packet_buffer_set_calc_frame_durations(ctx->tt->cur->streams[j]->pbuffer, 1);
     }
   }
 
@@ -676,13 +637,21 @@ static int parse_packet(bgav_demuxer_context_t * ctx)
   int i;
   gavl_packet_t * p = NULL;
 
+  int eof = 0;
+  int ret = 0;
+  
   if(bgav_demuxer_next_packet(ctx) != GAVL_SOURCE_OK)
-    return 0;
-    
+    eof = 1;
+  else
+    ret = 1;
+  
   for(i = 0; i < ctx->tt->cur->num_streams; i++)
     {
     if(!ctx->tt->cur->streams[i]->psink_parse)
       continue;
+
+    if(eof)
+      gavl_packet_buffer_flush(ctx->tt->cur->streams[i]->pbuffer);
     
     while(1)
       {
@@ -690,9 +659,12 @@ static int parse_packet(bgav_demuxer_context_t * ctx)
       if(gavl_packet_source_read_packet(gavl_packet_buffer_get_source(ctx->tt->cur->streams[i]->pbuffer), &p) != GAVL_SOURCE_OK)
         break;
       gavl_packet_sink_put_packet(ctx->tt->cur->streams[i]->psink_parse, p);
+
+      if(eof)
+        ret = 1;
       }
     }
-  return 1;
+  return ret;
   }
 
 int bgav_demuxer_get_duration(bgav_demuxer_context_t * ctx)
@@ -826,8 +798,8 @@ void bgav_demuxer_set_clock_time(bgav_demuxer_context_t * ctx,
 void bgav_demuxer_parse_track(bgav_demuxer_context_t * ctx)
   {
   int type_mask = GAVL_STREAM_AUDIO | GAVL_STREAM_VIDEO | GAVL_STREAM_TEXT | GAVL_STREAM_OVERLAY;
-
-  ctx->si = gavl_packet_index_create(0);
+  
+  ctx->si_parse = gavl_packet_index_create(0);
   
   parse_start(ctx, type_mask, 0);
   
@@ -835,13 +807,54 @@ void bgav_demuxer_parse_track(bgav_demuxer_context_t * ctx)
 
   if(ctx->demuxer->post_seek_resync)
     ctx->demuxer->post_seek_resync(ctx);
+
+  ctx->index_position = 0;
+  
   
   while(parse_packet(ctx))
     ;
 
-  gavl_packet_index_sort_by_position(ctx->si);
+  gavl_packet_index_sort_by_position(ctx->si_parse);
   
   parse_end(ctx, type_mask);
+
+  if(ctx->si)
+    {
+    int i;
+    fprintf(stderr, "Need to merge index %d %d\n",
+            ctx->si->num_entries,
+            ctx->si_parse->num_entries);
+
+    if(ctx->si->num_entries != ctx->si_parse->num_entries)
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Index size mismatch: Parsed: %d Embedded: %d",
+               ctx->si_parse->num_entries, ctx->si->num_entries);
+      
+      //      fprintf(stderr, "Parsed index\n");
+      //      gavl_packet_index_dump(ctx->si_parse);
+
+      //      fprintf(stderr, "Embedded index\n");
+      //      gavl_packet_index_dump(ctx->si);
+      
+      }
+    else
+      {
+      for(i = 0; i < ctx->si->num_entries; i++)
+        {
+        ctx->si->entries[i].pts = ctx->si_parse->entries[i].pts;
+        ctx->si->entries[i].flags = ctx->si_parse->entries[i].flags;
+        }
+
+      //      fprintf(stderr, "Merged index\n");
+      //      gavl_packet_index_dump(ctx->si);
+      
+      }
+    gavl_packet_index_destroy(ctx->si_parse);
+    }
+  else
+    ctx->si = ctx->si_parse;
+
+  ctx->si_parse = NULL;
   
   }
 

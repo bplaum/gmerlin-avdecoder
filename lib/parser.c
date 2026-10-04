@@ -50,6 +50,10 @@ parsers[] =
     { BGAV_WAVID_2_FOURCC(0x2000), bgav_packet_parser_init_a52 },
     { BGAV_MK_FOURCC('.','a','c','3'), bgav_packet_parser_init_a52 },
     { BGAV_MK_FOURCC('a','c','-','3'), bgav_packet_parser_init_a52 },
+
+    { BGAV_WAVID_2_FOURCC(0x0160), bgav_packet_parser_init_wma  },
+    { BGAV_WAVID_2_FOURCC(0x0161), bgav_packet_parser_init_wma  },
+
 #ifdef HAVE_DCA
     { BGAV_MK_FOURCC('d','t','s',' '), bgav_packet_parser_init_dca },
 #endif

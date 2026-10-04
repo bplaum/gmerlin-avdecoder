@@ -110,7 +110,7 @@ static gavl_source_status_t decode_frame_dts(bgav_stream_t * s)
       {
       s->data.audio.format->samplerate = sample_rate;
       s->data.audio.format->samples_per_frame = BLOCK_SAMPLES;
-      s->codec_bitrate = bit_rate;
+      s->ci->bitrate = bit_rate;
       s->data.audio.format->sample_format = GAVL_SAMPLE_FLOAT;
       
       bgav_dca_flags_2_channel_setup(flags, s->data.audio.format);

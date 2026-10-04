@@ -191,7 +191,7 @@ static int open_wav(bgav_demuxer_context_t * ctx)
   else
     gavl_track_set_duration(ctx->tt->cur->info,
                             ((int64_t)s->stats.total_bytes * (int64_t)GAVL_TIME_SCALE) / 
-                            (s->codec_bitrate / 8));
+                            (s->ci->bitrate / 8));
   
   return 1;
   
@@ -228,7 +228,7 @@ static gavl_source_status_t next_packet_wav(bgav_demuxer_context_t * ctx)
   
   p->pts =
     ((ctx->input->position - ctx->tt->cur->data_start) * s->data.audio.format->samplerate) /
-    (s->codec_bitrate / 8);
+    (s->ci->bitrate / 8);
   
   gavl_packet_alloc(p, priv->packet_size);
     
@@ -259,13 +259,13 @@ static void seek_wav(bgav_demuxer_context_t * ctx, int64_t time, int scale)
     }
   else
     {
-    file_position = (gavl_time_unscale(scale, time) * (s->codec_bitrate / 8)) / scale;
+    file_position = (gavl_time_unscale(scale, time) * (s->ci->bitrate / 8)) / scale;
     file_position /= s->ci->block_align;
     file_position *= s->ci->block_align;
     }
   /* Calculate the time before we add the start offset */
   STREAM_SET_SYNC(s, ((int64_t)file_position * s->data.audio.format->samplerate) /
-    (s->codec_bitrate / 8));
+    (s->ci->bitrate / 8));
   
   file_position += ctx->tt->cur->data_start;
   bgav_input_seek(ctx->input, file_position, SEEK_SET);

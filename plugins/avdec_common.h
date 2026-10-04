@@ -32,6 +32,7 @@ typedef struct
   bg_media_source_t src;
 
   pthread_mutex_t mutex;
+
   
   } avdec_priv;
 

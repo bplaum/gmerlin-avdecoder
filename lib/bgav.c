@@ -80,6 +80,7 @@ create_demuxer(bgav_t * b)
     bgav_demuxer_destroy(ret);
     ret = NULL;
     }
+
   
   return ret;
   }
@@ -150,7 +151,14 @@ int bgav_init(bgav_t * ret)
       bgav_track_table_merge_metadata(ret->tt, &ret->input->m);
       goto done;
       }
-      
+
+    /* Check if we need to build an index */
+    if(ret->demuxer->flags & BGAV_DEMUXER_NEED_INDEX)
+      {
+      fprintf(stderr, "Index building requested\n");
+      bgav_ensure_index(ret);
+      }
+    
     // if(ret->tt->tracks[0].
 
     }
@@ -345,6 +353,7 @@ static void set_stream_demuxers(bgav_track_t * t,
 
 int bgav_select_track(bgav_t * b, int track)
   {
+  
   int was_running = 0;
   int reset_input = 0;
   int64_t data_start = -1;
@@ -357,6 +366,9 @@ int bgav_select_track(bgav_t * b, int track)
     b->flags &= ~BGAV_FLAG_IS_RUNNING;
     was_running = 1;
     }
+
+  /* Check if we need an index */
+  
   
   if((track < 0) || (track >= b->tt->num_tracks))
     return 0;

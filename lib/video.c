@@ -449,9 +449,9 @@ int bgav_video_start(bgav_stream_t * s)
       s->data.video.format->framerate_mode = GAVL_FRAMERATE_CONSTANT;
     }
 
-  if(s->codec_bitrate)
+  if(s->ci->bitrate)
     gavl_dictionary_set_int(s->m, GAVL_META_BITRATE,
-                          s->codec_bitrate);
+                          s->ci->bitrate);
   else if(s->container_bitrate)
     gavl_dictionary_set_int(s->m, GAVL_META_BITRATE,
                           s->container_bitrate);
@@ -828,9 +828,7 @@ int bgav_set_video_compression_info(bgav_stream_t * s)
     bgav_mpeg4_remove_packed_flag(&s->ci->codec_header);
     }
   
-  if(s->codec_bitrate)
-    s->ci->bitrate = s->codec_bitrate;
-  else if(s->container_bitrate)
+  if(!s->ci->bitrate && s->container_bitrate)
     s->ci->bitrate = s->container_bitrate;
   
   if(need_bitrate && !s->ci->bitrate)

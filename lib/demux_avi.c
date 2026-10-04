@@ -1213,7 +1213,7 @@ static int init_audio_stream(bgav_demuxer_context_t * ctx,
         if(!strh->dwSampleSize)
           {
           bg_as->container_bitrate = GAVL_BITRATE_VBR;
-          bg_as->codec_bitrate = GAVL_BITRATE_VBR;
+          bg_as->ci->bitrate = GAVL_BITRATE_VBR;
           }
         free(buf);
         break;
@@ -1386,6 +1386,19 @@ static int init_video_stream(bgav_demuxer_context_t * ctx,
     if(!bgav_stream_set_parse_frame(bg_vs))
       return 0;
     }
+
+  if(((bg_vs->flags & STREAM_DTS_ONLY) ||
+      (bg_vs->ci->flags & GAVL_COMPRESSION_HAS_B_FRAMES)) &&
+     (bgav_options_get_bool(ctx->opt, BGAV_OPT_GEN_DTS)))
+    {
+    fprintf(stderr, "AVI with B-frames for transcoding: Need DTS\n");
+    ctx->flags |= BGAV_DEMUXER_NEED_INDEX;
+    ctx->index_mode = INDEX_MODE_SI;
+
+    bg_vs->flags &= ~STREAM_DTS_ONLY;
+    
+    }
+  
   
   return 1;
   }
@@ -1687,16 +1700,11 @@ static int open_avi(bgav_demuxer_context_t * ctx)
         continue;
       else if(bgav_check_fourcc(s->fourcc, audio_codecs_parse_mpeg))
         {
-        ctx->index_mode = INDEX_MODE_SIMPLE;
+        ctx->index_mode = INDEX_MODE_SI;
         ctx->flags &= ~BGAV_DEMUXER_SAMPLE_ACCURATE;
         
         bgav_stream_set_parse_full(s);
         continue;
-        }
-      else
-        {
-        ctx->index_mode = 0;
-        break;
         }
       }
     }

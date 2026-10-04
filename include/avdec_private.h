@@ -323,7 +323,7 @@ struct bgav_stream_s
    */
   
   int container_bitrate;
-  int codec_bitrate;
+  //  int codec_bitrate;
   
   /*
    *  See STREAM_ defines above
@@ -1131,13 +1131,16 @@ struct bgav_demuxer_s
 #define BGAV_DEMUXER_SAMPLE_ACCURATE        (1<<16)
 #define BGAV_DEMUXER_LIVE                   (1<<17)
 
+#define BGAV_DEMUXER_NEED_INDEX             (1<<18)
+
+
+
 #define INDEX_MODE_NONE   0 /* Default: No sample accuracy */
 /* Packets have precise timestamps and durations and are adjacent in the file */
 #define INDEX_MODE_SIMPLE 1
-/* File has a global index and codecs, which allow sample accuracy */
-// #define INDEX_MODE_SI_SA  5
-/* File has a global index but codecs, which need complete parsing */
-#define INDEX_MODE_SI_PARSE  6
+
+
+#define INDEX_MODE_SI     2
 
 
 
@@ -1168,6 +1171,9 @@ struct bgav_demuxer_context_s
    *  seek() functions will be used
    */
   gavl_packet_index_t * si;
+
+  /* Index built by bgav_demuxer_parse_track */
+  gavl_packet_index_t * si_parse;
   
   bgav_t * b;
   
@@ -1260,6 +1266,8 @@ int bgav_is_redirector(bgav_t * bgav);
 /* Decoder was only opened to build an index */
 #define BGAV_FLAG_BUILD_INDEX      (1<<4)
 
+
+
 struct bgav_s
   {
   char * location;
@@ -1301,31 +1309,6 @@ void bgav_send_state(bgav_t * b);
 
 /* Bytestream utilities */
 
-/* ptr -> integer */
-
-#if 0
-
-#define BGAV_PTR_2_16LE(p) GAVL_PTR_2_16LE(p) 
-#define BGAV_PTR_2_24LE(p) GAVL_PTR_2_24LE(p)
-#define BGAV_PTR_2_32LE(p) GAVL_PTR_2_32LE(p)
-#define BGAV_PTR_2_64LE(p) GAVL_PTR_2_64LE(p)
-#define BGAV_PTR_2_16BE(p) GAVL_PTR_2_16BE(p) 
-#define BGAV_PTR_2_32BE(p) GAVL_PTR_2_32BE(p) 
-#define BGAV_PTR_2_24BE(p) GAVL_PTR_2_24BE(p)
-#define BGAV_PTR_2_64BE(p) GAVL_PTR_2_64BE(p)
-
-/* integer -> ptr */
-
-#define BGAV_16LE_2_PTR(i, p) GAVL_16LE_2_PTR(i, p) 
-#define BGAV_24LE_2_PTR(i, p) GAVL_24LE_2_PTR(i, p) 
-#define BGAV_32LE_2_PTR(i, p) GAVL_32LE_2_PTR(i, p)
-#define BGAV_64LE_2_PTR(i, p) GAVL_64LE_2_PTR(i, p) 
-#define BGAV_16BE_2_PTR(i, p) GAVL_16BE_2_PTR(i, p) 
-#define BGAV_32BE_2_PTR(i, p) GAVL_32BE_2_PTR(i, p) 
-#define BGAV_24BE_2_PTR(i, p) GAVL_24BE_2_PTR(i, p) 
-#define BGAV_64BE_2_PTR(i, p) GAVL_64BE_2_PTR(i, p) 
-
-#endif
 
 #define BGAV_PTR_2_FOURCC(p) GAVL_PTR_2_32BE(p)
 

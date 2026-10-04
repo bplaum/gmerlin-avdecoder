@@ -148,7 +148,8 @@ void bgav_packet_parser_init_dvdsub(bgav_packet_parser_t * parser);
 void bgav_packet_parser_init_vp8(bgav_packet_parser_t * parser);
 void bgav_packet_parser_init_vp9(bgav_packet_parser_t * parser);
 
-   
+void bgav_packet_parser_init_wma(bgav_packet_parser_t * parser);
+
    
 
 

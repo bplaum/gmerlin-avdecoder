@@ -496,9 +496,7 @@ int bgav_set_overlay_compression_info(bgav_stream_t * s)
   
   s->ci->id = id;
 
-  if(s->codec_bitrate)
-    s->ci->bitrate = s->codec_bitrate;
-  else if(s->container_bitrate)
+  if(!s->ci->bitrate && s->container_bitrate)
     s->ci->bitrate = s->container_bitrate;
   
   s->flags |= STREAM_GOT_CI;
