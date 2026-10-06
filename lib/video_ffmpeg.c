@@ -883,21 +883,26 @@ static int get_buffer2_cb(struct AVCodecContext *ctx, AVFrame *frame, int flags)
   gavl_video_frame_t *f;
   ffmpeg_video_priv * priv = s->decoder_priv;
 
-  //  fprintf(stderr, "get_buffer2_cb %d\n", ctx->refs);
+  //&  fprintf(stderr, "get_buffer2_cb %d\n", ctx->refs);
   
   /* Set format for hw context */
   if(!(priv->flags & DR_INIT))
     {
+#if 0 /* This can trigger spurious format conversions later on */   
     int w, h;
     gavl_video_format_t fmt;
     memset(&fmt, 0, sizeof(fmt));
+#endif
 
+    get_format(ctx, s->data.video.format);
+    priv->flags &= ~NEED_FORMAT;
+
+    
+#if 0 /* This can trigger spurious format conversions later on */   
     gavl_video_format_copy(&fmt, s->data.video.format);
 
-#if 0 /* This can trigger spurious format conversions later on */   
     fmt.image_width = frame->width;
     fmt.image_height = frame->height;
-#endif
     
     w = frame->width;
     h = frame->height;
@@ -906,12 +911,16 @@ static int get_buffer2_cb(struct AVCodecContext *ctx, AVFrame *frame, int flags)
 
     fmt.frame_width = w;
     fmt.frame_height = h;
+#endif
     
     //  fmt.pixelformat = s->data.video.format->pixelformat;
+
+    if(ctx->refs + 2 < 16)
+      gavl_hw_ctx_set_max_frames(priv->hwctx, 16);
+    else
+      gavl_hw_ctx_set_max_frames(priv->hwctx, ctx->refs + 2);
     
-    gavl_hw_ctx_set_max_frames(priv->hwctx, ctx->refs + 2);
-    
-    gavl_hw_ctx_set_video_creator(priv->hwctx, &fmt, GAVL_HW_FRAME_MODE_MAP);
+    gavl_hw_ctx_set_video_creator(priv->hwctx, s->data.video.format, GAVL_HW_FRAME_MODE_MAP);
     
     priv->flags |= DR_INIT;
     }
@@ -1239,11 +1248,11 @@ static int init_ffmpeg(bgav_stream_t * s)
     return 0;
     }
 
-     
-  get_format(priv->ctx, s->data.video.format);
-
-  priv->flags &= ~NEED_FORMAT;
-      
+  if(priv->flags & NEED_FORMAT)
+    {
+    get_format(priv->ctx, s->data.video.format);
+    priv->flags &= ~NEED_FORMAT;
+    }
   
   /* Handle unsupported colormodels */
   if(s->data.video.format->pixelformat == GAVL_PIXELFORMAT_NONE)
@@ -2355,6 +2364,7 @@ static gavl_pixelformat_t get_pixelformat(enum AVPixelFormat p,
 /* Static functions (moved here, to make the above mess more readable) */
 static void get_format(AVCodecContext * ctx, gavl_video_format_t * format)
   {
+  int w, h;
   
   if(format->pixelformat == GAVL_PIXELFORMAT_NONE)
     {
@@ -2376,12 +2386,14 @@ static void get_format(AVCodecContext * ctx, gavl_video_format_t * format)
     }
   else
     {
+#if 1
     if((ctx->sample_aspect_ratio.num > 1) ||
        (ctx->sample_aspect_ratio.den > 1))
       {
       format->pixel_width  = ctx->sample_aspect_ratio.num;
       format->pixel_height = ctx->sample_aspect_ratio.den;
       }
+#endif
     /* Some demuxers don't know the frame dimensions */
     if(!format->image_width)
       {
@@ -2427,12 +2439,18 @@ static void get_format(AVCodecContext * ctx, gavl_video_format_t * format)
       }
     }
 
+  w = format->image_width;
+  h = format->image_height;
+  avcodec_align_dimensions(ctx, &w, &h);
+  format->frame_width = w;
+  format->frame_height = h;
   
   if(!format->timescale)
     {
     format->timescale = ctx->time_base.den;
     format->frame_duration = ctx->time_base.num;
     }
+
   }
 
 
