@@ -131,6 +131,7 @@ void bgav_packet_parser_init_opus(bgav_packet_parser_t * parser);
 #endif
 
 void bgav_packet_parser_init_adts(bgav_packet_parser_t * parser);
+void bgav_packet_parser_init_eac3(bgav_packet_parser_t * parser);
 
 void bgav_packet_parser_init_flac(bgav_packet_parser_t * parser);
 

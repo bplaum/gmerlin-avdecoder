@@ -51,6 +51,9 @@ parsers[] =
     { BGAV_MK_FOURCC('.','a','c','3'), bgav_packet_parser_init_a52 },
     { BGAV_MK_FOURCC('a','c','-','3'), bgav_packet_parser_init_a52 },
 
+    { BGAV_MK_FOURCC('e','a','c','3'), bgav_packet_parser_init_eac3 },
+
+    
     { BGAV_WAVID_2_FOURCC(0x0160), bgav_packet_parser_init_wma  },
     { BGAV_WAVID_2_FOURCC(0x0161), bgav_packet_parser_init_wma  },
 

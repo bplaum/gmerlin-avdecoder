@@ -115,6 +115,10 @@ static int handle_cmd(void * data, gavl_msg_t * msg)
           else if(t == GAVL_STREAM_VIDEO)
             {
             gavl_dictionary_set(avdec->opt, BGAV_OPT_VIDEOBUFFER, gavl_msg_get_arg_c(msg, 1));
+
+            fprintf(stderr, "Got video stream options:\n");
+            gavl_value_dump(gavl_dictionary_get(avdec->opt, BGAV_OPT_VIDEOBUFFER), 2);
+            
             }
           }
         }

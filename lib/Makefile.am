@@ -393,6 +393,7 @@ parse_cavs.c \
 parse_dirac.c \
 parse_dv.c \
 parse_dvdsub.c \
+parse_eac3.c \
 parse_flac.c \
 parse_h264.c \
 parse_jpeg.c \

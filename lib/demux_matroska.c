@@ -386,6 +386,12 @@ static void init_dts(bgav_stream_t * s)
   bgav_stream_set_parse_frame(s);
   }
 
+static void init_eac3(bgav_stream_t * s)
+  {
+  // bgav_mkv_track_t * p = s->priv;
+  bgav_stream_set_parse_frame(s);
+  }
+
 
 static const codec_info_t audio_codecs[] =
   {
@@ -396,6 +402,7 @@ static const codec_info_t audio_codecs[] =
     { "A_AAC/",          BGAV_MK_FOURCC('m','p','4','a'), init_aac,    CODEC_FLAG_INCOMPLETE },
     { "A_AAC",           BGAV_MK_FOURCC('m','p','4','a'), init_aac,    0 },
     { "A_AC3",           BGAV_MK_FOURCC('.','a','c','3'), init_ac3,    0 },
+    { "A_EAC3",          BGAV_MK_FOURCC('e','a','c','3'), init_eac3,   0 },
     { "A_DTS",           BGAV_MK_FOURCC('d','t','s',' '), init_dts,    0 },
     { /* End */ }
   };

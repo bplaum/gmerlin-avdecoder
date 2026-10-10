@@ -111,6 +111,12 @@ static void resync_v4l2(bgav_stream_t * s)
   
   }
 
+#define H265_FOURCCS \
+  BGAV_MK_FOURCC('h', 'e', 'v', '1'), \
+  BGAV_MK_FOURCC('H', '2', '6', '5'), \
+  BGAV_MK_FOURCC('h', '2', '6', '5')
+
+
 #define H264_FOURCCS \
   BGAV_MK_FOURCC('a', 'v', 'c', '1'), \
   BGAV_MK_FOURCC('H', '2', '6', '4'), \
