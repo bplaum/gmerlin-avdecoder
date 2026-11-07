@@ -84,6 +84,7 @@ const bg_codec_plugin_t the_plugin =
       .destroy =        bg_avdec_codec_destroy,
       .get_parameters = get_parameters,
       .set_parameter =  bg_avdec_codec_set_parameter,
+      .get_controllable = bg_avdec_codec_get_controllable,
     },
     .get_compressions     = get_compressions,
     .get_codec_tags      = get_codec_tags,

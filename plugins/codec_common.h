@@ -18,9 +18,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
-
-
 #include "options.h"
+
+#include <gmerlin/bgmsg.h>
 
 typedef struct
   {
@@ -28,12 +28,17 @@ typedef struct
   gavl_codec_id_t * compressions;
   bgav_options_t * opt;
   uint32_t * codec_tags;
+
+  bg_controllable_t ctrl;
+
   } bg_avdec_codec_t;
 
 void * bg_avdec_codec_create(void);
 void bg_avdec_codec_destroy(void *);
 void bg_avdec_codec_reset(void*);
 int64_t bg_avdec_codec_skip(void*, int64_t t, int scale);
+
+bg_controllable_t * bg_avdec_codec_get_controllable(void*);
 
 void bg_avdec_codec_set_parameter(void *, const char * name, const gavl_value_t * val);
 

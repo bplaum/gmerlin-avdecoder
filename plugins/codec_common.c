@@ -34,12 +34,57 @@
 
 #include "codec_common.h"
 
+static int handle_cmd(void * data, gavl_msg_t * msg)
+  {
+  bg_avdec_codec_t * c = data;
+
+  switch(msg->NS)
+    {
+    case GAVL_MSG_NS_SRC:
+      switch(msg->ID)
+        {
+        case GAVL_CMD_SRC_SET_BUFFER_FORMATS:
+          {
+          gavl_stream_type_t t = gavl_msg_get_arg_int(msg, 0);
+          if(t == GAVL_STREAM_VIDEO)
+            {
+            gavl_dictionary_set(c->opt, BGAV_OPT_VIDEOBUFFER, gavl_msg_get_arg_c(msg, 1));
+
+            //            fprintf(stderr, "Got video stream options:\n");
+            //            gavl_value_dump(gavl_dictionary_get(c->opt, BGAV_OPT_VIDEOBUFFER), 2);
+            
+            }
+          else if(t == GAVL_STREAM_AUDIO)
+            {
+            gavl_dictionary_set(c->opt, BGAV_OPT_AUDIOBUFFER, gavl_msg_get_arg_c(msg, 1));
+
+//            fprintf(stderr, "Got audio stream options:\n");
+//            gavl_value_dump(gavl_dictionary_get(c->opt, BGAV_OPT_AUDIOBUFFER), 2);
+            }
+          }
+        }
+      break;
+    }
+  return 1;
+  }
+
+bg_controllable_t * bg_avdec_codec_get_controllable(void * data)
+  {
+  bg_avdec_codec_t * c = data;
+  return &c->ctrl;
+  }
+
 
 void * bg_avdec_codec_create()
   {
   bg_avdec_codec_t * ret = calloc(1, sizeof(*ret));
   ret->dec = bgav_stream_decoder_create();
   ret->opt = bgav_stream_decoder_get_options(ret->dec);
+
+  bg_controllable_init(&ret->ctrl,
+                       bg_msg_sink_create(handle_cmd, ret, 1),
+                       bg_msg_hub_create(1));
+  
   return ret;
   }
 
@@ -53,6 +98,8 @@ void bg_avdec_codec_destroy(void * priv)
   if(c->codec_tags)
     free(c->codec_tags);
 
+  bg_controllable_cleanup(&c->ctrl);
+  
   free(c);
   }
 
