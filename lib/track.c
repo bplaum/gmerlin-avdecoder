@@ -593,10 +593,10 @@ void bgav_track_remove_unsupported(bgav_track_t * track)
       else
         gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
                  "No audio decoder found for fourcc %c%c%c%c (0x%08x)",
-                 (s->fourcc & 0xFF000000) >> 24,
-                 (s->fourcc & 0x00FF0000) >> 16,
-                 (s->fourcc & 0x0000FF00) >> 8,
                  (s->fourcc & 0x000000FF),
+                 (s->fourcc & 0x0000FF00) >> 8,
+                 (s->fourcc & 0x00FF0000) >> 16,
+                 (s->fourcc & 0xFF000000) >> 24,
                  s->fourcc);
       bgav_track_remove_audio_stream(track, i);
       }
@@ -612,10 +612,10 @@ void bgav_track_remove_unsupported(bgav_track_t * track)
       {
       gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
                "No video decoder found for fourcc %c%c%c%c (0x%08x)",
-               (s->fourcc & 0xFF000000) >> 24,
-               (s->fourcc & 0x00FF0000) >> 16,
-               (s->fourcc & 0x0000FF00) >> 8,
                (s->fourcc & 0x000000FF),
+               (s->fourcc & 0x0000FF00) >> 8,
+               (s->fourcc & 0x00FF0000) >> 16,
+               (s->fourcc & 0xFF000000) >> 24,
                s->fourcc);
       bgav_track_remove_video_stream(track, i);
       }
