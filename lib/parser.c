@@ -208,6 +208,30 @@ static gavl_sink_status_t sink_put_func_frame(void * priv, gavl_packet_t * pkt)
   return gavl_packet_sink_put_packet(p->next, pkt);
   }
 
+/* Parse frame (src) */
+
+static gavl_source_status_t source_get_func_frame(void * priv, gavl_packet_t ** pkt)
+  {
+  gavl_source_status_t st;
+  bgav_packet_parser_t * p = priv;
+
+  while(1)
+    {
+    if((st = gavl_packet_source_read_packet(p->prev, pkt)) != GAVL_SOURCE_OK)
+      return st;
+    
+    if(!do_parse_frame(p, *pkt))
+      return GAVL_SOURCE_EOF;
+    
+    if(!PACKET_GET_SKIP(*pkt))
+      break;
+    
+    }
+  
+  return GAVL_SOURCE_OK;
+  }
+
+
 /* Parse full */
 static gavl_packet_t * sink_get_func_full(void * priv)
   {
@@ -374,7 +398,7 @@ bgav_packet_parser_t * bgav_packet_parser_create(gavl_dictionary_t * stream_info
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Found no packet parser for compression");
     return NULL;
     }
- 
+  
   if(stream_flags & STREAM_PARSE_FULL)
     {
     ret->sink = gavl_packet_sink_create(sink_get_func_full,

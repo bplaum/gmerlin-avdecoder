@@ -55,6 +55,10 @@ struct bgav_packet_parser_s
   gavl_packet_sink_t * next;
   gavl_packet_sink_t * sink;
 
+  /* Pull (for stream decoders) */
+  gavl_packet_source_t * prev;
+  gavl_packet_source_t * src;
+  
   gavl_audio_format_t * afmt;
   gavl_video_format_t * vfmt;
   gavl_compression_info_t * ci;
