@@ -166,10 +166,10 @@ int bgav_audio_start(bgav_stream_t * s)
       else
         gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN,
                  "No audio decoder found for fourcc %c%c%c%c (0x%08x)",
-                 (s->fourcc & 0xFF000000) >> 24,
-                 (s->fourcc & 0x00FF0000) >> 16,
-                 (s->fourcc & 0x0000FF00) >> 8,
                  (s->fourcc & 0x000000FF),
+                 (s->fourcc & 0x0000FF00) >> 8,
+                 (s->fourcc & 0x00FF0000) >> 16,
+                 (s->fourcc & 0xFF000000) >> 24,
                  s->fourcc);
       return 0;
       }
