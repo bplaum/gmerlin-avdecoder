@@ -553,10 +553,8 @@ static int read_frame(bgav_input_context_t * input,
       {
       case 2:
         /* 3 bytes for ID and size */
-        ret->header.fourcc =
-          (((uint32_t)probe_data[0] << 24) | 
-           ((uint32_t)probe_data[1] << 16) |
-           ((uint32_t)probe_data[2] << 8));
+        ret->header.fourcc = GAVL_MK_FOURCC(probe_data[0], probe_data[1], probe_data[2], 0x00);
+
         if(bgav_input_read_data(input, buf, 3) < 3)
           return 0;
         ret->header.data_size =
@@ -573,10 +571,8 @@ static int read_frame(bgav_input_context_t * input,
         if(!buf[0])
           return 1;
         
-        ret->header.fourcc = (((uint32_t)probe_data[0] << 24) | 
-                              ((uint32_t)probe_data[1] << 16) |
-                              ((uint32_t)probe_data[2] << 8) |
-                              ((uint32_t)buf[0]));
+        ret->header.fourcc = GAVL_MK_FOURCC(probe_data[0], probe_data[1], probe_data[2], buf[0]);
+
         if(!bgav_input_read_32_be(input, &ret->header.data_size) ||
            !bgav_input_read_16_be(input, &ret->header.flags))
           return 0;
@@ -587,10 +583,7 @@ static int read_frame(bgav_input_context_t * input,
     {
     if(bgav_input_read_data(input, buf, 1) < 1)
       return 0;
-    ret->header.fourcc = (((uint32_t)probe_data[0] << 24) | 
-                          ((uint32_t)probe_data[1] << 16) |
-                          ((uint32_t)probe_data[2] << 8) |
-                          ((uint32_t)buf[0]));
+    ret->header.fourcc = GAVL_MK_FOURCC(probe_data[0], probe_data[1], probe_data[2], buf[0]);
     
     if(!read_32_syncsave(input, &ret->header.data_size) ||
        !bgav_input_read_16_be(input, &ret->header.flags))
@@ -660,7 +653,7 @@ static int read_frame(bgav_input_context_t * input,
     data = data_new;
     }
   
-  if(((ret->header.fourcc & 0xFF000000) ==
+  if(((ret->header.fourcc & BGAV_MK_FOURCC(0xff, 0x00, 0x00, 0x00)) ==
      BGAV_MK_FOURCC('T', 0x00, 0x00, 0x00)) ||
      (ret->header.fourcc == BGAV_MK_FOURCC('W', 'X', 'X', 'X')))
     {
