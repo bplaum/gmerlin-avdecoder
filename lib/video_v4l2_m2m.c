@@ -61,7 +61,7 @@ static int init_v4l2(bgav_stream_t * s)
 
   priv = calloc(1, sizeof(*priv));
   
-  priv->dev = gavl_v4l2_device_open(dev_file);
+  priv->dev = gavl_v4l2_device_open(dev_file, NULL);
   
   if((arr = gavl_dictionary_get_array(s->opt, BGAV_OPT_VIDEOBUFFER)))
     gavl_v4l2_device_set_buffer_formats(priv->dev, arr);
