@@ -38,6 +38,7 @@
 // #undef HAVE_LIBVA
 
 #include <gavl/hw.h>
+#include <gavl/extpfmt.h>
 
 
 #ifdef HAVE_LIBVA
@@ -90,8 +91,7 @@
 #define COUNT_FRAMES  
 
 static gavl_pixelformat_t get_pixelformat(enum AVPixelFormat p,
-                                          gavl_pixelformat_t pixelformat);
-
+                                          gavl_pixelformat_t pixelformat, uint32_t * fourcc);
 
 typedef struct
   {
@@ -184,6 +184,8 @@ static const struct
   {
   enum AVPixelFormat  ffmpeg_csp;
   gavl_pixelformat_t gavl_csp;
+  uint32_t fourcc;
+  
   } pixelformats[] =
   {
     { AV_PIX_FMT_YUV420P,       GAVL_YUV_420_P },  ///< Planar YUV 4:2:0 (1 Cr & Cb sample per 2x2 Y samples)
@@ -192,7 +194,12 @@ static const struct
     { AV_PIX_FMT_BGR24,         GAVL_BGR_24    },  ///< Packed pixel, 3 bytes per pixel, BGRBGR...
     { AV_PIX_FMT_YUV422P,       GAVL_YUV_422_P },  ///< Planar YUV 4:2:2 (1 Cr & Cb sample per 2x1 Y samples)
     { AV_PIX_FMT_YUV444P,       GAVL_YUV_444_P }, ///< Planar YUV 4:4:4 (1 Cr & Cb sample per 1x1 Y samples)
-    { AV_PIX_FMT_RGB32,         GAVL_RGBA_32   },  ///< Packed pixel, 4 bytes per pixel, BGRABGRA..., stored in cpu endianness
+    ///< Packed pixel, 4 bytes per pixel, BGRABGRA...,   stored in cpu endianness
+#ifdef WORDS_BIGENDIAN
+    { AV_PIX_FMT_RGB32,         GAVL_PIXELFORMAT_EXTENDED, GAVL_MK_FOURCC('B','A','2','4') },
+#else
+    { AV_PIX_FMT_RGB32,         GAVL_PIXELFORMAT_EXTENDED, GAVL_MK_FOURCC('A','R','2','4') },
+#endif
     { AV_PIX_FMT_YUV410P,       GAVL_YUV_410_P }, ///< Planar YUV 4:1:0 (1 Cr & Cb sample per 4x4 Y samples)
     { AV_PIX_FMT_YUV411P,       GAVL_YUV_411_P }, ///< Planar YUV 4:1:1 (1 Cr & Cb sample per 4x1 Y samples)
     { AV_PIX_FMT_RGB565,        GAVL_RGB_16 }, ///< always stored in cpu endianness
@@ -205,17 +212,41 @@ static const struct
     { AV_PIX_FMT_YUVJ422P,      GAVL_YUVJ_422_P }, ///< Planar YUV 4:2:2 full scale (jpeg)
     { AV_PIX_FMT_YUVJ444P,      GAVL_YUVJ_444_P }, ///< Planar YUV 4:4:4 full scale (jpeg)
 
-    { AV_PIX_FMT_YUVA420P,      GAVL_YUVA_32 },
+    { AV_PIX_FMT_YUVA420P,      GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUVA420P },
     { AV_PIX_FMT_VAAPI,         GAVL_YUV_420_P },  ///< Planar YUV 4:2:0 (1 Cr & Cb sample per 2x2 Y samples)
+    
     /* Higher accuracy */
-    { AV_PIX_FMT_YUV422P10,     GAVL_YUV_422_P_16 },
-    { AV_PIX_FMT_YUV422P12,     GAVL_YUV_422_P_16 },
-    { AV_PIX_FMT_YUV422P14,     GAVL_YUV_422_P_16 },
+    
     { AV_PIX_FMT_YUV422P16,     GAVL_YUV_422_P_16 },
-    { AV_PIX_FMT_YUV444P10,     GAVL_YUV_444_P_16 },
-    { AV_PIX_FMT_YUV444P12,     GAVL_YUV_444_P_16 },
-    { AV_PIX_FMT_YUV444P14,     GAVL_YUV_444_P_16 },
     { AV_PIX_FMT_YUV444P16,     GAVL_YUV_444_P_16 },
+
+    { AV_PIX_FMT_YUV420P9LE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV420P9LE },
+    { AV_PIX_FMT_YUV420P9BE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV420P9BE },
+    { AV_PIX_FMT_YUV422P9LE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV422P9LE },
+    { AV_PIX_FMT_YUV422P9BE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV422P9BE },
+    { AV_PIX_FMT_YUV444P9LE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV444P9LE },
+    { AV_PIX_FMT_YUV444P9BE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV444P9BE },
+
+    { AV_PIX_FMT_YUV420P10LE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV420P10LE },
+    { AV_PIX_FMT_YUV420P10BE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV420P10BE },
+    { AV_PIX_FMT_YUV422P10LE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV422P10LE },
+    { AV_PIX_FMT_YUV422P10BE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV422P10BE },
+    { AV_PIX_FMT_YUV444P10LE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV444P10LE },
+    { AV_PIX_FMT_YUV444P10BE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV444P10BE },
+
+    { AV_PIX_FMT_YUV420P12LE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV420P12LE },
+    { AV_PIX_FMT_YUV420P12BE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV420P12BE },
+    { AV_PIX_FMT_YUV422P12LE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV422P12LE },
+    { AV_PIX_FMT_YUV422P12BE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV422P12BE },
+    { AV_PIX_FMT_YUV444P12LE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV444P12LE },
+    { AV_PIX_FMT_YUV444P12BE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV444P12BE },
+
+    { AV_PIX_FMT_YUV420P14LE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV420P14LE },
+    { AV_PIX_FMT_YUV420P14BE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV420P14BE },
+    { AV_PIX_FMT_YUV422P14LE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV422P14LE },
+    { AV_PIX_FMT_YUV422P14BE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV422P14BE },
+    { AV_PIX_FMT_YUV444P14LE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV444P14LE },
+    { AV_PIX_FMT_YUV444P14BE,  GAVL_PIXELFORMAT_EXTENDED, GAVL_EPFMT_AV_PIX_FMT_YUV444P14BE },
     
     { AV_PIX_FMT_NB, GAVL_PIXELFORMAT_NONE },
 
@@ -781,7 +812,7 @@ static gavl_source_status_t decode_picture(bgav_stream_t * s)
         priv->gavl_frame = priv->gavl_frame_priv;
         }
       /* Set our internal frame */
-      for(i = 0; i < 3; i++)
+      for(i = 0; i < GAVL_MAX_PLANES; i++) // AV_NUM_DATA_POINTERS = 8, GAVL_MAX_PLANES = 4
         {
         priv->gavl_frame->planes[i]  = priv->frame->data[i];
         priv->gavl_frame->strides[i] = priv->frame->linesize[i];
@@ -996,7 +1027,11 @@ static enum AVPixelFormat get_format_cb(AVCodecContext *ctx, const enum AVPixelF
   gavl_pixelformat_t pfmt = GAVL_PIXELFORMAT_NONE;
 
   priv = s->decoder_priv;
+
+  //  fprintf(stderr, "get_format_cb:\n");
+  //  gavl_hw_buffer_formats_dump(gavl_dictionary_get_array(s->opt, BGAV_OPT_VIDEOBUFFER));
   
+    
   //  fmts = &s->opt->hwctx_video, GAVL_HW_FRAME_MODE_MAP);
   /* Copied from avcodec_default_get_format() */
   // If the last element of the list is a software format, choose it
@@ -2190,6 +2225,7 @@ static void pal8_to_rgba32(gavl_video_frame_t * dst, AVFrame * src,
     }
   }
 
+#if 0
 static void yuva420_to_yuva32(gavl_video_frame_t * dst, AVFrame * src,
                               int width, int height)
   {
@@ -2294,54 +2330,10 @@ static void yuva420_to_yuva32(gavl_video_frame_t * dst, AVFrame * src,
     dst_save += dst_stride;
     }
   }
-
-
-/* Real stupid rgba format conversion */
-
-static void rgba32_to_rgba32(gavl_video_frame_t * dst, AVFrame * src,
-                             int width, int height)
-  {
-  int i, j;
-  uint32_t r, g, b, a;
-  uint8_t * dst_ptr;
-  uint8_t * dst_save;
-  int dst_stride;
-  
-  uint32_t * src_ptr;
-  uint8_t  * src_save;
-
-  dst_save = dst->planes[0];
-  dst_stride = dst->strides[0];
-    
-  src_save = src->data[0];
-  for(i = 0; i < height; i++)
-    {
-    src_ptr = (uint32_t*)src_save;
-    dst_ptr = dst_save;
-    
-    for(j = 0; j < width; j++)
-      {
-      a = ((*src_ptr) & 0xff000000) >> 24;
-      r = ((*src_ptr) & 0x00ff0000) >> 16;
-      g = ((*src_ptr) & 0x0000ff00) >> 8;
-      b = ((*src_ptr) & 0x000000ff);
-      dst_ptr[0] = r;
-      dst_ptr[1] = g;
-      dst_ptr[2] = b;
-      dst_ptr[3] = a;
-      
-      dst_ptr+=4;
-      src_ptr++;
-      }
-    src_save += src->linesize[0];
-    dst_save += dst_stride;
-    }
-  }
-
-
+#endif
 
 static gavl_pixelformat_t get_pixelformat(enum AVPixelFormat p,
-                                          gavl_pixelformat_t pixelformat)
+                                          gavl_pixelformat_t pixelformat, uint32_t * fourcc)
   {
   int i;
   if(p == AV_PIX_FMT_PAL8)
@@ -2355,7 +2347,12 @@ static gavl_pixelformat_t get_pixelformat(enum AVPixelFormat p,
   for(i = 0; i < sizeof(pixelformats)/sizeof(pixelformats[0]); i++)
     {
     if(pixelformats[i].ffmpeg_csp == p)
+      {
+      if(pixelformats[i].gavl_csp == GAVL_PIXELFORMAT_EXTENDED)
+        *fourcc = pixelformats[i].fourcc;
+      
       return pixelformats[i].gavl_csp;
+      }
     }
   return GAVL_PIXELFORMAT_NONE;
   }
@@ -2369,7 +2366,7 @@ static void get_format(AVCodecContext * ctx, gavl_video_format_t * format)
   if(format->pixelformat == GAVL_PIXELFORMAT_NONE)
     {
     format->pixelformat =
-      get_pixelformat(ctx->pix_fmt, format->pixelformat);
+      get_pixelformat(ctx->pix_fmt, format->pixelformat, &format->fourcc);
     }
   
   if(ctx->codec_id == AV_CODEC_ID_DVVIDEO)
@@ -2470,14 +2467,7 @@ static void put_frame_palette(bgav_stream_t * s, gavl_video_frame_t * f)
   }
 
 
-static void put_frame_rgba32(bgav_stream_t * s, gavl_video_frame_t * f)
-  {
-  ffmpeg_video_priv * priv = s->decoder_priv;
-  rgba32_to_rgba32(f, priv->frame,
-                   s->data.video.format->image_width,
-                   s->data.video.format->image_height);
-  }
-
+#if 0
 static void put_frame_yuva420(bgav_stream_t * s, gavl_video_frame_t * f)
   {
   ffmpeg_video_priv * priv = s->decoder_priv;
@@ -2485,7 +2475,7 @@ static void put_frame_yuva420(bgav_stream_t * s, gavl_video_frame_t * f)
                     s->data.video.format->image_width,
                     s->data.video.format->image_height);
   }
-
+#endif
 
 static void put_frame_swapfields(bgav_stream_t * s, gavl_video_frame_t * f)
   {
@@ -2526,34 +2516,6 @@ static void put_frame_swapfields(bgav_stream_t * s, gavl_video_frame_t * f)
   }
 
 #if 0
-static void put_frame_yuvp10_nocopy(bgav_stream_t * s, gavl_video_frame_t * f)
-  {
-  ffmpeg_video_priv * priv = s->decoder_priv;
-  if(!priv->dsp)
-    priv->dsp = gavl_dsp_context_create();
-
-  gavl_dsp_video_frame_shift_bits(priv->dsp, s->vframe, s->data.video.format, 6);
-  }
-
-static void put_frame_yuvp12_nocopy(bgav_stream_t * s, gavl_video_frame_t * f)
-  {
-  ffmpeg_video_priv * priv = s->decoder_priv;
-  if(!priv->dsp)
-    priv->dsp = gavl_dsp_context_create();
-
-  gavl_dsp_video_frame_shift_bits(priv->dsp, s->vframe, s->data.video.format, 4);
-  }
-
-static void put_frame_yuvp14_nocopy(bgav_stream_t * s, gavl_video_frame_t * f)
-  {
-  ffmpeg_video_priv * priv = s->decoder_priv;
-  if(!priv->dsp)
-    priv->dsp = gavl_dsp_context_create();
-
-  gavl_dsp_video_frame_shift_bits(priv->dsp, s->vframe, s->data.video.format, 2);
-  }
-#endif
-
 /* Copy */
 static void put_frame_yuvp10(bgav_stream_t * s, gavl_video_frame_t * f)
   {
@@ -2581,6 +2543,7 @@ static void put_frame_yuvp14(bgav_stream_t * s, gavl_video_frame_t * f)
 
   gavl_dsp_video_frame_shift_bits_copy(priv->dsp, f, priv->gavl_frame, s->data.video.format, 2);
   }
+#endif
 
 /* Copy/flip internal frame to output */
 static void init_put_frame(bgav_stream_t * s)
@@ -2602,6 +2565,12 @@ static void init_put_frame(bgav_stream_t * s)
       s->data.video.format->hwctx = priv->hwctx;
       s->src_flags |= GAVL_SOURCE_SRC_ALLOC;
       }
+
+    if(s->data.video.format->pixelformat == GAVL_PIXELFORMAT_EXTENDED)
+      {
+      gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got extended pixelformat");
+      
+      }
     
     switch(priv->ctx->pix_fmt)
       {
@@ -2614,24 +2583,12 @@ static void init_put_frame(bgav_stream_t * s)
         gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Using VAAPI");
         break;
 #endif
-      case AV_PIX_FMT_RGB32:
-        priv->put_frame = put_frame_rgba32;
-        break;
+
+#if 0
       case AV_PIX_FMT_YUVA420P:
         priv->put_frame = put_frame_yuva420;
         break;
-      case AV_PIX_FMT_YUV422P10:
-      case AV_PIX_FMT_YUV444P10:
-        priv->put_frame = put_frame_yuvp10;
-        break;
-      case AV_PIX_FMT_YUV422P12:
-      case AV_PIX_FMT_YUV444P12:
-        priv->put_frame = put_frame_yuvp12;
-        break;
-      case AV_PIX_FMT_YUV422P14:
-      case AV_PIX_FMT_YUV444P14:
-        priv->put_frame = put_frame_yuvp14;
-        break;
+#endif
       default:
         if(priv->flags & SWAP_FIELDS_OUT)
           priv->put_frame = put_frame_swapfields;
