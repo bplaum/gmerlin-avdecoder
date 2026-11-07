@@ -1294,3 +1294,22 @@ void bgav_input_set_demuxer_pts(bgav_input_context_t * ctx, int64_t pts, int sca
     ctx->demuxer_scale = scale;
     }
   }
+
+int bgav_input_read_fourcc(bgav_input_context_t * ctx,uint32_t * fourcc)
+  {
+  uint8_t buf[4];
+  if(bgav_input_read_data(ctx, buf, 4) < 4)
+    return 0;
+  *fourcc = BGAV_MK_FOURCC(buf[0], buf[1], buf[2], buf[3]);
+  return 1;
+  }
+
+int bgav_input_get_fourcc(bgav_input_context_t * ctx,uint32_t * fourcc)
+  {
+  uint8_t buf[4];
+  if(bgav_input_get_data(ctx, buf, 4) < 4)
+    return 0;
+  *fourcc = BGAV_MK_FOURCC(buf[0], buf[1], buf[2], buf[3]);
+  return 1;
+  
+  }
