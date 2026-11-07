@@ -188,24 +188,25 @@ static gavl_source_status_t next_packet_wavpack(bgav_demuxer_context_t * ctx)
   if(bgav_input_read_data(ctx->input, header, HEADER_SIZE) < HEADER_SIZE)
     return GAVL_SOURCE_EOF; // EOF
 
-  s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
-  p = bgav_stream_get_packet_write(s);
-
-  p->position = pos;
-
   
   /* The last 12 bytes of the header must be copied to the
      packet */
 
   parse_header(&h, header);
   //  dump_header(&h);
-  
+
   if(h.fourcc != BGAV_MK_FOURCC('w', 'v', 'p', 'k'))
     {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Lost sync");
+    if(h.fourcc != BGAV_MK_FOURCC('A', 'P', 'E', 'T'))
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Lost sync %08x", h.fourcc);
     return GAVL_SOURCE_EOF;
     }
-    
+
+  s = bgav_track_get_audio_stream(ctx->tt->cur, 0);
+  
+  p = bgav_stream_get_packet_write(s);
+  p->position = pos;
+  
   size = h.block_size - 24;
   
   gavl_packet_alloc(p, size + HEADER_SIZE);
