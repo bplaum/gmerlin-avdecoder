@@ -412,7 +412,7 @@ static gavl_source_status_t next_packet_4xm(bgav_demuxer_context_t * ctx)
       return GAVL_SOURCE_EOF;
 
     
-    fourcc = BGAV_PTR_2_FOURCC(&header[0]);
+    fourcc = BGAV_PTR_2_FOURCC(header);
     switch(fourcc)
       {
       case ID_LIST:
