@@ -419,6 +419,7 @@ int bgav_h264_sps_parse(bgav_h264_sps_t * sps,
   bgav_bitstream_init(&b, buffer, len);
 
   bgav_bitstream_get(&b, &sps->profile_idc, 8);
+#if 0
   bgav_bitstream_get(&b, &sps->constraint_set0_flag, 1);
   bgav_bitstream_get(&b, &sps->constraint_set1_flag, 1);
   bgav_bitstream_get(&b, &sps->constraint_set2_flag, 1);
@@ -427,6 +428,9 @@ int bgav_h264_sps_parse(bgav_h264_sps_t * sps,
   bgav_bitstream_get(&b, &sps->constraint_set5_flag, 1);
   
   bgav_bitstream_get(&b, &dummy, 2); /* reserved_zero_4bits */
+#else
+  bgav_bitstream_get(&b, &sps->constraint_flags, 8); /* constraint_flags */
+#endif
   bgav_bitstream_get(&b, &sps->level_idc, 8); /* level_idc */
 
   bgav_bitstream_get_golomb_ue(&b, &sps->seq_parameter_set_id);
@@ -534,10 +538,14 @@ void bgav_h264_sps_dump(bgav_h264_sps_t * sps)
   int i;
   gavl_dprintf("SPS:\n");
   gavl_dprintf("  profile_idc:                             %d\n", sps->profile_idc);
+#if 0
   gavl_dprintf("  constraint_set0_flag:                    %d\n", sps->constraint_set0_flag);
   gavl_dprintf("  constraint_set1_flag:                    %d\n", sps->constraint_set1_flag);
   gavl_dprintf("  constraint_set2_flag:                    %d\n", sps->constraint_set2_flag);
   gavl_dprintf("  constraint_set3_flag:                    %d\n", sps->constraint_set3_flag);
+#else
+  gavl_dprintf("  constraint_flags:                        %02x\n", sps->constraint_flags);
+#endif
   gavl_dprintf("  level_idc:                               %d\n", sps->level_idc);
   gavl_dprintf("  seq_parameter_set_id:                    %d\n", sps->seq_parameter_set_id);
 
@@ -652,20 +660,133 @@ void bgav_h264_sps_get_image_size(const bgav_h264_sps_t * sps,
 #endif
   }
 
+#if 0
 
 // http://blog.comrite.com/2019/06/05/h-264-profile-level-id-packetization-mode-nal/
 
-static char * check_level_1b(const bgav_h264_sps_t * sps)
+static char * check_level_1b(int constraint_flags,
+                             int level_idc)
   {
-  if((sps->level_idc == 11) && sps->constraint_set3_flag)
+  if((level_idc == 11) &&
+     (constraint_flags & H264_CONSTRAINT_SET3_FLAG)
+     // sps->constraint_set3_flag
+     )
     return gavl_strdup("1b");
   else
     return NULL;
   }
 
+static void gavl_h264_get_profile_level(int profile_idc,
+                                        int constraint_flags,
+                                        int level_idc, gavl_dictionary_t * m)
+  {
+  const char * profile = NULL;
+  char * level = NULL;
+  
+  switch(profile_idc)
+    {
+    case 44:
+      profile = GAVL_META_H264_PROFILE_CAVLC_444_INTRA;
+      break;
+    case 66:
+      if(constraint_flags & H264_CONSTRAINT_SET1_FLAG)
+        profile = GAVL_META_H264_PROFILE_CONSTRAINED_BASELINE;
+      else
+        profile = GAVL_META_H264_PROFILE_BASELINE;
+
+      level = check_level_1b(constraint_flags, level_idc);
+
+      break;
+    case 77:
+      profile = GAVL_META_H264_PROFILE_MAIN;
+      level = check_level_1b(constraint_flags, level_idc);
+      break;
+    case 88:
+      profile = GAVL_META_H264_PROFILE_EXTENDED;
+      break;
+    case 100:
+      if(constraint_flags & H264_CONSTRAINT_SET4_FLAG)
+        {
+        if(constraint_flags & H264_CONSTRAINT_SET5_FLAG)
+          profile = GAVL_META_H264_PROFILE_CONSTRAINED_HIGH;
+        else
+          profile = GAVL_META_H264_PROFILE_PROGRESSIVE_HIGH;
+        }
+      else
+        profile = GAVL_META_H264_PROFILE_HIGH;
+      break;
+    case 110:
+      if(constraint_flags & H264_CONSTRAINT_SET3_FLAG)
+        profile = GAVL_META_H264_PROFILE_HIGH_10;
+      else
+        profile = GAVL_META_H264_PROFILE_HIGH_10;
+      break;
+    case 122:
+      if(constraint_flags & H264_CONSTRAINT_SET3_FLAG)
+        profile = GAVL_META_H264_PROFILE_HIGH_422_INTRA;
+      else
+        profile = GAVL_META_H264_PROFILE_HIGH_422;
+      break;
+    case 244:
+      if(constraint_flags & H264_CONSTRAINT_SET3_FLAG)
+        profile = GAVL_META_H264_PROFILE_HIGH_444_INTRA;
+      else
+        profile = GAVL_META_H264_PROFILE_HIGH_444_PREDICTIVE;
+      break;
+    /* scalable */
+    case 83:
+      if(constraint_flags & H264_CONSTRAINT_SET5_FLAG)
+        profile = GAVL_META_H264_PROFILE_SCALABLE_CONSTRAINED_BASELINE;
+      else
+        profile = GAVL_META_H264_PROFILE_SCALABLE_BASELINE;
+        
+      break;
+    case 86:
+      if(constraint_flags & H264_CONSTRAINT_SET5_FLAG)
+        profile = GAVL_META_H264_PROFILE_SCALABLE_CONSTRAINED_HIGH;
+      else if(constraint_flags & H264_CONSTRAINT_SET3_FLAG)
+        profile = GAVL_META_H264_PROFILE_SCALABLE_HIGH_INTRA;
+      else
+        profile = GAVL_META_H264_PROFILE_SCALABLE_HIGH;
+      break;
+    /* Stereo/Multiview */
+    case 128:
+      profile = GAVL_META_H264_PROFILE_STEREO_HIGH;
+      break;
+    case 118:
+      profile = GAVL_META_H264_PROFILE_MULTIVIEW_HIGH;
+      break;
+    case 138:
+      profile = GAVL_META_H264_PROFILE_MULTIVIEW_DEPTH_HIGH;
+      break;
+    }
+  
+  if(profile)
+    gavl_dictionary_set_string(m, GAVL_META_PROFILE, profile);
+  else  
+    gavl_dictionary_set_string_nocopy(m, GAVL_META_PROFILE,
+                                      gavl_sprintf("Unknown (%d)", profile_idc));
+  
+  if(!level)
+    {
+    if(level_idc % 10)
+      level = gavl_sprintf("%.1f", (double)level_idc/10.0);
+    else
+      level = gavl_sprintf("%d", level_idc/10);
+    }
+  
+  gavl_dictionary_set_string_nocopy(m, GAVL_META_LEVEL, level);
+  
+  }
+#endif
+
 void bgav_h264_sps_get_profile_level(const bgav_h264_sps_t * sps,
                                      gavl_dictionary_t * m)
   {
+  gavl_h264_get_profile_level(sps->profile_idc,
+                              sps->constraint_flags,
+                              sps->level_idc, m);
+#if 0
   const char * profile = NULL;
   char * level = NULL;
   
@@ -762,6 +883,8 @@ void bgav_h264_sps_get_profile_level(const bgav_h264_sps_t * sps,
     }
   
   gavl_dictionary_set_string_nocopy(m, GAVL_META_LEVEL, level);
+#endif
+
   }
 
 int bgav_h264_decode_sei_message_header(const uint8_t * data, int len,

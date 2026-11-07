@@ -126,15 +126,26 @@ typedef struct
 
 /* Sequence parameter set */
 
+#define H264_CONSTRAINT_SET0_FLAG  0x80
+#define H264_CONSTRAINT_SET1_FLAG  0x40
+#define H264_CONSTRAINT_SET2_FLAG  0x20
+#define H264_CONSTRAINT_SET3_FLAG  0x10
+#define H264_CONSTRAINT_SET4_FLAG  0x08
+#define H264_CONSTRAINT_SET5_FLAG  0x04
+
 typedef struct
   {
   int profile_idc;
+  int constraint_flags;
+  
+  /*
   int constraint_set0_flag;
   int constraint_set1_flag;
   int constraint_set2_flag;
   int constraint_set3_flag;
   int constraint_set4_flag;
   int constraint_set5_flag;
+  */
   int level_idc;
   int seq_parameter_set_id;
   
