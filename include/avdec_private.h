@@ -43,8 +43,7 @@
 
 #include <bsf.h>
 
-
-#define BGAV_MK_FOURCC(a, b, c, d) ((a<<24)|(b<<16)|(c<<8)|d)
+#define BGAV_MK_FOURCC(a, b, c, d) GAVL_MK_FOURCC(a, b, c, d)
 
 #define BGAV_VORBIS BGAV_MK_FOURCC('V','B','I','S')
 
@@ -940,8 +939,8 @@ int bgav_input_get_double_64_le(bgav_input_context_t * ctx, double * ret);
 
 bgav_yml_node_t * bgav_input_get_yml(bgav_input_context_t * ctx);
 
-#define bgav_input_read_fourcc(a,b) bgav_input_read_32_be(a,b)
-#define bgav_input_get_fourcc(a,b)  bgav_input_get_32_be(a,b)
+int bgav_input_read_fourcc(bgav_input_context_t * ctx,uint32_t * fourcc);
+int bgav_input_get_fourcc(bgav_input_context_t * ctx,uint32_t * fourcc);
 
 char * bgav_input_absolute_url(bgav_input_context_t * ctx, const char * rel_url);
 
@@ -1309,11 +1308,9 @@ void bgav_send_state(bgav_t * b);
 
 /* Bytestream utilities */
 
+#define BGAV_PTR_2_FOURCC(p) BGAV_MK_FOURCC((p)[0], (p)[1], (p)[2], (p)[3])
 
-#define BGAV_PTR_2_FOURCC(p) GAVL_PTR_2_32BE(p)
-
-#define BGAV_WAVID_2_FOURCC(id) BGAV_MK_FOURCC(0x00, 0x00, (id>>8), (id&0xff))
-
+#define BGAV_WAVID_2_FOURCC(id) (id)
 #define BGAV_FOURCC_2_WAVID(f) (f & 0xffff)
 
 /* utils.c */
