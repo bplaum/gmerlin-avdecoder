@@ -36,8 +36,8 @@ struct bgav_stream_decoder_s
   bgav_options_t opt;
   bgav_stream_t s;
 
-  bgav_packet_t p;
-  bgav_packet_t * out_packet;
+  //  bgav_packet_t p;
+  //  bgav_packet_t * out_packet;
   
   int flags;
   };
@@ -141,7 +141,6 @@ bgav_stream_decoder_reset(bgav_stream_decoder_t * dec)
   {
   bgav_packet_t * p = NULL;
   dec->s.out_time = GAVL_TIME_UNDEFINED;
-  dec->out_packet = NULL;
   
   if(bgav_stream_peek_packet_read(&dec->s, &p) != GAVL_SOURCE_OK)
     {
