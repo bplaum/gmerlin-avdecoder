@@ -757,7 +757,12 @@ static codec_info_t codec_infos[] =
                     0x00 },
       -1 },
 #endif
-    /*     AV_CODEC_ID_DTS, */
+
+    { "FFmpeg eac3 decoder", "EAC3", AV_CODEC_ID_EAC3,
+      (uint32_t[]){ BGAV_MK_FOURCC('e', 'a', 'c', '3'),
+                    0x00 },
+      -1 },
+/*     AV_CODEC_ID_DTS, */
     /*     AV_CODEC_ID_VORBIS, */
     /*     AV_CODEC_ID_DVAUDIO, */
     /*     AV_CODEC_ID_WMAV1, */
