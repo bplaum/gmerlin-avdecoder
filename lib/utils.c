@@ -53,11 +53,11 @@ void bgav_dump_fourcc(uint32_t fourcc)
   {
   if((fourcc & 0xffff0000) || !(fourcc))
     gavl_dprintf( "%c%c%c%c (%08x)",
-            (fourcc & 0xFF000000) >> 24,
-            (fourcc & 0x00FF0000) >> 16,
-            (fourcc & 0x0000FF00) >> 8,
-            (fourcc & 0x000000FF),
-            fourcc);
+                  (fourcc & 0x000000FF),
+                  (fourcc & 0x0000FF00) >> 8,
+                  (fourcc & 0x00FF0000) >> 16,
+                  (fourcc & 0xFF000000) >> 24,
+                  fourcc);
   else
     gavl_dprintf( "WavID: 0x%04x", fourcc);
     
