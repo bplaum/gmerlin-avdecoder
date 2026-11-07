@@ -103,7 +103,7 @@ static int open_smaf(bgav_demuxer_context_t * ctx)
 
     //    dump_chunk_header(&ch);
 
-    if((ch.fourcc & 0xffffff00) == BGAV_MK_FOURCC('M','T','R',0))
+    if((ch.fourcc & BGAV_MK_FOURCC(0xff,0xff,0xff,0x00)) == BGAV_MK_FOURCC('M','T','R',0))
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
                "MIDI like files not supported");
@@ -114,17 +114,17 @@ static int open_smaf(bgav_demuxer_context_t * ctx)
             (ch.fourcc == BGAV_MK_FOURCC('O','P','D','A')))
       bgav_input_skip(ctx->input, ch.size);
 
-    else if((ch.fourcc & 0xffffff00) == BGAV_MK_FOURCC('A','T','R',0))
+    else if((ch.fourcc & BGAV_MK_FOURCC(0xff,0xff,0xff,0x00)) == BGAV_MK_FOURCC('A','T','R',0))
       done = 1;
 
     else
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
                "Unsupported SMAF chunk (%c%c%c%c)",
-               (ch.fourcc & 0xFF000000) >> 24,
-               (ch.fourcc & 0x00FF0000) >> 16,
+               (ch.fourcc & 0x000000FF),
                (ch.fourcc & 0x0000FF00) >> 8,
-               (ch.fourcc & 0x000000FF));
+               (ch.fourcc & 0x00FF0000) >> 16,
+               (ch.fourcc & 0xFF000000) >> 24);
       return 0;
       }
     
@@ -174,7 +174,7 @@ static int open_smaf(bgav_demuxer_context_t * ctx)
        (ch.fourcc == BGAV_MK_FOURCC('A','s','p','I')))
       bgav_input_skip(ctx->input, ch.size);
 
-    else if((ch.fourcc & 0xffffff00) == BGAV_MK_FOURCC('A','w','a', 0))
+    else if((ch.fourcc & BGAV_MK_FOURCC(0xff,0xff,0xff,0x00)) == BGAV_MK_FOURCC('A','w','a', 0))
       done = 1;
 
     else
