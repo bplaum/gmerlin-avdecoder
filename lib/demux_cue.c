@@ -68,49 +68,6 @@ static int probe_cue(bgav_input_context_t * input)
   return 0;
   }
 
-#if 0
-static int load_edl(gavl_dictionary_t * ret, const glob_t * g, const char * ext)
-  {
-  int result = 0;
-  const gavl_dictionary_t * edl;
-  bgav_t  * b;
-  int i;
-  const char * loc = NULL;
-  const char * pos;
-  
-  /* Search for the filename */
-
-  for(i = 0; i < g->gl_pathc; i++)
-    {
-    pos = strrchr(g->gl_pathv[i], '.');
-    if(pos && !strcasecmp(pos, ext))
-      {
-      loc = g->gl_pathv[i];
-      break;
-      }
-    }
-  
-  if(!loc)
-    return 0;
-  
-  b = bgav_create();
-  if(!bgav_open(b, loc))
-    {
-    bgav_close(b);
-    return 0;
-    }
-  
-  if((edl = bgav_get_edl(b)))
-    {
-    gavl_dictionary_copy(ret, edl);
-    result = 1;
-    }
-  
-  bgav_close(b);
-  
-  return result;
-  }
-#endif
 
 static int open_cue(bgav_demuxer_context_t * ctx)
   {
