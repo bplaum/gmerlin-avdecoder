@@ -65,16 +65,6 @@ void bgav_options_set_dump_packets(bgav_options_t* opt,
   gavl_dictionary_set_int(opt, BGAV_OPT_DUMP_PACKETS, enable);
   }
 
-int bgav_options_get_bool(const bgav_options_t*opt, const char * key)
-  {
-  int val_i = 0;
-  if(gavl_dictionary_get_int(opt, key, &val_i) && val_i)
-    return 1;
-  else
-    return 0;
-  }
-  
-
 
 
 #define FREE(ptr) if(ptr) free(ptr)

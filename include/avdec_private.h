@@ -747,17 +747,17 @@ struct bgav_options_s
   };
 #endif
 
-int bgav_options_get_bool(const bgav_options_t*opt, const char * key);
-
-BGAV_PUBLIC void bgav_options_set_defaults(bgav_options_t*opt);
-
-void bgav_options_free(bgav_options_t*opt);
+#define bgav_options_get_bool gavl_dictionary_get_bool
 
 #if 0
 void bgav_options_metadata_changed(const bgav_options_t * opt,
                                    const gavl_dictionary_t * new_metadata,
                                    gavl_time_t pts);
 #endif
+
+BGAV_PUBLIC void bgav_options_set_defaults(bgav_options_t*opt);
+
+void bgav_options_free(bgav_options_t*opt);
 
 /* Overloadable input module */
 
